@@ -1,0 +1,1395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- A screen that runs for months will happily serve a cached copy of itself
+     forever. These stop the browser holding an old build after a deploy. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>RR Branch — Insights</title>
+<style>
+  :root{
+    --ground:#070C16; --panel:#0D1524; --panel-2:#111B2C; --raise:#16233A;
+    --line:#1C2942; --line-2:#2A3B58;
+    --ink:#F3F7FD; --ink-2:#93A7C4; --ink-3:#5E7297; --ink-4:#3E4F6E;
+    --teal:#2DD4BF; --teal-deep:#0D9488; --gold:#F5B935; --violet:#A78BFA;
+    --red:#FB7185; --amber:#FBBF24; --green:#34D399; --blue:#60A5FA;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--ground); color:var(--ink); font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       -webkit-font-smoothing:antialiased; padding-bottom:40px}
+  .num{font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+  a{color:var(--teal)}
+
+  header{position:sticky; top:0; z-index:30; display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+         padding:11px 18px; background:rgba(9,14,25,.93); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+  .shield{height:34px;width:auto;flex:none;display:block;
+          filter:drop-shadow(0 0 10px rgba(45,212,191,.25))}
+  .ttl{font-size:16px;font-weight:750;line-height:1.1}
+  .ttl small{display:block;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-top:2px}
+  .sp{flex:1}
+  .seg{display:flex; background:var(--panel); border:1px solid var(--line); border-radius:8px; overflow:hidden}
+  .seg button{background:none;border:0;color:var(--ink-3);font:600 12px/1 inherit;padding:8px 12px;cursor:pointer;transition:.15s}
+  .seg button:hover{color:var(--ink)}
+  .seg button.on{background:var(--teal-deep);color:#03110E}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:rgba(45,212,191,.14);border:1px solid rgba(45,212,191,.35);
+        color:var(--teal);font-size:12px;font-weight:700;padding:5px 10px;border-radius:7px;cursor:pointer}
+  .chip b{font-weight:800}
+  .chip span{opacity:.7}
+  .who{font-size:12px;color:var(--ink-3);font-weight:600}
+
+  .wrap{padding:14px 18px; display:grid; grid-template-columns:repeat(12,1fr); gap:12px}
+  .card{background:linear-gradient(165deg,var(--panel-2),var(--panel)); border:1px solid var(--line);
+        border-radius:11px; padding:13px 15px; min-width:0; display:flex; flex-direction:column}
+  .card h3{font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3);font-weight:800;
+           margin-bottom:10px; display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .card h3 em{font-style:normal;color:var(--ink-4);letter-spacing:0;text-transform:none;font-size:11px;font-weight:600}
+
+  /* KPI tiles */
+  .kpi{grid-column:span 2; padding:11px 13px; cursor:default; position:relative; overflow:hidden}
+  .kpi .k{font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);font-weight:800}
+  .kpi .v{font-size:27px;font-weight:800;line-height:1.05;margin-top:3px}
+  .kpi .d{font-size:11px;color:var(--ink-3);margin-top:2px;font-weight:600}
+  .kpi svg{margin-top:6px;display:block;width:100%;height:24px}
+  .g{color:var(--green)} .r{color:var(--red)} .a{color:var(--amber)} .t{color:var(--teal)} .vi{color:var(--violet)}
+
+  .c12{grid-column:span 12} .c8{grid-column:span 8} .c6{grid-column:span 6}
+  .c5{grid-column:span 5} .c4{grid-column:span 4} .c7{grid-column:span 7} .c3{grid-column:span 3}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:800;
+     text-align:right;padding:0 0 7px 14px;cursor:pointer;white-space:nowrap;user-select:none}
+  th:first-child{text-align:left;padding-left:0}
+  td+td{padding-left:14px}
+  th:hover{color:var(--teal)}
+  th.sorted{color:var(--teal)}
+  td{padding:6px 0;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+  td:first-child{text-align:left;width:99%}
+  tbody tr{cursor:pointer; transition:background .12s}
+  tbody tr:hover{background:rgba(45,212,191,.06)}
+  tbody tr.sel{background:rgba(45,212,191,.11)}
+  .av{width:21px;height:21px;border-radius:50%;display:inline-grid;place-items:center;font-size:8.5px;
+      font-weight:800;color:#061018;margin-right:8px;vertical-align:-6px}
+  .pill{font-size:10px;font-weight:800;padding:2px 6px;border-radius:5px;white-space:nowrap}
+  .pill.ok{background:rgba(52,211,153,.14);color:var(--green)}
+  .pill.warn{background:rgba(251,191,36,.15);color:var(--amber)}
+  .pill.bad{background:rgba(251,113,133,.15);color:var(--red)}
+  .pill.mute{background:rgba(148,163,184,.12);color:var(--ink-3)}
+
+  .mini{height:26px;width:88px}
+  .bar{height:7px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--teal-deep),var(--teal));
+         width:0;transition:width .8s cubic-bezier(.2,.75,.3,1)}
+
+  /* funnel */
+  .fn{display:flex;flex-direction:column;gap:9px}
+  .fstep{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+  .fstep .lb{font-size:12px;font-weight:650}
+  .fstep .track{grid-column:1/-1;height:24px;border-radius:6px;background:rgba(255,255,255,.05);overflow:hidden;position:relative}
+  .fstep .fill{height:100%;border-radius:6px;width:0;transition:width .9s cubic-bezier(.2,.75,.3,1);
+               display:flex;align-items:center;padding-left:9px;font-size:11.5px;font-weight:800;color:#03110E}
+  .drop{font-size:10.5px;color:var(--ink-3);font-weight:700}
+
+  /* heatmap */
+  .hm{display:grid;grid-template-columns:auto repeat(12,1fr);gap:3px;font-size:9.5px}
+  .hm .hd{color:var(--ink-4);font-weight:700;text-align:center;letter-spacing:.04em}
+  .hm .rl{color:var(--ink-3);font-weight:700;padding-right:6px;text-align:right;line-height:18px}
+  .hm i{display:block;height:18px;border-radius:3px;background:rgba(255,255,255,.045)}
+
+  /* the approval queue — the case comes to the manager, decided in place */
+  .q{display:flex;flex-direction:column;gap:10px}
+  .qc{background:var(--raise);border:1px solid var(--line);border-left:4px solid var(--amber);
+      border-radius:10px;padding:12px 14px;display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start}
+  .qc.hot{border-left-color:var(--red)}
+  .qc.done{border-left-color:var(--teal);opacity:.55;transition:opacity .4s}
+  .qage{font-size:17px;font-weight:800;min-width:2.4em;text-align:center;padding:6px 4px;
+        border-radius:8px;background:rgba(251,191,36,.12);color:var(--amber)}
+  .qc.hot .qage{background:rgba(251,113,133,.12);color:var(--red)}
+  .qc.done .qage{background:rgba(45,212,191,.12);color:var(--teal)}
+  .qwho{font-size:14px;font-weight:750}
+  .qsub{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+  .qrec{margin-top:8px;display:flex;flex-direction:column;gap:3px}
+  .qrec .r1{font-size:12px;display:flex;gap:7px;align-items:baseline}
+  .qrec .r1 b{font-weight:700}
+  .qrec .r1 .m{color:var(--teal);font-weight:700;white-space:nowrap}
+  .qrec .r1 .tk{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+                color:var(--teal);border:1px solid rgba(45,212,191,.4);border-radius:4px;padding:0 5px}
+  /* the reason, under the plan it belongs to — the compliance line */
+  .qrec .rwhy{font-size:11.5px;color:var(--ink-3);line-height:1.5;margin:1px 0 4px 2px;
+              padding-left:8px;border-left:2px solid rgba(45,212,191,.35)}
+  .qrec .rwhy.none{color:var(--amber);border-left-color:rgba(251,191,36,.5)}
+  /* a case sent back and since fixed */
+  .qc.back{border-left-color:var(--teal)}
+  .qfixed{margin-top:8px;background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.3);
+          border-radius:8px;padding:8px 11px;font-size:11.5px;color:var(--ink-2);line-height:1.55}
+  .qfixed b{color:var(--teal);font-weight:800}
+  .qfixed i{display:block;font-style:normal;color:var(--ink-3);margin-top:3px}
+  .qflags{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px}
+  .qf{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;
+      background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.25)}
+  .qf.bad{background:rgba(251,113,133,.1);color:var(--red);border-color:rgba(251,113,133,.3)}
+  .qf.okf{background:rgba(45,212,191,.08);color:var(--teal);border-color:rgba(45,212,191,.25)}
+  .qact{display:flex;flex-direction:column;gap:7px;min-width:130px}
+  .qb{border:0;border-radius:8px;padding:10px 14px;font:inherit;font-size:12.5px;font-weight:800;
+      cursor:pointer;white-space:nowrap}
+  .qb.ok{background:var(--teal);color:#04211D}
+  .qb.ok.confirm{background:#0D9488;color:#fff;outline:2px solid var(--teal)}
+  .qb.back{background:transparent;color:var(--amber);border:1.5px solid rgba(251,191,36,.5)}
+  /* Decline is not a louder Send back — it closes the case. Red, and quieter
+     than the two above it so it is never the button you hit by accident. */
+  .qb.decline{background:transparent;color:var(--red);border:1.5px solid rgba(251,113,133,.4)}
+  .qb:disabled{opacity:.5;cursor:default}
+  .qnote{width:100%;box-sizing:border-box;margin-top:8px;background:var(--panel);color:var(--ink);
+         border:1px solid var(--line);border-radius:8px;padding:9px;font:inherit;font-size:12.5px;
+         resize:vertical;display:none}
+  .qnote.open{display:block}
+  /* one-tap send-back reasons, built from what the checks found on THIS case */
+  .qpick{display:none;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .qpick.open{display:flex}
+  .qp{font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:20px;cursor:pointer;
+      background:transparent;color:var(--amber);border:1.5px solid rgba(251,191,36,.4);
+      font-family:inherit}
+  .qp.on{background:var(--amber);color:#1F1503;border-color:var(--amber)}
+  .qmsg{font-size:11.5px;font-weight:700;margin-top:6px;color:var(--teal)}
+  .qmsg.err{color:var(--red)}
+  /* Signing. An approval is a signature — it goes onto the fact find itself,
+     in the manager's sign-off box, so it has to be collected here rather than
+     assumed from a button press. */
+  .qsign{display:none;margin-top:10px;background:var(--panel-2);border:1px solid var(--line);
+         border-radius:12px;padding:12px}
+  .qsign.open{display:block}
+  .qsign h5{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+            color:var(--ink-3);margin-bottom:7px}
+  .qsatt{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
+  .qsatt label{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;line-height:1.4;
+               cursor:pointer;padding:7px 9px;border:1px solid var(--line);border-radius:8px;
+               color:var(--ink-2);transition:.14s}
+  .qsatt label:has(input:checked){border-color:rgba(45,212,191,.55);background:rgba(45,212,191,.07);
+               color:var(--ink)}
+  .qsatt input{accent-color:var(--teal);width:15px;height:15px;margin-top:1px;flex:none}
+  .qsatt label:has(input:checked) .tick{opacity:1;transform:none}
+  .qsatt .tick{margin-left:auto;color:var(--teal);font-weight:900;opacity:0;transform:scale(.6);
+               transition:.18s cubic-bezier(.2,.9,.3,1)}
+  .qpadwrap{position:relative;height:132px;border:2px dashed var(--line-2);border-radius:10px;
+            background:#F8FAFC;overflow:hidden}
+  .qpad{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+  .qpadhint{position:absolute;left:0;right:0;bottom:14px;text-align:center;color:#94A3B8;
+            font-size:11.5px;font-weight:700;pointer-events:none}
+  .qpadrule{position:absolute;left:18px;right:18px;bottom:36px;border-bottom:1px solid #CBD5E1;
+            pointer-events:none}
+  .qsrow{display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap}
+  .qsname{flex:1 1 160px;min-width:0;background:var(--panel);color:var(--ink);border:1px solid var(--line);
+          border-radius:8px;padding:8px 10px;font:inherit;font-size:12.5px}
+  .qslink{background:none;border:0;color:var(--teal);font:inherit;font-size:11.5px;font-weight:800;
+          cursor:pointer;padding:0;white-space:nowrap}
+  .qslink.mute{color:var(--ink-3)}
+  .qsgo{width:100%;margin-top:10px;border:0;border-radius:9px;padding:12px;font:inherit;
+        font-size:13px;font-weight:850;cursor:pointer;background:var(--teal);color:#04211D}
+  .qsgo.back{background:var(--amber);color:#1F1503}
+  .qsgo.kill{background:var(--red);color:#2A0710}
+  .qsgo:disabled{opacity:.55;cursor:default}
+  .qsfoot{font-size:10.5px;color:var(--ink-3);margin-top:8px;line-height:1.5;text-align:center}
+  .qb.ghost{background:transparent;color:var(--ink-3);border:1.5px solid var(--line)}
+  .qb.hold{background:transparent;color:var(--violet);border:1.5px solid rgba(167,139,250,.45)}
+  .qc.held{border-left-color:var(--violet)}
+  .qc.held .qage{background:rgba(167,139,250,.12);color:var(--violet)}
+  .qheld{font-size:11px;font-weight:700;color:var(--violet);margin-top:6px;
+         background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.25);
+         border-radius:7px;padding:5px 9px;display:inline-block}
+
+  /* the deep dive — the whole case, opened in place */
+  .qdet{display:none;margin-top:12px;border-top:1px solid var(--line);padding-top:12px;
+        grid-column:1/-1}
+  .qdet.open{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .qsec{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px;
+        min-width:0}
+  .qsec.wide{grid-column:1/-1}
+  .qsec h4{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+           color:var(--ink-4);margin:0 0 8px}
+  .qkv{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:2.5px 0}
+  .qkv b{font-weight:700;text-align:right}
+  .qkv .miss{color:var(--red);font-weight:700}
+  .qkv .lbl{color:var(--ink-3)}
+  .qbarrow{margin:5px 0 7px}
+  .qbarrow .t{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px}
+  .qbarrow .t b{font-weight:750}
+  .qbarrow .bar{height:7px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}
+  .qbarrow .bar i{display:block;height:100%;border-radius:4px}
+  .qtbl{width:100%;border-collapse:collapse;font-size:11.5px}
+  .qtbl td{padding:3.5px 4px;border-top:1px solid var(--line)}
+  .qtbl tr:first-child td{border-top:0}
+  .qtbl .r{text-align:right;white-space:nowrap;font-weight:700}
+  .qtbl .mut{color:var(--ink-3)}
+  .qstars{color:var(--gold);letter-spacing:.1em}
+  .qvoice{font-size:12px;line-height:1.5}
+  .qvoice .yes{color:var(--teal);font-weight:700}
+  .qvoice .warnv{color:var(--amber);font-weight:700}
+  .qvoice .quote{background:var(--raise);border-left:3px solid var(--amber);border-radius:0 7px 7px 0;
+                 padding:7px 10px;margin-top:6px;white-space:pre-wrap}
+  .qchk{display:flex;flex-direction:column;gap:6px}
+  .qchk label{display:flex;gap:9px;align-items:flex-start;font-size:12px;cursor:pointer;
+              padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--raise)}
+  .qchk label:has(input:checked){border-color:rgba(45,212,191,.5);background:rgba(45,212,191,.06)}
+  .qchk input{accent-color:var(--teal);width:15px;height:15px;margin-top:1px;flex:none}
+  .qopen{font-size:11.5px;font-weight:700;color:var(--teal);text-decoration:none}
+  .qopen:hover{text-decoration:underline}
+
+  /* attention */
+  .att{display:flex;flex-direction:column;gap:7px}
+  .arow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:7px 9px;
+        border-radius:8px;background:var(--raise);border-left:3px solid var(--ink-4)}
+  .arow.bad{border-left-color:var(--red)} .arow.warn{border-left-color:var(--amber)}
+  .arow .t1{font-size:12.5px;font-weight:650} .arow .t2{font-size:11px;color:var(--ink-3);margin-top:1px}
+  .arow .n{font-size:16px;font-weight:800}
+
+  /* branch funnel — the narrowing, drawn */
+  .bf{display:flex;flex-direction:column;gap:9px}
+  .bfr .lb{font-size:12px;font-weight:650;color:var(--ink-2)}
+  .bfr .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .bfr .vl{font-size:13.5px;font-weight:800;font-variant-numeric:tabular-nums}
+  .bfr .tr{height:22px;border-radius:5px;background:rgba(255,255,255,.045);overflow:hidden;margin-top:4px}
+  .bfr .tr i{display:block;height:100%;width:0;border-radius:5px;transition:width .9s cubic-bezier(.2,.75,.3,1)}
+  .bfr .dp{font-size:10.5px;color:var(--ink-4);font-weight:700}
+
+  /* producer board on the dashboard */
+  .pbt{width:100%;border-collapse:collapse;font-size:12.5px}
+  .pbt th{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+          font-weight:800;text-align:right;padding:0 0 7px 12px;white-space:nowrap}
+  .pbt th:first-child{text-align:left;padding-left:0}
+  .pbt td{padding:7px 0 7px 12px;border-top:1px solid var(--line);text-align:right;white-space:nowrap;
+          font-variant-numeric:tabular-nums}
+  .pbt td:first-child{text-align:left;width:99%;padding-left:0}
+  .pbt tbody tr{cursor:pointer;transition:background .12s}
+  .pbt tbody tr:hover{background:rgba(45,212,191,.06)}
+  .pbt .up{font-weight:800}
+  .pbt tr.k1 .up{color:#F5B935} .pbt tr.k2 .up{color:#DCE3EC} .pbt tr.k3 .up{color:#E0975A}
+  .pbt tr.k4 .up{color:var(--teal)} .pbt tr.k5 .up{color:#60A5FA} .pbt tr.k6 .up{color:var(--ink-3)}
+  .pbt .rkn{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;
+            font-size:9.5px;font-weight:800;border:1px solid var(--line-2);color:var(--ink-3);margin-right:8px}
+  .pbt tr.k1 .rkn{border-color:#F5B935;color:#F5B935} .pbt tr.k2 .rkn{border-color:#DCE3EC;color:#DCE3EC}
+  .pbt tr.k3 .rkn{border-color:#E0975A;color:#E0975A}
+  .pbt .mini2{height:4px;border-radius:2px;background:rgba(255,255,255,.06);
+              overflow:hidden;margin-top:4px;display:flex}
+  .pbt .mini2 i{display:block;height:100%}
+  .empty{color:var(--ink-4);font-size:12px;padding:14px 0;text-align:center}
+  .note{font-size:11px;color:var(--ink-4);margin-top:9px;line-height:1.45}
+  #tip{position:fixed;z-index:80;background:#0A1220;border:1px solid var(--line-2);border-radius:7px;
+       padding:7px 10px;font-size:11.5px;pointer-events:none;opacity:0;transition:opacity .12s;
+       box-shadow:0 10px 30px rgba(0,0,0,.6);white-space:nowrap}
+  #tip.on{opacity:1}
+  #gate{position:fixed;inset:0;background:var(--ground);display:grid;place-items:center;z-index:90;padding:20px}
+  #gate .box{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:26px;max-width:380px;width:100%}
+  #gate h1{font-size:19px;font-weight:750;margin-bottom:6px}
+  #gate p{font-size:13px;color:var(--ink-2);margin-bottom:16px}
+  #gate input{width:100%;padding:11px;border-radius:8px;border:1px solid var(--line-2);background:#0A1220;
+              color:var(--ink);font:14px inherit;margin-bottom:9px}
+  #gate button{width:100%;padding:12px;border:0;border-radius:8px;background:var(--teal-deep);color:#03110E;
+               font:800 14px inherit;cursor:pointer}
+  #gate .err{color:var(--red);font-size:12.5px;margin-top:10px;min-height:16px}
+  @media (max-width:1100px){ .c8,.c7,.c6,.c5,.c4,.c3{grid-column:span 12} .kpi{grid-column:span 4} }
+  /* Phones. The managers run this queue from the agents' quarters and the car
+     park, so the phone is the primary screen, not a degraded one. Wide tables
+     scroll inside their own card — the page itself must never side-scroll,
+     because a panning page slides content under the sticky header, which reads
+     as overlap. The queue stacks: age+details, then full-width buttons a thumb
+     can actually hit. */
+  @media (max-width:640px){
+    .wrap{padding:10px; gap:10px}
+    .kpi{grid-column:span 6}
+    header{gap:8px; padding:9px 10px}
+    .who{display:none}
+    .seg{width:100%; order:9}
+    .seg button{flex:1; padding:9px 4px; font-size:11.5px}
+    .card{overflow-x:auto}
+    .qc{grid-template-columns:auto minmax(0,1fr); gap:8px 10px}
+    .qact{grid-column:1/-1; flex-direction:row; flex-wrap:wrap; min-width:0}
+    .qact .qb{flex:1 1 45%; padding:12px 6px}
+    .qact .qsub{flex-basis:100%}
+    .qdet.open{grid-template-columns:1fr}
+    .qrec .r1{flex-wrap:wrap}
+    .qage{font-size:14px; min-width:2.2em}
+    .qwho{font-size:13.5px}
+  }
+</style>
+</head>
+<body>
+
+<div id="gate"><div class="box">
+  <h1>Branch Insights</h1>
+  <p>Your agent number and access code — the same as the dashboard.</p>
+  <input id="gEmail" type="text" placeholder="Agent number, e.g. A10024"
+         autocomplete="username" autocapitalize="characters">
+  <input id="gPass" type="password" placeholder="Access code" autocomplete="current-password">
+  <button onclick="signIn()">Sign in</button>
+  <div class="err" id="gErr"></div>
+</div></div>
+
+<header>
+  <svg class="shield" viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg" aria-label="Ricky Rampersad Branch">
+    <path d="M30 2 L56 10 L56 36 C56 52 44 64 30 68 C16 64 4 52 4 36 L4 10 Z" fill="#fff" stroke="#0D9488" stroke-width="2.5"/>
+    <path d="M30 6 L52 13 L52 36 C52 50 41 60 30 64 C19 60 8 50 8 36 L8 13 Z" fill="#1E293B"/>
+    <path d="M16 36 L26 46 L46 22" fill="none" stroke="#14B8A6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="ttl">Branch Insights<small>Ricky Rampersad Branch</small></div>
+  <div class="sp"></div>
+  <span class="who" id="whoami"></span>
+  <div id="filters"></div>
+  <div class="seg" id="rangeSeg">
+    <button data-r="week">This week</button><button data-r="month" class="on">This month</button>
+    <button data-r="ytd">Year to date</button><button data-r="all">Since launch</button>
+  </div>
+</header>
+
+<div class="wrap" id="wrap">
+  <div class="card kpi" id="k_sub"></div>
+  <div class="card kpi" id="k_app"></div>
+  <div class="card kpi" id="k_cyc"></div>
+  <div class="card kpi" id="k_act"></div>
+  <div class="card kpi" id="k_prem"></div>
+  <div class="card kpi" id="k_ratio"></div>
+
+  <div class="card c8"><h3><span>Adoption since launch</span><em id="adoptNote"></em></h3><div id="adopt"></div></div>
+  <div class="card c4"><h3><span>Pipeline</span><em>where cases stand</em></h3><div class="fn" id="funnel"></div></div>
+
+  <div class="card c7"><h3><span>Agents</span><em>click a row to filter everything</em></h3><div id="agents"></div></div>
+  <div class="card c5"><h3><span>Managers</span><em>median days to decide</em></h3><div id="mgrs"></div></div>
+
+  <div class="card c4"><h3><span>Time to decision</span><em>days, distribution</em></h3><div id="cycle"></div></div>
+  <div class="card c4"><h3><span>Production by product</span><em>API taken</em></h3><div id="products"></div></div>
+  <div class="card c4"><h3><span>When fact finds land</span><em>day × hour</em></h3><div id="heat"></div></div>
+
+  <div class="card c5"><h3><span>Branch funnel</span><em id="funNote"></em></h3><div id="bfunnel"></div></div>
+  <div class="card c7"><h3><span>Producer board</span><em id="pbNote"></em></h3><div id="prodBoard"></div></div>
+
+  <div class="card c12"><h3><span>Waiting on a decision</span><em id="qNote">every open case in your scope, oldest first — the range above does not hide these</em></h3><div class="q" id="queue"></div></div>
+
+  <div class="card c12"><h3><span>Needs attention</span><em>named, oldest first</em></h3><div class="att" id="attention"></div></div>
+</div>
+
+<div id="tip"></div>
+
+<script>
+var ENDPOINT='https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
+var ROWS=[], ME=null, RANGE='month', FILTER={agent:null,manager:null};
+var $=function(i){return document.getElementById(i);};
+/* Same guard as the wallboard: writing into an element that no longer exists
+   throws, and one throw takes the whole page down. */
+function setText(id,s){ var el=$(id); if(el) el.textContent=s; }
+var TOK_KEY='rrb_insights_token';
+var TOKEN=null, ROLE='';
+
+/* ── helpers ───────────────────────────────────────────────────────────── */
+function num(v){ var n=parseFloat(String(v==null?'':v).replace(/[^0-9.\-]/g,'')); return isFinite(n)?n:0; }
+function str(v){ return v==null?'':String(v).trim(); }
+/* Annual Premium Income. A premium is meaningless until you know how often it
+   is paid — $500 monthly and $500 annually are the same figure and twelve
+   times the business. Mode is a new field, so cases written before it existed
+   have none; those annualise as monthly, which is how premiums are quoted
+   here, and the count of assumed lines is reported rather than buried. */
+function apiMult(mode){
+  var m=str(mode).toLowerCase();
+  if(/annual/.test(m) && !/semi/.test(m)) return 1;
+  if(/semi/.test(m)) return 2;
+  if(/quarter/.test(m)) return 4;
+  return 12;
+}
+function money(n){ if(!n) return 'TT$0';
+  if(n>=1e6) return 'TT$'+(n/1e6).toFixed(n>=1e7?0:1)+'M';
+  if(n>=1e3) return 'TT$'+Math.round(n/1e3)+'k'; return 'TT$'+Math.round(n); }
+function d(v){ if(!v) return null; var x=new Date(v); return isNaN(x.getTime())?null:x; }
+function days(a,b){ return (b.getTime()-a.getTime())/864e5; }
+function title(s){ s=str(s); if(!s) return '';
+  if(s!==s.toUpperCase()&&s!==s.toLowerCase()) return s;
+  return s.toLowerCase().replace(/(^|[\s'\-])([a-z])/g,function(m,p,c){return p+c.toUpperCase();}); }
+function hue(n){ var h=0; for(var i=0;i<n.length;i++) h=(h*31+n.charCodeAt(i))%360; return h; }
+function av(name){ var p=name.trim().split(/\s+/), i=((p[0]||'')[0]||'')+((p[1]||'')[0]||'');
+  return '<span class="av" style="background:linear-gradient(145deg,hsl('+hue(name)+' 70% 68%),hsl('+((hue(name)+38)%360)+' 72% 56%))">'+i.toUpperCase()+'</span>'; }
+function med(a){ if(!a.length) return null; var s=a.slice().sort(function(x,y){return x-y;});
+  return s.length%2?s[(s.length-1)/2]:(s[s.length/2-1]+s[s.length/2])/2; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+/* tooltips, one listener for the whole page */
+var tip=null;
+function bindTip(el,text){ el.addEventListener('mousemove',function(e){
+    tip=tip||$('tip'); tip.textContent=text; tip.classList.add('on');
+    tip.style.left=Math.min(window.innerWidth-tip.offsetWidth-10,e.clientX+13)+'px';
+    tip.style.top=(e.clientY-34)+'px'; });
+  el.addEventListener('mouseleave',function(){ $('tip').classList.remove('on'); }); }
+
+/* ── data shaping ──────────────────────────────────────────────────────── */
+function shape(raw){
+  return raw.map(function(r){
+    var recs=[], prem=0, cover=0, api=0, apiTaken=0, apps=0, assumed=0, taken=[];
+    for(var i=1;i<=6;i++){
+      var p=str(r['rec'+i+'Rec']); var rp=num(r['rec'+i+'Prem']);
+      var mult=apiMult(r['rec'+i+'Mode']);
+      if(p){ recs.push(p); prem+=rp; cover+=num(r['rec'+i+'Amt']); }
+      if(rp>0){ api+=rp*mult; if(!str(r['rec'+i+'Mode'])) assumed++; }
+      if(/^yes$/i.test(str(r['dec'+i+'Go']))){
+        apps++;
+        var dp=num(r['dec'+i+'Prem'])||rp;
+        apiTaken+=dp*mult;
+        var pl=str(r['dec'+i+'Plan'])||p;
+        var damt=num(r['dec'+i+'Amt'])||num(r['rec'+i+'Amt']);
+        if(pl) taken.push({plan:pl, api:dp*mult, amt:damt});
+      }
+    }
+    var sub=d(r.submittedAt), rev=d(r.mgrReviewedAt), app=d(r.approvedAt), iv=d(r.interviewDate);
+    return { id:str(r.submissionId), agent:title(r.advisorName)||str(r.agentCode)||'Unknown',
+      code:str(r.agentCode).toUpperCase(), manager:title(r.reviewerName)||title(r.mgrName)||'Unassigned',
+      status:str(r.status).toLowerCase(), advice:/^advice$/i.test(str(r.appType)),
+      sub:sub, rev:rev, app:app, iv:iv, recs:recs, prem:prem, cover:cover,
+      api:api, apiTaken:apiTaken, apps:apps, assumed:assumed, taken:taken,
+      closed:/^picked up$/i.test(str(r.caseOutcome)),
+      lost:/^not proceeding$/i.test(str(r.caseOutcome)),
+      need:num(r.insuranceNeed_calc), surplus:num(r.cashSurplus_calc),
+      rep:/^(y|yes|true|1)$/i.test(str(r.repDetected)),
+      client:str(r.clientName)||str(r.fullName)||str(r.adviceClientName)||'(client)',
+      raw:r };
+  }).filter(function(r){ return r.sub; })
+    .sort(function(a,b){ return b.sub-a.sub; });
+}
+/* Calendar periods, not rolling windows. 'This month' has to mean the month
+   the branch is actually in, or it will not reconcile with anything anybody
+   else reports. The week starts Sunday, as the branch counts it. */
+function periodStart(){
+  var n=new Date();
+  if(RANGE==='week'){ var d=new Date(n.getFullYear(),n.getMonth(),n.getDate());
+    d.setDate(d.getDate()-d.getDay()); return d; }
+  if(RANGE==='month') return new Date(n.getFullYear(),n.getMonth(),1);
+  if(RANGE==='ytd')   return new Date(n.getFullYear(),0,1);
+  return null;
+}
+function periodLabel(){
+  var n=new Date();
+  return RANGE==='week' ? 'this week'
+       : RANGE==='month'? n.toLocaleDateString(undefined,{month:'long'})
+       : RANGE==='ytd'  ? String(n.getFullYear())+' to date'
+       : 'since launch';
+}
+function inRange(r){
+  var s=periodStart();
+  if(s && r.sub<s) return false;
+  if(FILTER.agent && r.agent!==FILTER.agent) return false;
+  if(FILTER.manager && r.manager!==FILTER.manager) return false;
+  return true;
+}
+
+/* ── charts, hand-rolled so there is nothing to load ───────────────────── */
+function spark(vals,color,h){
+  h=h||24; var w=100, mx=Math.max.apply(null,vals.concat([1]));
+  var pts=vals.map(function(v,i){ return [i/(Math.max(1,vals.length-1))*w, h-(v/mx)*(h-3)-1.5]; });
+  var line=pts.map(function(p,i){ return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1); }).join(' ');
+  var area=line+' L'+w+' '+h+' L0 '+h+' Z';
+  var id='g'+Math.random().toString(36).slice(2,7);
+  return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+
+    '<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0" stop-color="'+color+'" stop-opacity=".38"/>'+
+    '<stop offset="1" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>'+
+    '<path d="'+area+'" fill="url(#'+id+')"/>'+
+    '<path d="'+line+'" fill="none" stroke="'+color+'" stroke-width="1.6" '+
+    'stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>';
+}
+function dailySeries(rows,n,pick){
+  var out=[], now=new Date(); now.setHours(0,0,0,0);
+  for(var i=n-1;i>=0;i--){
+    var a=new Date(now.getTime()-i*864e5), b=new Date(a.getTime()+864e5);
+    out.push(rows.filter(function(r){ var t=pick(r); return t&&t>=a&&t<b; }).length);
+  }
+  return out;
+}
+
+function kpi(el,label,value,detail,cls,vals,color){
+  el.innerHTML='<div class="k">'+label+'</div><div class="v num '+(cls||'')+'">'+value+'</div>'+
+    '<div class="d">'+detail+'</div>'+(vals?spark(vals,color||'#2DD4BF'):'');
+}
+
+/* ── render ────────────────────────────────────────────────────────────── */
+function render(){
+  var all=ROWS, rows=ROWS.filter(inRange);
+  var pstart=periodStart();
+  var spDays=Math.min(90,Math.max(14, pstart? Math.ceil(days(pstart,new Date()))+1 : 60));
+
+  /* KPI row */
+  var approved=rows.filter(function(r){return r.status==='approved';});
+  var decided=rows.filter(function(r){return r.rev&&(r.status==='approved'||r.status==='changes_requested');});
+  var cyc=decided.map(function(r){return days(r.sub,r.rev);}).filter(function(x){return x>=0&&x<400;});
+  var activeAgents={}; rows.forEach(function(r){ activeAgents[r.agent]=1; });
+  var prem=rows.reduce(function(a,r){return a+r.prem;},0);
+  var full=rows.filter(function(r){return !r.advice&&r.need>0&&r.cover>0;});
+  var ratio=full.length? Math.round(full.reduce(function(a,r){return a+r.cover/r.need;},0)/full.length*100):null;
+
+  kpi($('k_sub'),'Fact finds',rows.length,periodLabel(),'',dailySeries(rows,spDays,function(r){return r.sub;}),'#2DD4BF');
+  kpi($('k_app'),'Approved',approved.length,
+      rows.length?Math.round(approved.length/rows.length*100)+'% of submitted':'none yet','g',
+      dailySeries(approved,spDays,function(r){return r.app||r.rev;}),'#34D399');
+  var m=med(cyc);
+  kpi($('k_cyc'),'Median decision',m===null?'—':(Math.round(m*10)/10)+'d',
+      decided.length+' decided', m===null?'':(m>=7?'r':m>=3?'a':'g'));
+  kpi($('k_act'),'Active agents',Object.keys(activeAgents).length,'submitted in range','t');
+  var apiW = rows.reduce(function(a,r){return a+r.apiTaken;},0);
+  var appsW = rows.reduce(function(a,r){return a+r.apps;},0);
+  var asum = rows.reduce(function(a,r){return a+r.assumed;},0);
+  kpi($('k_prem'),'API written',money(apiW),
+      appsW+' application'+(appsW===1?'':'s')+(asum?' · '+asum+' assumed monthly':''),'vi');
+  kpi($('k_ratio'),'Recommend ratio',ratio===null?'—':ratio+'%',
+      full.length?'cover vs need, '+full.length+' cases':'needs full-disclosure cases',
+      ratio===null?'':(ratio<60?'r':ratio<80?'a':'g'));
+
+  /* Adoption — cumulative agents live and cumulative fact finds */
+  (function(){
+    if(!all.length){ $('adopt').innerHTML='<div class="empty">No submissions yet.</div>'; return; }
+    var first=all[all.length-1].sub, span=Math.max(1,Math.ceil(days(first,new Date())));
+    var buckets=Math.min(90,Math.max(10,span));
+    var perB=span/buckets, seen={}, cumA=[], cumF=[], f=0;
+    for(var i=0;i<buckets;i++){
+      var end=new Date(first.getTime()+(i+1)*perB*864e5);
+      all.forEach(function(r){ if(r.sub<=end && !seen[r.agent]) seen[r.agent]=1; });
+      f=all.filter(function(r){return r.sub<=end;}).length;
+      cumA.push(Object.keys(seen).length); cumF.push(f);
+    }
+    var W=100,H=44, mxA=Math.max.apply(null,cumA.concat([1])), mxF=Math.max.apply(null,cumF.concat([1]));
+    function path(vals,mx){ return vals.map(function(v,i){
+      return (i?'L':'M')+(i/(vals.length-1)*W).toFixed(2)+' '+(H-(v/mx)*(H-4)-2).toFixed(2); }).join(' '); }
+    $('adopt').innerHTML=
+      '<svg viewBox="0 0 100 44" preserveAspectRatio="none" style="width:100%;height:150px;display:block">'+
+      '<defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">'+
+        '<stop offset="0" stop-color="#2DD4BF" stop-opacity=".3"/><stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/></linearGradient></defs>'+
+      '<path d="'+path(cumF,mxF)+' L100 44 L0 44 Z" fill="url(#ag)"/>'+
+      '<path d="'+path(cumF,mxF)+'" fill="none" stroke="#2DD4BF" stroke-width="1.7" vector-effect="non-scaling-stroke"/>'+
+      '<path d="'+path(cumA,mxA)+'" fill="none" stroke="#F5B935" stroke-width="1.7" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"/>'+
+      '</svg>'+
+      '<div style="display:flex;gap:16px;margin-top:9px;font-size:11px;color:var(--ink-3);font-weight:700">'+
+        '<span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#2DD4BF;margin-right:5px"></i>'+cumF[cumF.length-1]+' fact finds</span>'+
+        '<span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#F5B935;margin-right:5px"></i>'+cumA[cumA.length-1]+' agents live</span>'+
+      '</div>';
+    $('adoptNote').textContent=first.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})+' → today';
+  })();
+
+  /* Pipeline funnel */
+  (function(){
+    var steps=[
+      ['Submitted', rows.length, '#2DD4BF'],
+      ['Reviewed', rows.filter(function(r){return r.rev;}).length, '#60A5FA'],
+      ['Approved', approved.length, '#34D399']
+    ];
+    var top=Math.max(1,steps[0][1]);
+    $('funnel').innerHTML=steps.map(function(s,i){
+      var pct=Math.round(s[1]/top*100);
+      var drop=i? (steps[i-1][1]? Math.round((steps[i-1][1]-s[1])/steps[i-1][1]*100):0) : null;
+      return '<div class="fstep"><div class="lb">'+s[0]+'</div>'+
+        '<div class="drop">'+(drop===null?'':(drop>0?'−'+drop+'% from above':'all carried'))+'</div>'+
+        '<div class="track"><div class="fill" data-w="'+Math.max(6,pct)+'" style="background:'+s[2]+'">'+s[1]+'</div></div></div>';
+    }).join('');
+    var pend=rows.filter(function(r){return r.status==='pending_review'||r.status==='submitted';}).length;
+    $('funnel').innerHTML+='<div class="note">'+pend+' still waiting on a manager.</div>';
+    requestAnimationFrame(function(){ $('funnel').querySelectorAll('.fill').forEach(function(f,i){
+      setTimeout(function(){ f.style.width=f.dataset.w+'%'; },70*i); }); });
+  })();
+
+  /* Agents */
+  (function(){
+    var by={};
+    rows.forEach(function(r){
+      var a=by[r.agent]=by[r.agent]||{name:r.agent,n:0,app:0,prem:0,adv:0,last:null,cov:0,need:0,api:0,apps:0};
+      a.n++; a.prem+=r.prem; a.api+=r.apiTaken; a.apps+=r.apps;
+      if(r.status==='approved') a.app++; if(r.advice) a.adv++;
+      if(!a.last||r.sub>a.last) a.last=r.sub;
+      if(!r.advice&&r.need>0&&r.cover>0){ a.cov+=r.cover; a.need+=r.need; }
+    });
+    var list=Object.keys(by).map(function(k){return by[k];});
+    if(!list.length){ $('agents').innerHTML='<div class="empty">Nobody submitted in this range.</div>'; return; }
+    list.sort(function(a,b){return b.n-a.n;});
+    $('agents').innerHTML='<table><thead><tr><th>Agent</th><th>Fact finds</th><th>Approved</th>'+
+      '<th>Ratio</th><th>Apps</th><th>API</th><th>Last seen</th><th style="width:96px">Trend</th></tr></thead><tbody>'+
+      list.map(function(a){
+        var q=Math.round(days(a.last,new Date()));
+        var rt=a.need? Math.round(a.cov/a.need*100):null;
+        var s=dailySeries(rows.filter(function(r){return r.agent===a.name;}),Math.min(45,spDays),function(r){return r.sub;});
+        return '<tr data-agent="'+esc(a.name)+'"'+(FILTER.agent===a.name?' class="sel"':'')+'>'+
+          '<td>'+av(a.name)+esc(a.name)+(a.adv?' <span class="pill mute">'+a.adv+' limited</span>':'')+'</td>'+
+          '<td class="num">'+a.n+'</td><td class="num">'+a.app+'</td>'+
+          '<td>'+(rt===null?'<span class="pill mute">—</span>':'<span class="pill '+(rt<60?'bad':rt<80?'warn':'ok')+'">'+rt+'%</span>')+'</td>'+
+          '<td class="num">'+a.apps+'</td>'+
+          '<td class="num">'+money(a.api)+'</td>'+
+          '<td><span class="pill '+(q>14?'bad':q>7?'warn':'mute')+'">'+(q<1?'today':q+'d')+'</span></td>'+
+          '<td><div class="mini">'+spark(s,'#2DD4BF',26)+'</div></td></tr>';
+      }).join('')+'</tbody></table>'+
+      '<div class="note">Ratio is cover recommended against need identified, full-disclosure cases only. Limited-scope cases have no assessed need, so they are counted but excluded from the ratio.</div>';
+    $('agents').querySelectorAll('tbody tr').forEach(function(tr){
+      tr.onclick=function(){ var a=tr.dataset.agent;
+        FILTER.agent = FILTER.agent===a ? null : a; draw(); };
+    });
+  })();
+
+  /* Managers */
+  (function(){
+    var by={};
+    ROWS.filter(function(r){ var s=periodStart(); return !s || r.sub>=s; }).forEach(function(r){
+      var m=by[r.manager]=by[r.manager]||{name:r.manager,app:0,ret:0,pend:0,ds:[],oldest:0};
+      if(r.rev&&r.status==='approved'){ m.app++; m.ds.push(days(r.sub,r.rev)); }
+      else if(r.rev&&r.status==='changes_requested'){ m.ret++; m.ds.push(days(r.sub,r.rev)); }
+      if(r.status==='pending_review'||r.status==='submitted'){
+        m.pend++; var g=days(r.sub,new Date()); if(g>m.oldest) m.oldest=Math.round(g); }
+    });
+    var list=Object.keys(by).map(function(k){return by[k];})
+      .filter(function(m){return m.app+m.ret+m.pend>0;})
+      .sort(function(a,b){return (b.app+b.ret+b.pend)-(a.app+a.ret+a.pend);});
+    if(!list.length){ $('mgrs').innerHTML='<div class="empty">No cases in this range.</div>'; return; }
+    $('mgrs').innerHTML='<table><thead><tr><th>Manager</th><th>Median</th><th>Approved</th><th>Sent back</th><th>Waiting</th><th>Oldest</th></tr></thead><tbody>'+
+      list.map(function(m){
+        var md=med(m.ds.filter(function(x){return x>=0&&x<400;}));
+        return '<tr data-mgr="'+esc(m.name)+'"'+(FILTER.manager===m.name?' class="sel"':'')+'>'+
+          '<td>'+av(m.name)+esc(m.name)+'</td>'+
+          '<td>'+(md===null?'<span class="pill mute">—</span>':'<span class="pill '+(md>=7?'bad':md>=3?'warn':'ok')+'">'+(Math.round(md*10)/10)+'d</span>')+'</td>'+
+          '<td class="num">'+m.app+'</td><td class="num">'+m.ret+'</td><td class="num">'+m.pend+'</td>'+
+          '<td>'+(m.pend?'<span class="pill '+(m.oldest>=7?'bad':m.oldest>=3?'warn':'mute')+'">'+m.oldest+'d</span>':'<span class="pill mute">—</span>')+'</td></tr>';
+      }).join('')+'</tbody></table>';
+    $('mgrs').querySelectorAll('tbody tr').forEach(function(tr){
+      tr.onclick=function(){ var m=tr.dataset.mgr; FILTER.manager = FILTER.manager===m ? null : m; draw(); };
+    });
+  })();
+
+  /* Cycle-time distribution */
+  (function(){
+    if(!cyc.length){ $('cycle').innerHTML='<div class="empty">Nothing decided in this range.</div>'; return; }
+    var bins=[[0,1,'same day'],[1,3,'1–3d'],[3,7,'3–7d'],[7,14,'7–14d'],[14,1e9,'14d+']];
+    var counts=bins.map(function(b){ return cyc.filter(function(x){return x>=b[0]&&x<b[1];}).length; });
+    var mx=Math.max.apply(null,counts.concat([1]));
+    $('cycle').innerHTML=bins.map(function(b,i){
+      var col=i<2?'#34D399':i<3?'#2DD4BF':i<4?'#FBBF24':'#FB7185';
+      return '<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:650;margin-bottom:3px">'+
+        '<span>'+b[2]+'</span><span class="num" style="color:var(--ink-3)">'+counts[i]+'</span></div>'+
+        '<div class="bar"><i data-w="'+Math.round(counts[i]/mx*100)+'" style="background:'+col+'"></i></div></div>';
+    }).join('')+'<div class="note">Median '+(Math.round(med(cyc)*10)/10)+'d across '+cyc.length+' decided cases. The spread matters more than the middle — a tail past 14 days is where clients go cold.</div>';
+    requestAnimationFrame(function(){ $('cycle').querySelectorAll('.bar i').forEach(function(b,i){
+      setTimeout(function(){ b.style.width=b.dataset.w+'%'; },60*i); }); });
+  })();
+
+  /* Product mix */
+  (function(){
+    // Production, not intention — what the client actually took, annualised.
+    var c={}, tot=0;
+    rows.forEach(function(r){ r.taken.forEach(function(x){
+      c[x.plan]=(c[x.plan]||0)+x.api; tot+=x.api; }); });
+    var list=Object.keys(c).map(function(k){return {p:k,n:c[k]};})
+      .sort(function(a,b){return b.n-a.n;}).slice(0,7);
+    if(!list.length){ $('products').innerHTML='<div class="empty">No recommendations recorded in this range.</div>'; return; }
+    var mx=list[0].n, pal=['#2DD4BF','#60A5FA','#A78BFA','#F5B935','#34D399','#FB7185','#93A7C4'];
+    $('products').innerHTML=list.map(function(x,i){
+      return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:650;margin-bottom:3px;gap:8px">'+
+        '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.p)+'</span>'+
+        '<span class="num" style="color:var(--ink-3)">'+money(x.n)+'</span></div>'+
+        '<div class="bar"><i data-w="'+Math.round(x.n/mx*100)+'" style="background:'+pal[i%pal.length]+'"></i></div></div>';
+    }).join('')+'<div class="note">Annual Premium Income from what the client accepted. '+
+      'Still what was <em>taken on the fact find</em>, not what underwriting issued.</div>';
+    requestAnimationFrame(function(){ $('products').querySelectorAll('.bar i').forEach(function(b,i){
+      setTimeout(function(){ b.style.width=b.dataset.w+'%'; },55*i); }); });
+  })();
+
+  /* Timing heatmap */
+  (function(){
+    var D=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], grid=[], mx=0;
+    for(var i=0;i<7;i++){ grid.push(new Array(12).fill(0)); }
+    rows.forEach(function(r){ var h=Math.floor(r.sub.getHours()/2); grid[r.sub.getDay()][h]++; });
+    grid.forEach(function(row){ row.forEach(function(v){ if(v>mx) mx=v; }); });
+    var head='<div class="hd"></div>'+[0,2,4,6,8,10,12,14,16,18,20,22].map(function(h){
+      return '<div class="hd">'+(h%6===0?(h===0?'12a':h===12?'12p':h>12?(h-12):h):'')+'</div>'; }).join('');
+    var body=D.map(function(dn,i){
+      return '<div class="rl">'+dn+'</div>'+grid[i].map(function(v,j){
+        var o=mx?v/mx:0;
+        return '<i data-v="'+v+'" data-d="'+dn+'" data-h="'+(j*2)+'" style="background:'+
+          (v?'rgba(45,212,191,'+(0.14+o*0.8).toFixed(2)+')':'rgba(255,255,255,.045)')+'"></i>'; }).join('');
+    }).join('');
+    $('heat').innerHTML='<div class="hm">'+head+body+'</div>'+
+      '<div class="note">When fact finds are actually submitted. A branch that only writes up on Friday afternoon is writing from memory.</div>';
+    $('heat').querySelectorAll('.hm i').forEach(function(el){
+      var h=+el.dataset.h; bindTip(el, el.dataset.d+' '+(h===0?'12am':h<12?h+'am':h===12?'12pm':(h-12)+'pm')+' — '+el.dataset.v+' submitted');
+    });
+  })();
+
+  /* The approval queue. Built from ROWS, not rows — the range selector must
+     never hide an open case. A 56-day-old fact find that vanishes because
+     "This week" is selected is how a backlog gets to 56 days. */
+  (function(){
+    var pend=ROWS.filter(function(r){return r.status==='pending_review'||r.status==='submitted';})
+      .sort(function(a,b){return a.sub-b.sub;});
+    var canAct=/manager/i.test(ROLE||'');
+    setText('qNote', pend.length
+      ? 'every open case in your scope, oldest first — the range above does not hide these'
+      : '');
+    if(!pend.length){
+      $('queue').innerHTML='<div class="empty">Nothing is waiting on a decision. Every fact find in your scope is signed off.</div>';
+      return;
+    }
+    /* The deep dive: everything a decision needs, built from the row itself.
+       Six sections and the attestation — the same facts the paper file would
+       hold, so approving here is approving with the file open. */
+    function qDeep(r){
+      var raw=r.raw||{};
+      var kv=function(l,v,crit){
+        var s=str(v);
+        return '<div class="qkv"><span class="lbl">'+l+'</span>'+
+          (s?'<b>'+esc(s)+'</b>':'<b class="'+(crit?'miss':'lbl')+'">'+(crit?'missing':'—')+'</b>')+'</div>';
+      };
+      var db=d(raw.dob), ageY=db?Math.floor(days(db,new Date())/365.25):0;
+      var deps=[]; if(str(raw.spouseName)) deps.push('spouse');
+      for(var ci=1;ci<=4;ci++) if(str(raw['child'+ci+'Name'])) deps.push('child');
+      for(var di=1;di<=3;di++) if(str(raw['dep'+di+'Name'])) deps.push(str(raw['dep'+di+'Rel']).toLowerCase()||'dependant');
+      var sInc=num(raw.spouseIncome)||num(raw.spouseMonthlyIncome);
+      var person='<div class="qsec"><h4>The person</h4>'+
+        kv('Age',ageY?ageY+' yrs':'',true)+
+        kv('ID number',raw.idNumber,true)+
+        kv('Marital',raw.maritalStatus)+
+        kv('Smoker',raw.smoker)+
+        kv('Occupation',str(raw.occupation)+(str(raw.employer)?' · '+str(raw.employer):''))+
+        kv('Employment',str(raw.empStatus)+(str(raw.tenure)?' · '+str(raw.tenure)+' yrs':''))+
+        kv('Dependants',deps.length?deps.length+' — '+deps.join(', '):'none recorded')+
+        (str(raw.spouseName)?kv('Spouse',str(raw.spouseName)+(sInc?' · '+money(sInc)+'/mo':'')):'')+
+        '</div>';
+
+      var inc=num(raw.monthlyIncomeTotal)||num(raw.monthlyIncome);
+      var exp=num(raw.monthlyExpenses);
+      var sur=num(raw.cashSurplus_calc)||(inc&&exp?inc-exp:0);
+      var newPrem=0, src='client taking';
+      for(var i=1;i<=6;i++) if(/^yes$/i.test(str(raw['dec'+i+'Go'])))
+        newPrem+=(num(raw['dec'+i+'Prem'])||num(raw['rec'+i+'Prem']))*apiMult(raw['rec'+i+'Mode'])/12;
+      if(!newPrem){ src='as recommended';
+        for(var i2=1;i2<=6;i2++) newPrem+=num(raw['rec'+i2+'Prem'])*apiMult(raw['rec'+i2+'Mode'])/12; }
+      var pct=sur>0?Math.round(newPrem/sur*100):0;
+      var pcol=pct>80?'var(--red)':pct>50?'var(--amber)':'var(--teal)';
+      var moneyS='<div class="qsec"><h4>The money</h4>'+
+        kv('Income / month',inc?money(inc):'',true)+
+        kv('Expenses / month',exp?money(exp):'')+
+        kv('Surplus / month',sur?money(Math.round(sur)):'',true)+
+        kv('New premium / month',money(Math.round(newPrem))+' · '+src)+
+        '<div class="qbarrow"><div class="t"><span>Premium vs surplus</span><b style="color:'+pcol+'">'+
+          (sur>0?pct+'%':'no surplus recorded')+'</b></div>'+
+        '<div class="bar"><i style="width:'+Math.min(100,pct)+'%;background:'+pcol+'"></i></div></div></div>';
+
+      var takeC=0;
+      for(var i3=1;i3<=6;i3++) if(/^yes$/i.test(str(raw['dec'+i3+'Go'])))
+        takeC+=num(raw['dec'+i3+'Amt'])||num(raw['rec'+i3+'Amt']);
+      var mxN=Math.max(r.need,r.cover,takeC,1);
+      var nbar=function(l,v,c){ return '<div class="qbarrow"><div class="t"><span>'+l+'</span><b>'+money(v)+'</b></div>'+
+        '<div class="bar"><i style="width:'+Math.round(v/mxN*100)+'%;background:'+c+'"></i></div></div>'; };
+      var gap=r.need-takeC;
+      var needS='<div class="qsec"><h4>Need vs the answer</h4>'+
+        nbar('Need found',r.need,'var(--violet)')+
+        nbar('Cover recommended',r.cover,'var(--teal-deep)')+
+        nbar('Client taking',takeC,'var(--teal)')+
+        (r.need>0?'<div class="qkv"><span class="lbl">'+(gap>0?'Need left uncovered':'Need fully covered')+
+          '</span><b style="color:'+(gap>r.need*0.5?'var(--red)':gap>0?'var(--amber)':'var(--teal)')+'">'+
+          (gap>0?money(gap):'&#10003;')+'</b></div>':'')+
+        (str(raw.naqScore)?kv('NAQ score',raw.naqScore):'')+
+        (str(raw.productFit)?kv('Product fit',raw.productFit):'')+
+        (str(raw.lapseRisk)?kv('Lapse risk',raw.lapseRisk):'')+'</div>';
+
+      var insRows='', noneRec=false;
+      for(var k=1;k<=7;k++){
+        var co=str(raw['ins'+k+'Co']), sum=num(raw['ins'+k+'Sum']);
+        if(!co&&!sum) continue;
+        if(/^none$/i.test(co)){ noneRec=true; continue; }
+        insRows+='<tr><td>'+esc(co||'?')+'</td><td class="mut">'+esc(str(raw['ins'+k+'Type']))+'</td>'+
+          '<td class="r">'+(sum?money(sum):'—')+'</td><td class="mut">'+esc(str(raw['ins'+k+'Status']))+'</td></tr>';
+      }
+      var exS='<div class="qsec"><h4>Existing cover</h4>'+
+        (insRows?'<table class="qtbl">'+insRows+'</table>'
+          :'<div class="qkv"><span class="lbl">'+(noneRec?'NONE recorded — client holds no existing cover':'Nothing recorded')+'</span></div>')+
+        (r.rep?'<div class="qheld" style="color:var(--red);border-color:rgba(251,113,133,.4);background:rgba(251,113,133,.07)">Replacement detected — '+
+          (str(raw.repDeclConfirm)?'declaration confirmed':'declaration NOT confirmed')+'</div>':'')+'</div>';
+
+      var conf=/^(y|yes|true|1)$/i.test(str(raw.clientConfirmed));
+      var chg=str(raw.clientChangeNote), rate=num(raw.clientRating);
+      var stars=function(n){ var s=''; for(var z=0;z<Math.round(n);z++) s+='&#9733;'; return s; };
+      var voice='<div class="qsec"><h4>The client&rsquo;s voice</h4><div class="qvoice">'+
+        (conf?'<div class="yes">&#10003; Confirmed the record is accurate'+
+            (d(raw.clientConfirmedAt)?' · '+d(raw.clientConfirmedAt).toLocaleDateString():'')+'</div>'
+          :'<div style="color:var(--ink-3)">Has not yet confirmed the record</div>')+
+        (chg?'<div class="warnv" style="margin-top:5px">Asked for a change — read before approving:</div>'+
+          '<div class="quote">'+esc(chg)+'</div>':'')+
+        (rate?'<div style="margin-top:6px"><span class="qstars">'+stars(rate)+'</span> rated the advisor '+rate+'/5</div>':'')+
+        '</div></div>';
+
+      var book=ROWS.filter(function(x){return x.agent===r.agent;});
+      var appr=book.filter(function(x){return x.status==='approved';}).length;
+      var ret=book.filter(function(x){return x.status==='changes_requested';}).length;
+      var closed=book.filter(function(x){return x.closed;}).length;
+      var rates=book.map(function(x){return num((x.raw||{}).clientRating);}).filter(function(v){return v>0;});
+      var avgR=rates.length?rates.reduce(function(a,v){return a+v;},0)/rates.length:0;
+      var advS='<div class="qsec"><h4>'+esc(r.agent)+' — the record</h4>'+
+        kv('Fact finds on file',book.length)+
+        kv('Approved',appr+(book.length?' ('+Math.round(appr/book.length*100)+'%)':''))+
+        kv('Sent back',ret)+
+        kv('Picked up',closed)+
+        (avgR?'<div class="qkv"><span class="lbl">Client rating</span><b><span class="qstars">'+stars(avgR)+'</span> '+
+          avgR.toFixed(1)+' ('+rates.length+')</b></div>':kv('Client rating','no ratings yet'))+
+        '<div style="margin-top:8px"><a class="qopen" href="FFPROJECT.html?id='+encodeURIComponent(r.id)+
+          '" target="_blank" rel="noopener">Open the full fact find form &rarr;</a></div></div>';
+
+      var att=canAct
+        ? '<div class="qsec wide"><h4>Your attestation — tick all four, then approve</h4><div class="qchk">'+
+          '<label><input type="checkbox"><span>The client data is complete and accurate — identity, age and contact will stand up to underwriting.</span></label>'+
+          '<label><input type="checkbox"><span>The ratios hold — the premium is affordable against the surplus, and the need calculation stands.</span></label>'+
+          '<label><input type="checkbox"><span>The recommendation is suitable — the plans answer the needs found, in the client&rsquo;s interest.</span></label>'+
+          '<label><input type="checkbox"><span>Compliance is addressed — replacement, disclosures and the concerns above are resolved or noted.</span></label>'+
+          '</div></div>'
+        : '';
+      return person+moneyS+needS+exS+voice+advS+att;
+    }
+
+    /* The signing block. Approving used to be a button press that wrote a
+       status and nothing else — the fact find went out to the client with an
+       empty manager sign-off box. Now the four attestations tick where you can
+       see them, and the signature drawn here is filed onto the form itself. */
+    var SIG_ATT=[
+      ['vd','Client data complete and accurate'],
+      ['vr','Premium affordable against the surplus'],
+      ['vs','Recommendation suits the need found'],
+      ['vc','Replacement, disclosure and compliance in order']];
+    function qSignBlock(r){
+      return '<div class="qsign" data-sign="'+esc(r.id)+'">'+
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">'+
+          '<h5 class="qstitle" style="margin:0">Attest and sign</h5>'+
+          '<button type="button" class="qslink qsall">Tick all four</button></div>'+
+        '<div class="qsatt">'+SIG_ATT.map(function(a){
+          return '<label><input type="checkbox" data-att="'+a[0]+'"><span>'+a[1]+
+            '</span><span class="tick">&#10003;</span></label>'; }).join('')+'</div>'+
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">'+
+          '<h5 style="margin:0">Your signature</h5>'+
+          '<button type="button" class="qslink mute qsclear">Clear</button></div>'+
+        '<div class="qpadwrap"><canvas class="qpad"></canvas>'+
+          '<div class="qpadrule"></div>'+
+          '<div class="qpadhint">Sign here &mdash; finger, stylus or mouse</div></div>'+
+        '<div class="qsrow"><input class="qsname" type="text" placeholder="Signed by" value="'+
+          esc(ME||'')+'">'+
+          '<button type="button" class="qslink qstype">Use my typed name</button></div>'+
+        '<button type="button" class="qsgo">Sign &amp; approve</button>'+
+        '<div class="qsfoot"></div></div>';
+    }
+
+    /* Wires one card's pad: draw, clear, or render the typed name in a hand.
+       Returns a reader the submit path calls for the PNG. */
+    function qPadInit(card){
+      var c=card.querySelector('.qpad'); if(!c||c.dataset.wired) return;
+      c.dataset.wired='1';
+      var x=c.getContext('2d'), hint=card.querySelector('.qpadhint');
+      var down=false, last=null;
+      function fit(){
+        var r=c.getBoundingClientRect(), dp=window.devicePixelRatio||1;
+        if(!r.width) return;
+        c.width=r.width*dp; c.height=r.height*dp; x.setTransform(dp,0,0,dp,0,0);
+        x.lineWidth=2.4; x.lineCap='round'; x.lineJoin='round'; x.strokeStyle='#0F172A';
+      }
+      fit();
+      c._fit=fit;
+      function pt(ev){ var r=c.getBoundingClientRect(), t=ev.touches?ev.touches[0]:ev;
+        return {x:t.clientX-r.left, y:t.clientY-r.top}; }
+      function start(ev){ ev.preventDefault(); down=true; last=pt(ev);
+        if(hint) hint.style.display='none'; }
+      function move(ev){ if(!down) return; ev.preventDefault(); var p=pt(ev);
+        x.beginPath(); x.moveTo(last.x,last.y); x.lineTo(p.x,p.y); x.stroke();
+        last=p; c.dataset.drawn='1'; }
+      function end(){ down=false; }
+      c.addEventListener('mousedown',start); c.addEventListener('mousemove',move);
+      window.addEventListener('mouseup',end);
+      c.addEventListener('touchstart',start,{passive:false});
+      c.addEventListener('touchmove',move,{passive:false});
+      c.addEventListener('touchend',end);
+      card.querySelector('.qsclear').onclick=function(){
+        x.clearRect(0,0,c.width,c.height); delete c.dataset.drawn;
+        if(hint) hint.style.display=''; };
+      card.querySelector('.qstype').onclick=function(){
+        var nameEl=card.querySelector('.qsname'), n=(nameEl.value||'').trim();
+        if(!n){ nameEl.focus(); return; }
+        var r=c.getBoundingClientRect();
+        x.clearRect(0,0,c.width,c.height);
+        x.fillStyle='#0F172A'; x.textAlign='center'; x.textBaseline='middle';
+        var s=40; do{ x.font='italic 700 '+s+'px Georgia,"Times New Roman",serif'; s-=2; }
+        while(x.measureText(n).width>r.width-48&&s>14);
+        x.fillText(n, r.width/2, r.height/2-6);
+        c.dataset.drawn='1'; if(hint) hint.style.display='none'; };
+    }
+
+    /* Did this case go back to the advisor and come back fixed, and is it
+       still waiting on a signature? Mirrors rrbCameBackFixed_ on the server —
+       if one changes, change both. */
+    function cameBackFixed(raw){
+      var st=str(raw.status).toLowerCase();
+      if(st.indexOf('approv')>-1||st.indexOf('declin')>-1||st.indexOf('cancel')>-1) return false;
+      var fixed=d(raw.fixedAt); if(!fixed) return false;
+      var back=d(raw.sentBackAt); if(!back) return true;
+      return fixed.getTime()>=back.getTime();
+    }
+
+    /* Send-back reasons the manager can tap instead of type, built from what
+       is actually wrong with THIS case — no generic pick-list of twenty
+       options, just the gaps the checks found.
+
+       The two evergreen asks are offered ONLY where the checks found nothing.
+       Appending them unconditionally meant every case, however clean, carried
+       a standing list of things to send it back for — which reads as the
+       system asking to be argued with rather than a case ready to sign. */
+    function qPicks(r){
+      var raw=r.raw||{}, chk=raw._checks||{}, out=[];
+      for(var i=1;i<=6;i++){
+        var plan=str(raw['rec'+i+'Rec']);
+        if(plan&&!str(raw['rec'+i+'Reason']))
+          out.push('No reason given for '+plan);
+        if(num(raw['rec'+i+'Prem'])>0&&!str(raw['rec'+i+'Mode']))
+          out.push('Premium mode not selected for '+(plan||'row '+i));
+      }
+      (chk.concerns||[]).forEach(function(c){ out.push(c.t); });
+      if(!out.length){
+        out.push('Confirm the figures with the client');
+        out.push('Needs analysis is too thin to defend');
+      }
+      var seen={};
+      return out.filter(function(t){ if(seen[t])return false; seen[t]=1; return true; })
+        .slice(0,8)
+        .map(function(t){ return '<button type="button" class="qp" data-t="'+esc(t)+'">'+esc(t)+'</button>'; })
+        .join('');
+    }
+
+    $('queue').innerHTML=pend.map(function(r){
+      var g=Math.round(days(r.sub,new Date())), hot=g>=14;
+      var raw=r.raw||{}, chk=raw._checks||null;
+      /* Every recommendation with the REASON under it. A plan name and a sum
+         assured is a product order; the reason is what makes it advice, and it
+         is the line an inspection asks to see. Approving a list without it was
+         approving blind. */
+      var recl='';
+      for(var i=1;i<=6;i++){
+        var plan=str(raw['rec'+i+'Rec']); var amt=num(raw['rec'+i+'Amt']);
+        var rp=num(raw['rec'+i+'Prem']); var md=str(raw['rec'+i+'Mode']);
+        if(!plan&&!rp) continue;
+        var took=/^yes$/i.test(str(raw['dec'+i+'Go']));
+        var why=str(raw['rec'+i+'Reason']);
+        recl+='<div class="r1"><b>'+esc(plan||'(plan not named)')+'</b>'+
+          (amt?'<span>'+money(amt)+' cover</span>':'')+
+          (rp?'<span class="m">'+money(rp)+(md?'/'+esc(md.toLowerCase()):'/mo assumed')+'</span>':'')+
+          (took?'<span class="tk">client taking</span>':'')+'</div>'+
+          (why?'<div class="rwhy">'+esc(why)+'</div>'
+              :'<div class="rwhy none">No reason written for this plan</div>');
+      }
+      var flags='';
+      if(chk&&chk.concerns&&chk.concerns.length){
+        flags=chk.concerns.map(function(c){
+          return '<span class="qf '+(c.sev==='bad'?'bad':'')+'" title="'+esc(c.why||'')+'">'+esc(c.t)+'</span>';
+        }).join('');
+      } else if(chk){
+        flags='<span class="qf okf">No concerns flagged by the checks</span>';
+      }
+      if(chk&&chk.adviceOnly) flags='<span class="qf okf">Specific Need Only</span>'+flags;
+      var held=!!str(raw.caseHoldAt);
+      var heldChip=held
+        ? '<div class="qheld">On hold'+(d(raw.caseHoldAt)?' since '+d(raw.caseHoldAt).toLocaleDateString():'')+
+          (str(raw.caseHoldBy)?' · '+esc(str(raw.caseHoldBy)):'')+
+          (str(raw.caseHoldNote)?' — '+esc(str(raw.caseHoldNote)):'')+'</div>'
+        : '';
+      /* A case you sent back and the advisor has since fixed. Without this it
+         came back into the queue looking exactly like a first submission, and
+         the only way to know whether your instruction had been carried out was
+         to open the file and read it again. */
+      var back=cameBackFixed(raw);
+      var fixChip=back
+        ? '<div class="qfixed"><b>Came back fixed'+
+            (num(raw.fixRound)>1?' · round '+num(raw.fixRound):'')+'</b> — '+
+            esc(str(raw.fixedBy)||r.agent)+' answered what you sent it back for'+
+            (d(raw.fixedAt)?', '+d(raw.fixedAt).toLocaleDateString():'')+'.'+
+            (str(raw.sentBackNote)?'<i>You asked: '+esc(str(raw.sentBackNote))+'</i>':'')+
+            (str(raw.fixedWhat)?'<i>Changed: '+esc(str(raw.fixedWhat))+'</i>':'')+
+          '</div>'
+        : '';
+      var acts=canAct
+        ? '<div class="qact">'+
+            '<button class="qb ok" data-id="'+esc(r.id)+'" data-v="approve">Approve</button>'+
+            '<button class="qb back" data-id="'+esc(r.id)+'" data-v="return">Send back&hellip;</button>'+
+            '<button class="qb decline" data-id="'+esc(r.id)+'" data-v="decline">Decline&hellip;</button>'+
+            '<button class="qb hold" data-id="'+esc(r.id)+'" data-v="hold">Hold&hellip;</button>'+
+            '<button class="qb ghost" data-id="'+esc(r.id)+'" data-v="toggle">Full review &#9662;</button>'+
+          '</div>'
+        : '<div class="qact"><div class="qsub">'+esc(r.manager)+' decides this</div>'+
+            '<button class="qb ghost" data-id="'+esc(r.id)+'" data-v="toggle">Full review &#9662;</button></div>';
+      return '<div class="qc'+(hot&&!held?' hot':'')+(held?' held':'')+(back?' back':'')+
+        '" data-card="'+esc(r.id)+'">'+
+        '<div class="qage">'+g+'d</div>'+
+        '<div><div class="qwho">'+esc(r.client)+'</div>'+
+        '<div class="qsub">'+esc(r.agent)+' · with '+esc(r.manager)+' · submitted '+r.sub.toLocaleDateString()+
+          (r.need?' · need '+money(r.need):'')+'</div>'+
+        fixChip+
+        (recl?'<div class="qrec">'+recl+'</div>':'')+
+        (flags?'<div class="qflags">'+flags+'</div>':'')+
+        heldChip+
+        '<div class="qpick">'+qPicks(r)+'</div>'+
+        '<textarea class="qnote" rows="2" placeholder="What needs to change before you can approve it? Goes to the advisor."></textarea>'+
+        (canAct?qSignBlock(r):'')+
+        '<div class="qmsg" style="display:none"></div></div>'+
+        acts+
+        '<div class="qdet">'+qDeep(r)+'</div></div>';
+    }).join('');
+
+    /* A tapped chip writes its line into the note; untapping removes it. The
+       note stays an ordinary textarea the manager can edit — what is in the
+       box is exactly what the advisor receives, chips or not. */
+    $('queue').querySelectorAll('.qp').forEach(function(c){
+      c.onclick=function(){
+        var card=c.closest('.qc'), noteEl=card.querySelector('.qnote');
+        var line='• '+c.dataset.t;
+        var lines=noteEl.value.split('\n').filter(function(x){return x.trim()!=='';});
+        if(c.classList.toggle('on')) lines.push(line);
+        else lines=lines.filter(function(x){return x!==line;});
+        noteEl.value=lines.join('\n');
+      };
+    });
+
+    $('queue').querySelectorAll('.qb').forEach(function(b){
+      b.onclick=function(){
+        var card=b.closest('.qc'), id=b.dataset.id, v=b.dataset.v;
+        var noteEl=card.querySelector('.qnote'), msg=card.querySelector('.qmsg');
+        var det=card.querySelector('.qdet');
+
+        if(v==='toggle'){
+          det.classList.toggle('open');
+          b.innerHTML=det.classList.contains('open')?'Close review &#9652;':'Full review &#9662;';
+          return;
+        }
+
+        /* Send back, Decline and Hold all arm the note box first; the second
+           click on the same button fires. Arming one resets the others.
+           All three need words — none of them can be a bare tap. */
+        if(v==='return'||v==='hold'||v==='decline'){
+          if(card.dataset.armed!==v){
+            card.dataset.armed=v;
+            noteEl.classList.add('open');
+            var pick=card.querySelector('.qpick');
+            if(pick) pick.classList.toggle('open', v==='return');
+            noteEl.placeholder = v==='return'
+              ? 'Tap the reasons above, add your own words if needed — goes to the advisor.'
+              : v==='decline'
+              ? 'Why does this recommendation not stand? The advisor is not being asked to fix it, so this is all they get.'
+              : 'What are you waiting on? Stays on the file — nothing is emailed, and the reminder clock resets.';
+            noteEl.focus();
+            b.textContent = v==='return' ? 'Send back now'
+                          : v==='decline' ? 'Decline this case' : 'Confirm hold';
+            card.querySelectorAll('.qb').forEach(function(x){
+              if(x===b) return;
+              if(x.dataset.v==='return')  x.innerHTML='Send back&hellip;';
+              if(x.dataset.v==='decline') x.innerHTML='Decline&hellip;';
+              if(x.dataset.v==='hold')    x.innerHTML='Hold&hellip;';
+            });
+            return;
+          }
+          if(v==='hold'&&!noteEl.value.trim()){
+            msg.style.display='block'; msg.className='qmsg err';
+            msg.textContent='Say what you are waiting on — the reason is the whole point of a hold.';
+            return;
+          }
+        }
+
+        /* Approve and Send back both open the signing panel. A decision on a
+           fact find is a signature, not a button press: the mark drawn here is
+           filed onto the form itself, in the manager's sign-off box. Hold is
+           not a decision on the case, so it still fires straight through. */
+        if(v==='approve'||v==='return'||v==='decline'){
+          var pane=card.querySelector('.qsign');
+          if(pane&&!pane.classList.contains('open')){
+            if((v==='return'||v==='decline')&&!noteEl.value.trim()){
+              msg.style.display='block'; msg.className='qmsg err';
+              msg.textContent=v==='decline'
+                ? 'Say why it is being declined — nobody is being asked to fix it, so this is all the advisor gets.'
+                : 'Tap a reason above, or type one — that is what the advisor receives.';
+              return;
+            }
+            var approve=(v==='approve');
+            pane.dataset.v=v;
+            pane.classList.add('open');
+            card.querySelector('.qstitle').textContent=approve
+              ? 'Attest and sign' : v==='decline' ? 'Sign the decline' : 'Sign the send-back';
+            /* Attestations belong to an approval. Sending back attests to
+               nothing — the reason above is the substance. */
+            pane.querySelector('.qsatt').style.display=approve?'':'none';
+            /* Anything already ticked in the deep dive carries across, so the
+               same four are not asked for twice. */
+            if(approve&&det.classList.contains('open')){
+              var deep=[].slice.call(card.querySelectorAll('.qchk input'));
+              pane.querySelectorAll('.qsatt input').forEach(function(x,i){
+                if(deep[i]&&deep[i].checked) x.checked=true; });
+            }
+            var go=pane.querySelector('.qsgo');
+            go.textContent=approve?'Sign & approve'
+                          :v==='decline'?'Sign & decline':'Sign & send back';
+            go.classList.toggle('back',!approve);
+            go.classList.toggle('kill',v==='decline');
+            pane.querySelector('.qsfoot').textContent=approve
+              ? 'Your signature goes onto the fact find, in the manager’s sign-off box, “I agree” is ticked in your name, and it travels with the client’s copy.'
+              : v==='decline'
+              ? 'This closes the case. “I do not agree” is ticked, your signature is kept against the decision, and the advisor is told it is not going forward.'
+              : 'Your signature is kept against the decision. The fact find stays unsigned — it is going back.';
+            qPadInit(card);
+            setTimeout(function(){
+              var c=card.querySelector('.qpad'); if(c&&c._fit) c._fit();
+              pane.scrollIntoView({block:'nearest',behavior:'smooth'});
+            },60);
+            msg.style.display='none';
+            return;
+          }
+          if(pane) return;   /* panel already open — the Sign button submits */
+        }
+
+        fire(card,id,v,noteEl.value.trim(),null,'','');
+      };
+    });
+
+    /* The one place a decision is actually sent. Everything above decides what
+       to put in it; this posts it and updates the card. The signature travels
+       in a POST body — a PNG data URL is far too long for a query string. */
+    function fire(card,id,v,note,atts,sig,signName){
+      var msg=card.querySelector('.qmsg');
+      card.querySelectorAll('.qb').forEach(function(x){x.disabled=true;});
+      var go=card.querySelector('.qsgo'); if(go) go.disabled=true;
+      msg.style.display='block'; msg.className='qmsg'; msg.textContent='Recording…';
+      var body={stage:'queue_decide',token:TOKEN,id:id,v:v,note:note||''};
+      if(atts) Object.keys(atts).forEach(function(k){ body[k]=atts[k]?'1':'0'; });
+      if(sig){ body.sig=sig; body.signName=signName||''; }
+      fetch(ENDPOINT,{method:'POST',cache:'no-store',
+            headers:{'Content-Type':'text/plain;charset=utf-8'},
+            body:JSON.stringify(body)})
+          .then(function(x){return x.json();})
+          .then(function(j){
+            if(!j||!j.ok){
+              if(j&&j.already){ msg.textContent=j.error+' Refreshing…';
+                return load(TOKEN); }
+              throw new Error((j&&j.error)||'Could not record the decision.');
+            }
+            var mine=ROWS.filter(function(x){return x.id===id;})[0];
+            if(j.status==='held'){
+              card.classList.add('held'); card.classList.remove('hot');
+              msg.textContent='On hold. The reason is on the file, and the daily reminder skips this case today.';
+              if(mine&&mine.raw){ mine.raw.caseHoldAt=new Date().toISOString();
+                mine.raw.caseHoldBy=ME||''; mine.raw.caseHoldNote=note||''; }
+              delete card.dataset.armed;
+              setTimeout(draw,1400);
+              return;
+            }
+            card.classList.add('done'); card.classList.remove('hot');
+            var pane=card.querySelector('.qsign'); if(pane) pane.classList.remove('open');
+            msg.textContent = j.status==='approved'
+              ? 'Approved and signed. Your signature is in the sign-off box, “I agree” is ticked in your name, the advisor has been emailed, and the client gets their approval letter.'
+              : j.status==='declined'
+              ? 'Declined and signed. “I do not agree” is ticked, the case is closed, and the advisor has been told it is not going forward. Nothing went to the client.'
+              : 'Sent back. The advisor has been emailed with your reasons.';
+            if(mine){ mine.status=j.status;
+              mine.rev=new Date(); if(j.status==='approved') mine.app=new Date(); }
+            setTimeout(draw,1600);
+          })
+          .catch(function(err){
+            msg.className='qmsg err'; msg.textContent=err.message;
+            card.querySelectorAll('.qb').forEach(function(x){x.disabled=false;});
+            var g2=card.querySelector('.qsgo'); if(g2) g2.disabled=false;
+          });
+    }
+
+    /* Four taps to say the same yes is three taps of friction on a phone. One
+       control ticks them, and untick still works individually — the record
+       stores what is ticked, so nothing is assumed on the manager's behalf. */
+    $('queue').querySelectorAll('.qsall').forEach(function(b){
+      b.onclick=function(){
+        var pane=b.closest('.qsign');
+        var boxes=[].slice.call(pane.querySelectorAll('.qsatt input'));
+        var on=!boxes.every(function(x){return x.checked;});
+        boxes.forEach(function(x){ x.checked=on; });
+        b.textContent=on?'Untick all':'Tick all four';
+      };
+    });
+
+    /* Signing IS the decision — this is the button that sends it. */
+    $('queue').querySelectorAll('.qsgo').forEach(function(go){
+      go.onclick=function(){
+        var card=go.closest('.qc'), pane=card.querySelector('.qsign');
+        var msg=card.querySelector('.qmsg'), pad=card.querySelector('.qpad');
+        var v=pane.dataset.v||'approve', approve=(v==='approve');
+        var id=(card.dataset.card||'');
+        var atts=null;
+        if(approve){
+          var boxes=[].slice.call(pane.querySelectorAll('.qsatt input'));
+          if(!boxes.every(function(x){return x.checked;})){
+            msg.style.display='block'; msg.className='qmsg err';
+            msg.textContent='Tick all four — they are what you are putting your name to.';
+            return;
+          }
+          atts={}; boxes.forEach(function(x){ atts[x.dataset.att]=true; });
+        }
+        /* An approval without a mark would leave the fact find's sign-off box
+           empty on a case that has, on paper, been signed off. */
+        if(approve&&!pad.dataset.drawn){
+          msg.style.display='block'; msg.className='qmsg err';
+          msg.textContent='Sign in the box, or tap “Use my typed name”.';
+          return;
+        }
+        var sig=pad.dataset.drawn?pad.toDataURL('image/png'):'';
+        fire(card,id,v,card.querySelector('.qnote').value.trim(),atts,sig,
+             (card.querySelector('.qsname').value||'').trim());
+      };
+    });
+  })();
+
+  /* Needs attention */
+  (function(){
+    var items=[];
+    rows.filter(function(r){return r.rep;}).forEach(function(r){
+      items.push({n:'!',t1:'Replacement of existing cover',t2:r.agent+' · with '+r.manager,sev:'bad',sort:900}); });
+    rows.filter(function(r){return r.surplus>0&&r.prem>0&&(r.prem/r.surplus)>0.8;}).forEach(function(r){
+      items.push({n:Math.round(r.prem/r.surplus*100)+'%',t1:'Premium above the client’s surplus',
+                  t2:r.agent+' · '+money(r.prem)+' against '+money(r.surplus),sev:'bad',sort:800}); });
+    // Cap each kind, or whichever failure is most common buries every other
+    // one and the panel stops being a list of what to do next.
+    var kept=[], perKind={};
+    items.sort(function(a,b){return b.sort-a.sort;}).forEach(function(i){
+      perKind[i.t1]=(perKind[i.t1]||0)+1;
+      if(perKind[i.t1]<=4) kept.push(i);
+    });
+    var hidden=items.length-kept.length;
+    items=kept;
+    $('attention').innerHTML = items.length
+      ? items.slice(0,12).map(function(i){
+          return '<div class="arow '+i.sev+'"><div class="n '+(i.sev==='bad'?'r':'a')+'">'+i.n+'</div>'+
+            '<div><div class="t1">'+esc(i.t1)+'</div><div class="t2">'+esc(i.t2)+'</div></div>'+
+            '<div></div></div>'; }).join('')
+      : '<div class="empty">Nothing needs chasing in this range.</div>';
+    if(hidden>0) $('attention').innerHTML+='<div class="note">'+hidden+
+      ' more of the same kinds not shown — open the range or filter to an agent to see them all.</div>';
+  })();
+
+  /* Branch funnel — need found narrowing to money collected. Five stages, each
+     bar scaled against the first, with the drop between them stated. */
+  (function(){
+    var need=rows.reduce(function(a,r){return a+r.need;},0);
+    var recC=rows.reduce(function(a,r){return a+r.cover;},0);
+    var sold=rows.reduce(function(a,r){return a+r.taken.reduce(function(x,y){return x+(y.amt||0);},0);},0);
+    var apiR=rows.reduce(function(a,r){return a+r.api;},0);
+    var apiP=rows.reduce(function(a,r){return a+(r.closed?r.apiTaken:0);},0);
+    var pipe=rows.reduce(function(a,r){return a+(r.closed||r.lost?0:r.apiTaken);},0);
+
+    var st=[['Need found',need,'#60A5FA'],['Cover recommended',recC,'#A78BFA'],
+            ['Cover sold',sold,'#2DD4BF']];
+    var st2=[['API recommended',apiR,'#93A7C4'],['API picked up',apiP,'#F5B935']];
+    var mx=Math.max(1,need), mx2=Math.max(1,apiR);
+    function bars(list,scale){
+      return list.map(function(s,i){
+        var prev=i?list[i-1][1]:null;
+        var drop=prev!==null&&prev>0? Math.round((prev-s[1])/prev*100):null;
+        return '<div class="bfr"><div class="hd"><span class="lb">'+s[0]+'</span>'+
+          '<span class="vl" style="color:'+s[2]+'">'+money(s[1])+'</span></div>'+
+          '<div class="tr"><i data-w="'+Math.max(2,Math.round(s[1]/scale*100))+'" style="background:'+s[2]+'"></i></div>'+
+          (drop!==null? '<div class="dp">'+(drop>0? '&minus;'+drop+'% from above':'all carried')+'</div>':'')+
+          '</div>';
+      }).join('');
+    }
+    $('bfunnel').innerHTML = need||apiR
+      ? bars(st,mx)+'<div style="height:1px;background:var(--line);margin:4px 0"></div>'+bars(st2,mx2)+
+        '<div class="note">Annualised. '+money(pipe)+' more is sitting in pipeline &mdash; taken by the client, not yet picked up.</div>'
+      : '<div class="empty">Nothing in this period yet.</div>';
+    setText('funNote', periodLabel());
+    requestAnimationFrame(function(){ $('bfunnel').querySelectorAll('.tr i').forEach(function(b,i){
+      setTimeout(function(){ b.style.width=b.dataset.w+'%'; },70*i); }); });
+  })();
+
+  /* Producer board — the same funnel, per advisor, ranked on what was collected. */
+  (function(){
+    var by={};
+    rows.forEach(function(r){
+      var a=by[r.agent]=by[r.agent]||{name:r.agent,n:0,need:0,cover:0,sold:0,apiRec:0,
+                                      up:0,pipe:0,apps:0,appsUp:0};
+      a.n++; a.need+=r.need; a.cover+=r.cover; a.apiRec+=r.api; a.apps+=r.apps;
+      a.sold+=r.taken.reduce(function(x,y){return x+(y.amt||0);},0);
+      if(r.closed){ a.up+=r.apiTaken; a.appsUp+=r.apps; }
+      else if(!r.lost) a.pipe+=r.apiTaken;
+    });
+    var list=Object.keys(by).map(function(k){return by[k];})
+      .sort(function(a,b){return b.up-a.up || b.apiRec-a.apiRec;});
+    if(!list.length){ $('prodBoard').innerHTML='<div class="empty">Nobody submitted in this period.</div>'; return; }
+    var top=Math.max.apply(null,[1].concat(list.map(function(x){return x.up+x.pipe;})));
+    $('prodBoard').innerHTML='<table class="pbt"><thead><tr><th>Advisor</th><th>Fact finds</th>'+
+      '<th>Need found</th><th>Cover sold</th><th>API rec</th><th>Pipeline</th><th>Apps</th><th>API picked up</th>'+
+      '</tr></thead><tbody>'+
+      list.map(function(a,i){
+        var pct=a.apiRec>0? Math.round(a.up/a.apiRec*100):null;
+        return '<tr class="k'+Math.min(6,i+1)+'" data-agent="'+esc(a.name)+'">'+
+          '<td><span class="rkn">'+(i+1)+'</span>'+av(a.name)+esc(a.name)+
+            '<div class="mini2"><i style="width:'+Math.round(a.up/top*100)+'%;background:#F5B935"></i>'+
+            '<i style="width:'+Math.round(a.pipe/top*100)+'%;background:rgba(167,139,250,.6)"></i></div></td>'+
+          '<td>'+a.n+'</td><td>'+money(a.need)+'</td><td style="color:var(--teal)">'+money(a.sold)+'</td>'+
+          '<td>'+money(a.apiRec)+'</td><td style="color:var(--violet)">'+money(a.pipe)+'</td>'+
+          '<td>'+a.appsUp+' / '+a.apps+'</td>'+
+          '<td class="up">'+money(a.up)+(pct===null?'':' <span style="font-size:10px;color:var(--ink-4)">'+pct+'%</span>')+'</td></tr>';
+      }).join('')+'</tbody></table>'+
+      '<div class="note">Ranked on API picked up. Apps shows picked up against written. '+
+      'Click a row to filter the whole page to that advisor.</div>';
+    setText('pbNote', periodLabel()+' · '+list.length+' advisors');
+    $('prodBoard').querySelectorAll('tbody tr').forEach(function(tr){
+      tr.onclick=function(){ var a=tr.dataset.agent; FILTER.agent = FILTER.agent===a?null:a; draw(); };
+    });
+  })();
+
+  /* filter chips */
+  var f=[];
+  if(FILTER.agent) f.push('<span class="chip" data-clear="agent"><b>'+esc(FILTER.agent)+'</b><span>✕</span></span>');
+  if(FILTER.manager) f.push('<span class="chip" data-clear="manager"><b>'+esc(FILTER.manager)+'</b><span>✕</span></span>');
+  $('filters').innerHTML=f.join(' ');
+  $('filters').querySelectorAll('.chip').forEach(function(c){
+    c.onclick=function(){ FILTER[c.dataset.clear]=null; draw(); }; });
+}
+function draw(){ try{ render(); }catch(e){ console.error(e); } }
+
+/* ── auth + load ───────────────────────────────────────────────────────── */
+function load(token){
+  TOKEN=token;
+  return fetch(ENDPOINT+'?action=data&token='+encodeURIComponent(token)+'&_='+Date.now(),{cache:'no-store'})
+    .then(function(r){return r.json();})
+    .then(function(j){
+      if(!j||j.ok===false) throw new Error((j&&j.error)||'refused');
+      ROWS=shape(j.rows||[]);
+      $('gate').style.display='none';
+      $('whoami').textContent=(ME?ME+' · ':'')+ROWS.length+' fact finds in scope';
+      draw();
+    });
+}
+function signIn(){
+  var e=$('gEmail').value.trim().toUpperCase(), p=$('gPass').value;
+  $('gEmail').value=e;
+  if(!e||!p){ $('gErr').textContent='Enter your agent number and access code.'; return; }
+  $('gErr').textContent='Signing in…';
+  // The server reads `code` and `pw`. This sent `email` and `password`, so
+  // this sign-in could never have succeeded — every attempt looked like a
+  // wrong password.
+  fetch(ENDPOINT+'?action=login&code='+encodeURIComponent(e.toUpperCase())+'&pw='+encodeURIComponent(p))
+    .then(function(r){return r.json();})
+    .then(function(j){
+      if(!j||j.ok===false) throw new Error((j&&j.error)||'Sign-in failed.');
+      ME=j.name||j.person&&j.person.name||e;
+      ROLE=str(j.role);
+      try{ sessionStorage.setItem(TOK_KEY,j.token); sessionStorage.setItem(TOK_KEY+'_n',ME);
+           sessionStorage.setItem(TOK_KEY+'_r',ROLE); }catch(x){}
+      return load(j.token);
+    })
+    .catch(function(err){ $('gErr').textContent=err.message; });
+}
+$('rangeSeg').querySelectorAll('button').forEach(function(b){
+  b.onclick=function(){ $('rangeSeg').querySelectorAll('button').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on'); RANGE=b.dataset.r; draw(); };
+});
+$('gPass').addEventListener('keydown',function(e){ if(e.key==='Enter') signIn(); });
+
+(function(){
+  var t=null; try{ t=sessionStorage.getItem(TOK_KEY); ME=sessionStorage.getItem(TOK_KEY+'_n');
+    ROLE=sessionStorage.getItem(TOK_KEY+'_r')||''; }catch(x){}
+  if(t) load(t).catch(function(){ $('gate').style.display='grid'; });
+})();
+</script>
+</body>
+</html>

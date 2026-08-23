@@ -1,0 +1,1353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- A screen that runs for months will happily serve a cached copy of itself
+     forever. These stop the browser holding an old build after a deploy. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>RR Branch — Live</title>
+<style>
+  :root{
+    --ground:#070C16; --panel:#0D1524; --panel-2:#121C2E;
+    --line:#1C2942; --line-2:#293853;
+    --ink:#F3F7FD; --ink-2:#93A7C4; --ink-3:#5E7297;
+    --teal:#2DD4BF; --teal-deep:#0D9488; --teal-glow:rgba(45,212,191,.35);
+    --gold:#F5B935; --gold-deep:#B98216;
+    --red:#FB7185; --amber:#FBBF24; --violet:#A78BFA;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html,body{height:100%; overflow:hidden}
+  body{
+    background:
+      radial-gradient(1100px 620px at 82% -12%, rgba(45,212,191,.10), transparent 62%),
+      radial-gradient(880px 520px at 6% 108%, rgba(167,139,250,.09), transparent 60%),
+      var(--ground);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:calc(9px + .70vw); line-height:1.4; -webkit-font-smoothing:antialiased;
+  }
+  .num{font-variant-numeric:tabular-nums; letter-spacing:-.025em}
+
+  header{
+    display:flex; align-items:center; gap:1.1em;
+    padding:.95em 1.5em; border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(20,32,54,.9),rgba(10,17,32,.75));
+  }
+  .howto{
+    display:flex; align-items:center; gap:.55em; flex:none; text-decoration:none;
+    font-size:.72em; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-2); border:1px solid var(--line); border-radius:2em;
+    padding:.5em .95em .5em .7em; transition:color .15s, border-color .15s;
+  }
+  .howto:hover{ color:var(--teal); border-color:var(--teal); }
+  .howto .tri{
+    width:1.35em; height:1.35em; border-radius:50%; flex:none; display:block;
+    background:var(--teal); position:relative;
+  }
+  .howto .tri::after{
+    content:''; position:absolute; left:52%; top:50%; transform:translate(-50%,-50%);
+    border-left:.42em solid #04211D; border-top:.26em solid transparent;
+    border-bottom:.26em solid transparent;
+  }
+  .shield{
+    height:2.9em; width:auto; flex:none; display:block;
+    filter:drop-shadow(0 0 .9em var(--teal-glow));
+  }
+  .brand{font-size:1.25em; font-weight:750; letter-spacing:-.012em; line-height:1.15}
+  .brand small{display:block; font-size:.5em; letter-spacing:.22em; text-transform:uppercase;
+               color:var(--ink-3); font-weight:700; margin-top:.28em}
+  .spacer{flex:1}
+  .live{display:flex; align-items:center; gap:.5em; font-size:.7em; letter-spacing:.17em;
+        text-transform:uppercase; color:var(--ink-2); font-weight:700}
+  .dot{width:.6em; height:.6em; border-radius:50%; background:var(--teal); animation:pulse 2.4s infinite}
+  .dot.stale{background:var(--amber); animation:none} .dot.dead{background:var(--red); animation:none}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(45,212,191,.65)}70%{box-shadow:0 0 0 .8em rgba(45,212,191,0)}100%{box-shadow:0 0 0 0 rgba(45,212,191,0)}}
+  .clock{font-size:1.42em; font-weight:750} .clock span{color:var(--ink-3); font-size:.6em; margin-left:.45em}
+
+  .ptitle{display:flex; align-items:baseline; gap:.7em; margin-bottom:.15em}
+  .ptitle h1{font-size:1.55em; font-weight:800; letter-spacing:-.02em; line-height:1.15}
+  .ptitle h1 b{color:var(--teal); font-weight:800}
+  .ptitle h1 i{font-style:normal; color:var(--gold)}
+  .ptitle .tag{font-size:.62em; letter-spacing:.2em; text-transform:uppercase; font-weight:800;
+               color:var(--ink-4); padding:.25em .6em; border:1px solid var(--line-2); border-radius:.35em}
+  main{position:relative; height:calc(100vh - 5.1em)}
+  .panel{position:absolute; inset:0; padding:1.25em 1.5em; display:flex; flex-direction:column; gap:.95em;
+         opacity:0; transform:translateY(.7em) scale(.995); pointer-events:none;
+         transition:opacity .6s ease, transform .6s cubic-bezier(.2,.7,.3,1)}
+  .panel.on{opacity:1; transform:none}
+
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:.9em}
+  /* On the producer panels the board is the point, so the tiles give it their
+     height back rather than the type shrinking to a size nobody reads at ten
+     feet. */
+  .stats.tight .stat{padding:.55em 1.1em}
+  .stats.tight .val{font-size:2.35em}
+  .stats.tight .s{font-size:.72em}
+  .stat{background:linear-gradient(160deg,var(--panel-2),var(--panel));
+        border:1px solid var(--line); border-radius:.75em; padding:.85em 1.1em; position:relative; overflow:hidden}
+  .stat::after{content:''; position:absolute; inset:0 auto 0 0; width:.2em;
+               background:linear-gradient(180deg,var(--teal),transparent)}
+  .stat.g::after{background:linear-gradient(180deg,var(--gold),transparent)}
+  .stat.v::after{background:linear-gradient(180deg,var(--violet),transparent)}
+  .stat .k{font-size:.7em; letter-spacing:.15em; text-transform:uppercase; color:var(--ink-3); font-weight:800}
+  .stat .val{font-size:3.1em; font-weight:800; line-height:1.02; margin-top:.04em}
+  .stat .s{font-size:.76em; color:var(--ink-2); margin-top:.15em}
+  .up{color:var(--teal)} .down{color:var(--red)} .bad{color:var(--red)} .warnc{color:var(--amber)}
+
+  .card{background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1px solid var(--line);
+        border-radius:.75em; padding:.95em 1.15em; display:flex; flex-direction:column; min-height:0}
+  .card h2{font-size:.72em; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3);
+           font-weight:800; margin-bottom:.75em; display:flex; justify-content:space-between; align-items:baseline}
+  .card h2 em{font-style:normal; color:var(--teal)}
+  .grow{flex:1; min-height:0}
+  .cols{flex:1; display:grid; grid-template-columns:1.3fr 1fr; gap:.9em; min-height:0}
+
+  /* leaderboard */
+  .rows{display:flex; flex-direction:column; gap:.42em}
+  .row{display:grid; grid-template-columns:auto 2.3em 1fr auto; align-items:center; gap:.75em;
+       transition:transform .7s cubic-bezier(.2,.7,.3,1)}
+  .rank{font-size:.95em; font-weight:800; color:var(--ink-3); width:1.5em; text-align:right}
+  .row.lead .rank{color:var(--gold)}
+  /* Position should be visible before any number is read. Gold, silver, bronze,
+     then cooling — the same order every day, so a move up the board is felt. */
+  .prow.r1 .rank{color:#F5B935} .prow.r2 .rank{color:#CBD5E1} .prow.r3 .rank{color:#D08A4E}
+  .prow.r1 .bar i{background:linear-gradient(90deg,#B98216,#F5B935)}
+  .prow.r2 .bar i{background:linear-gradient(90deg,#64748B,#CBD5E1)}
+  .prow.r3 .bar i{background:linear-gradient(90deg,#8A5A2B,#D08A4E)}
+  .prow.r4 .bar i{background:linear-gradient(90deg,#0D9488,#2DD4BF)}
+  .prow.r5 .bar i{background:linear-gradient(90deg,#155E75,#38BDF8); opacity:.85}
+  .prow.r6 .bar i{background:linear-gradient(90deg,#334155,#64748B); opacity:.75}
+  .prow.r1 .av{box-shadow:0 0 0 .16em rgba(245,185,53,.5), 0 0 1.4em rgba(245,185,53,.28)}
+  .prow.r2 .av{box-shadow:0 0 0 .14em rgba(203,213,225,.4)}
+  .prow.r3 .av{box-shadow:0 0 0 .14em rgba(208,138,78,.4)}
+  .prow.r1 .who{color:#FDF6E4}
+  .prow.r1 .met.api b{color:#F5B935; font-size:1.5em}
+  .av{width:2.3em; height:2.3em; border-radius:50%; display:grid; place-items:center;
+      font-size:.82em; font-weight:800; color:#061018; letter-spacing:-.02em}
+  .row.lead .av{box-shadow:0 0 0 .16em rgba(245,185,53,.5), 0 0 1.4em rgba(245,185,53,.3)}
+  .who{font-size:1.04em; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .prow .who{font-size:1.18em; font-weight:700}
+  .prow .bar{height:.34em; margin-top:.32em; opacity:.72}
+  .mv{font-size:.72em; font-weight:800; margin-left:.4em}
+  .mv.u{color:var(--teal)} .mv.d{color:var(--red)} .mv.n{color:var(--gold)}
+  .bar{height:.52em; border-radius:.26em; background:rgba(255,255,255,.06); overflow:hidden; margin-top:.28em}
+  .bar i{display:block; height:100%; border-radius:.26em; width:0;
+         background:linear-gradient(90deg,var(--teal-deep),var(--teal));
+         transition:width 1.1s cubic-bezier(.2,.75,.3,1)}
+  .row.lead .bar i{background:linear-gradient(90deg,var(--gold-deep),var(--gold))}
+  .cnt{font-size:1.42em; font-weight:800; min-width:1.5em; text-align:right}
+  .cnt small{display:block; font-size:.46em; color:var(--ink-3); font-weight:700; margin-top:-.25em}
+
+  /* 14-day chart */
+  .chart{flex:1; display:flex; align-items:flex-end; gap:.45em; min-height:0; padding-top:.5em}
+  .col{flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:.35em; height:100%}
+  .stack{width:100%; display:flex; flex-direction:column; justify-content:flex-end; flex:1; gap:.12em}
+  .seg{width:100%; border-radius:.22em .22em 0 0; height:0; transition:height 1s cubic-bezier(.2,.75,.3,1)}
+  .seg.n{background:linear-gradient(180deg,var(--teal),var(--teal-deep))}
+  .seg.a{background:linear-gradient(180deg,var(--gold),var(--gold-deep)); border-radius:.22em .22em 0 0}
+  .col .lbl{font-size:.62em; color:var(--ink-3); font-weight:700; letter-spacing:.04em}
+  .col.today .lbl{color:var(--teal)}
+  .col .top{font-size:.72em; font-weight:800; color:var(--ink-2); height:1.1em}
+  .key{display:flex; gap:1em; font-size:.68em; color:var(--ink-3); font-weight:700; letter-spacing:.06em}
+  .key i{display:inline-block; width:.7em; height:.7em; border-radius:.16em; margin-right:.35em}
+
+  /* recognition */
+  .recs{display:flex; flex-direction:column; gap:.5em}
+  .rec{display:grid; grid-template-columns:auto 1fr auto; gap:.7em; align-items:center;
+       padding:.5em .7em; border-radius:.5em; background:rgba(245,185,53,.07);
+       border:1px solid rgba(245,185,53,.2)}
+  .rec .t{font-size:.92em; font-weight:650}
+  .rec .w{font-size:.7em; color:var(--ink-3); font-weight:700; white-space:nowrap}
+  .tick2{color:var(--gold); font-size:1.1em; font-weight:800}
+
+  .mgrow{display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:.8em;
+         padding:.5em 0; border-top:1px solid var(--line)}
+  .mgrow:first-child{border-top:0}
+  .pill{font-size:.68em; font-weight:800; padding:.2em .55em; border-radius:.32em; white-space:nowrap}
+  .pill.ok{background:rgba(45,212,191,.13); color:var(--teal)}
+  .pill.warn{background:rgba(251,191,36,.14); color:var(--amber)}
+  .pill.bad{background:rgba(251,113,133,.14); color:var(--red)}
+  .flag{display:flex; align-items:baseline; gap:.65em; padding:.5em 0; border-top:1px solid var(--line)}
+  .flag:first-of-type{border-top:0}
+  .flag b{font-size:1.75em; font-weight:800; min-width:1.2em}
+  .flag span{font-size:.86em; color:var(--ink-2); line-height:1.35}
+  .empty{color:var(--ink-3); font-size:.95em; padding:1em 0}
+
+  /* the moment someone lands one */
+  #burst{position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden; display:none}
+  #burst.on{display:block}
+  .banner{position:absolute; left:50%; top:14%; transform:translate(-50%,-140%);
+          background:linear-gradient(135deg,#0F766E,#14B8A6); color:#03110E;
+          padding:1em 2em; border-radius:.8em; text-align:center;
+          box-shadow:0 1.4em 3.4em rgba(0,0,0,.55), 0 0 3em var(--teal-glow);
+          animation:drop 5s cubic-bezier(.2,.8,.3,1) forwards}
+  .banner .k{font-size:.72em; letter-spacing:.22em; text-transform:uppercase; font-weight:800; opacity:.72}
+  .banner .n{font-size:2.1em; font-weight:800; line-height:1.15; margin-top:.1em}
+  @keyframes drop{
+    0%{transform:translate(-50%,-140%)} 12%{transform:translate(-50%,0)}
+    82%{transform:translate(-50%,0); opacity:1} 100%{transform:translate(-50%,-140%); opacity:0}}
+  .p{position:absolute; width:.7em; height:.7em; border-radius:.16em; animation:fall 3.6s linear forwards}
+  @keyframes fall{0%{transform:translateY(-12vh) rotate(0); opacity:1}
+                  100%{transform:translateY(104vh) rotate(680deg); opacity:0}}
+
+  /* the hero — the number that should stop someone mid-corridor */
+  .hero{display:grid; grid-template-columns:1.15fr 1fr; gap:.9em; align-items:stretch}
+  .hbox{background:linear-gradient(150deg,rgba(45,212,191,.16),rgba(13,148,136,.05));
+        border:1px solid rgba(45,212,191,.32); border-radius:.8em; padding:.9em 1.2em;
+        display:flex; flex-direction:column; justify-content:center; position:relative; overflow:hidden}
+  .hbox::after{content:''; position:absolute; right:-3em; top:-3em; width:9em; height:9em;
+               border-radius:50%; background:radial-gradient(circle,var(--teal-glow),transparent 68%)}
+  .hbox .k{font-size:.72em; letter-spacing:.17em; text-transform:uppercase; color:var(--teal); font-weight:800}
+  .hbox .v{font-size:3.5em; font-weight:800; line-height:1.02; margin-top:.04em}
+  .hbox .s{font-size:.8em; color:var(--ink-2); margin-top:.2em}
+  .hsplit{display:grid; grid-template-rows:1fr 1fr; gap:.9em}
+  .hmini{background:linear-gradient(160deg,var(--panel-2),var(--panel)); border:1px solid var(--line);
+         border-radius:.8em; padding:.7em 1.1em; display:flex; align-items:center; justify-content:space-between; gap:1em}
+  .hmini .k{font-size:.7em; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); font-weight:800}
+  .hmini .v{font-size:1.9em; font-weight:800}
+
+  /* leaderboard rows carrying the real numbers */
+  .lrow{display:grid; grid-template-columns:1.5em 2.5em 1fr repeat(3,minmax(4.6em,auto));
+        align-items:center; gap:.8em; padding:.42em 0}
+  .lrow + .lrow{border-top:1px solid rgba(255,255,255,.045)}
+  .lrow .met{text-align:right}
+  .lrow .met b{display:block; font-size:1.12em; font-weight:800; line-height:1.1}
+  .lrow .met span{display:block; font-size:.6em; color:var(--ink-3); font-weight:700;
+                  letter-spacing:.07em; text-transform:uppercase; margin-top:.1em}
+  .lrow.lead .met b{color:var(--gold)}
+
+  /* ── PRODUCER ROW ──────────────────────────────────────────────────────
+     Seven equal columns made every figure shout at the same volume, so the
+     eye had nothing to land on and the story — need found narrowing down to
+     money collected — was left for the reader to assemble.
+     Three zones instead: who, the funnel, the money. ─────────────────── */
+  .pr{display:grid; grid-template-columns:2.1em 2.6em minmax(9em,1fr) auto minmax(9.5em,auto);
+      align-items:center; gap:1.1em; padding:.18em .7em; border-radius:.5em}
+  .pr + .pr{border-top:1px solid rgba(255,255,255,.055)}
+  .pr .rk{font-weight:800; font-variant-numeric:tabular-nums}
+  .pr .nm2{font-size:1.0em; font-weight:750; white-space:nowrap; overflow:hidden;
+           text-overflow:ellipsis; line-height:1.2}
+  .pr .sub{font-size:.62em; color:var(--ink-4); font-weight:700; letter-spacing:.05em;
+           text-transform:uppercase; margin-top:.12em}
+
+  /* the funnel: three stages, narrowing, with the drop shown between them */
+  .fn3{display:flex; align-items:center; gap:.55em}
+  /* Fixed, not minimum: a number wider than the minimum grows its own box and
+     the column drifts away from its heading. */
+  .fn3 .st{text-align:right; width:6.3em; flex:0 0 6.3em; font-size:1em}
+  .fn3 .st b{display:block; font-size:.98em; font-weight:800; line-height:1.1;
+             font-variant-numeric:tabular-nums; letter-spacing:-.02em; color:var(--ink-2)}
+  .fn3 .st i{display:block; font-style:normal; font-size:.6em; font-weight:700;
+             letter-spacing:.09em; text-transform:uppercase; color:var(--ink-4); margin-top:.15em}
+  .fn3 .st.sold b{color:var(--teal)}
+  /* The separator has to occupy the same width in the header as in the row,
+     or every stage drifts a few pixels further from its heading than the last. */
+  .fn3 .ar{color:var(--ink-4); font-size:.9em; opacity:.55;
+           width:1.1em; flex:0 0 1.1em; text-align:center}
+
+  /* the money: what the row is finally worth */
+  .mny{text-align:right; padding-left:.4em}
+  .mny b{display:block; font-size:1.34em; font-weight:800; line-height:1.05;
+         font-variant-numeric:tabular-nums; letter-spacing:-.025em; color:var(--ink-2)}
+  .mny .ap{display:block; font-size:.6em; font-weight:800; letter-spacing:.05em;
+           text-transform:uppercase; color:var(--ink-3); margin-top:.14em}
+  .mny .pl{display:block; font-size:.62em; font-weight:700; color:var(--violet); margin-top:.06em}
+  .mny .pl.none{color:var(--ink-4)}
+
+  /* A leaderboard where every figure is the same gold tells you nothing about
+     position. The money takes the rank's colour, and it descends. */
+  .pr.p1 .mny b{color:#F5B935; text-shadow:0 0 1.4em rgba(245,185,53,.45)}
+  .pr.p2 .mny b{color:#DCE3EC}
+  .pr.p3 .mny b{color:#E0975A}
+  .pr.p4 .mny b{color:#2DD4BF}
+  .pr.p5 .mny b{color:#60A5FA}
+  .pr.p6 .mny b{color:#93A7C4}
+  .pr.p1 .mny .ap{color:#F5B935} .pr.p2 .mny .ap{color:#DCE3EC}
+  .pr.p3 .mny .ap{color:#E0975A} .pr.p4 .mny .ap{color:#2DD4BF}
+  .pr.p5 .mny .ap{color:#60A5FA}
+
+  /* the rank chip, so position is an object rather than a digit */
+  .pr .rk{display:grid; place-items:center; width:1.75em; height:1.75em; border-radius:50%;
+          font-size:.92em; border:1.5px solid var(--line-2); color:var(--ink-3)}
+  .pr.p1 .rk{border-color:#F5B935; color:#F5B935; background:rgba(245,185,53,.1);
+             box-shadow:0 0 1.2em rgba(245,185,53,.25)}
+  .pr.p2 .rk{border-color:#DCE3EC; color:#DCE3EC; background:rgba(220,227,236,.07)}
+  .pr.p3 .rk{border-color:#E0975A; color:#E0975A; background:rgba(224,151,90,.08)}
+  .pr.p4 .rk{border-color:rgba(45,212,191,.5); color:var(--teal)}
+  .pr.p5 .rk{border-color:rgba(96,165,250,.45); color:#60A5FA}
+
+  /* conversion — the one figure that was arithmetic before */
+  .cv{display:inline-block; font-size:.66em; font-weight:800; padding:.16em .5em;
+      border-radius:.3em; letter-spacing:.04em; margin-left:.5em; vertical-align:.15em}
+  .cv.hi{background:rgba(52,211,153,.16); color:var(--green)}
+  .cv.mid{background:rgba(251,191,36,.16); color:var(--amber)}
+  .cv.lo{background:rgba(251,113,133,.16); color:var(--red)}
+  .cv.zero{background:rgba(148,163,184,.12); color:var(--ink-3)}
+
+  .pr .track{height:.3em; border-radius:.15em; background:rgba(255,255,255,.055);
+             overflow:hidden; margin-top:.24em; display:flex}
+  .pr .track i{display:block; height:100%; width:0; transition:width .9s cubic-bezier(.2,.75,.3,1)}
+  .pr .track .w1{background:linear-gradient(90deg,#0D9488,#2DD4BF)}
+  .pr .track .w2{background:rgba(167,139,250,.55)}
+
+  .pr.p1{background:linear-gradient(90deg,rgba(245,185,53,.09),transparent 55%)}
+  .pr.p1 .rk{color:#F5B935} .pr.p2 .rk{color:#CBD5E1} .pr.p3 .rk{color:#D08A4E}
+  .pr.p1 .av{box-shadow:0 0 0 .15em rgba(245,185,53,.5), 0 0 1.5em rgba(245,185,53,.3)}
+  .pr.p2 .av{box-shadow:0 0 0 .13em rgba(203,213,225,.4)}
+  .pr.p3 .av{box-shadow:0 0 0 .13em rgba(208,138,78,.42)}
+  .pr.p1 .mny b{font-size:1.56em}
+  .pr.p1 .nm2{color:#FDF6E4}
+
+  .phd{display:grid; grid-template-columns:2.1em 2.6em minmax(9em,1fr) auto minmax(9.5em,auto);
+       gap:1.1em; padding:0 .7em .5em; border-bottom:1px solid var(--line-2); align-items:end}
+  .phd > span{font-size:.6em; letter-spacing:.15em; text-transform:uppercase;
+              color:var(--ink-3); font-weight:800}
+  /* min-width resolves against the element's OWN font-size, so a header label
+     set small computes a narrower box and stops sitting over its number. The
+     box stays at the row's size; only the text inside it shrinks. */
+  .phd > span.fn3{font-size:inherit}
+  .phd .fn3 .st{font-size:1em; width:6.3em; flex:0 0 6.3em; text-align:right}
+  .phd .fn3 .st i{font-style:normal; font-size:.6em; letter-spacing:.13em;
+                  text-transform:uppercase; color:var(--ink-3); font-weight:800}
+  .phd .fn3 .ar{opacity:0}
+  /* ── days worked ─────────────────────────────────────────────────────── */
+  .wkstrip{display:grid; grid-template-columns:repeat(7,1fr); gap:.5em}
+  .wd{background:var(--panel-2); border:1px solid var(--line); border-radius:.55em;
+      padding:.55em .3em; text-align:center; position:relative; overflow:hidden}
+  .wd .dw{font-size:.62em; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+          color:var(--ink-4)}
+  .wd .dn{font-size:1.7em; font-weight:800; line-height:1.05; margin-top:.1em;
+          font-variant-numeric:tabular-nums; color:var(--ink-3)}
+  .wd .dd{font-size:.58em; color:var(--ink-4); font-weight:700; margin-top:.1em}
+  .wd.on{border-color:rgba(45,212,191,.42); background:linear-gradient(160deg,rgba(45,212,191,.13),var(--panel))}
+  .wd.on .dn{color:var(--teal)} .wd.on .dw{color:var(--teal)}
+  .wd.we{border-style:dashed}
+  .wd.we.on{border-color:rgba(245,185,53,.5);
+            background:linear-gradient(160deg,rgba(245,185,53,.14),var(--panel))}
+  .wd.we.on .dn, .wd.we.on .dw{color:var(--gold)}
+  .wd.today{box-shadow:0 0 0 1.5px var(--teal), 0 0 1.6em rgba(45,212,191,.25)}
+  .wd.fut{opacity:.32}
+  .wd .api{font-size:.56em; font-weight:800; color:var(--gold); margin-top:.15em}
+
+  /* month calendar */
+  .cal{display:grid; grid-template-columns:repeat(7,1fr); gap:.32em}
+  .cal .hdd{font-size:.58em; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+            color:var(--ink-4); text-align:center; padding-bottom:.2em}
+  .cal .cd{border-radius:.32em; aspect-ratio:1.5/1; display:grid; place-items:center;
+           font-size:.78em; font-weight:700; font-variant-numeric:tabular-nums;
+           background:rgba(255,255,255,.035); color:var(--ink-4); position:relative}
+  .cal .cd.has{color:#04120F; font-weight:800}
+  .cal .cd.fut{opacity:.22}
+  .cal .cd .cn{position:absolute; top:.1em; right:.25em; font-size:.62em; opacity:.75}
+  .calnote{display:flex; gap:1.2em; align-items:baseline; margin-top:.6em;
+           font-size:.72em; color:var(--ink-3); font-weight:700}
+  .calnote b{color:var(--ink); font-size:1.3em}
+
+  /* The big calendar. The COUNT is the hero — the date is a caption on it.
+     A calendar that shouts the date is a wall planner; this one is a chart. */
+  /* minmax(0,1fr), not 1fr: a plain 1fr track floors at the cell's min-content,
+     and the big count inside made that wider than the card. */
+  .cal.big{gap:.4em; grid-template-columns:repeat(7,minmax(0,1fr));
+           grid-auto-rows:minmax(0,1fr); align-content:stretch; overflow:hidden}
+  .cal.big .hdd{font-size:.66em; padding-bottom:.35em}
+  .cal.big .cd{place-items:stretch; padding:.2em .3em; min-height:0; min-width:0;
+               border:1px solid rgba(255,255,255,.05)}
+  .cal.big .cd .dm{position:absolute; top:.16em; left:.4em; font-size:.6em;
+                   font-weight:700; opacity:.5}
+  .cal.big .cd .bn{align-self:center; justify-self:center; font-size:1.5em;
+                   font-weight:900; line-height:1; letter-spacing:-.02em}
+  .cal.big .cd.zero .bn{opacity:.16; font-weight:800}
+  .cal.big .cd.wknd{border-style:dashed; border-color:rgba(245,185,53,.28)}
+  .cal.big .cd.today{outline:2px solid var(--teal); outline-offset:1px}
+  .cal.big .cd.has .dm{opacity:.62; color:#04120F}
+  /* Sequential ramp — one hue, dark→light by volume, validated on this surface. */
+  .cal.big .cd.q1{background:#1A6B62; color:#CFFAF3}
+  .cal.big .cd.q2{background:#12A594; color:#04211D}
+  .cal.big .cd.q3{background:#3DDCC7; color:#04211D}
+  .cal.big .cd.q4{background:#8FF2E2; color:#04211D}
+  .calkey{display:flex; align-items:center; gap:.5em; margin-top:.7em;
+          font-size:.62em; font-weight:800; letter-spacing:.06em;
+          text-transform:uppercase; color:var(--ink-4)}
+  .calkey i{width:2.1em; height:1.05em; border-radius:.22em; display:inline-block}
+  .calkey .lb{color:var(--ink-3); letter-spacing:.02em; text-transform:none;
+              font-size:1.05em}
+
+  /* Agent × day. One row per advisor, one column per day of the month, each
+     row in that advisor's own colour so the rhythms compare at a glance. */
+  .agrid{display:flex; flex-direction:column; overflow:hidden; flex:1.55; min-height:0}
+  .ag{display:grid; grid-template-columns:2.1em 9.6em minmax(0,1fr) 7em;
+      gap:.6em; align-items:center; flex:1; min-height:0; max-height:4.6em;
+      border-top:1px solid var(--line)}
+  .ag:first-of-type{border-top:0}
+  .ag .ai{width:2.1em; height:2.1em; border-radius:.5em; display:grid;
+          place-items:center; font-size:.6em; font-weight:900; color:#06101C}
+  .ag .an{font-size:.8em; font-weight:800; white-space:nowrap;
+          overflow:hidden; text-overflow:ellipsis}
+  .ag .ad{display:grid; gap:.14em; grid-auto-flow:column;
+          grid-auto-columns:1fr; height:100%; padding:.42em 0; min-height:0}
+  .ag .ac{border-radius:.22em; background:rgba(255,255,255,.05); min-height:0}
+  .ag .ac.we{background:rgba(245,185,53,.07)}
+  .ag .ac.fut{background:rgba(255,255,255,.015)}
+  .ag .at{font-size:.7em; font-weight:800; color:var(--ink-3); text-align:right;
+          font-variant-numeric:tabular-nums; white-space:nowrap}
+  .ag .at b{color:var(--ink); font-size:1.2em}
+  .agh{display:grid; grid-template-columns:2.1em 9.6em minmax(0,1fr) 7em;
+       gap:.6em; font-size:.58em; font-weight:800; letter-spacing:.09em;
+       text-transform:uppercase; color:var(--ink-4); align-items:end;
+       padding-bottom:.3em; border-bottom:1px solid var(--line-2)}
+  .agh .r{text-align:right}
+  /* A day ruler on the same 31 tracks as the rows below, so a mark can be
+     placed in the month rather than just counted. */
+  .agr{display:grid; gap:.14em; grid-auto-flow:column; grid-auto-columns:1fr;
+       letter-spacing:0; text-transform:none; font-size:.95em}
+  .agr span{text-align:center; color:transparent}
+  .agr span.t{color:var(--ink-4)}
+
+  /* Which weekday the branch actually writes on. One measure, so one hue —
+     colouring these by value would spend the identity channel re-saying the
+     height. The best day is called out by label, not by a second colour. */
+  .dowp{display:flex; flex-direction:column; margin-top:.9em;
+        border-top:1px solid var(--line); padding-top:.7em; min-height:0}
+  .dowp .dh{font-size:.58em; font-weight:800; letter-spacing:.09em;
+            text-transform:uppercase; color:var(--ink-4); display:flex;
+            justify-content:space-between; margin-bottom:.5em}
+  .dowp .dh b{color:var(--teal); letter-spacing:.02em}
+  .dowb{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:.7em;
+        flex:1; min-height:0; align-items:end}
+  .dowb .db{display:flex; flex-direction:column; justify-content:flex-end;
+            height:100%; gap:.35em; min-height:0}
+  .dowb .db i{display:block; background:var(--teal-deep); border-radius:.28em .28em 0 0;
+              min-height:.18em; transition:height .8s cubic-bezier(.2,.8,.2,1)}
+  .dowb .db.we i{background:var(--gold-deep)}
+  .dowb .db .dv{font-size:.72em; font-weight:900; text-align:center;
+                font-variant-numeric:tabular-nums}
+  .dowb .db .dl{font-size:.58em; font-weight:800; letter-spacing:.08em;
+                text-transform:uppercase; color:var(--ink-4); text-align:center}
+  .dowb .db.we .dl{color:var(--gold)}
+
+  .more{font-size:.66em; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+        color:var(--ink-4); padding:0 .7em; line-height:1.3}
+  .phd .r{text-align:right}
+
+  .prow .met.pipe b{color:var(--violet)}
+  /* Only the two that matter carry colour, so the eye lands on them. */
+  .prow .met.subm b{color:var(--ink)}
+  .prow .met b{color:var(--ink-2)}
+  .prow .met.sold b, .prow .met.api b, .prow .met.pipe b{font-weight:800}
+  .prow .met.subm b{color:var(--blue)}
+  .prow{display:grid; grid-template-columns:1.5em 2.5em 1fr repeat(7,6.3em);
+        align-items:center; gap:.7em; padding:.42em 0}
+  .prow + .prow{border-top:1px solid rgba(255,255,255,.06)}
+  .prow{padding:.62em 0}
+  .prow.lead{background:linear-gradient(90deg,rgba(245,185,53,.07),transparent 60%);
+             border-radius:.5em; padding-left:.5em; margin-left:-.5em}
+  .prow .met{text-align:right}
+  /* The column heading says what this is. Repeating it under all forty numbers
+     on the screen was the loudest thing on the panel and carried no
+     information at all. */
+  .prow .met b{display:block; font-size:1.32em; font-weight:800; line-height:1.05;
+               font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+  .prow .met span{display:block; font-size:.6em; color:var(--ink-4); font-weight:700;
+                  margin-top:.05em}
+  .prow .met.sold b{color:var(--teal)}
+  .prow .met.api b{color:var(--gold)}
+  /* Track widths in em resolve against the grid CONTAINER's font-size. Setting
+     the header small here made its columns 97px against the rows' 157px, so
+     nothing lined up. The container keeps the row's font-size and only the
+     label text is shrunk. */
+  /* Heading block. The card title and the period sit on one line above a ruled
+     column header; the header's own baseline is what the numbers hang from, so
+     it gets its own rule and its own breathing room. */
+  .pbar{display:flex; align-items:baseline; justify-content:space-between;
+        gap:1em; padding-bottom:.55em; margin-bottom:.15em}
+  .pbar .t{font-size:.86em; font-weight:800; letter-spacing:.16em; text-transform:uppercase;
+           color:var(--ink-2)}
+  .pbar .pper{display:flex; gap:.45em; align-items:baseline}
+  .pbar .pper i{font-style:normal; font-size:.66em; font-weight:800; letter-spacing:.13em;
+             text-transform:uppercase; color:var(--ink-4); padding:.25em .6em;
+             border:1px solid var(--line-2); border-radius:.35em}
+  .pbar .pper i.on{color:var(--teal); border-color:rgba(45,212,191,.45);
+                background:rgba(45,212,191,.09)}
+  .phead{display:grid; grid-template-columns:1.5em 2.5em 1fr repeat(7,6.3em);
+         gap:.7em; padding:0 0 .55em; border-bottom:1px solid var(--line-2);
+         align-items:end}
+  .phead > div{font-size:.62em; letter-spacing:.14em; text-transform:uppercase;
+               color:var(--ink-3); font-weight:800; line-height:1.25}
+  .phead > div:nth-child(n+4){text-align:right}
+  .phead div:nth-child(n+4){text-align:right}
+  .lhead{display:grid; grid-template-columns:1.5em 2.5em 1fr repeat(3,minmax(4.6em,auto));
+         gap:.8em; font-size:.6em; letter-spacing:.14em; text-transform:uppercase;
+         color:var(--ink-4); font-weight:800; padding-bottom:.35em; border-bottom:1px solid var(--line)}
+  .lhead div:nth-child(n+4){text-align:right}
+
+  /* congratulations */
+  .spot{display:grid; grid-template-columns:auto 1fr; gap:1.2em; align-items:center;
+        background:linear-gradient(120deg,rgba(245,185,53,.15),rgba(245,185,53,.02));
+        border:1px solid rgba(245,185,53,.32); border-radius:.8em; padding:1em 1.3em}
+  .spot .big{width:4.4em; height:4.4em; border-radius:50%; display:grid; place-items:center;
+             font-size:1.5em; font-weight:800; color:#061018; box-shadow:0 0 2em rgba(245,185,53,.35)}
+  .spot .k{font-size:.7em; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); font-weight:800}
+  .spot .n{font-size:2em; font-weight:800; line-height:1.1; margin-top:.05em}
+  .spot .s{font-size:.88em; color:var(--ink-2); margin-top:.25em}
+  .cheer{display:flex; flex-direction:column; gap:.5em; margin-top:.9em}
+  .cline{display:grid; grid-template-columns:auto 1fr; gap:.75em; align-items:center;
+         background:var(--panel-2); border:1px solid var(--line); border-radius:.55em; padding:.55em .85em}
+  .cline .em{font-size:1.15em}
+  .cline .tx{font-size:.95em; font-weight:600}
+  .cline .tx b{color:var(--teal); font-weight:800}
+  .motto{text-align:center; font-size:1.05em; font-weight:650; color:var(--ink-2);
+         padding:.7em 0 0; font-style:italic}
+
+  .ticks{display:flex; gap:.4em; justify-content:center; padding:.55em 0 0}
+  .tk{width:2.4em; height:.2em; border-radius:.1em; background:var(--line-2); transition:background .4s}
+  .tk.on{background:var(--teal)}
+  @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="shield" viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg" aria-label="Ricky Rampersad Branch">
+    <path d="M30 2 L56 10 L56 36 C56 52 44 64 30 68 C16 64 4 52 4 36 L4 10 Z" fill="#fff" stroke="#0D9488" stroke-width="2.5"/>
+    <path d="M30 6 L52 13 L52 36 C52 50 41 60 30 64 C19 60 8 50 8 36 L8 13 Z" fill="#1E293B"/>
+    <path d="M16 36 L26 46 L46 22" fill="none" stroke="#14B8A6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="brand">Ricky Rampersad Branch<small>Guardian Life of the Caribbean</small></div>
+  <div class="spacer"></div>
+  <a class='howto' href='/walkthrough' title='Watch the walkthrough'>
+    <span class="tri"></span>How it works</a>
+  <div class="live"><span class="dot" id="dot"></span><span id="liveTxt">Live</span></div>
+  <div class="clock num" id="clock">—<span id="date"></span></div>
+</header>
+
+<main>
+  <!-- 1 · TODAY -->
+  <section class="panel" id="p0">
+    <div class="ptitle"><h1 id="t_p0"></h1><span class="tag">The money</span></div>
+    <div class="hero">
+      <div class="hbox">
+        <div class="k">Protection identified this month</div>
+        <div class="v num" id="hNeed">—</div>
+        <div class="s" id="hNeedSub">the gap this branch has found and documented</div>
+      </div>
+      <div class="hsplit">
+        <div class="hmini"><div><div class="k">Cover recommended</div><div class="s" style="font-size:.72em;color:var(--ink-3)">month to date</div></div><div class="v num t" id="hCover">—</div></div>
+        <div class="hmini"><div><div class="k">Monthly premium</div><div class="s" style="font-size:.72em;color:var(--ink-3)">month to date</div></div><div class="v num" style="color:var(--gold)" id="hPrem">—</div></div>
+      </div>
+    </div>
+    <div class="card grow">
+      <h2><span>Leaderboard</span><em id="wkLbl">this week</em></h2>
+      <div class="lhead"><div></div><div></div><div>Advisor</div><div>Fact finds</div><div>Need found</div><div>Cover</div></div>
+      <div class="rows grow" id="leaders" style="margin-top:.35em"></div>
+      <div class="motto" id="motto"></div>
+    </div>
+  </section>
+
+  <!-- 2 · MOMENTUM -->
+  <section class="panel" id="p1">
+    <div class="ptitle"><h1 id="t_p1"></h1><span class="tag">Momentum</span></div>
+    <div class="stats">
+      <div class="stat v"><div class="k" id="mLbl">This month</div><div class="val num" id="mSub">0</div><div class="s">fact finds submitted</div></div>
+      <div class="stat"><div class="k">Approved</div><div class="val num" id="mApp">0</div><div class="s">signed off this month</div></div>
+      <div class="stat g"><div class="k">Recommended</div><div class="val num" id="mPrem">—</div><div class="s">monthly premium, month to date</div></div>
+    </div>
+    <div class="cols">
+      <div class="card">
+        <h2><span>Last 14 days</span>
+          <span class="key"><span><i style="background:var(--teal)"></i>submitted</span><span><i style="background:var(--gold)"></i>approved</span></span></h2>
+        <div class="chart" id="chart"></div>
+      </div>
+      <div class="card">
+        <h2><span>Recognition</span><em>approved this week</em></h2>
+        <div class="recs grow" id="recs"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · CONGRATULATIONS -->
+  <section class="panel" id="p2">
+    <div class="ptitle"><h1 id="t_p2"></h1><span class="tag">Recognition</span></div>
+    <div class="spot" id="spot"></div>
+    <div class="card grow" style="margin-top:.9em">
+      <h2><span>Worth saying out loud</span><em id="cheerSub"></em></h2>
+      <div class="cheer" id="cheer"></div>
+    </div>
+  </section>
+
+  <!-- 4 · BRANCH -->
+  <section class="panel" id="p3">
+    <div class="ptitle"><h1 id="t_p3"></h1><span class="tag">The branch</span></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Awaiting review</div><div class="val num" id="qPending">0</div><div class="s">with a manager now</div></div>
+      <div class="stat"><div class="k">Oldest</div><div class="val num" id="qOldest">—</div><div class="s" id="qOldestWho">—</div></div>
+      <div class="stat"><div class="k">Over 3 days</div><div class="val num" id="qBreach">0</div><div class="s">past the review standard</div></div>
+    </div>
+    <div class="cols">
+      <div class="card"><h2><span>Review queue</span><em>by manager</em></h2><div class="grow" id="mgrs"></div></div>
+      <div class="card"><h2><span>Flags outstanding</span></h2><div class="grow" id="flags"></div></div>
+    </div>
+  </section>
+  <!-- 4 · HOW MANAGERS MANAGE -->
+  <section class="panel" id="p4">
+    <div class="ptitle"><h1 id="t_p4"></h1><span class="tag">The managers</span></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Median turnaround</div><div class="val num" id="pMed">—</div><div class="s">days, submitted to decided</div></div>
+      <div class="stat"><div class="k">Approved</div><div class="val num" id="pApp">0</div><div class="s">cases signed off</div></div>
+      <div class="stat v"><div class="k">Sent back</div><div class="val num" id="pRet">0</div><div class="s" id="pRetPct">for changes</div></div>
+    </div>
+    <div class="card grow">
+      <h2><span>How managers are managing</span><em>median days to decide</em></h2>
+      <div class="grow" id="perf"></div>
+    </div>
+  </section>
+  <!-- 8 · PRODUCTION -->
+  <section class="panel" id="p7">
+    <div class="ptitle"><h1 id="t_p7"></h1><span class="tag">Production</span></div>
+    <div class="stats tight">
+      <div class="stat g"><div class="k">API picked up</div><div class="val num" id="prApi">—</div><div class="s" id="prApiSub">delivered and paid</div></div>
+      <div class="stat v"><div class="k">In pipeline</div><div class="val num" id="prPipe">—</div><div class="s" id="prPipeSub">said yes, not yet picked up</div></div>
+      <div class="stat"><div class="k">API recommended</div><div class="val num" id="prSub2">—</div><div class="s" id="prSubSub">to satisfy the need found</div></div>
+    </div>
+    <div class="card grow">
+      <div class="pbar"><span class="t">Producer board</span>
+        <span class="pper"><i>This week</i><i class="on" id="prSub">Month</i><i>Year</i></span></div>
+      <div class="phd"><span></span><span></span><span>Advisor</span>
+        <span class="fn3"><span class="st"><i>Need found</i></span><span class="ar">&#9656;</span>
+          <span class="st"><i>Cover rec</i></span><span class="ar">&#9656;</span>
+          <span class="st"><i>Cover sold</i></span><span class="ar">&#9656;</span>
+          <span class="st"><i>API rec</i></span></span>
+        <span class="r">API picked up</span></div>
+      <div class="rows grow" id="prProd" style="margin-top:.4em"></div>
+    </div>
+  </section>
+
+  <!-- 10 · THE WORKING RHYTHM — when the work actually happened, and by whom -->
+  <section class="panel" id="p9">
+    <div class="ptitle"><h1 id="t_p9"></h1><span class="tag">Working rhythm</span></div>
+    <div style="flex:1; min-height:0; display:grid; grid-template-rows:minmax(0,1fr) auto; gap:.7em">
+      <div class="cols" style="grid-template-columns:28em minmax(0,1fr); align-items:stretch; min-height:0">
+        <div class="card" style="min-width:0; display:flex; flex-direction:column">
+          <h2><span id="calTitle">Calendar</span><em id="calNote">fact finds per day</em></h2>
+          <div class="cal big" id="calGrid" style="flex:1; min-height:0"></div>
+          <div class="calkey" id="calKey"></div>
+        </div>
+        <div class="card" style="min-width:0; display:flex; flex-direction:column">
+          <h2>Who worked which days<em id="rhSub"></em></h2>
+          <div class="agrid" id="agGrid"></div>
+          <div class="dowp" id="dowProfile" style="flex:1; min-height:0"></div>
+        </div>
+      </div>
+      <div class="stats tight">
+        <div class="stat"><div class="k">Days worked</div><div class="val num" id="rhDays">—</div><div class="s" id="rhDaysSub">of the month so far</div></div>
+        <div class="stat g"><div class="k">Busiest day</div><div class="val num" id="rhBest">—</div><div class="s" id="rhBestSub">&nbsp;</div></div>
+        <div class="stat v"><div class="k">Longest run</div><div class="val num" id="rhStreak">—</div><div class="s" id="rhStreakSub">consecutive days worked</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · THE YEAR -->
+  <section class="panel" id="p8">
+    <div class="ptitle"><h1 id="t_p8"></h1><span class="tag">The year</span></div>
+    <div class="stats tight">
+      <div class="stat g"><div class="k">API picked up</div><div class="val num" id="yApi">—</div><div class="s" id="yApiSub">year to date</div></div>
+      <div class="stat v"><div class="k">API recommended</div><div class="val num" id="yRec">—</div><div class="s">across the year</div></div>
+      <div class="stat"><div class="k">Fact finds</div><div class="val num" id="ySub">0</div><div class="s" id="ySubSub">since January</div></div>
+    </div>
+    <div class="card grow">
+      <div class="pbar"><span class="t">Producer board</span>
+        <span class="pper"><i>This week</i><i>Month</i><i class="on" id="yLbl">Year</i></span></div>
+      <div class="phd"><span></span><span></span><span>Advisor</span>
+        <span class="fn3"><span class="st"><i>Need found</i></span><span class="ar">&#9656;</span>
+          <span class="st"><i>Cover rec</i></span><span class="ar">&#9656;</span>
+          <span class="st"><i>Cover sold</i></span><span class="ar">&#9656;</span>
+          <span class="st"><i>API rec</i></span></span>
+        <span class="r">API picked up</span></div>
+      <div class="rows grow" id="yRace" style="margin-top:.4em"></div>
+    </div>
+  </section>
+
+  <!-- 6 · THE MONTH -->
+  <section class="panel" id="p5">
+    <div class="ptitle"><h1 id="t_p5"></h1><span class="tag">The week</span></div>
+    <div class="stats tight">
+      <div class="stat g"><div class="k">API picked up</div><div class="val num" id="wkApi">—</div><div class="s" id="wkApiSub">this week</div></div>
+      <div class="stat v"><div class="k">In pipeline</div><div class="val num" id="wkPipe">—</div><div class="s" id="wkPipeSub">taken, not yet picked up</div></div>
+      <div class="stat"><div class="k">API recommended</div><div class="val num" id="wkRec">—</div><div class="s" id="wkRecSub">this week</div></div>
+    </div>
+    <div class="card" style="margin-bottom:.9em">
+      <h2><span>Days worked</span><em id="dwNote"></em></h2>
+      <div class="wkstrip" id="wkStrip"></div>
+    </div>
+    <div class="card grow">
+      <div class="pbar"><span class="t">Producer board</span>
+        <span class="pper"><i class="on">This week</i><i id="wkM">Month</i><i id="wkY">Year</i></span></div>
+      <div class="phd"><span></span><span></span><span>Advisor</span>
+        <span class="fn3"><span class="st"><i>Need found</i></span><span class="ar">&#9656;</span>
+          <span class="st"><i>Cover rec</i></span><span class="ar">&#9656;</span>
+          <span class="st"><i>Cover sold</i></span><span class="ar">&#9656;</span>
+          <span class="st"><i>API rec</i></span></span>
+        <span class="r">API picked up</span></div>
+      <div class="rows grow" id="mRace" style="margin-top:.4em"></div>
+    </div>
+  </section>
+
+  <!-- 7 · THE WEEK -->
+  <section class="panel" id="p6">
+    <div class="ptitle"><h1 id="t_p6"></h1><span class="tag">The week</span></div>
+    <div class="stats">
+      <div class="stat"><div class="k">This week</div><div class="val num" id="wSub">0</div><div class="s" id="wCmp">—</div></div>
+      <div class="stat g"><div class="k">Weekend work</div><div class="val num" id="wWknd">0</div><div class="s">Saturday &amp; Sunday</div></div>
+      <div class="stat v"><div class="k">Need found</div><div class="val num" id="wNeed">—</div><div class="s">this week</div></div>
+    </div>
+    <div class="cols">
+      <div class="card"><h2><span>Day by day</span><em>this week</em></h2><div class="chart" id="wChart"></div></div>
+      <div class="card"><h2><span>Working the weekend</span><em>who turned up</em></h2><div class="cheer" id="wWho"></div></div>
+    </div>
+  </section>
+</main>
+
+<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span></div>
+<div id="burst"></div>
+
+<script>
+/* ═══ SETTINGS ═════════════════════════════════════════════════════════ */
+var ENDPOINT = 'https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
+var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
+
+var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 10;
+var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+/* Calendar volume: one hue, dark to light. Validated as an ordinal ramp against
+   this surface — monotone lightness, every step clear of the card behind it. */
+var QC = ['#1A6B62','#12A594','#3DDCC7','#8FF2E2'];
+/* Advisor identity: eight fixed hues in a fixed order. Assigned alphabetically,
+   NOT by rank — an advisor who slips from first to fifth must not change colour,
+   or the eye reads the repaint as a different person. Validated on this surface
+   for colour-blind separation; every row is named as well, so colour reinforces
+   identity rather than carrying it alone. */
+var AGC = ['#3987e5','#d95926','#199e70','#c98500',
+           '#d55181','#008300','#9085e9','#e66767'];
+function agColours(names){
+  var slot={}, sorted=names.slice().sort();
+  sorted.forEach(function(n,i){ slot[n]=AGC[i%AGC.length]; });
+  return slot;
+}
+var lastGood=null, lastAt=0, panel=0, lastJustIn='', prevRank={}, seenApprovals={}, firstPaint=true;
+
+function $(id){ return document.getElementById(id); }
+/* Writing text into an element that no longer exists throws, and on a wall
+   that runs unattended one throw blanks every panel. Renaming a tile has now
+   done this twice, so it goes through here instead. */
+function setText(id, s){ var el=$(id); if(el) el.textContent=s; }
+function setHTML(id, h){ var el=$(id); if(el) el.innerHTML=h; }
+function money(n){
+  if(!n) return 'TT$0';
+  if(n>=1000000) return 'TT$'+(n/1000000).toFixed(n>=10000000?0:1)+'M';
+  if(n>=1000) return 'TT$'+Math.round(n/1000)+'k';
+  return 'TT$'+Math.round(n);
+}
+/* Colour from the name, so an agent keeps the same one every day. */
+function hue(name){ var h=0; for(var i=0;i<name.length;i++) h=(h*31+name.charCodeAt(i))%360; return h; }
+function avatar(name){
+  var p=name.trim().split(/\s+/), ini=((p[0]||'')[0]||'')+((p[1]||'')[0]||'');
+  return {ini:ini.toUpperCase(), bg:'linear-gradient(145deg,hsl('+hue(name)+' 70% 68%),hsl('+((hue(name)+38)%360)+' 72% 56%))'};
+}
+/* Numbers count up — a figure that lands with movement gets looked at. */
+function countTo(el,to,fmt){
+  // A renamed or removed tile must never take the whole screen down — this is
+  // a wall that runs unattended, and one null here blanks every panel.
+  if(!el) return;
+  var from=parseFloat(el.dataset.v||'0'); if(from===to){ el.textContent=fmt?fmt(to):to; return; }
+  el.dataset.v=to; var t0=performance.now(), dur=850;
+  (function step(t){
+    var k=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-k,3), v=from+(to-from)*e;
+    el.textContent = fmt?fmt(v):Math.round(v);
+    if(k<1) requestAnimationFrame(step); else el.textContent = fmt?fmt(to):to;
+  })(t0);
+}
+function tick(){
+  var d=new Date(), h=d.getHours(), m=String(d.getMinutes()).padStart(2,'0');
+  var ap=h>=12?'pm':'am'; h=h%12||12;
+  $('clock').firstChild.nodeValue=h+':'+m;
+  setText('date', ap+' · '+d.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'}));
+  var age=Date.now()-lastAt, dot=$('dot');
+  if(!lastGood){dot.className='dot dead'; setText('liveTxt', 'Connecting');}
+  else if(age>STALE_MS){dot.className='dot stale'; setText('liveTxt', 'Reconnecting');}
+  else {dot.className='dot'; setText('liveTxt', 'Live');}
+}
+
+function celebrate(name){
+  var b=$('burst'); b.innerHTML=''; b.classList.add('on');
+  var ban=document.createElement('div'); ban.className='banner';
+  ban.innerHTML='<div class="k">Fact find just in</div><div class="n"></div>';
+  ban.querySelector('.n').textContent=name;
+  b.appendChild(ban);
+  var cols=['#2DD4BF','#F5B935','#A78BFA','#FFFFFF'];
+  for(var i=0;i<34;i++){
+    var p=document.createElement('i'); p.className='p';
+    p.style.left=(Math.random()*100)+'%';
+    p.style.background=cols[i%cols.length];
+    p.style.animationDelay=(Math.random()*1.1)+'s';
+    p.style.animationDuration=(2.8+Math.random()*1.6)+'s';
+    b.appendChild(p);
+  }
+  setTimeout(function(){ b.classList.remove('on'); b.innerHTML=''; }, 6000);
+}
+
+function leaderRows(list, box, rankKey){
+  if(!list.length){ box.innerHTML='<div class="empty">Waiting for the first fact find.</div>'; return; }
+  var top=list[0].count||1;
+  box.innerHTML=list.map(function(a,i){
+    var av=avatar(a.name), was=prevRank[rankKey+a.name];
+    var mv = was===undefined ? (firstPaint?'':'<span class="mv n">NEW</span>')
+           : was>i ? '<span class="mv u">▲'+(was-i)+'</span>'
+           : was<i ? '<span class="mv d">▼'+(i-was)+'</span>' : '';
+    return '<div class="row'+(i===0?' lead':'')+'">'+
+      '<div class="rank num">'+(i+1)+'</div>'+
+      '<div class="av" style="background:'+av.bg+'">'+av.ini+'</div>'+
+      '<div><div class="who"><span class="nm"></span>'+mv+'</div>'+
+      '<div class="bar"><i data-w="'+Math.max(5,Math.round(a.count/top*100))+'"></i></div></div>'+
+      '<div class="cnt num">'+a.count+'<small>'+money(a.premium)+'</small></div></div>';
+  }).join('');
+  var nm=box.querySelectorAll('.nm');
+  list.forEach(function(a,i){ if(nm[i]) nm[i].textContent=a.name; prevRank[rankKey+a.name]=i; });
+  requestAnimationFrame(function(){
+    box.querySelectorAll('.bar i').forEach(function(b,i){
+      setTimeout(function(){ b.style.width=b.dataset.w+'%'; }, 60*i);
+    });
+  });
+}
+
+/* Big money reads better rounded hard — TT$4.2M, not TT$4,187,300. */
+function big(n){ n=Math.round(n);
+  if(n>=1e6) return 'TT$'+(n/1e6).toFixed(n>=1e7?1:2)+'M';
+  if(n>=1e3) return 'TT$'+Math.round(n/1e3)+'k';
+  return 'TT$'+n; }
+
+/* A leaderboard row carrying what the work is actually worth. */
+function richRows(list, box, key){
+  if(!list.length){ box.innerHTML='<div class="empty">Nothing yet — first one on the board sets the pace.</div>'; return; }
+  var top=list[0].count||1;
+  box.innerHTML=list.slice(0,7).map(function(a,i){
+    var av2=avatar(a.name), was=prevRank[key+a.name];
+    var mv = was===undefined ? (firstPaint?'':'<span class="mv n">NEW</span>')
+           : was>i ? '<span class="mv u">▲'+(was-i)+'</span>'
+           : was<i ? '<span class="mv d">▼'+(i-was)+'</span>' : '';
+    return '<div class="lrow'+(i===0?' lead':'')+'">'+
+      '<div class="rank num">'+(i+1)+'</div>'+
+      '<div class="av" style="background:'+av2.bg+'">'+av2.ini+'</div>'+
+      '<div><div class="who"><span class="nm"></span>'+mv+'</div>'+
+        '<div class="bar"><i data-w="'+Math.max(5,Math.round(a.count/top*100))+'"></i></div></div>'+
+      '<div class="met"><b>'+a.count+'</b><span>found</span></div>'+
+      '<div class="met"><b>'+big(a.need||0)+'</b><span>need</span></div>'+
+      '<div class="met"><b>'+big(a.cover||0)+'</b><span>cover</span></div></div>';
+  }).join('');
+  var nm=box.querySelectorAll('.nm');
+  list.slice(0,7).forEach(function(a,i){ if(nm[i]) nm[i].textContent=a.name; prevRank[key+a.name]=i; });
+  requestAnimationFrame(function(){ box.querySelectorAll('.bar i').forEach(function(b,i){
+    setTimeout(function(){ b.style.width=b.dataset.w+'%'; },55*i); }); });
+}
+
+/* The producer board. One advisor, the whole funnel: what they found, what
+   they recommended, what the client took, and what it is worth annualised. */
+function producerRows(list, box, key, rankOn){
+  if(!list.length){
+    box.innerHTML='<div class="empty">Nothing on the board yet. First one up sets the pace.</div>';
+    return;
+  }
+  var sorted=list.slice().sort(function(a,b){
+    return (b[rankOn]||0)-(a[rankOn]||0) || (b.count||0)-(a.count||0); });
+  var top=Math.max.apply(null,[1].concat(sorted.map(function(x){
+    return (x.pickedUp||0)+(x.pipeline||0); })));
+
+  box.innerHTML=sorted.slice(0,8).map(function(a,i){
+    var av2=avatar(a.name), was=prevRank[key+a.name];
+    var mv = was===undefined ? (firstPaint?'':'<span class="mv n">NEW</span>')
+           : was>i ? '<span class="mv u">▲'+(was-i)+'</span>'
+           : was<i ? '<span class="mv d">▼'+(i-was)+'</span>' : '';
+
+    // Conversion: of the API this advisor recommended, how much has been
+    // collected. It was arithmetic the reader had to do; now it is a chip.
+    var rec=a.apiRec||0, got=a.pickedUp||0, pipe=a.pipeline||0;
+    var pct = rec>0 ? Math.round(got/rec*100) : null;
+    var band = pct===null ? 'zero' : pct>=50 ? 'hi' : pct>=25 ? 'mid' : pct>0 ? 'lo' : 'zero';
+    var chip = pct===null ? '' : '<span class="cv '+band+'">'+pct+'% closed</span>';
+
+    var wGot=Math.round(got/top*100), wPipe=Math.round(pipe/top*100);
+
+    return '<div class="pr p'+Math.min(6,i+1)+'">'+
+      '<div class="rk">'+(i+1)+'</div>'+
+      '<div class="av" style="background:'+av2.bg+'">'+av2.ini+'</div>'+
+      '<div><div class="nm2"><span class="nmx"></span>'+mv+'</div>'+
+        '<div class="sub">'+(a.count||0)+' fact finds &middot; '+(a.apps||0)+' apps'+chip+'</div>'+
+        '<div class="track"><i class="w1" data-w="'+wGot+'"></i><i class="w2" data-w="'+wPipe+'"></i></div>'+
+      '</div>'+
+      '<div class="fn3">'+
+        '<div class="st"><b>'+big(a.need||0)+'</b></div>'+
+        '<span class="ar">&#9656;</span>'+
+        '<div class="st"><b>'+big(a.cover||0)+'</b></div>'+
+        '<span class="ar">&#9656;</span>'+
+        '<div class="st sold"><b>'+big(a.sold||0)+'</b></div>'+
+        '<span class="ar">&#9656;</span>'+
+        '<div class="st"><b>'+big(rec)+'</b></div>'+
+      '</div>'+
+      '<div class="mny"><b>'+big(got)+'</b>'+
+        '<span class="ap">'+(a.appsUp||0)+' app'+((a.appsUp||0)===1?'':'s')+' picked up</span>'+
+        '<span class="pl'+(pipe?'':' none')+'">'+(pipe? big(pipe)+' pipeline':'nothing pending')+'</span>'+
+      '</div></div>';
+  }).join('');
+
+  var nm=box.querySelectorAll('.nmx');
+  sorted.slice(0,8).forEach(function(a,i){ if(nm[i]) nm[i].textContent=a.name; prevRank[key+a.name]=i; });
+
+  requestAnimationFrame(function(){
+    // A wall might be 1080p, 4K, or a portrait panel in a corridor. Rather than
+    // pick a row count and hope, drop any row that does not fit and say how
+    // many were left off — a board that silently truncates is a board that
+    // quietly tells someone they are not on it.
+    var lim = box.parentElement ? box.parentElement.getBoundingClientRect().bottom : 0;
+    var rows = [].slice.call(box.querySelectorAll('.pr'));
+    var dropped = 0;
+    for (var i = rows.length - 1; i > 0; i--) {
+      if (rows[i].getBoundingClientRect().bottom > lim - 4) { rows[i].remove(); dropped++; }
+      else break;
+    }
+    if (dropped) {
+      var more = document.createElement('div');
+      more.className = 'more';
+      more.textContent = '+ ' + dropped + ' more advisor' + (dropped === 1 ? '' : 's');
+      box.appendChild(more);
+      // If the note itself will not fit, drop one more row to make room for it.
+      // Losing a row is recoverable; a board that hides people without saying
+      // so is not.
+      var guard = 0;
+      while (more.getBoundingClientRect().bottom > lim - 2 && guard++ < 4) {
+        var last = box.querySelector('.pr:last-of-type');
+        if (!last) break;
+        last.remove(); dropped++;
+        more.textContent = '+ ' + dropped + ' more advisor' + (dropped === 1 ? '' : 's');
+      }
+    }
+    box.querySelectorAll('.track i').forEach(function(b,i){
+      setTimeout(function(){ b.style.width=b.dataset.w+'%'; }, 40*i);
+    });
+  });
+}
+
+/* Recognition: who led, and what is genuinely worth saying. */
+function renderSpotlight(d){
+  var wk=(d.leaders||[]), mo=(d.monthLeaders||[]), star=wk[0]||mo[0];
+  if(star){ var a=avatar(star.name);
+    $('spot').innerHTML='<div class="big" style="background:'+a.bg+'">'+a.ini+'</div>'+
+      '<div><div class="k">Leading this week</div><div class="n"><span class="sn"></span></div>'+
+      '<div class="s">'+star.count+' fact find'+(star.count===1?'':'s')+
+      (star.need? ' · '+big(star.need)+' of need identified':'')+'</div></div>';
+    $('spot').querySelector('.sn').textContent=star.name;
+  } else {
+    $('spot').innerHTML='<div class="big" style="background:linear-gradient(145deg,#334,#223)">—</div>'+
+      '<div><div class="k">This week</div><div class="n">Still open</div>'+
+      '<div class="s">First fact find of the week takes the lead.</div></div>';
+  }
+
+  var lines=[], M=d.month||{}, W=d.week||{}, WK=d.weekend||{week:0,who:[]};
+  if(M.need>0) lines.push(['🛡️','The branch has identified <b>'+big(M.need)+'</b> of unmet protection this month.']);
+  if(M.approved>0) lines.push(['✅','<b>'+M.approved+'</b> plan'+(M.approved===1?'':'s')+' approved and moving.']);
+  if(WK.week>0) lines.push(['🔥','<b>'+WK.week+'</b> fact find'+(WK.week===1?'':'s')+' done at the weekend. That is choosing to show up.']);
+  if(W.submitted>W.lastWeek && W.lastWeek>0) lines.push(['📈','Ahead of last week by <b>'+(W.submitted-W.lastWeek)+'</b> already.']);
+  mo.slice(0,3).forEach(function(a){ if(a.count>=5)
+    lines.push(['🏅','<b>'+a.name+'</b> has '+a.count+' this month — that is a habit, not a run of luck.']); });
+  (d.approvals||[]).slice(0,2).forEach(function(x){
+    lines.push(['👏','Congratulations <b>'+x.agent+'</b> — approved and ready to present.']); });
+  if(!lines.length) lines.push(['🌅','A clean sheet. The first fact find of the day sets the tone.']);
+
+  $('cheer').innerHTML=lines.slice(0,6).map(function(l){
+    return '<div class="cline"><div class="em">'+l[0]+'</div><div class="tx">'+l[1]+'</div></div>'; }).join('');
+  setText('cheerSub', (d.month&&d.month.label)||'');
+}
+
+/* Headline per panel — the number leads, not the label. */
+function headlines(d){
+  var M=d.month||{}, W=d.week||{}, WK=d.weekend||{week:0}, q=d.queue||{}, L=(d.leaders||[])[0];
+  var mp=(d.managerPerf||[]).filter(function(x){return x.reviewed>0;});
+  var ds=mp.map(function(m){return m.medianDays;}).filter(function(x){return x!==null;}).sort(function(a,b){return a-b;});
+  var md=ds.length? ds[Math.floor(ds.length/2)] : null;
+  var set=function(id,html){ var el=$(id); if(el) el.innerHTML=html; };
+  set('t_p0', M.need>0 ? '<b>'+big(M.need)+'</b> of protection found this month'
+                       : 'The board is open');
+  set('t_p1', M.submitted? '<b>'+M.submitted+'</b> fact finds in '+(M.label||'this month')
+                         : 'Momentum starts today');
+  set('t_p2', L? 'Leading the week: <i>'+esc(L.name)+'</i>' : 'Recognition');
+  set('t_p3', q.pending? '<b>'+q.pending+'</b> waiting on a manager'
+                       : 'The queue is <b>clear</b>');
+  set('t_p4', md!==null? 'Managers decide in <b>'+md+' days</b>' : 'How managers are managing');
+  var WPP=(d.production&&d.production.wtd)||{api:0,pipeline:0};
+  set('t_p5', WPP.api>0 ? '<b>'+big(WPP.api)+'</b> picked up this week'
+            : (WPP.pipeline>0 ? '<b>'+big(WPP.pipeline)+'</b> in pipeline this week'
+            : ((d.leaders||[]).length? '<b>'+esc(d.leaders[0].name)+'</b> leads the week'
+                                     : 'A fresh week')));
+  set('t_p6', WK.week>0 ? '<b>'+WK.week+'</b> done at the weekend'
+                        : (W.submitted? '<b>'+W.submitted+'</b> this week' : 'A fresh week'));
+  var PR=(d.production&&d.production.mtd)||{api:0,apps:0};
+  var YY=d.year||{};
+  set('t_p8', YY.pickedUp>0 ? '<b>'+big(YY.pickedUp)+'</b> picked up in '+(YY.label||'the year')
+                            : (YY.submitted? '<b>'+YY.submitted+'</b> fact finds this year'
+                                           : 'The year starts here'));
+  set('t_p7', PR.api>0 ? '<b>'+big(PR.api)+'</b> of API picked up this month'
+             : (PR.pipeline>0 ? '<b>'+big(PR.pipeline)+'</b> in pipeline, none picked up yet'
+                              : 'Production opens with the first application'));
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+/* A closing line that reflects where the branch actually is. */
+function motto(d){
+  var M=d.month||{}, q=d.queue||{};
+  if((M.need||0)>1e6) return '“Every number here started as a conversation somebody chose to have.”';
+  if(q.pending>10) return '“The work is done. Now it needs a decision.”';
+  if((M.submitted||0)===0) return '“The first one is always the hardest. Somebody take it.”';
+  return '“Find the need, and the sale takes care of itself.”';
+}
+
+function render(d){
+  var M=d.month||{}, W=d.week||{}, WK=d.weekend||{week:0,month:0,who:[]};
+
+  /* 1 · the money */
+  countTo($('hNeed'), M.need||0, big);
+  countTo($('hCover'), M.cover||0, big);
+  countTo($('hPrem'), M.premium||0, money);
+  setText('hNeedSub', (M.submitted||0)+' fact finds this month have documented this much unmet need');
+  richRows(d.leaders||[], $('leaders'), 'w');
+  setText('motto', motto(d));
+
+  /* 6 · the month race */
+  // Read straight off the payload — P is declared further down in this
+  // function, and depending on statement order inside one long render is how
+  // a panel throws and takes the whole screen with it.
+  var WP=((d.production||{}).wtd)||{api:0,pipeline:0,apps:0,clients:0,cases:0};
+  countTo($('wkApi'), WP.api||0, big);
+  countTo($('wkPipe'), WP.pipeline||0, big);
+  countTo($('wkRec'), W.api||0, big);
+  setText('wkApiSub', (WP.apps||0)+' app'+((WP.apps||0)===1?'':'s')+' picked up this week');
+  setText('wkPipeSub', (WP.clients||0)+' client'+((WP.clients||0)===1?'':'s')+' taking cover');
+  setText('wkRecSub', (W.submitted||0)+' fact find'+((W.submitted||0)===1?'':'s')+' · '+big(W.need||0)+' need found');
+  /* Days worked this week — which days the branch actually turned up. */
+  var CAL=d.calendar||{};
+  var wdz=CAL.week||[];
+  $('wkStrip').innerHTML = wdz.length ? wdz.map(function(x){
+    var we=(x.dow===0||x.dow===6);
+    return '<div class="wd'+(x.n?' on':'')+(we?' we':'')+(x.today?' today':'')+(x.future?' fut':'')+'">'+
+      '<div class="dw">'+x.lbl+'</div>'+
+      '<div class="dn">'+(x.future?'·':x.n)+'</div>'+
+      '<div class="dd">'+x.dom+'</div>'+
+      (x.api? '<div class="api">'+big(x.api)+'</div>':'')+
+    '</div>';
+  }).join('') : '<div class="empty">No week data yet.</div>';
+  var dw=CAL.daysWorkedWeek||0, de=CAL.daysElapsedWeek||0;
+  setText('dwNote', dw+' of '+de+' day'+(de===1?'':'s')+' so far'+
+    (dw===de&&de>0? ' — every day worked' : ''));
+
+  producerRows(d.leaders||[], $('mRace'), 'wk', 'pickedUp');
+
+
+  /* 7 · the week */
+  countTo($('wSub'), W.submitted||0);
+  countTo($('wWknd'), WK.week||0);
+  countTo($('wNeed'), W.need||0, big);
+  var diff=(W.submitted||0)-(W.lastWeek||0), c=$('wCmp');
+  if(!W.lastWeek && !W.submitted){ c.textContent='nothing yet this week'; c.className='s'; }
+  else if(diff>0){ c.textContent='▲ '+diff+' ahead of last week'; c.className='s up'; }
+  else if(diff<0){ c.textContent='▼ '+Math.abs(diff)+' behind at this point'; c.className='s down'; }
+  else { c.textContent='level with last week'; c.className='s'; }
+
+  var wk=(d.series||[]).slice(-7), wmx=Math.max(1,Math.max.apply(null,wk.map(function(x){return x.n;})));
+  $('wChart').innerHTML=wk.map(function(x,i){
+    var we=(x.lbl==='Sat'||x.lbl==='Sun');
+    return '<div class="col'+(i===wk.length-1?' today':'')+'">'+
+      '<div class="top num">'+(x.n?x.n:'')+'</div><div class="stack">'+
+      '<div class="seg '+(we?'a':'n')+'" data-h="'+(x.n/wmx*100)+'"></div></div>'+
+      '<div class="lbl"'+(we?' style="color:var(--gold)"':'')+'>'+x.lbl+'</div></div>';
+  }).join('');
+  requestAnimationFrame(function(){ $('wChart').querySelectorAll('.seg').forEach(function(g,i){
+    setTimeout(function(){ g.style.height=g.dataset.h+'%'; },45*i); }); });
+
+  $('wWho').innerHTML = (WK.who&&WK.who.length)
+    ? WK.who.map(function(w){ var a=avatar(w.name);
+        return '<div class="cline"><div class="av" style="background:'+a.bg+'">'+a.ini+'</div>'+
+          '<div class="tx"><span class="wn"></span> &mdash; <b>'+w.n+'</b> at the weekend</div></div>'; }).join('')
+    : '<div class="empty">Nobody worked this weekend. Monday is a fresh start.</div>';
+  var wns=$('wWho').querySelectorAll('.wn');
+  (WK.who||[]).forEach(function(w,i){ if(wns[i]) wns[i].textContent=w.name; });
+
+  /* 8 · production */
+  var P=(d.production||{}), MT=(P.mtd||{apps:0,clients:0,api:0,cases:0});
+  countTo($('prApi'), MT.api||0, big);
+  countTo($('prApps'), MT.apps||0);
+
+  countTo($('prPipe'), MT.pipeline||0, big);
+  countTo($('prSub2'), MT.apiRec||0, big);
+  setText('prSubSub', 'to satisfy '+big(M.need||0)+' of need found');
+  setText('prApiSub', 'confirmed issued · '+(M.label||'month to date'));
+  setText('prPipeSub', (MT.open||0)+' awaiting an answer'+
+    ((MT.subCases>0)?', '+MT.subCases+' with head office':'')+
+    ((MT.staleCases>0)?' · '+big(MT.stale)+' over 14 days':''));
+  setText('prCliSub', (MT.clients||0)+' clients · '+(MT.cases||0)+' fact finds');
+  producerRows(d.monthLeaders||[], $('prProd'), 'mo', 'pickedUp');
+  setText('prSub', M.label||'Month');
+
+  /* 10 · the working rhythm — the days the work happened, and whose days they were */
+  var CALM=d.calendar||{}, mdz=CALM.month||[];
+  if(mdz.length){
+    var mx=Math.max.apply(null,[1].concat(mdz.map(function(x){return x.n;})));
+    /* Four buckets, so the legend can name what a colour means. A continuous
+       alpha ramp looks precise and tells the viewer nothing they can read off. */
+    var qOf=function(n){ if(!n) return 0;
+      return Math.min(4, Math.max(1, Math.ceil(n/mx*4))); };
+    var lead=mdz[0].dow;
+    var cells=['S','M','T','W','T','F','S']
+      .map(function(h){return '<div class="hdd">'+h+'</div>';}).join('');
+    for(var b=0;b<lead;b++) cells+='<div></div>';
+    cells+=mdz.map(function(x){
+      var q=qOf(x.n), we=(x.dow===0||x.dow===6);
+      return '<div class="cd'+(x.n?' has q'+q:' zero')+(x.future?' fut':'')+
+        (we?' wknd':'')+(x.today?' today':'')+'">'+
+        '<span class="dm">'+x.dom+'</span>'+
+        '<span class="bn">'+(x.n||'·')+'</span></div>';
+    }).join('');
+    $('calGrid').innerHTML=cells;
+    setText('calTitle', CALM.monthLabel||'Calendar');
+    setText('calNote', 'fact finds per day');
+    var kq=[1,2,3,4].map(function(q){
+      return '<i class="q'+q+'" style="background:'+QC[q-1]+'"></i>';}).join('');
+    $('calKey').innerHTML='<span>Quiet</span>'+kq+'<span>Busy</span>'+
+      '<span class="lb" style="margin-left:auto">'+mx+' on the best day</span>';
+
+    var mw=CALM.daysWorkedMonth||0, me=CALM.daysElapsedMonth||0;
+    countTo($('rhDays'), mw);
+    setText('rhDaysSub', 'of '+me+' so far · '+(me?Math.round(mw/me*100):0)+'% of days active');
+    var best=mdz.reduce(function(a,x){return (x.n>(a?a.n:0))?x:a;},null);
+    if(best&&best.n){ countTo($('rhBest'), best.n);
+      setText('rhBestSub', DOW[best.dow]+' '+best.dom+' · '+
+        (best.n===1?'1 fact find':best.n+' fact finds')); }
+    /* Longest unbroken run of worked days — consistency, which a total hides. */
+    var run=0, bestRun=0;
+    mdz.forEach(function(x){ if(x.future) return;
+      run = x.n ? run+1 : 0; if(run>bestRun) bestRun=run; });
+    countTo($('rhStreak'), bestRun);
+    setText('rhStreakSub', bestRun===1?'consecutive day worked':'consecutive days worked');
+
+    /* Agent × day. Each advisor keeps one hue across the row; within the row the
+       cell only gets lighter with volume, so identity and magnitude never fight. */
+    var ags=(CALM.agents||[]).slice(0,7), extra=(CALM.agents||[]).length-ags.length;
+    var amx=Math.max.apply(null,[1].concat(ags.map(function(a){
+      return Math.max.apply(null,[0].concat(a.d));})));
+    var CMAP=agColours(ags.map(function(a){return a.n;}));
+    var ruler=mdz.map(function(x){
+      var t=(x.dom===1||x.dom%5===0);
+      return '<span'+(t?' class="t"':'')+'>'+x.dom+'</span>';}).join('');
+    $('agGrid').innerHTML = ags.length ?
+      ('<div class="agh"><span></span><span>Advisor</span>'+
+       '<span class="agr">'+ruler+'</span><span class="r">Days · FF</span></div>'+
+       ags.map(function(a){
+        var c=CMAP[a.n], av=avatar(a.n);
+        var strip=a.d.map(function(n,j){
+          var f=mdz[j]||{}, we=(f.dow===0||f.dow===6);
+          if(!n) return '<div class="ac'+(f.future?' fut':(we?' we':''))+'"></div>';
+          var o=(0.34+(n/amx)*0.66).toFixed(2);
+          return '<div class="ac" style="background:'+c+'; opacity:'+o+'"></div>';
+        }).join('');
+        return '<div class="ag">'+
+          '<div class="ai" style="background:'+c+'">'+av.ini+'</div>'+
+          '<div class="an">'+esc(a.n)+'</div>'+
+          '<div class="ad">'+strip+'</div>'+
+          '<div class="at"><b>'+a.w+'</b> d · '+a.t+'</div></div>';
+       }).join('')+
+       (extra>0?'<div class="more">+ '+extra+' more advisor'+(extra>1?'s':'')+'</div>':''))
+      : '<div class="empty">No fact finds yet this month</div>';
+    setText('rhSub', ags.length? ags.length+' advisors · '+(CALM.monthLabel||'') : '');
+
+    /* Weekday profile — the same month summed by day of the week. A branch that
+       writes on Tuesdays and dies on Thursdays cannot see that in a total. */
+    var dsum=[0,0,0,0,0,0,0];
+    mdz.forEach(function(x){ dsum[x.dow]+=x.n; });
+    var dmx=Math.max.apply(null,[1].concat(dsum));
+    var bestDow=dsum.indexOf(Math.max.apply(null,dsum));
+    $('dowProfile').innerHTML=
+      '<div class="dh"><span>Which day the branch writes on</span>'+
+      '<span>strongest &middot; <b>'+DOW[bestDow]+'</b></span></div>'+
+      '<div class="dowb">'+dsum.map(function(v,i){
+        var we=(i===0||i===6);
+        return '<div class="db'+(i===bestDow?' best':'')+(we?' we':'')+'">'+
+          '<div class="dv">'+v+'</div>'+
+          '<i data-h="'+Math.round(v/dmx*100)+'" style="height:0"></i>'+
+          '<div class="dl">'+DOW[i]+'</div></div>';
+      }).join('')+'</div>';
+    requestAnimationFrame(function(){
+      var bs=document.querySelectorAll('#dowProfile .db i');
+      for(var i=0;i<bs.length;i++) bs[i].style.height=bs[i].getAttribute('data-h')+'%';
+    });
+  }
+  else {
+    /* The calendar comes from the wall feed. If the site is republished before
+       the script is redeployed, say so plainly rather than showing empty cards
+       that read as a branch which did no work. */
+    setHTML('calGrid','');
+    setHTML('calKey','');
+    setHTML('agGrid','<div class="empty">Waiting on the wall feed &mdash; '+
+      'redeploy the Apps Script to fill this in</div>');
+    setHTML('dowProfile','');
+  }
+  setHTML('t_p9', mdz.length
+    ? '<b>'+(CALM.daysWorkedMonth||0)+'</b> days worked in '+
+      ((CALM.monthLabel||'').split(' ')[0]||'the month')
+    : 'The working rhythm');
+
+  /* 9 · the year */
+  var Y=d.year||{};
+  countTo($('yApi'), Y.pickedUp||0, big);
+  countTo($('yRec'), Y.api||0, big);
+  countTo($('ySub'), Y.submitted||0);
+  setText('yApiSub', (Y.label||'')+' to date');
+  setText('ySubSub', big(Y.need||0)+' of need found');
+  setText('yLbl', Y.label||'Year');
+  setText('wkY', Y.label||'Year');
+  setText('wkM', M.label||'Month');
+  producerRows(d.yearLeaders||[], $('yRace'), 'yr', 'pickedUp');
+
+  /* 3 · recognition */
+  renderSpotlight(d);
+
+  /* 2 · momentum */
+  setText('mLbl', (d.month&&d.month.label)||'This month');
+  countTo($('mSub'), d.month.submitted);
+  countTo($('mApp'), d.month.approved||0);
+  countTo($('mPrem'), d.month.premium, money);
+
+  var s=d.series||[], mx=Math.max(1,Math.max.apply(null,s.map(function(x){return x.n+x.a;})));
+  $('chart').innerHTML=s.map(function(x,i){
+    var isToday=i===s.length-1;
+    return '<div class="col'+(isToday?' today':'')+'">'+
+      '<div class="top num">'+(x.n?x.n:'')+'</div>'+
+      '<div class="stack">'+
+        '<div class="seg a" data-h="'+(x.a/mx*100)+'"></div>'+
+        '<div class="seg n" data-h="'+(x.n/mx*100)+'"></div>'+
+      '</div><div class="lbl">'+x.lbl+'</div></div>';
+  }).join('');
+  requestAnimationFrame(function(){
+    $('chart').querySelectorAll('.seg').forEach(function(g,i){
+      setTimeout(function(){ g.style.height=g.dataset.h+'%'; }, 28*i);
+    });
+  });
+
+  var ap=d.approvals||[];
+  $('recs').innerHTML = ap.length ? ap.map(function(a){
+    var av=avatar(a.agent), mins=Math.round((Date.now()-new Date(a.at).getTime())/60000);
+    var when = mins<60? mins+'m ago' : mins<1440? Math.round(mins/60)+'h ago' : Math.round(mins/1440)+'d ago';
+    return '<div class="rec"><div class="av" style="background:'+av.bg+'">'+av.ini+'</div>'+
+      '<div class="t"><span class="nm2"></span></div><div class="w">'+when+' <span class="tick2">✓</span></div></div>';
+  }).join('') : '<div class="empty">No approvals yet this week. First one lands here.</div>';
+  var n2=$('recs').querySelectorAll('.nm2');
+  ap.forEach(function(a,i){ if(n2[i]) n2[i].textContent=a.agent; });
+
+  /* 3 · branch */
+  var q=d.queue;
+  countTo($('qPending'), q.pending);
+  setText('qOldest', q.pending? q.oldestDays+'d' : '—');
+  setText('qOldestWho', q.pending? 'with '+q.oldestWho : 'nothing waiting');
+  countTo($('qBreach'), q.breaching);
+  $('qBreach').className='val num'+(q.breaching?' bad':'');
+
+  $('mgrs').innerHTML=(d.managers||[]).length ? d.managers.map(function(m){
+    var cls=m.oldestDays>=7?'bad':m.oldestDays>=3?'warn':'ok';
+    return '<div class="mgrow"><div class="who"><span class="nm3"></span></div>'+
+      '<div class="cnt num" style="font-size:1.2em">'+m.count+'</div>'+
+      '<span class="pill '+cls+'">oldest '+m.oldestDays+'d</span></div>';
+  }).join('') : '<div class="empty">Nothing waiting. The queue is clear.</div>';
+  var n3=$('mgrs').querySelectorAll('.nm3');
+  (d.managers||[]).forEach(function(m,i){ if(n3[i]) n3[i].textContent=m.name; });
+
+  var f=d.flags, items=[
+    [f.replacements,'replacement'+(f.replacements===1?'':'s')+' awaiting sign-off','bad'],
+    [f.overCommitted,'premium over 80% of the client’s surplus','bad'],
+    [f.evidence,'awaiting medical evidence','warnc']
+  ].filter(function(x){return x[0]>0;});
+  $('flags').innerHTML = items.length
+    ? items.map(function(x){return '<div class="flag"><b class="num '+x[2]+'">'+x[0]+'</b><span>'+x[1]+'</span></div>';}).join('')
+    : '<div class="flag"><b class="num up">✓</b><span>Nothing flagged across the branch.</span></div>';
+
+  /* 4 · how managers manage */
+  var mp=(d.managerPerf||[]).filter(function(x){return x.reviewed>0;});
+  var allD=[], tApp=0, tRet=0;
+  mp.forEach(function(m){ tApp+=m.approved; tRet+=m.returned; if(m.medianDays!==null) allD.push(m.medianDays); });
+  allD.sort(function(a,b){return a-b;});
+  var med = allD.length ? (allD.length%2 ? allD[(allD.length-1)/2] : (allD[allD.length/2-1]+allD[allD.length/2])/2) : null;
+  setText('pMed', med===null ? '—' : (Math.round(med*10)/10)+'d');
+  countTo($('pApp'), tApp); countTo($('pRet'), tRet);
+  setText('pRetPct', (tApp+tRet) ? Math.round(tRet/(tApp+tRet)*100)+'% of decided cases' : 'for changes');
+
+  $('perf').innerHTML = mp.length ? mp.map(function(m){
+    var av=avatar(m.name);
+    var band = m.medianDays===null?'ok':m.medianDays>=7?'bad':m.medianDays>=3?'warn':'ok';
+    return '<div class="mgrow" style="grid-template-columns:2.3em 1fr auto auto auto;gap:.7em">'+
+      '<div class="av" style="background:'+av.bg+'">'+av.ini+'</div>'+
+      '<div class="who"><span class="nmp"></span></div>'+
+      '<span class="pill '+band+'">'+(m.medianDays===null?'—':m.medianDays+'d median')+'</span>'+
+      '<div class="cnt num" style="font-size:1.05em">'+m.approved+'<small>approved</small></div>'+
+      '<div class="cnt num" style="font-size:1.05em">'+m.returned+'<small>sent back</small></div>'+
+      '</div>';
+  }).join('') : '<div class="empty">No cases decided yet — this fills in as managers work the queue.</div>';
+  var np=$('perf').querySelectorAll('.nmp');
+  mp.forEach(function(m,i){ if(np[i]) np[i].textContent=m.name; });
+
+  /* the moment */
+  if(d.justIn && d.justIn.at!==lastJustIn){
+    var mins=Math.round((Date.now()-new Date(d.justIn.at).getTime())/60000);
+    if(!firstPaint && mins<30) celebrate(d.justIn.agent);
+    lastJustIn=d.justIn.at;
+  }
+  headlines(d);
+  firstPaint=false;
+}
+
+function poll(){
+  fetch(ENDPOINT+'?action=wall&k='+encodeURIComponent(WALL_KEY)+'&_='+Date.now(),{cache:'no-store'})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d||d.ok===false) throw new Error((d&&d.error)||'refused');
+      if(d.empty) d={today:{submitted:0,approved:0},week:{submitted:0,approved:0,premium:0,lastWeek:0},
+                     month:{submitted:0,approved:0,premium:0,label:''},series:[],leaders:[],approvals:[],
+                     queue:{pending:0,oldestDays:0,oldestWho:'',breaching:0},managers:[],
+                     flags:{replacements:0,overCommitted:0,evidence:0},justIn:null};
+      lastGood=d; lastAt=Date.now(); render(d);
+    })
+    .catch(function(e){ console.warn('wall poll failed:', e.message); });
+}
+function rotate(){
+  panel=(panel+1)%PANELS;
+  /* Adding a panel and forgetting its tick used to throw here and freeze the
+     board on whatever was showing. Missing elements are now skipped. */
+  for(var i=0;i<PANELS;i++){
+    var pn=$('p'+i), kk=$('k'+i);
+    if(pn) pn.classList.toggle('on', i===panel);
+    if(kk) kk.classList.toggle('on', i===panel);
+  }
+  // re-run the entry animations for the panel coming into view
+  if(lastGood) render(lastGood);
+}
+$('p0').classList.add('on'); $('k0').classList.add('on');
+tick(); poll();
+setInterval(tick,1000); setInterval(poll,POLL_MS); setInterval(rotate,ROTATE_MS);
+setInterval(function(){
+  if(new Date().getHours()!==4) return;
+  // location.reload() can be served from cache, which would pin this screen to
+  // an old build indefinitely. Re-request with a fresh stamp instead.
+  var u=location.href.split('#')[0].replace(/[?&]v=\d+/,'');
+  location.replace(u+(u.indexOf('?')>-1?'&':'?')+'v='+Date.now());
+},3600000);
+</script>
+<div class="rrb-credit" style="position:fixed;left:14px;bottom:8px;z-index:60;
+  font-size:.52em;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#3E5170">
+  factfind360 &middot; created by Ricky Rampersad, Branch Manager</div>
+</body>
+</html>

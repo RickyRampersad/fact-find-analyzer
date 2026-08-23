@@ -1,0 +1,108 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>How factfind360 works</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(900px 500px at 80% -10%,rgba(45,212,191,.13),transparent 60%),
+radial-gradient(700px 450px at 5% 110%,rgba(245,185,53,.09),transparent 55%),#0E1A2E;
+color:#F3F7FD;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+min-height:100vh;padding:34px 14px 60px}
+.wrap{max-width:960px;margin:0 auto}
+h1{font-size:clamp(26px,5vw,40px);font-weight:850;letter-spacing:-.02em;text-align:center}
+h1 b{color:#2DD4BF}
+.sub{text-align:center;color:#93A7C4;font-weight:600;margin:8px 0 26px}
+.player{position:relative;border-radius:16px;overflow:hidden;border:1px solid #1C2942;
+  box-shadow:0 24px 70px rgba(0,0,0,.5);background:#000}
+video{width:100%;display:block;background:#000}
+.cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:16px;cursor:pointer;border:0;width:100%;font:inherit;color:#F3F7FD;
+  background:radial-gradient(60% 70% at 50% 44%,rgba(8,14,26,.86),rgba(8,14,26,.94));
+  transition:opacity .3s}
+.cover[hidden]{display:none}
+.cover:focus-visible{outline:3px solid #2DD4BF;outline-offset:-3px}
+.play{width:84px;height:84px;border-radius:50%;background:#2DD4BF;color:#04211D;
+  display:grid;place-items:center;box-shadow:0 12px 40px rgba(45,212,191,.45);
+  transition:transform .2s}
+.cover:hover .play{transform:scale(1.07)}
+.play svg{width:32px;height:32px;margin-left:5px;fill:currentColor}
+.cover .lab{font-size:19px;font-weight:850;letter-spacing:-.01em;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.cover .len{font-size:12.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:#F5B935;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+@media(max-width:520px){.play{width:64px;height:64px}.play svg{width:24px;height:24px}
+  .cover .lab{font-size:16px}}
+.chs{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:22px}
+.ch{background:rgba(255,255,255,.04);border:1px solid #1C2942;border-radius:12px;padding:13px 15px;cursor:pointer;transition:.15s}
+.ch:hover{border-color:#2DD4BF;transform:translateY(-2px)}
+.ch .t{font-weight:800;font-size:14px}
+.ch .s{color:#93A7C4;font-size:12px;margin-top:3px}
+.ch .m{color:#F5B935;font-weight:800;font-size:11px;letter-spacing:.08em}
+.foot{text-align:center;color:#5E7297;font-size:12px;margin-top:26px}
+.foot a{color:#2DD4BF;font-weight:700;text-decoration:none}
+</style></head><body><div class="wrap">
+<h1>How <b>factfind360</b> works</h1>
+<div class="sub">Created by Ricky Rampersad, Branch Manager. Aligned to Guardian’s Confidential Fact Find V3. 6 minutes 23 seconds. All data shown is sample data.</div>
+<div class="player">
+  <video id="v" playsinline preload="metadata" poster="tour-poster-v19.jpg">
+    <source src="factfind360-tour-v19.mp4" type="video/mp4">
+  </video>
+  <button class="cover" id="cover" aria-label="Play the walkthrough, 6 minutes 23 seconds">
+    <span class="play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+    <span class="lab">Watch the walkthrough</span>
+    <span class="len">5 min 12 &middot; sound on</span>
+  </button>
+</div>
+<div class="chs">
+  <div class="ch" data-t="0.0"><div class="m">0:00</div><div class="t">Introduction</div><div class="s">One journey — agent, client, manager</div></div>
+  <div class="ch" data-t="14.3"><div class="m">0:14</div><div class="t">Why it exists</div><div class="s">We protect the person who earns</div></div>
+  <div class="ch" data-t="24.6"><div class="m">0:24</div><div class="t">A whole career</div><div class="s">33 yrs Guardian · MDRT Life · TOT ×4 · COT ×9</div></div>
+  <div class="ch" data-t="42.4"><div class="m">0:42</div><div class="t">Guardian V3</div><div class="s">Every section, same order</div></div>
+  <div class="ch" data-t="53.9"><div class="m">0:53</div><div class="t">Only want product advice?</div><div class="s">That is the client’s right under the Act</div></div>
+  <div class="ch" data-t="63.1"><div class="m">1:03</div><div class="t">The short path</div><div class="s">Product, reason, two signatures — no manager</div></div>
+  <div class="ch" data-t="76.6"><div class="m">1:16</div><div class="t">Two roads in</div><div class="s">6 steps or 3 — both compliant</div></div>
+  <div class="ch" data-t="84.6"><div class="m">1:24</div><div class="t">What the client gets</div><div class="s">They rate the advice, then sign</div></div>
+  <div class="ch" data-t="97.6"><div class="m">1:37</div><div class="t">The maths, live</div><div class="s">Surplus before you finish the sentence</div></div>
+  <div class="ch" data-t="104.5"><div class="m">1:44</div><div class="t">The need, uncovered</div><div class="s">TT$1.21M less existing cover</div></div>
+  <div class="ch" data-t="124.7"><div class="m">2:04</div><div class="t">Retirement</div><div class="s">70% of income · 20 years · in a second</div></div>
+  <div class="ch" data-t="147.9"><div class="m">2:27</div><div class="t">The medicals</div><div class="s">What Underwriting will ask for</div></div>
+  <div class="ch" data-t="161.4"><div class="m">2:41</div><div class="t">Guardian’s own form</div><div class="s">Not a version of it</div></div>
+  <div class="ch" data-t="169.9"><div class="m">2:49</div><div class="t">Page after page</div><div class="s">Every field where Guardian put it</div></div>
+  <div class="ch" data-t="182.2"><div class="m">3:02</div><div class="t">The Insurance Act</div><div class="s">Schedule 11 · taken, retained, inspectable</div></div>
+  <div class="ch" data-t="194.6"><div class="m">3:14</div><div class="t">Drafts</div><div class="s">Pick it up on any device</div></div>
+  <div class="ch" data-t="200.6"><div class="m">3:20</div><div class="t">Checks as you work</div><div class="s">Nothing stops you in front of a client</div></div>
+  <div class="ch" data-t="207.6"><div class="m">3:27</div><div class="t">One tap sends it</div><div class="s">Manager and client, straight away</div></div>
+  <div class="ch" data-t="213.1"><div class="m">3:33</div><div class="t">The client’s copy</div><div class="s">Plain English, confirm from the email</div></div>
+  <div class="ch" data-t="219.2"><div class="m">3:39</div><div class="t">The 5pm email</div><div class="s">Decide and sign from the report itself</div></div>
+  <div class="ch" data-t="224.6"><div class="m">3:44</div><div class="t">The queue</div><div class="s">Oldest first, one tap away</div></div>
+  <div class="ch" data-t="228.7"><div class="m">3:48</div><div class="t">Approve and sign</div><div class="s">One screen, RAI answered there</div></div>
+  <div class="ch" data-t="243.7"><div class="m">4:03</div><div class="t">Or send it back</div><div class="s">The reason goes on the record</div></div>
+  <div class="ch" data-t="249.8"><div class="m">4:09</div><div class="t">Or decline</div><div class="s">Not going forward, and why</div></div>
+  <div class="ch" data-t="257.2"><div class="m">4:17</div><div class="t">Fixed in the email</div><div class="s">The manager is told the moment it is</div></div>
+  <div class="ch" data-t="265.3"><div class="m">4:25</div><div class="t">Coaching on facts</div><div class="s">Tap any advisor, live</div></div>
+  <div class="ch" data-t="274.2"><div class="m">4:34</div><div class="t">After approval</div><div class="s">Delivery, follow-up, the annual review</div></div>
+  <div class="ch" data-t="290.4"><div class="m">4:50</div><div class="t">Since 1 July</div><div class="s">Real numbers, kept up to date</div></div>
+  <div class="ch" data-t="300.1"><div class="m">5:00</div><div class="t">factfind360</div><div class="s">Built in the Ricky Rampersad Branch</div></div>
+</div>
+<div class="foot" style="line-height:1.8">
+  <span style="color:#F3F7FD;font-weight:800;font-size:14px">Created by Ricky Rampersad</span><br>
+  <span style="color:#F5B935;font-weight:700;letter-spacing:.08em;font-size:11px">BRANCH MANAGER</span><br>
+  Conceived, designed and driven from inside the Ricky Rampersad Branch<br>
+  Guardian Life of the Caribbean · <a href='/'>factfind360.com</a>
+</div>
+</div><script>
+var v=document.getElementById('v'), cover=document.getElementById('cover');
+function start(t){
+  cover.hidden=true;
+  v.controls=true;
+  if(typeof t==='number') v.currentTime=t;
+  v.muted=false; v.volume=1;
+  var p=v.play();
+  if(p&&p.catch) p.catch(function(){ cover.hidden=false; });
+}
+cover.onclick=function(){ start(); };
+v.addEventListener('play',function(){ cover.hidden=true; });
+v.addEventListener('ended',function(){ cover.hidden=false; });
+document.querySelectorAll('.ch').forEach(function(c){
+  c.onclick=function(){ start(parseFloat(c.dataset.t)); };
+});
+</script></body></html>

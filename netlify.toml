@@ -1,0 +1,29 @@
+# factfind360.com
+#
+# There is no build step. The site is the files in this directory, served
+# exactly as they are, so the publish directory is the repository root.
+# Netlify serves ffproject.html at /ffproject and walkthrough.html at
+# /walkthrough; those clean URLs are what advisors have, so do not rename
+# the files.
+
+[build]
+  publish = "."
+  command = ""
+
+# The fact find and the manager dashboard carry client names, dates of
+# birth, incomes, existing policy details and the recommendations made
+# against them. no-store keeps that out of shared-device browser caches;
+# no-referrer stops anything the page links out to from receiving the URL.
+[[headers]]
+  for = "/ffproject.html"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/insights.html"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
