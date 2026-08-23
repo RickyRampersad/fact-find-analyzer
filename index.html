@@ -2772,6 +2772,153 @@ function buildDailyReport(){
   };
 }
 
+/* ---- the 5pm message ---------------------------------------------------
+   The daily report above, written as a WhatsApp message.
+
+   Counts only. No client name, agent email, policy number or premium
+   against a named case leaves the dashboard through here — a branch
+   WhatsApp group gets forwarded, screenshotted and backed up to personal
+   phones, and it is not somewhere client detail can be recalled from.
+   Anyone who needs the detail is one sign-in away from the report itself,
+   scoped to what their role allows.
+
+   Built from the object buildDailyReport() already returned, so the
+   message and the report on screen can never disagree, and it costs no
+   extra server call. */
+function dailyMsgOn(k){
+  const el = document.querySelector('[data-msg="' + k + '"]');
+  return !el || el.checked;
+}
+
+/* Busiest advisor over the same 30 days the pipeline figure uses.
+   Volume first, premium breaks a tie. */
+function topAdvisor30(){
+  const by = {};
+  ALL.forEach(function(r){
+    if (daysBetween(NOW, new Date(r.submittedAt)) > 30) return;
+    const k = r.agentCode || r.advisorName;
+    if (!k) return;
+    const a = by[k] || (by[k] = { name: r.advisorName || k, ff: 0, prem: 0 });
+    a.ff++; a.prem += (r.premium || 0);
+  });
+  let best = null;
+  Object.keys(by).forEach(function(k){
+    const a = by[k];
+    if (!best || a.ff > best.ff || (a.ff === best.ff && a.prem > best.prem)) best = a;
+  });
+  return best;
+}
+
+function dailyMessage(d){
+  const L = [];
+  const day = NOW.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+  const plural = (n, one, many) => n === 1 ? one : many;
+
+  L.push('*Ricky Rampersad Branch — ' + day + '*');
+  L.push('_' + d.scopeLabel + '_');
+  L.push('');
+  L.push('*' + d.submittedToday + '* ' + plural(d.submittedToday, 'fact find', 'fact finds') +
+         ' today · *' + d.approvedToday + '* signed off');
+  if (d.submittedYesterday) L.push('Yesterday: ' + d.submittedYesterday + '.');
+
+  if (dailyMsgOn('pipeline')){
+    L.push('');
+    L.push('*' + money(d.pipelinePremium) + '* premium in the pipeline over 30 days' +
+           (d.replacementFlags
+             ? ' · *' + d.replacementFlags + '* replacement ' +
+               plural(d.replacementFlags, 'flag', 'flags')
+             : ''));
+  }
+
+  if (dailyMsgOn('top')){
+    const t = topAdvisor30();
+    if (t){
+      L.push('');
+      L.push('🏆 *' + t.name + '* — ' + t.ff + ' ' + plural(t.ff, 'fact find', 'fact finds') +
+             ' in 30 days, ' + money(t.prem) + ' premium.');
+    }
+  }
+
+  if (dailyMsgOn('queue')){
+    L.push('');
+    if (d.awaiting.length){
+      L.push('*' + d.awaiting.length + ' ' + plural(d.awaiting.length, 'file', 'files') +
+             ' waiting on my signature' +
+             (d.stuck.length ? ' — ' + d.stuck.length + ' over ' + STUCK_DAYS + ' days' : '') + '.*');
+      L.push('_Nothing reaches a client until it is checked. I will clear these tonight._');
+    } else {
+      L.push('*Nothing waiting on my signature.* Every file went back the same day.');
+    }
+  }
+
+  if (dailyMsgOn('quiet') && d.quiet.length){
+    L.push('');
+    L.push('*Nothing in ' + QUIET_DAYS + ' days:* ' +
+           d.quiet.map(function(q){ return q.name; }).join(', ') + '.');
+  }
+
+  L.push('');
+  L.push('Keep asking the questions. The needs are already there.');
+  L.push('— ' + (SESSION && SESSION.name ? SESSION.name : 'Ricky'));
+  return L.join('\n');
+}
+
+/* Appended after renderDaily() has rewritten #dailyBody, so it cannot
+   duplicate itself. The textarea is deliberately editable — the message is
+   a starting point, not a broadcast you are stuck with. */
+function renderDailyMessage(){
+  const body = document.getElementById('dailyBody');
+  if (!body || !SESSION) return;
+
+  const opts = [['pipeline','Pipeline'], ['top','Top advisor'],
+                ['queue','Signing queue'], ['quiet','Quiet advisors']];
+
+  const card = document.createElement('div');
+  card.className = 'card col-12 no-print';
+  card.id = 'dailyMsgCard';
+  card.innerHTML =
+    '<h3>The 5pm message</h3>' +
+    '<div class="csub">The same figures, written for the branch WhatsApp group. ' +
+    'Counts only — no client names go out this way. Edit it before you send.</div>' +
+    '<div id="dailyMsgOpts" style="display:flex;flex-wrap:wrap;gap:14px;margin:12px 0 10px">' +
+      opts.map(function(o){
+        return '<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">' +
+               '<input type="checkbox" data-msg="' + o[0] + '" checked> ' + escapeHtml(o[1]) + '</label>';
+      }).join('') +
+    '</div>' +
+    '<textarea id="dailyMsgText" rows="15" spellcheck="false" ' +
+      'style="width:100%;box-sizing:border-box;font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;' +
+      'padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);' +
+      'color:var(--ink);resize:vertical"></textarea>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px">' +
+      '<button class="btn sm" id="dailyMsgWa">Send on WhatsApp</button>' +
+      '<button class="btn sm ghost" id="dailyMsgCopy">Copy the message</button>' +
+    '</div>';
+  body.appendChild(card);
+
+  const ta = card.querySelector('#dailyMsgText');
+  const redraw = function(){ ta.value = dailyMessage(buildDailyReport()); };
+  redraw();
+
+  card.querySelector('#dailyMsgOpts').addEventListener('change', redraw);
+
+  card.querySelector('#dailyMsgWa').addEventListener('click', function(){
+    window.open('https://wa.me/?text=' + encodeURIComponent(ta.value), '_blank', 'noopener');
+  });
+
+  card.querySelector('#dailyMsgCopy').addEventListener('click', function(){
+    const b = this;
+    navigator.clipboard.writeText(ta.value).then(function(){
+      b.textContent = 'Copied';
+      setTimeout(function(){ b.textContent = 'Copy the message'; }, 1700);
+    }).catch(function(){
+      ta.select();
+      b.textContent = 'Press ⌘C / Ctrl+C';
+      setTimeout(function(){ b.textContent = 'Copy the message'; }, 2400);
+    });
+  });
+}
+
 function renderDaily(){
   const d = buildDailyReport();
   const dt = NOW.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
@@ -2854,7 +3001,7 @@ function toggleDaily(){
   const main  = document.querySelector('#appView > .wrap');
   const btn   = document.getElementById('dailyBtn');
   const showing = daily.classList.contains('hide');
-  if (showing){ renderDaily(); daily.classList.remove('hide'); main.classList.add('hide'); btn.textContent = '← Back to dashboard'; }
+  if (showing){ renderDaily(); renderDailyMessage(); daily.classList.remove('hide'); main.classList.add('hide'); btn.textContent = '← Back to dashboard'; }
   else        { daily.classList.add('hide');    main.classList.remove('hide'); btn.textContent = '📋 Daily report'; }
   window.scrollTo(0,0);
 }
