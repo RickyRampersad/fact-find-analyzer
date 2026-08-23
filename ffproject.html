@@ -7170,12 +7170,53 @@ function rulesForPlan(planStr) {
 // ctx: { age, amount, term, occClass, monthlyPremium }
 function checkPlanRules(planStr, ctx) {
   const r = rulesForPlan(planStr);
-  if (!r) return [];
   ctx = ctx || {};
   const out = [];
   const age = (ctx.age == null) ? null : Number(ctx.age);
   const amt = Number(ctx.amount) || 0;
-  const add = function (level, msg) { out.push({ level: level, msg: msg, src: r.src, key: r.key }); };
+  const label = r ? r.key : String(planStr || '').trim();
+  const add = function (level, msg) {
+    out.push({ level: level, msg: msg, src: r ? r.src : '', key: label });
+  };
+
+  if (!label) return out;
+
+  // ---- the row was never finished -------------------------------------
+  // Every amount and premium rule below is guarded by "> 0", so a row with a
+  // plan chosen and the figures left blank satisfied all of them in silence.
+  // That is what reaches the client as "not set" against COVER and PREMIUM on
+  // a plan the letter says has been approved for them, and there is no reading
+  // of an approval letter where that is acceptable.
+  //
+  // This sits above the "is the product known" exit on purpose. The row that
+  // sent "not set" to a client was Lifestyle Special Edition, which is not in
+  // the library — so the old early return meant the one row carrying the
+  // largest figure in the case was the one row nothing checked.
+  //
+  // Premium is asked of every product: a plan being recommended has a price,
+  // whatever kind of plan it is. Cover is not — health plans reimburse against
+  // a schedule of benefits rather than a sum assured, so demanding a figure
+  // there would be asking the advisor to invent one. Where the product is
+  // unknown we cannot tell which it is, so a missing sum assured is raised as
+  // a warning rather than a blocker.
+  if (!(Number(ctx.monthlyPremium) > 0)) {
+    add('error', label + ' has no premium. As it stands the client’s approval letter prints "not set" where the price belongs.');
+  }
+  if (!amt) {
+    if (!r) {
+      add('warn', label + ' has no cover amount. If it is not a health plan the client’s approval letter will print "not set" where the sum assured belongs.');
+    } else if (r.type !== 'health') {
+      add('error', label + ' has no cover amount. As it stands the client’s approval letter prints "not set" where the sum assured belongs.');
+    }
+  }
+
+  // ---- the product is not in the library -------------------------------
+  // Nothing below this point can run: no issue ages, no minimums, no maximums,
+  // no premium floors. Say so rather than returning a clean bill of health.
+  if (!r) {
+    add('warn', label + ' is not in the branch Products library, so its issue ages, minimum and maximum sums and premium rules are not being checked here. Confirm them against the product sheet before this goes to the client.');
+    return out;
+  }
 
   if (r.unverified) {
     add('warn', r.key + ' limits are not held in the branch Products library. Confirm issue ages, minimums and maximums with Head Office before you quote them to the client.');
