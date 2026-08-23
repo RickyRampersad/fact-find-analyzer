@@ -10337,8 +10337,34 @@ function computePersistencyScore() {
   (function(){
     const w = 10; let pts, note, band;
     const qualMax = (typeof FI !== 'undefined' && FI.fi_uwMaxLife) ? FI.fi_uwMaxLife : 0;
+    // Only life sums assured belong in this comparison. fi_uwMaxLife is the
+    // income-qualifying ceiling for LIFE cover, and the loop used to add every
+    // row into it: a disability income benefit, a health plan and a retirement
+    // fund target were all counted as though they were a death benefit.
+    //
+    // A client taking a TT$3.8m retirement plan was therefore read as carrying
+    // TT$3.8m of life cover, pushed over the ceiling, and scored down for an
+    // over-insurance referral that no underwriter would ever raise. The same
+    // addition upstream is what reports a branch "cover recommended" figure in
+    // the hundreds of millions and a recommend-ratio above 100% for every
+    // advisor at once.
+    //
+    // Excluded by type: health reimburses against a schedule of benefits,
+    // pa-di pays a monthly income, annuity-deferred is a savings target. None
+    // of the three is a sum payable on death. Products the library does not
+    // know are still counted — better to overstate here than to silently drop
+    // real cover — and checkPlanRules() now says when a plan is unknown.
+    const NOT_LIFE_COVER = ['health', 'pa-di', 'annuity-deferred'];
     let chosenCover = 0;
-    for (let i = 1; i <= 6; i++) chosenCover += num(state['dec' + i + 'Amt']);
+    for (let i = 1; i <= 6; i++) {
+      const amt = num(state['dec' + i + 'Amt']);
+      if (!amt) continue;
+      const rule = (typeof rulesForPlan === 'function')
+        ? rulesForPlan(state['dec' + i + 'Plan'] || state['rec' + i + 'Rec'])
+        : null;
+      if (rule && NOT_LIFE_COVER.indexOf(rule.type) >= 0) continue;
+      chosenCover += amt;
+    }
     if (annualIncome <= 0) { pts = w*0.4; band='amber'; note='Income unknown — coverage fit not testable.'; }
     else if (chosenCover <= 0) { pts = w*0.5; band='amber'; note='No cover amount selected yet.'; }
     else if (qualMax > 0 && chosenCover > qualMax * 1.05) { pts = w*0.4; band='amber'; note='Selected cover exceeds the income-qualifying ceiling — expect underwriting referral.'; }
