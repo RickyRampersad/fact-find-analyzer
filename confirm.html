@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="theme-color" content="#0E1F4D">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Your summary · Ricky Rampersad Branch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,600&family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --navy:#0B1836; --teal:#0D7A70; --teal-lt:#2DD4BF; --gold:#9A6B04;
+  --good:#0E7A54; --crit:#B23A2B;
+  --paper:#FFFFFF; --ground:#F4F6FA; --sunk:#EDF1F7;
+  --ink:#0F172A; --ink-2:#3F4A5C; --muted:#697489; --line:#DDE3EC;
+  --shadow:0 1px 2px rgba(11,24,54,.05), 0 10px 28px -16px rgba(11,24,54,.22);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --navy:#0A1224; --teal:#2DD4BF; --teal-lt:#5EEAD4; --gold:#F5B324;
+    --good:#34D399; --crit:#F87171;
+    --paper:#111A2E; --ground:#080D1A; --sunk:#0D1526;
+    --ink:#E9EEF6; --ink-2:#C2CBDA; --muted:#8A94A8; --line:#212B41;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -18px rgba(0,0,0,.85);
+  }
+}
+:root[data-theme="dark"]{
+  --navy:#0A1224; --teal:#2DD4BF; --teal-lt:#5EEAD4; --gold:#F5B324;
+  --good:#34D399; --crit:#F87171;
+  --paper:#111A2E; --ground:#080D1A; --sunk:#0D1526;
+  --ink:#E9EEF6; --ink-2:#C2CBDA; --muted:#8A94A8; --line:#212B41;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -18px rgba(0,0,0,.85);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font:16.5px/1.62 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+header{background:radial-gradient(620px 320px at 88% -20%,rgba(45,212,191,.18),transparent 62%),var(--navy);
+  color:#fff;padding:26px 18px 28px}
+.hin{max-width:640px;margin:0 auto}
+.eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--teal-lt);margin:0 0 8px}
+h1{font-family:Newsreader,Georgia,serif;font-size:clamp(26px,6vw,34px);font-weight:600;
+  line-height:1.15;letter-spacing:-.019em;margin:0 0 10px;text-wrap:balance}
+header p{margin:0;font-size:15.6px;color:rgba(255,255,255,.78);line-height:1.6;max-width:52ch}
+.wrap{max-width:640px;margin:0 auto;padding:22px 18px 64px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;
+  padding:18px 19px;box-shadow:var(--shadow);margin-bottom:16px}
+h2{font-size:15.5px;font-weight:800;margin:0 0 11px;letter-spacing:-.005em}
+.line{display:flex;gap:14px;padding:9px 0;border-top:1px solid var(--line);font-size:15px;line-height:1.5}
+.line:first-of-type{border-top:0;padding-top:0}
+.line .k{color:var(--muted);flex:1;min-width:0}
+.line .v{font-weight:700;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.meta{font-size:14px;color:var(--muted);margin:0}
+.ask{font-family:Newsreader,Georgia,serif;font-size:21px;font-weight:600;
+  line-height:1.3;margin:0 0 4px;letter-spacing:-.012em}
+.askp{font-size:15px;color:var(--ink-2);margin:0 0 15px}
+.choices{display:grid;gap:10px}
+button{border:0;border-radius:12px;padding:16px;cursor:pointer;width:100%;
+  font:800 16.5px Inter,sans-serif;text-align:center}
+.yes{background:var(--teal);color:#fff;box-shadow:0 9px 24px -12px rgba(13,122,112,.9)}
+.no{background:var(--paper);color:var(--ink);border:1.5px solid var(--line)}
+.no:hover{border-color:var(--teal)}
+.yes:hover{filter:brightness(1.07)}
+button:disabled{opacity:.55;cursor:default;box-shadow:none}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+textarea{width:100%;min-height:150px;padding:13px 14px;border:1.5px solid var(--line);
+  border-radius:11px;background:var(--sunk);color:var(--ink);resize:vertical;
+  font:15.5px/1.6 Inter,-apple-system,sans-serif;margin-bottom:12px}
+textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,122,112,.16)}
+.msg{border-radius:11px;padding:13px 15px;font-size:14.6px;line-height:1.55;margin-bottom:14px}
+.msg.err{background:rgba(178,58,43,.1);border:1.5px solid rgba(178,58,43,.4);color:var(--crit);font-weight:600}
+.foot{font-size:13.2px;color:var(--muted);text-align:center;line-height:1.6;padding-top:4px}
+.hide{display:none!important}
+.spin{text-align:center;color:var(--muted);font-size:15px;padding:34px 0}
+.done h2{font-family:Newsreader,Georgia,serif;font-size:25px;font-weight:600;margin:0 0 9px}
+.done p{margin:0 0 10px;font-size:15.4px;color:var(--ink-2)}
+.back{background:none;border:0;color:var(--teal);font:600 14.6px Inter,sans-serif;
+  cursor:pointer;padding:6px 0;width:auto;text-decoration:underline}
+</style>
+</head>
+<body>
+
+<header><div class="hin">
+  <p class="eyebrow">Ricky Rampersad Branch · Guardian Life</p>
+  <h1 id="hTitle">Your summary</h1>
+  <p id="hSub">Please check this is right before anything goes ahead.</p>
+</div></header>
+
+<div class="wrap">
+
+  <div id="loading" class="spin">Opening your summary…</div>
+
+  <div id="failed" class="hide">
+    <div class="msg err" id="failMsg"></div>
+    <div class="foot">If you were expecting to see your summary, please contact your
+      advisor and they will send it again.</div>
+  </div>
+
+  <div id="view" class="hide">
+    <div class="card">
+      <h2>What we discussed</h2>
+      <div id="summary"></div>
+    </div>
+
+    <div class="card" id="metaCard">
+      <p class="meta" id="metaText"></p>
+    </div>
+
+    <div class="card">
+      <p class="ask">Is this right?</p>
+      <p class="askp">If anything is wrong or missing, tell us — nothing goes ahead until
+        you are happy with it.</p>
+      <div class="msg err hide" id="viewErr"></div>
+      <div class="choices">
+        <button class="yes" id="btnYes" type="button">Yes, that is right</button>
+        <button class="no" id="btnNo" type="button">Something needs changing</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="changes" class="hide">
+    <div class="card">
+      <p class="ask">What needs changing?</p>
+      <p class="askp">In your own words. Your advisor reads this and will come back to you.</p>
+      <textarea id="note" maxlength="2000"
+        placeholder="For example: my income is different, or you have missed one of my children."></textarea>
+      <div class="msg err hide" id="noteErr"></div>
+      <button class="yes" id="btnSend" type="button">Send this to my advisor</button>
+      <div style="text-align:center"><button class="back" id="btnBack" type="button">Back</button></div>
+    </div>
+  </div>
+
+  <div id="done" class="hide">
+    <div class="card done">
+      <h2 id="doneTitle"></h2>
+      <p id="doneBody"></p>
+    </div>
+    <div class="foot">You can close this page.</div>
+  </div>
+
+</div>
+
+<script>
+/* ── The client's confirmation page ──────────────────────────────────────
+   Served from factfind360.com, on purpose.
+
+   This used to be a link straight to the Apps Script web app, which puts
+   Google's own interstitial in front of the client — "This application was
+   created by another user, not by Google", with a warning that Google
+   cannot verify it is safe. That cannot be turned off and a custom domain
+   cannot be mapped onto script.google.com. A client clicking a link from
+   their insurance advisor and landing on a Google safety warning undoes
+   the work the fact find just did.
+
+   So the client only ever sees this domain. Apps Script stays where it
+   belongs: answering requests in the background, never being visited.
+
+   Same single-case token as comment.html, and the same text/plain POST so
+   the browser sends no preflight for Apps Script to fail to answer. */
+
+var ENDPOINT = 'https://script.google.com/macros/s/'
+  + 'AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
+
+var $ = function (id) { return document.getElementById(id); };
+var TOKEN = new URLSearchParams(location.search).get('t') || '';
+
+function show(id) {
+  ['loading', 'failed', 'view', 'changes', 'done'].forEach(function (k) {
+    $(k).classList.toggle('hide', k !== id);
+  });
+  window.scrollTo(0, 0);
+}
+
+function post(body) {
+  return fetch(ENDPOINT, {
+    method: 'POST', cache: 'no-store',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  }).then(function (r) { return r.json(); });
+}
+
+function netMsg(e, tail) {
+  return e.message === 'Failed to fetch'
+    ? 'We could not reach the branch just then. Please check your connection and try again.'
+    : e.message + (tail || '');
+}
+
+/* Built with textContent, never innerHTML — every value here came from a
+   form someone typed into. */
+function addLine(host, label, value) {
+  if (!value) return;
+  var row = document.createElement('div'); row.className = 'line';
+  var k = document.createElement('div'); k.className = 'k'; k.textContent = label;
+  var v = document.createElement('div'); v.className = 'v'; v.textContent = value;
+  row.appendChild(k); row.appendChild(v); host.appendChild(row);
+}
+
+/* ---- open ---- */
+if (!TOKEN) {
+  $('failMsg').textContent = 'This link is incomplete. Please open it from your email exactly as it was sent — copying part of the link leaves your summary behind.';
+  show('failed');
+} else {
+  post({ stage: 'client_open', t: TOKEN })
+    .then(function (j) {
+      if (!j || !j.ok) throw new Error((j && j.error) || 'This link is no longer valid.');
+
+      if (j.clientName) {
+        $('hTitle').textContent = j.clientName.split(/\s+/)[0] + ', your summary';
+      }
+
+      var host = $('summary');
+      (j.lines || []).forEach(function (l) { addLine(host, l.label, l.value); });
+      if (!host.children.length) {
+        addLine(host, 'Your advisor will send the detail separately', '—');
+      }
+
+      var bits = [];
+      if (j.advisorName) bits.push('Prepared by ' + j.advisorName);
+      if (j.submitted) bits.push('on ' + j.submitted);
+      if (bits.length) $('metaText').textContent = bits.join(' ') + '.';
+      else $('metaCard').classList.add('hide');
+
+      if (j.alreadyConfirmed) {
+        $('doneTitle').textContent = 'You have already confirmed this.';
+        $('doneBody').textContent = 'Nothing more to do. If something has changed since, '
+          + 'contact your advisor and they will sort it out.';
+        show('done');
+        return;
+      }
+      show('view');
+    })
+    .catch(function (e) {
+      $('failMsg').textContent = netMsg(e);
+      show('failed');
+    });
+}
+
+/* ---- yes ---- */
+$('btnYes').addEventListener('click', function () {
+  var btn = this, err = $('viewErr');
+  btn.disabled = true; btn.textContent = 'Sending…'; err.classList.add('hide');
+
+  post({ stage: 'client_confirm', t: TOKEN, confirmed: 'yes' })
+    .then(function (j) {
+      if (!j || !j.ok) throw new Error((j && j.error) || 'We could not record that.');
+      $('doneTitle').textContent = 'Thank you.';
+      $('doneBody').textContent = 'Your advisor knows the summary is right and will carry on '
+        + 'from here. Nothing else is needed from you today.';
+      show('done');
+    })
+    .catch(function (e) {
+      btn.disabled = false; btn.textContent = 'Yes, that is right';
+      err.textContent = netMsg(e); err.classList.remove('hide');
+    });
+});
+
+/* ---- something needs changing ---- */
+$('btnNo').addEventListener('click', function () { show('changes'); $('note').focus(); });
+$('btnBack').addEventListener('click', function () { show('view'); });
+$('note').addEventListener('input', function () { $('noteErr').classList.add('hide'); });
+
+$('btnSend').addEventListener('click', function () {
+  var text = $('note').value.trim(), err = $('noteErr');
+  if (!text) {
+    err.textContent = 'Please tell us what needs changing first.';
+    err.classList.remove('hide'); $('note').focus(); return;
+  }
+  var btn = this;
+  btn.disabled = true; btn.textContent = 'Sending…'; err.classList.add('hide');
+
+  post({ stage: 'client_confirm', t: TOKEN, confirmed: 'no', note: text })
+    .then(function (j) {
+      if (!j || !j.ok) throw new Error((j && j.error) || 'We could not send that.');
+      $('doneTitle').textContent = 'Thank you — that is with your advisor.';
+      $('doneBody').textContent = 'They will read what you sent and come back to you. '
+        + 'Nothing goes ahead until it is right.';
+      show('done');
+    })
+    .catch(function (e) {
+      btn.disabled = false; btn.textContent = 'Send this to my advisor';
+      err.textContent = netMsg(e, ' What you wrote is still here.');
+      err.classList.remove('hide');
+    });
+});
+</script>
+</body>
+</html>

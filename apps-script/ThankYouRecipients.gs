@@ -57,7 +57,16 @@ var TY_CONFIG = {
   },
 
   // Temporary. Delete the address to stop the branch manager's blind copies.
-  ALWAYS_BCC: ['Ricky.Rampersad@myguardiangroup.com']
+  ALWAYS_BCC: ['Ricky.Rampersad@myguardiangroup.com'],
+
+  // The advisor who did the fact find.
+  //
+  // Off, because the instruction for the client's email was "just the client
+  // and the direct manager". Worth a second look before it stays that way:
+  // an earlier instruction was that the direct agent needs to be copied, and
+  // he is the one the client replies to. Flip this to true and he is back in
+  // Cc beside the manager — nothing else changes.
+  CC_ADVISOR: false
 };
 
 /* ── helpers ───────────────────────────────────────────────────────────── */
@@ -125,14 +134,17 @@ function tyRecipients_(row) {
   }
 
   var cc = [];
-  var agent = tyClean_(row.agentEmail);
-  if (tyIsEmail_(agent)) cc.push(agent);
-  else problems.push('No advisor email on this fact find, so the advisor was not copied.');
+  var mgr = tyManagerEmail_(row.dmName);
+  if (mgr.ok) cc.push(mgr.email);
+  else problems.push(mgr.why + ' The manager was not copied.');
+
+  if (TY_CONFIG.CC_ADVISOR) {
+    var agent = tyClean_(row.agentEmail);
+    if (tyIsEmail_(agent)) cc.push(agent);
+    else problems.push('No advisor email on this fact find, so the advisor was not copied.');
+  }
 
   var bcc = [];
-  var mgr = tyManagerEmail_(row.dmName);
-  if (mgr.ok) bcc.push(mgr.email);
-  else problems.push(mgr.why + ' The manager was not copied.');
 
   TY_CONFIG.ALWAYS_BCC.forEach(function (e) { if (tyIsEmail_(e)) bcc.push(e); });
 
