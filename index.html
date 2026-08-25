@@ -2273,21 +2273,38 @@ function renderQueue(){
           return;
         }
       }
-      if(v==='approve'||v==='return'||v==='decline'){
+      // A send-back is not a signature event. Nothing is being signed off:
+      // the fact find stays unsigned and goes back to the advisor to be
+      // fixed, which the old sign-pane admitted in its own footer while
+      // still demanding a signature to say so. Asking a manager to sign in
+      // order to decline to sign put a signature step in front of the
+      // decision they make most often, and a signature against a case that
+      // was never approved is a record of nothing.
+      //
+      // What a send-back owes is the reason, which is already required
+      // below, and who wrote it — established by the session token qFire()
+      // sends. Approve and decline still sign, for opposite reasons:
+      // approve puts the signature in the manager's sign-off box on the
+      // fact find and it travels with the client's copy; decline ticks
+      // "I do not agree" on the form and closes the case.
+      if(v==='return'&&!noteEl.value.trim()){
+        msg.style.display='block'; msg.className='qmsg err';
+        msg.textContent='Tap a reason above, or type one — that is what the advisor receives.';
+        return;
+      }
+      if(v==='approve'||v==='decline'){
         var pane=card.querySelector('.qsign');
         if(pane&&!pane.classList.contains('open')){
-          if((v==='return'||v==='decline')&&!noteEl.value.trim()){
+          if(v==='decline'&&!noteEl.value.trim()){
             msg.style.display='block'; msg.className='qmsg err';
-            msg.textContent=v==='decline'
-              ? 'Say why it is being declined — nobody is being asked to fix it, so this is all the advisor gets.'
-              : 'Tap a reason above, or type one — that is what the advisor receives.';
+            msg.textContent='Say why it is being declined — nobody is being asked to fix it, so this is all the advisor gets.';
             return;
           }
           var approve=(v==='approve');
           pane.dataset.v=v;
           pane.classList.add('open');
           card.querySelector('.qstitle').textContent=approve
-            ? 'Attest and sign' : v==='decline' ? 'Sign the decline' : 'Sign the send-back';
+            ? 'Attest and sign' : 'Sign the decline';
           pane.querySelector('.qsatt').style.display=approve?'':'none';
           if(approve&&det.classList.contains('open')){
             var deep=[].slice.call(card.querySelectorAll('.qchk input'));
@@ -2295,14 +2312,12 @@ function renderQueue(){
               if(deep[i]&&deep[i].checked) x.checked=true; });
           }
           var go=pane.querySelector('.qsgo');
-          go.textContent=approve?'Sign & approve':v==='decline'?'Sign & decline':'Sign & send back';
+          go.textContent=approve?'Sign & approve':'Sign & decline';
           go.classList.toggle('back',!approve);
           go.classList.toggle('kill',v==='decline');
           pane.querySelector('.qsfoot').textContent=approve
             ? 'Your signature goes onto the fact find, in the manager’s sign-off box, “I agree” is ticked in your name, and it travels with the client’s copy.'
-            : v==='decline'
-            ? 'This closes the case. “I do not agree” is ticked, your signature is kept against the decision, and the advisor is told it is not going forward.'
-            : 'Your signature is kept against the decision. The fact find stays unsigned — it is going back.';
+            : 'This closes the case. “I do not agree” is ticked, your signature is kept against the decision, and the advisor is told it is not going forward.';
           qPadInit(card);
           setTimeout(function(){
             var c=card.querySelector('.qpad'); if(c&&c._fit) c._fit();
