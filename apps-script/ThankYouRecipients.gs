@@ -59,14 +59,9 @@ var TY_CONFIG = {
   // Temporary. Delete the address to stop the branch manager's blind copies.
   ALWAYS_BCC: ['Ricky.Rampersad@myguardiangroup.com'],
 
-  // The advisor who did the fact find.
-  //
-  // Off, because the instruction for the client's email was "just the client
-  // and the direct manager". Worth a second look before it stays that way:
-  // an earlier instruction was that the direct agent needs to be copied, and
-  // he is the one the client replies to. Flip this to true and he is back in
-  // Cc beside the manager — nothing else changes.
-  CC_ADVISOR: false
+  // The advisor who did the fact find, in Cc beside their direct manager.
+  // Both of them get it; the branch manager is blind-copied and nowhere else.
+  CC_ADVISOR: true
 };
 
 /* ── helpers ───────────────────────────────────────────────────────────── */
