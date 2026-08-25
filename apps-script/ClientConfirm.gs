@@ -40,6 +40,8 @@ var CC_CONFIRM_URL = 'https://factfind360.com/confirm';
 DM_CONFIG.COLS.confirmed   = ['clientconfirmed', 'client confirmed'];
 DM_CONFIG.COLS.confirmedAt = ['clientconfirmedat', 'client confirmed at'];
 DM_CONFIG.COLS.changeNote  = ['clientchangenote', 'client change note'];
+DM_CONFIG.COLS.sigs        = ['sigs', 'signatures'];
+DM_CONFIG.COLS.clientSigDate = ['clientsigdate', 'client sig date'];
 
 /** A confirmation link for one case. Mint it when the summary email is sent. */
 function clientConfirmLink_(caseId, issuedTo) {
@@ -118,6 +120,7 @@ function clientConfirm_(p) {
   try {
     lock.waitLock(20000);
 
+    var sigProblem = '';
     var yes = /^(yes|true|1)$/i.test(String(p.confirmed || ''));
     var note = String(p.note == null ? '' : p.note).trim().slice(0, 2000);
     if (!yes && !note) return { ok: false, error: 'Please tell us what needs changing.' };
@@ -138,6 +141,32 @@ function clientConfirm_(p) {
     set('confirmedAt', new Date());
     if (!yes) set('changeNote', note);
 
+    /* The signature is the point of the exercise, not a nicety. Three people
+       already sign this form — the advisor, the direct manager and the branch
+       manager — all of them attesting to a conversation only one of them had
+       with the client. This is the client's own hand on the record saying it
+       happened the way the file says it did.
+
+       Merged into the existing signatures rather than written over them: the
+       advisor may already have signed at the appointment, and the same
+       data-sig key "client" is what the form's own pad writes, so a client
+       signing here and a client signing in front of the advisor land in the
+       same place and cannot disagree. */
+    if (yes && p.sig) {
+      var sigCol = dmCol_(map, 'sigs');
+      if (sigCol >= 0) {
+        var raw = String(sh.getRange(row, sigCol + 1).getValue() || '').trim();
+        var sigs = {};
+        if (raw) { try { sigs = JSON.parse(raw) || {}; } catch (e) { sigs = {}; } }
+        sigs.client = String(p.sig);
+        sh.getRange(row, sigCol + 1).setValue(JSON.stringify(sigs));
+        set('clientSigDate', new Date());
+      } else {
+        sigProblem = 'No sigs column on ' + DM_CONFIG.RESPONSES_SHEET +
+          '. The confirmation was recorded but the signature had nowhere to go.';
+      }
+    }
+
     // A client saying "this is wrong" that lands nowhere is worse than no
     // page at all, so a missing column is an error rather than a silent pass.
     if (!wroteFlag) {
@@ -145,7 +174,9 @@ function clientConfirm_(p) {
     }
 
     dmRetireToken_(t.row);
-    return { ok: true };
+    // Logged, not shown to the client — they signed; a missing column is ours.
+    if (sigProblem) Logger.log(sigProblem);
+    return { ok: true, note: sigProblem };
   } catch (err) {
     return { ok: false, error: err.message };
   } finally {

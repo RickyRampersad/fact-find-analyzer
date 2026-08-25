@@ -80,6 +80,15 @@ textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(1
 .done p{margin:0 0 10px;font-size:15.4px;color:var(--ink-2)}
 .back{background:none;border:0;color:var(--teal);font:600 14.6px Inter,sans-serif;
   cursor:pointer;padding:6px 0;width:auto;text-decoration:underline}
+.attest{border-left:3px solid var(--teal);background:var(--sunk);border-radius:0 10px 10px 0;
+  padding:14px 16px;font-size:15.2px;line-height:1.6;color:var(--ink)}
+.padwrap{position:relative;height:150px;border:2px dashed var(--line);border-radius:10px;
+  background:var(--sunk);overflow:hidden}
+.pad{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.padrule{position:absolute;left:20px;right:20px;bottom:40px;border-bottom:1px solid var(--line);
+  pointer-events:none}
+.padhint{position:absolute;left:0;right:0;bottom:15px;text-align:center;color:var(--muted);
+  font-size:12.5px;font-weight:700;pointer-events:none}
 </style>
 </head>
 <body>
@@ -87,7 +96,7 @@ textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(1
 <header><div class="hin">
   <p class="eyebrow">Ricky Rampersad Branch · Guardian Life</p>
   <h1 id="hTitle">Your summary</h1>
-  <p id="hSub">Please check this is right before anything goes ahead.</p>
+  <p id="hSub">Please confirm this is what your advisor discussed with you, and sign.</p>
 </div></header>
 
 <div class="wrap">
@@ -111,12 +120,27 @@ textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(1
     </div>
 
     <div class="card">
-      <p class="ask">Is this right?</p>
-      <p class="askp">If anything is wrong or missing, tell us — nothing goes ahead until
-        you are happy with it.</p>
-      <div class="msg err hide" id="viewErr"></div>
-      <div class="choices">
-        <button class="yes" id="btnYes" type="button">Yes, that is right</button>
+      <p class="ask">Is this what happened?</p>
+      <p class="askp">Read this before you sign. If any of it is wrong, or something was
+        never discussed with you, say so instead — nothing goes ahead until it is right.</p>
+
+      <div class="attest">I confirm the information above is mine, that my advisor
+        explained the recommendations to me, and that the decision recorded is the one
+        I made.</div>
+
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin:17px 0 7px">
+        <h2 style="margin:0">Your signature</h2>
+        <button class="back" id="btnClear" type="button">Clear</button>
+      </div>
+      <div class="padwrap">
+        <canvas class="pad" id="pad"></canvas>
+        <div class="padrule"></div>
+        <div class="padhint" id="padhint">Sign here with your finger</div>
+      </div>
+
+      <div class="msg err hide" id="viewErr" style="margin-top:14px"></div>
+      <div class="choices" style="margin-top:14px">
+        <button class="yes" id="btnYes" type="button">Confirm and sign</button>
         <button class="no" id="btnNo" type="button">Something needs changing</button>
       </div>
     </div>
@@ -239,21 +263,80 @@ if (!TOKEN) {
     });
 }
 
-/* ---- yes ---- */
+/* ---- the signature pad ----
+   Same shape as the one in the fact find, carrying the two fixes made there:
+   refit whenever the element actually has a size rather than once on a timer
+   (a pad measured before layout draws the stroke outside the visible area and
+   looks broken), and carry any existing signature across a resize, because
+   resizing a canvas clears it and rotating a phone would otherwise leave a
+   blank PNG behind a "signed" flag. */
+var pad = $('pad'), px = pad.getContext('2d'), padHint = $('padhint');
+(function initPad(){
+  var down = false, last = null;
+
+  function style(){ px.lineWidth = 2.4; px.lineCap = 'round'; px.lineJoin = 'round';
+    px.strokeStyle = getComputedStyle(document.body).color; }
+
+  function fit(){
+    var r = pad.getBoundingClientRect(), dp = window.devicePixelRatio || 1;
+    if (!r.width || !r.height) return;
+    var w = Math.round(r.width * dp), h = Math.round(r.height * dp);
+    if (pad.width === w && pad.height === h) { style(); return; }
+    var prev = pad.dataset.drawn ? pad.toDataURL('image/png') : null;
+    pad.width = w; pad.height = h; px.setTransform(dp, 0, 0, dp, 0, 0); style();
+    if (prev) { var im = new Image(); im.onload = function(){ px.drawImage(im, 0, 0, r.width, r.height); }; im.src = prev; }
+  }
+  fit();
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(pad.parentNode);
+  else window.addEventListener('resize', fit);
+
+  function at(ev){ var r = pad.getBoundingClientRect(), t = ev.touches ? ev.touches[0] : ev;
+    return { x: t.clientX - r.left, y: t.clientY - r.top }; }
+  function start(ev){ ev.preventDefault(); down = true; last = at(ev); padHint.style.display = 'none'; }
+  function move(ev){ if (!down) return; ev.preventDefault(); var p = at(ev);
+    px.beginPath(); px.moveTo(last.x, last.y); px.lineTo(p.x, p.y); px.stroke();
+    last = p; pad.dataset.drawn = '1'; }
+  function end(){ down = false; }
+
+  pad.addEventListener('mousedown', start);
+  pad.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+  pad.addEventListener('touchstart', start, { passive: false });
+  pad.addEventListener('touchmove', move, { passive: false });
+  pad.addEventListener('touchend', end);
+
+  $('btnClear').addEventListener('click', function(){
+    px.clearRect(0, 0, pad.width, pad.height);
+    delete pad.dataset.drawn;
+    padHint.style.display = '';
+    $('viewErr').classList.add('hide');
+  });
+})();
+
+/* ---- confirm and sign ---- */
 $('btnYes').addEventListener('click', function () {
   var btn = this, err = $('viewErr');
+
+  if (!pad.dataset.drawn) {
+    err.textContent = 'Please sign in the box above. This is the part that records you agreed to it.';
+    err.classList.remove('hide');
+    pad.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    return;
+  }
+
   btn.disabled = true; btn.textContent = 'Sending…'; err.classList.add('hide');
 
-  post({ stage: 'client_confirm', t: TOKEN, confirmed: 'yes' })
+  post({ stage: 'client_confirm', t: TOKEN, confirmed: 'yes',
+         sig: pad.toDataURL('image/png') })
     .then(function (j) {
       if (!j || !j.ok) throw new Error((j && j.error) || 'We could not record that.');
       $('doneTitle').textContent = 'Thank you.';
-      $('doneBody').textContent = 'Your advisor knows the summary is right and will carry on '
-        + 'from here. Nothing else is needed from you today.';
+      $('doneBody').textContent = 'Your signature is on your fact find, recording that this is what was '
+        + 'discussed and what you agreed to. Nothing else is needed from you today.';
       show('done');
     })
     .catch(function (e) {
-      btn.disabled = false; btn.textContent = 'Yes, that is right';
+      btn.disabled = false; btn.textContent = 'Confirm and sign';
       err.textContent = netMsg(e); err.classList.remove('hide');
     });
 });
