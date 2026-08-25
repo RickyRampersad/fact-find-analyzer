@@ -30,9 +30,12 @@
  *
  *      var r = tyRecipients_(row);
  *      if (!r.ok) { Logger.log(r.problems.join(' | ')); return; }
+ *      if (r.problems.length) Logger.log(r.problems.join(' | '));
+ *      var s = tySender_(row);
  *      MailApp.sendEmail({
  *        to: r.to, cc: r.cc, bcc: r.bcc,
- *        subject: subject, htmlBody: body, name: 'Ricky Rampersad Branch'
+ *        subject: subject, htmlBody: body,
+ *        name: s.name, replyTo: s.replyTo
  *      });
  *
  *    `row` is whatever object already holds the submitted fact find — it
@@ -159,6 +162,36 @@ function tyRecipients_(row) {
     bcc: bcc.join(','),
     problems: problems
   };
+}
+
+/* ── who it looks like it came from ────────────────────────────────────── */
+
+/**
+ * The sender, as the client sees it.
+ *
+ * Apps Script sends as the account running the script. It cannot put an
+ * arbitrary address in From — GmailApp only accepts one already verified as a
+ * send-as alias on that account, and Guardian mail is on Microsoft, so an
+ * advisor's real address is not one Google can send as without SMTP
+ * credentials per advisor and an admin willing to set them up.
+ *
+ * What does work, with nothing to configure: the client sees the advisor's
+ * name on the message, and a reply goes to the advisor rather than to
+ * whatever account happens to be running the script. replyTo takes any
+ * address and needs no verification.
+ *
+ * That is also the more honest shape. This email is generated when a fact
+ * find is submitted; the advisor never wrote it and never saw it go. A
+ * message carrying their name and their reply address is true. One with
+ * their address in From would be the system claiming to be them.
+ */
+function tySender_(row) {
+  var advisor = tyClean_(row && row.advisorName);
+  var email   = tyClean_(row && row.agentEmail);
+  var out = { name: advisor ? advisor + ' · Ricky Rampersad Branch'
+                            : 'Ricky Rampersad Branch' };
+  if (tyIsEmail_(email)) out.replyTo = email;
+  return out;
 }
 
 /* ── self test ─────────────────────────────────────────────────────────── */
