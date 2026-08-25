@@ -2065,14 +2065,50 @@ function qPadInit(card){
   c.dataset.wired='1';
   var x=c.getContext('2d'), hint=card.querySelector('.qpadhint');
   var down=false, last=null;
+  function style(){
+    x.lineWidth=2.4; x.lineCap='round'; x.lineJoin='round'; x.strokeStyle='#0F172A';
+  }
+  /* Two things went wrong here, and both ended with a manager who could not
+     sign and typed their name instead because it was the only thing that
+     worked.
+
+     fit() gave up when the canvas had no width yet — which is exactly the
+     state it is in for the first frames after the pane opens. It left the
+     backing store at the default 300x150 with no scale transform while CSS
+     stretched it across the card, so a finger drawn across the pad landed
+     somewhere outside the visible area. The stroke registered, nothing
+     appeared, and the pad looked broken. One retry on a timer covered it
+     when the pane opened quickly and missed it when it did not.
+
+     And resizing a canvas clears it. Any refit after a signature was drawn
+     — rotating a phone is enough — wiped the ink while leaving dataset.drawn
+     set, so toDataURL() returned a blank PNG and a blank signature went onto
+     the fact find looking like a real one.
+
+     So: refit whenever the element actually has a size, carry the existing
+     signature across the resize, and do nothing at all when the size has not
+     changed. */
   function fit(){
     var r=c.getBoundingClientRect(), dp=window.devicePixelRatio||1;
-    if(!r.width) return;
-    c.width=r.width*dp; c.height=r.height*dp; x.setTransform(dp,0,0,dp,0,0);
-    x.lineWidth=2.4; x.lineCap='round'; x.lineJoin='round'; x.strokeStyle='#0F172A';
+    if(!r.width||!r.height) return false;
+    var w=Math.round(r.width*dp), h=Math.round(r.height*dp);
+    if(c.width===w&&c.height===h){ style(); return true; }
+    var prev=c.dataset.drawn ? c.toDataURL('image/png') : null;
+    c.width=w; c.height=h; x.setTransform(dp,0,0,dp,0,0); style();
+    if(prev){
+      var img=new Image();
+      img.onload=function(){ x.drawImage(img,0,0,r.width,r.height); };
+      img.src=prev;
+    }
+    return true;
   }
   fit();
   c._fit=fit;
+  if(window.ResizeObserver){
+    new ResizeObserver(function(){ fit(); }).observe(c.parentNode||c);
+  } else {
+    window.addEventListener('resize',fit);
+  }
   function pt(ev){ var r=c.getBoundingClientRect(), t=ev.touches?ev.touches[0]:ev;
     return {x:t.clientX-r.left, y:t.clientY-r.top}; }
   function start(ev){ ev.preventDefault(); down=true; last=pt(ev); if(hint) hint.style.display='none'; }
