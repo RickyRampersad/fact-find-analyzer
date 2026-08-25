@@ -89,6 +89,19 @@ textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(1
   pointer-events:none}
 .padhint{position:absolute;left:0;right:0;bottom:15px;text-align:center;color:var(--muted);
   font-size:12.5px;font-weight:700;pointer-events:none}
+.ovl{position:fixed;inset:0;background:rgba(11,24,54,.55);display:flex;align-items:flex-end;
+  justify-content:center;z-index:50;padding:0}
+@media (min-width:560px){ .ovl{align-items:center;padding:20px} }
+.sheet{background:var(--paper);border-radius:16px 16px 0 0;padding:20px 19px 22px;
+  width:100%;max-width:560px;max-height:92vh;overflow-y:auto;
+  box-shadow:0 -8px 40px -12px rgba(11,24,54,.5)}
+@media (min-width:560px){ .sheet{border-radius:16px} }
+.rec{border-top:1px solid var(--line);padding:13px 0}
+.rec:first-child{border-top:0;padding-top:2px}
+.rec .rn{font-size:16px;font-weight:800;margin:0 0 3px;color:var(--teal)}
+.rec .rf{display:flex;gap:14px;font-size:14.4px;color:var(--ink-2);margin:0 0 6px}
+.rec .rf b{color:var(--ink);font-variant-numeric:tabular-nums}
+.rec .rw{font-size:14.6px;line-height:1.55;color:var(--ink-2);margin:0}
 </style>
 </head>
 <body>
@@ -119,29 +132,24 @@ textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(1
       <p class="meta" id="metaText"></p>
     </div>
 
+    <div class="card hide" id="recsCard">
+      <h2>What was recommended, and why</h2>
+      <div id="recs"></div>
+    </div>
+
     <div class="card">
       <p class="ask">Is this what happened?</p>
-      <p class="askp">Read this before you sign. If any of it is wrong, or something was
-        never discussed with you, say so instead — nothing goes ahead until it is right.</p>
+      <p class="askp">Take your time. If any of it is wrong, or something was never
+        discussed with you, say so — nothing goes ahead until it is right.</p>
 
       <div class="attest">I confirm the information above is mine, that my advisor
-        explained the recommendations to me, and that the decision recorded is the one
-        I made.</div>
-
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin:17px 0 7px">
-        <h2 style="margin:0">Your signature</h2>
-        <button class="back" id="btnClear" type="button">Clear</button>
-      </div>
-      <div class="padwrap">
-        <canvas class="pad" id="pad"></canvas>
-        <div class="padrule"></div>
-        <div class="padhint" id="padhint">Sign here with your finger</div>
-      </div>
+        explained these recommendations to me, and that the decision recorded is the
+        one I made.</div>
 
       <div class="msg err hide" id="viewErr" style="margin-top:14px"></div>
-      <div class="choices" style="margin-top:14px">
-        <button class="yes" id="btnYes" type="button">Confirm and sign</button>
-        <button class="no" id="btnNo" type="button">Something needs changing</button>
+      <div class="choices" style="margin-top:16px">
+        <button class="yes" id="btnYes" type="button">I agree</button>
+        <button class="no" id="btnNo" type="button">Something needs to change</button>
       </div>
     </div>
   </div>
@@ -166,6 +174,33 @@ textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(1
     <div class="foot">You can close this page.</div>
   </div>
 
+</div>
+
+<!-- The signature only appears once the client has said they agree. Putting a
+     pad in front of someone before they have decided invites a reflex
+     signature, which is the opposite of what this is for. -->
+<div class="ovl hide" id="ovl">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ovlTitle">
+    <h2 id="ovlTitle" style="font-family:Newsreader,Georgia,serif;font-size:21px;font-weight:600;margin:0 0 8px">Sign to confirm</h2>
+    <p class="askp" id="ovlWhat">You are signing to say the information is yours, the
+      recommendations were explained to you, and the decision recorded is the one you made.</p>
+
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin:4px 0 7px">
+      <h2 style="margin:0">Your signature</h2>
+      <button class="back" id="btnClear" type="button">Clear</button>
+    </div>
+    <div class="padwrap">
+      <canvas class="pad" id="pad"></canvas>
+      <div class="padrule"></div>
+      <div class="padhint" id="padhint">Sign here with your finger</div>
+    </div>
+
+    <div class="msg err hide" id="ovlErr" style="margin-top:12px"></div>
+    <div class="choices" style="margin-top:14px">
+      <button class="yes" id="btnSign" type="button">Sign and confirm</button>
+      <button class="no" id="btnCancel" type="button">Not yet</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -236,6 +271,30 @@ if (!TOKEN) {
         $('hTitle').textContent = j.clientName.split(/\s+/)[0] + ', your summary';
       }
 
+      var recs = j.recs || [];
+      if (recs.length) {
+        var rh = $('recs');
+        recs.forEach(function (r) {
+          var d = document.createElement('div'); d.className = 'rec';
+          var n = document.createElement('p'); n.className = 'rn';
+          n.textContent = r.plan || 'Recommendation'; d.appendChild(n);
+          var facts = [];
+          if (r.need)  facts.push(r.need);
+          if (r.cover) facts.push('Cover ' + r.cover);
+          if (r.prem)  facts.push('Premium ' + r.prem);
+          if (facts.length) {
+            var f = document.createElement('div'); f.className = 'rf';
+            f.textContent = facts.join('  ·  '); d.appendChild(f);
+          }
+          if (r.why) {
+            var w = document.createElement('p'); w.className = 'rw';
+            w.textContent = r.why; d.appendChild(w);
+          }
+          rh.appendChild(d);
+        });
+        $('recsCard').classList.remove('hide');
+      }
+
       var host = $('summary');
       (j.lines || []).forEach(function (l) { addLine(host, l.label, l.value); });
       if (!host.children.length) {
@@ -287,6 +346,7 @@ var pad = $('pad'), px = pad.getContext('2d'), padHint = $('padhint');
     if (prev) { var im = new Image(); im.onload = function(){ px.drawImage(im, 0, 0, r.width, r.height); }; im.src = prev; }
   }
   fit();
+  pad._fit = fit;
   if (window.ResizeObserver) new ResizeObserver(fit).observe(pad.parentNode);
   else window.addEventListener('resize', fit);
 
@@ -313,14 +373,32 @@ var pad = $('pad'), px = pad.getContext('2d'), padHint = $('padhint');
   });
 })();
 
-/* ---- confirm and sign ---- */
+/* ---- I agree → the signature comes up ---- */
 $('btnYes').addEventListener('click', function () {
-  var btn = this, err = $('viewErr');
+  $('ovlErr').classList.add('hide');
+  $('ovl').classList.remove('hide');
+  document.body.style.overflow = 'hidden';
+  // The pad has only just been given a size. Measuring it before the overlay
+  // laid out is exactly the case that used to draw strokes off-screen.
+  requestAnimationFrame(function () { if (pad._fit) pad._fit(); });
+});
+
+$('btnCancel').addEventListener('click', function () {
+  $('ovl').classList.add('hide');
+  document.body.style.overflow = '';
+});
+
+$('ovl').addEventListener('click', function (ev) {
+  if (ev.target === this) { $('btnCancel').click(); }
+});
+
+/* ---- sign and confirm ---- */
+$('btnSign').addEventListener('click', function () {
+  var btn = this, err = $('ovlErr');
 
   if (!pad.dataset.drawn) {
     err.textContent = 'Please sign in the box above. This is the part that records you agreed to it.';
     err.classList.remove('hide');
-    pad.scrollIntoView({ block: 'center', behavior: 'smooth' });
     return;
   }
 
@@ -330,13 +408,15 @@ $('btnYes').addEventListener('click', function () {
          sig: pad.toDataURL('image/png') })
     .then(function (j) {
       if (!j || !j.ok) throw new Error((j && j.error) || 'We could not record that.');
+      $('ovl').classList.add('hide');
+      document.body.style.overflow = '';
       $('doneTitle').textContent = 'Thank you.';
       $('doneBody').textContent = 'Your signature is on your fact find, recording that this is what was '
         + 'discussed and what you agreed to. Nothing else is needed from you today.';
       show('done');
     })
     .catch(function (e) {
-      btn.disabled = false; btn.textContent = 'Confirm and sign';
+      btn.disabled = false; btn.textContent = 'Sign and confirm';
       err.textContent = netMsg(e); err.classList.remove('hide');
     });
 });

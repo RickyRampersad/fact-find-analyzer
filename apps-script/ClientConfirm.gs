@@ -57,11 +57,14 @@ function clientConfirmLink_(caseId, issuedTo) {
 /**
  * The lines the client sees.
  *
- * Deliberately short. This page exists so the client can say "yes that is
- * right" or "no it is not" — it is not the fact find, and it is reached by a
- * link that could be forwarded, so it carries what they already told us and
- * nothing they did not. No recommendations, no premiums, no ID numbers, no
- * bank detail.
+ * What the client told us about themselves, so they can check we heard it
+ * right. The recommendations are separate, below.
+ *
+ * Still not the fact find. The link could be forwarded, so this carries what
+ * the client already knows — their own occupation, income, expenses and
+ * dependants — and none of the identifiers that would make a forwarded link
+ * worth something to somebody else: no ID or passport number, no address, no
+ * bank detail, no medical answers.
  */
 function clientSummaryLines_(get) {
   var money = function (v) {
@@ -75,6 +78,42 @@ function clientSummaryLines_(get) {
   push('Monthly income',       money(get('monthlyIncome')));
   push('Monthly expenses',     money(get('monthlyExpenses')));
   push('People depending on you', get('dependants'));
+  return out;
+}
+
+/**
+ * The recommendations, in the client's own words as far as possible.
+ *
+ * A client cannot honestly attest that the recommendations were explained to
+ * them if the page does not show the recommendations. The advisor's written
+ * reason goes with each one — that reason is the compliance artefact the
+ * whole form is built around, and showing it to the client is the only way
+ * anyone finds out whether it matches what was actually said in the room.
+ */
+function clientRecLines_(getRaw) {
+  var money = function (v) {
+    var n = Number(String(v == null ? '' : v).replace(/[^0-9.-]/g, ''));
+    return isFinite(n) && n ? 'TT$' + Math.round(n).toLocaleString('en-US') : '';
+  };
+  var out = [];
+  for (var i = 1; i <= 6; i++) {
+    var plan = getRaw('rec' + i + 'Rec');
+    var amt  = money(getRaw('rec' + i + 'Amt'));
+    var prem = money(getRaw('rec' + i + 'Prem'));
+    if (!plan && !amt && !prem) continue;
+
+    // Whichever reason the advisor wrote. dec{i}Reason is what they recorded
+    // against the client's decision; rec{i}Reason against the recommendation.
+    var why = getRaw('dec' + i + 'Reason') || getRaw('rec' + i + 'Reason');
+
+    out.push({
+      plan:  plan,
+      need:  getRaw('rec' + i + 'Need'),
+      cover: amt,
+      prem:  prem,
+      why:   why
+    });
+  }
   return out;
 }
 
@@ -95,6 +134,13 @@ function clientOpen_(p) {
       }
       return '';
     };
+    // rec1Rec, dec1Reason and friends are not logical fields in DM_CONFIG.COLS
+    // — there are 36 of them — so they are read by their own header name.
+    var getRaw = function (header) {
+      var k = String(header).toLowerCase().replace(/[^a-z0-9]/g, '');
+      return map[k] === undefined ? ''
+        : String(vals[map[k]] == null ? '' : vals[map[k]]).trim();
+    };
     var asDate = function (v) {
       if (!v) return '';
       var d = new Date(v);
@@ -108,6 +154,7 @@ function clientOpen_(p) {
       advisorName:      get('advisor'),
       submitted:        asDate(get('submitted')),
       lines:            clientSummaryLines_(get),
+      recs:             clientRecLines_(getRaw),
       alreadyConfirmed: /^(yes|true|1)$/i.test(get('confirmed'))
     };
   } catch (err) {
