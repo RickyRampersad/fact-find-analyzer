@@ -915,6 +915,7 @@
     <div class="filters no-print" id="filterBar"></div>
     <div id="execSummary"></div>
     <div id="queueCard"></div>
+    <div id="prospectCard"></div>
     <div class="kpi-grid" id="kpiGrid"></div>
     <div class="grid" id="chartGrid"></div>
     <div id="caseFlow"></div>
@@ -1571,6 +1572,7 @@ function render(){
   var base=baseRows(), D=periodDays();
   var cur=metricSet(windowRows(base,D,0)), prev=metricSet(windowRows(base,2*D,D));
   renderQueue();
+  renderProspecting();
   renderExec(rows,cur,prev);
   renderKPIs(rows,cur,prev);
   renderCharts(rows);
@@ -2177,6 +2179,169 @@ function qFire(card,id,v,note,atts,sig,signName){
         var g2=card.querySelector('.qsgo'); if(g2) g2.disabled=false;
       });
 }
+/* ═══ PROSPECTING ═══════════════════════════════════════════════════════
+   The work before the fact find exists.
+
+   It has lived on its own page, on the other domain, with no sign-in and
+   no link from here — so an advisor logged into their own dashboard could
+   see every fact find they had done and nothing about the people they were
+   trying to reach, and had nowhere to send a link from. Two systems that
+   never met.
+
+   Its endpoint has been deployed and answering all along, and it takes an
+   agent code. This dashboard already knows who is signed in. Nothing was
+   needed server-side.
+
+   JSONP because Apps Script sends no CORS headers and a script tag has
+   never needed them. */
+var PX_ENDPOINT = 'https://script.google.com/macros/s/'
+  + 'AKfycbzfRo6pS2l8s9GN-E9_aSqshqMs_C2WyWEtaRePPwD0y8o2ttz7zcRE9CEw4OScORX1/exec';
+var PX_MEET = 'https://rickyrampersadbranch.com/meet/a/';
+
+function pxToken(){
+  var c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s = '';
+  for (var i = 0; i < 7; i++) s += c.charAt(Math.floor(Math.random() * c.length));
+  return s;
+}
+
+/* An advisor's message. The same words their prospect board sends, so a
+   prospect cannot tell which screen it came from. */
+function pxMessage(first){
+  return 'Hi ' + (first || 'there') + ' — before we meet, this is how I work.\n\n'
+    + 'It is written while we talk, not from memory after I leave. Every '
+    + 'recommendation carries a reason in writing. And a manager checks it '
+    + 'before you ever see it.\n\n'
+    + 'A minute to watch. Then nothing to fill in — just tap what is actually '
+    + 'on your mind, and I come with the right numbers.\n\n'
+    + 'You take all of it, some of it, or none of it.\n\n'
+    + '— ' + (SESSION.name || '') + ', Ricky Rampersad Branch';
+}
+
+function renderProspecting(){
+  var host = document.getElementById('prospectCard');
+  if (!host || !SESSION) return;
+
+  var sc    = SESSION.scope || {};
+  var mine  = sc.kind === 'agent';
+  var code  = SESSION.code || '';
+  /* An agent sees their own. Anyone above them sees the branch: the
+     prospecting records carry no unit, so a unit manager cannot be shown
+     their team alone — and a figure labelled "your unit" that is really the
+     whole branch is worse than one labelled honestly. */
+  var query = mine && code ? '&a=' + encodeURIComponent(code) : '';
+
+  host.innerHTML =
+    '<div class="card"><h3>Prospecting</h3>'
+    + '<div class="csub" id="pxSub">' + (mine ? 'Your links' : 'Branch-wide — every advisor')
+    + '</div><div id="pxBody" style="margin-top:12px;color:var(--muted);font-size:14px">'
+    + 'Loading…</div></div>';
+
+  var cb = 'rrbDash' + Date.now(), done = false;
+  function cleanup(){
+    var el = document.getElementById(cb);
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+  }
+  window[cb] = function(data){
+    done = true; cleanup();
+    try { paint((data && data.prospects) || []); }
+    catch (e) { fail('Could not read the prospecting board.'); }
+  };
+  var sc2 = document.createElement('script');
+  sc2.id = cb;
+  sc2.src = PX_ENDPOINT + '?action=board' + query + '&callback=' + cb;
+  sc2.onerror = function(){ cleanup(); fail('The prospecting board did not answer.'); };
+  document.head.appendChild(sc2);
+  setTimeout(function(){ if (!done) { cleanup(); fail('The prospecting board did not answer.'); } }, 15000);
+
+  function fail(msg){
+    var b = document.getElementById('pxBody');
+    if (b) b.innerHTML = escapeHtml(msg) + ' Figures are not shown rather than shown wrong.'
+      + (mine ? sendBox() : '');
+    if (mine) wireSend();
+  }
+
+  function sendBox(){
+    return '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)">'
+      + '<div style="font-weight:800;font-size:14px;margin-bottom:9px">Send your link</div>'
+      + '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:9px">'
+      + '<input id="pxFirst" placeholder="Their first name" '
+      + 'style="flex:1;min-width:150px;padding:11px 12px;border:1px solid var(--line);'
+      + 'border-radius:9px;background:var(--sunk);color:var(--ink);font:15px Inter,sans-serif">'
+      + '<input id="pxNum" placeholder="WhatsApp number" inputmode="tel" '
+      + 'style="flex:1;min-width:150px;padding:11px 12px;border:1px solid var(--line);'
+      + 'border-radius:9px;background:var(--sunk);color:var(--ink);font:15px Inter,sans-serif">'
+      + '</div>'
+      + '<div style="display:flex;gap:9px;flex-wrap:wrap">'
+      + '<button class="btn sm" id="pxSend">Send on WhatsApp</button>'
+      + '<button class="btn sm ghost" id="pxCopy">Copy the link</button></div>'
+      + '<div id="pxMsg" style="font-size:13px;color:var(--muted);margin-top:9px"></div></div>';
+  }
+
+  function myLink(first){
+    var q = 't=' + pxToken();
+    if (first) q += '&c=' + encodeURIComponent(first);
+    return PX_MEET + encodeURIComponent(code) + '/?' + q;
+  }
+
+  function wireSend(){
+    var send = document.getElementById('pxSend'), copy = document.getElementById('pxCopy');
+    if (!send) return;
+    send.onclick = function(){
+      var first = (document.getElementById('pxFirst').value || '').trim();
+      var num = (document.getElementById('pxNum').value || '').replace(/\D/g, '');
+      if (!num) { document.getElementById('pxNum').focus(); return; }
+      if (num.length === 7)  num = '1868' + num;
+      if (num.length === 10) num = '1' + num;
+      var text = pxMessage(first) + '\n\n' + myLink(first);
+      window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(text), '_blank', 'noopener');
+      document.getElementById('pxMsg').textContent =
+        'Opened in WhatsApp. It shows on your board once they open it.';
+    };
+    copy.onclick = function(){
+      var first = (document.getElementById('pxFirst').value || '').trim();
+      navigator.clipboard.writeText(myLink(first)).then(function(){
+        copy.textContent = 'Copied'; setTimeout(function(){ copy.textContent = 'Copy the link'; }, 1600);
+      }).catch(function(){ document.getElementById('pxMsg').textContent = myLink(first); });
+    };
+  }
+
+  function paint(rows){
+    var sent = rows.length;
+    var at = function(m){ return rows.filter(function(p){ return Number(p.s || 0) >= m; }).length; };
+    var booked = rows.filter(function(p){ return !!p.booked; }).length;
+    var pc = function(n){ return sent ? Math.round(n / sent * 100) + '%' : '—'; };
+
+    var tiles = [
+      ['Links sent', sent, ''],
+      ['Opened', at(1), pc(at(1))],
+      ['Watched through', at(2), pc(at(2))],
+      ['Booked', booked, pc(booked)]
+    ].map(function(t){
+      return '<div style="flex:1;min-width:110px"><div style="font-size:11px;font-weight:700;'
+        + 'text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">' + t[0] + '</div>'
+        + '<div style="font-size:26px;font-weight:800;line-height:1.15;margin-top:3px">' + t[1]
+        + '</div><div style="font-size:12px;color:var(--muted)">' + (t[2] || '&nbsp;') + '</div></div>';
+    }).join('');
+
+    /* The people worth a call: they watched it and stopped. They have said
+       what worries them and gone no further, which is the shortest distance
+       between a link and an appointment. */
+    var warm = rows.filter(function(p){ return Number(p.s || 0) >= 2 && !p.booked; });
+
+    document.getElementById('pxBody').innerHTML =
+      '<div style="display:flex;gap:18px;flex-wrap:wrap">' + tiles + '</div>'
+      + (warm.length
+          ? '<div style="margin-top:14px;padding:11px 13px;border-radius:9px;'
+            + 'background:color-mix(in srgb,#F5B324 12%,transparent);font-size:14px;line-height:1.5">'
+            + '<b>' + warm.length + '</b> watched it through and have not booked'
+            + (mine ? ' — that is your call list.' : '.') + '</div>'
+          : '')
+      + (mine ? sendBox() : '');
+    if (mine) wireSend();
+  }
+}
+
 function renderQueue(){
   var host=document.getElementById('queueCard');
   if(!host) return;
