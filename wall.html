@@ -1467,6 +1467,16 @@ setInterval(function(){
 
   function pc(n, of){ return of ? Math.round(n / of * 100) + '%' : '—'; }
 
+  /* Who sent it. logSend() posts agent and advisor with every link, so the
+     server holds both — but the board is normally asked for one advisor at a
+     time, so the field it answers with has never had to be relied on. Read
+     whichever name it uses and fall back to the code; a board that omits it
+     entirely degrades to the needs breakdown rather than showing nothing. */
+  function whoSent(p){
+    return String(p.advisor || p.adv || p.agentName || p.n_adv || '').trim()
+        || String(p.agent || p.a || p.code || '').trim();
+  }
+
   function render(rows){
     var sent = rows.length;
     var at = function(min){
@@ -1529,6 +1539,62 @@ setInterval(function(){
 
     /* What prospects picked for themselves, before an advisor said anything.
        wants may arrive as a list or as one string. */
+    /* Who is sending, if the feed says. This is the panel the branch will
+       actually look for: a name beside a number is the only thing on a wall
+       that changes behaviour. */
+    var byAdv = {};
+    rows.forEach(function(p){
+      var who = whoSent(p);
+      if (!who) return;
+      var a = byAdv[who] || (byAdv[who] = { sent:0, opened:0, booked:0 });
+      a.sent++;
+      if (Number(p.s || 0) >= 1) a.opened++;
+      if (p.booked) a.booked++;
+    });
+    var advs = Object.keys(byAdv).map(function(k){
+      return { name:k, sent:byAdv[k].sent, opened:byAdv[k].opened, booked:byAdv[k].booked };
+    }).sort(function(x, y){ return y.opened - x.opened || y.sent - x.sent; });
+
+    if (advs.length) {
+      $('pxWantsSub').textContent = 'most opened first';
+      var host = $('pxWants');
+      host.innerHTML = '';
+      var head = document.createElement('div');
+      head.style.cssText = 'display:grid;grid-template-columns:minmax(0,1fr) 3.2em 3.2em 3.2em;'
+        + 'gap:.5em;font-size:.52em;font-weight:800;letter-spacing:.08em;text-transform:uppercase;'
+        + 'color:#7E93B0;padding-bottom:.45em;border-bottom:1px solid rgba(255,255,255,.09)';
+      head.innerHTML = '<div>Advisor</div><div style="text-align:right">Sent</div>'
+        + '<div style="text-align:right">Open</div><div style="text-align:right">Book</div>';
+      host.appendChild(head);
+
+      var top = advs[0];
+      advs.slice(0, 7).forEach(function(a, i){
+        var lead = (i === 0 && a.opened > 0);
+        var row = document.createElement('div');
+        row.style.cssText = 'display:grid;grid-template-columns:minmax(0,1fr) 3.2em 3.2em 3.2em;'
+          + 'gap:.5em;font-size:.6em;padding:.42em 0;align-items:baseline'
+          + (lead ? ';background:rgba(245,179,36,.11);border-radius:.3em;padding-left:.4em;'
+                  + 'padding-right:.4em;margin:0 -.4em' : '');
+        row.innerHTML =
+          '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:'
+            + (lead ? '800;color:#F5B324' : '600;color:#D6E2F2') + '">'
+            + (lead ? '★ ' : '') + a.name.replace(/[<>&]/g, '') + '</div>'
+          + '<div class="num" style="text-align:right;color:#9FB2CC">' + a.sent + '</div>'
+          + '<div class="num" style="text-align:right;font-weight:800">' + a.opened + '</div>'
+          + '<div class="num" style="text-align:right;color:#3DDCC7;font-weight:800">' + a.booked + '</div>';
+        host.appendChild(row);
+      });
+      if (advs.length > 7) {
+        var more = document.createElement('div');
+        more.style.cssText = 'font-size:.52em;color:#7E93B0;padding-top:.5em';
+        more.textContent = '+ ' + (advs.length - 7) + ' more sending';
+        host.appendChild(more);
+      }
+      var h2 = $('pxWants').parentNode.querySelector('h2 span');
+      if (h2) h2.textContent = 'Who is sending';
+      return;
+    }
+
     var tally = {};
     rows.forEach(function(p){
       var w = p.wants;
