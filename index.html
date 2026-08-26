@@ -2224,6 +2224,14 @@ function renderProspecting(){
   var sc    = SESSION.scope || {};
   var mine  = sc.kind === 'agent';
   var code  = SESSION.code || '';
+
+  /* Anyone with an agent code can send a link, whatever they can see.
+     I had gated the send box to agent scope, which took it away from every
+     manager — and in this branch the managers carry cases too. The branch
+     manager is A00427 and has his own clients. Scope decides whose figures
+     are shown; it has nothing to do with whether somebody is allowed to send
+     their own link. */
+  var canSend = !!code;
   /* An agent sees their own. Anyone above them sees the branch: the
      prospecting records carry no unit, so a unit manager cannot be shown
      their team alone — and a figure labelled "your unit" that is really the
@@ -2232,7 +2240,8 @@ function renderProspecting(){
 
   host.innerHTML =
     '<div class="card"><h3>Prospecting</h3>'
-    + '<div class="csub" id="pxSub">' + (mine ? 'Your links' : 'Branch-wide — every advisor')
+    + '<div class="csub" id="pxSub">' + (mine ? 'Your links'
+        : 'Branch-wide figures — the send box below is your own link')
     + '</div><div id="pxBody" style="margin-top:12px;color:var(--muted);font-size:14px">'
     + 'Loading…</div></div>';
 
@@ -2257,8 +2266,8 @@ function renderProspecting(){
   function fail(msg){
     var b = document.getElementById('pxBody');
     if (b) b.innerHTML = escapeHtml(msg) + ' Figures are not shown rather than shown wrong.'
-      + (mine ? sendBox() : '');
-    if (mine) wireSend();
+      + (canSend ? sendBox() : '');
+    if (canSend) wireSend();
   }
 
   function sendBox(){
@@ -2337,8 +2346,8 @@ function renderProspecting(){
             + '<b>' + warm.length + '</b> watched it through and have not booked'
             + (mine ? ' — that is your call list.' : '.') + '</div>'
           : '')
-      + (mine ? sendBox() : '');
-    if (mine) wireSend();
+      + (canSend ? sendBox() : '');
+    if (canSend) wireSend();
   }
 }
 
