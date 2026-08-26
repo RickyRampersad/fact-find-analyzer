@@ -1472,6 +1472,28 @@ setInterval(function(){
      time, so the field it answers with has never had to be relied on. Read
      whichever name it uses and fall back to the code; a board that omits it
      entirely degrades to the needs breakdown rather than showing nothing. */
+  /* How long ago it went out.
+     logSend() posts `at` as an ISO stamp, so the server has the real moment.
+     What the board answers with is a display string — "2 days ago", "4 hours
+     ago" — so read an ISO field if one is there and fall back to parsing the
+     words. Returns null when neither can be trusted, and a null is left out
+     of the aging rather than counted as new. */
+  function daysSince(p){
+    var iso = p.at || p.sentAt || p.ts || p.sent;
+    if (iso) {
+      var d = new Date(iso);
+      if (!isNaN(d.getTime())) return Math.max(0, (Date.now() - d.getTime()) / 86400000);
+    }
+    var t = String(p.t || '').toLowerCase().trim();
+    if (!t) return null;
+    if (/just now|moments?/.test(t)) return 0;
+    if (/yesterday/.test(t)) return 1;
+    var m = t.match(/(\d+)\s*(minute|hour|day|week|month)/);
+    if (!m) return null;
+    var n = Number(m[1]);
+    return { minute: n / 1440, hour: n / 24, day: n, week: n * 7, month: n * 30 }[m[2]];
+  }
+
   function whoSent(p){
     return String(p.advisor || p.adv || p.agentName || p.n_adv || '').trim()
         || String(p.agent || p.a || p.code || '').trim();
@@ -1533,6 +1555,22 @@ setInterval(function(){
       var lost = counts[i-1] - counts[i];
       if (lost > worst) { worst = lost; worstAt = labels[i-1] + ' → ' + labels[i]; }
     }
+    /* Aging. A link nobody opened a fortnight ago is not a prospect any more,
+       and a booked one has already done its job — so only the unbooked are
+       counted, and only the ones old enough to say something. */
+    var aged = rows.filter(function(p){
+      if (p.booked) return false;
+      var d = daysSince(p);
+      return d !== null && d >= 7;
+    });
+    var stale = aged.filter(function(p){ return Number(p.s || 0) === 0; });
+    var ageEl = $('pxSentSub');
+    if (ageEl && aged.length) {
+      ageEl.textContent = aged.length + ' out over a week, not booked'
+        + (stale.length ? ' · ' + stale.length + ' never opened' : '');
+      ageEl.style.color = '#F5B324';
+    }
+
     $('pxDropSub').textContent = (sent && worst > 0)
       ? 'biggest drop ' + worstAt.toLowerCase() + ', ' + worst + ' lost'
       : (sent ? 'nobody has dropped out' : '');
