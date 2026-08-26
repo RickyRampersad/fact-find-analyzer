@@ -24,51 +24,46 @@ echo "Narration — $VOICE at $RATE"; echo
 
 say 1 "The fact find just got a great deal better. Here is what happens now, from the moment you press submit."
 
-say 2 "You finish with your client and you submit. That is the last thing you have to do."
+say 2 "You finish with your client, and you submit. That is the last thing you have to do."
 
-say 3 "Your client hears from us within seconds. Their own copy, in plain words. What you found. What you recommended. And why, in your words, not ours."
+say 3 "Everything you asked her lands on the Guardian form. The real one. Word for word, where it belongs."
 
-say 4 "Your manager gets the case on their phone. The figures, the reason, and anything worth a second look, already pulled out."
+say 4 "And look at what sits at the top of page one. The Insurance Act. Schedule eleven. Understand the need before you recommend anything."
 
-say 5 "They approve and sign it right there. No sign in. No form. Their signature goes straight onto the fact find."
+say 5 "That is not a rule the branch invented. It is printed on the form, and your client signs directly underneath it."
 
-say 6 "The moment they do, your client gets their plan."
+say 6 "Your client hears from us within seconds. Their own copy, in plain words, with your reason beside every single plan."
 
-say 7 "And here is the part that changed. That letter now says what your client actually took. Not everything you showed them. What they chose."
+say 7 "Your manager gets the case on their phone. The figures, the reason, and anything worth a second look, already pulled out."
 
-say 8 "What they turned down is on it too, in their own words, so nothing looks like it was never offered."
+say 8 "They approve and sign it right there. No sign in. No form. Their signature goes straight onto the fact find."
 
-say 9 "Then look at who receives it. Your client. Copied to their direct manager, and to you."
+say 9 "The moment they do, your client gets their plan."
 
-say 10 "Sales support is off it. The branch manager is blind copied. Your client sees the people who advised them, and nobody else."
+say 10 "And here is what changed. That letter now says what your client actually took. Not everything you showed them. What they chose."
 
-say 11 "Then they sign. I confirm the recommendations were explained to me, and the decision shown is the one I made."
+say 11 "What they turned down is on it too, in their own words. Critical illness. Revisit in March, when the car loan finishes."
 
-say 12 "Their hand, on your file. That is the strongest thing a fact find can carry."
+say 12 "Then look at who receives it. Your client. Copied to their direct manager, and to you."
 
-say 13 "One section. Three steps. Section ten, step three, is where all of this comes from."
+say 13 "Sales support is off it. The branch manager is blind copied. Your client sees the people who advised them, and nobody else."
+
+say 14 "Then they sign. I confirm the recommendations were explained to me, and the decision shown is the one I made."
+
+say 15 "That is what keeps business on the books. A client who understood what they bought, and chose it themselves, does not walk away in month nine."
+
+say 16 "Proper needs assessment. Real client engagement. Every step of it on Guardian's own paper."
+
+say 17 "One section. Three steps. Section ten, step three, is where all of this comes from."
 
 echo
 echo "Durations:"
-for f in line*.mp3; do
-  printf '  %-12s %6.2fs\n' "$f" "$(python3 -c "
-import sys,struct
-f=open('$f','rb').read()
-# frame-count MP3 duration: 24kHz mono, count frames
-i=0;n=0
-while i<len(f)-4:
-    if f[i]==0xFF and (f[i+1]&0xE0)==0xE0:
-        br=[0,32,40,48,56,64,80,96,112,128,160,192,224,256,320,0][(f[i+2]>>4)&0xF]
-        sr=[44100,48000,32000,0][(f[i+2]>>2)&0x3]
-        ver=(f[i+1]>>3)&0x3
-        if ver==2: sr//=2
-        elif ver==0: sr//=4
-        if br==0 or sr==0: i+=1; continue
-        pad=(f[i+2]>>1)&1
-        fl=(144*br*1000)//sr+pad
-        if fl<4: i+=1; continue
-        n+=1; i+=fl
-    else: i+=1
-print(round(n*1152/24000,2))
-")"
-done
+python3 - <<'PYEOF'
+from mutagen.mp3 import MP3
+import glob
+d=[round(MP3(f).info.length,2) for f in sorted(glob.glob('line*.mp3'))]
+for f,x in zip(sorted(glob.glob('line*.mp3')),d): print('  %-12s %6.2fs' % (f,x))
+print()
+print('  DUR = [%s];' % ', '.join(str(x) for x in d))
+print('  total %.1fs' % sum(d))
+PYEOF
