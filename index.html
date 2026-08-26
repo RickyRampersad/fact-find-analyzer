@@ -2065,14 +2065,50 @@ function qPadInit(card){
   c.dataset.wired='1';
   var x=c.getContext('2d'), hint=card.querySelector('.qpadhint');
   var down=false, last=null;
+  function style(){
+    x.lineWidth=2.4; x.lineCap='round'; x.lineJoin='round'; x.strokeStyle='#0F172A';
+  }
+  /* Two things went wrong here, and both ended with a manager who could not
+     sign and typed their name instead because it was the only thing that
+     worked.
+
+     fit() gave up when the canvas had no width yet — which is exactly the
+     state it is in for the first frames after the pane opens. It left the
+     backing store at the default 300x150 with no scale transform while CSS
+     stretched it across the card, so a finger drawn across the pad landed
+     somewhere outside the visible area. The stroke registered, nothing
+     appeared, and the pad looked broken. One retry on a timer covered it
+     when the pane opened quickly and missed it when it did not.
+
+     And resizing a canvas clears it. Any refit after a signature was drawn
+     — rotating a phone is enough — wiped the ink while leaving dataset.drawn
+     set, so toDataURL() returned a blank PNG and a blank signature went onto
+     the fact find looking like a real one.
+
+     So: refit whenever the element actually has a size, carry the existing
+     signature across the resize, and do nothing at all when the size has not
+     changed. */
   function fit(){
     var r=c.getBoundingClientRect(), dp=window.devicePixelRatio||1;
-    if(!r.width) return;
-    c.width=r.width*dp; c.height=r.height*dp; x.setTransform(dp,0,0,dp,0,0);
-    x.lineWidth=2.4; x.lineCap='round'; x.lineJoin='round'; x.strokeStyle='#0F172A';
+    if(!r.width||!r.height) return false;
+    var w=Math.round(r.width*dp), h=Math.round(r.height*dp);
+    if(c.width===w&&c.height===h){ style(); return true; }
+    var prev=c.dataset.drawn ? c.toDataURL('image/png') : null;
+    c.width=w; c.height=h; x.setTransform(dp,0,0,dp,0,0); style();
+    if(prev){
+      var img=new Image();
+      img.onload=function(){ x.drawImage(img,0,0,r.width,r.height); };
+      img.src=prev;
+    }
+    return true;
   }
   fit();
   c._fit=fit;
+  if(window.ResizeObserver){
+    new ResizeObserver(function(){ fit(); }).observe(c.parentNode||c);
+  } else {
+    window.addEventListener('resize',fit);
+  }
   function pt(ev){ var r=c.getBoundingClientRect(), t=ev.touches?ev.touches[0]:ev;
     return {x:t.clientX-r.left, y:t.clientY-r.top}; }
   function start(ev){ ev.preventDefault(); down=true; last=pt(ev); if(hint) hint.style.display='none'; }
@@ -2273,21 +2309,38 @@ function renderQueue(){
           return;
         }
       }
-      if(v==='approve'||v==='return'||v==='decline'){
+      // A send-back is not a signature event. Nothing is being signed off:
+      // the fact find stays unsigned and goes back to the advisor to be
+      // fixed, which the old sign-pane admitted in its own footer while
+      // still demanding a signature to say so. Asking a manager to sign in
+      // order to decline to sign put a signature step in front of the
+      // decision they make most often, and a signature against a case that
+      // was never approved is a record of nothing.
+      //
+      // What a send-back owes is the reason, which is already required
+      // below, and who wrote it — established by the session token qFire()
+      // sends. Approve and decline still sign, for opposite reasons:
+      // approve puts the signature in the manager's sign-off box on the
+      // fact find and it travels with the client's copy; decline ticks
+      // "I do not agree" on the form and closes the case.
+      if(v==='return'&&!noteEl.value.trim()){
+        msg.style.display='block'; msg.className='qmsg err';
+        msg.textContent='Tap a reason above, or type one — that is what the advisor receives.';
+        return;
+      }
+      if(v==='approve'||v==='decline'){
         var pane=card.querySelector('.qsign');
         if(pane&&!pane.classList.contains('open')){
-          if((v==='return'||v==='decline')&&!noteEl.value.trim()){
+          if(v==='decline'&&!noteEl.value.trim()){
             msg.style.display='block'; msg.className='qmsg err';
-            msg.textContent=v==='decline'
-              ? 'Say why it is being declined — nobody is being asked to fix it, so this is all the advisor gets.'
-              : 'Tap a reason above, or type one — that is what the advisor receives.';
+            msg.textContent='Say why it is being declined — nobody is being asked to fix it, so this is all the advisor gets.';
             return;
           }
           var approve=(v==='approve');
           pane.dataset.v=v;
           pane.classList.add('open');
           card.querySelector('.qstitle').textContent=approve
-            ? 'Attest and sign' : v==='decline' ? 'Sign the decline' : 'Sign the send-back';
+            ? 'Attest and sign' : 'Sign the decline';
           pane.querySelector('.qsatt').style.display=approve?'':'none';
           if(approve&&det.classList.contains('open')){
             var deep=[].slice.call(card.querySelectorAll('.qchk input'));
@@ -2295,14 +2348,12 @@ function renderQueue(){
               if(deep[i]&&deep[i].checked) x.checked=true; });
           }
           var go=pane.querySelector('.qsgo');
-          go.textContent=approve?'Sign & approve':v==='decline'?'Sign & decline':'Sign & send back';
+          go.textContent=approve?'Sign & approve':'Sign & decline';
           go.classList.toggle('back',!approve);
           go.classList.toggle('kill',v==='decline');
           pane.querySelector('.qsfoot').textContent=approve
             ? 'Your signature goes onto the fact find, in the manager’s sign-off box, “I agree” is ticked in your name, and it travels with the client’s copy.'
-            : v==='decline'
-            ? 'This closes the case. “I do not agree” is ticked, your signature is kept against the decision, and the advisor is told it is not going forward.'
-            : 'Your signature is kept against the decision. The fact find stays unsigned — it is going back.';
+            : 'This closes the case. “I do not agree” is ticked, your signature is kept against the decision, and the advisor is told it is not going forward.';
           qPadInit(card);
           setTimeout(function(){
             var c=card.querySelector('.qpad'); if(c&&c._fit) c._fit();
@@ -2772,6 +2823,153 @@ function buildDailyReport(){
   };
 }
 
+/* ---- the 5pm message ---------------------------------------------------
+   The daily report above, written as a WhatsApp message.
+
+   Counts only. No client name, agent email, policy number or premium
+   against a named case leaves the dashboard through here — a branch
+   WhatsApp group gets forwarded, screenshotted and backed up to personal
+   phones, and it is not somewhere client detail can be recalled from.
+   Anyone who needs the detail is one sign-in away from the report itself,
+   scoped to what their role allows.
+
+   Built from the object buildDailyReport() already returned, so the
+   message and the report on screen can never disagree, and it costs no
+   extra server call. */
+function dailyMsgOn(k){
+  const el = document.querySelector('[data-msg="' + k + '"]');
+  return !el || el.checked;
+}
+
+/* Busiest advisor over the same 30 days the pipeline figure uses.
+   Volume first, premium breaks a tie. */
+function topAdvisor30(){
+  const by = {};
+  ALL.forEach(function(r){
+    if (daysBetween(NOW, new Date(r.submittedAt)) > 30) return;
+    const k = r.agentCode || r.advisorName;
+    if (!k) return;
+    const a = by[k] || (by[k] = { name: r.advisorName || k, ff: 0, prem: 0 });
+    a.ff++; a.prem += (r.premium || 0);
+  });
+  let best = null;
+  Object.keys(by).forEach(function(k){
+    const a = by[k];
+    if (!best || a.ff > best.ff || (a.ff === best.ff && a.prem > best.prem)) best = a;
+  });
+  return best;
+}
+
+function dailyMessage(d){
+  const L = [];
+  const day = NOW.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+  const plural = (n, one, many) => n === 1 ? one : many;
+
+  L.push('*Ricky Rampersad Branch — ' + day + '*');
+  L.push('_' + d.scopeLabel + '_');
+  L.push('');
+  L.push('*' + d.submittedToday + '* ' + plural(d.submittedToday, 'fact find', 'fact finds') +
+         ' today · *' + d.approvedToday + '* signed off');
+  if (d.submittedYesterday) L.push('Yesterday: ' + d.submittedYesterday + '.');
+
+  if (dailyMsgOn('pipeline')){
+    L.push('');
+    L.push('*' + money(d.pipelinePremium) + '* premium in the pipeline over 30 days' +
+           (d.replacementFlags
+             ? ' · *' + d.replacementFlags + '* replacement ' +
+               plural(d.replacementFlags, 'flag', 'flags')
+             : ''));
+  }
+
+  if (dailyMsgOn('top')){
+    const t = topAdvisor30();
+    if (t){
+      L.push('');
+      L.push('🏆 *' + t.name + '* — ' + t.ff + ' ' + plural(t.ff, 'fact find', 'fact finds') +
+             ' in 30 days, ' + money(t.prem) + ' premium.');
+    }
+  }
+
+  if (dailyMsgOn('queue')){
+    L.push('');
+    if (d.awaiting.length){
+      L.push('*' + d.awaiting.length + ' ' + plural(d.awaiting.length, 'file', 'files') +
+             ' waiting on my signature' +
+             (d.stuck.length ? ' — ' + d.stuck.length + ' over ' + STUCK_DAYS + ' days' : '') + '.*');
+      L.push('_Nothing reaches a client until it is checked. I will clear these tonight._');
+    } else {
+      L.push('*Nothing waiting on my signature.* Every file went back the same day.');
+    }
+  }
+
+  if (dailyMsgOn('quiet') && d.quiet.length){
+    L.push('');
+    L.push('*Nothing in ' + QUIET_DAYS + ' days:* ' +
+           d.quiet.map(function(q){ return q.name; }).join(', ') + '.');
+  }
+
+  L.push('');
+  L.push('Keep asking the questions. The needs are already there.');
+  L.push('— ' + (SESSION && SESSION.name ? SESSION.name : 'Ricky'));
+  return L.join('\n');
+}
+
+/* Appended after renderDaily() has rewritten #dailyBody, so it cannot
+   duplicate itself. The textarea is deliberately editable — the message is
+   a starting point, not a broadcast you are stuck with. */
+function renderDailyMessage(){
+  const body = document.getElementById('dailyBody');
+  if (!body || !SESSION) return;
+
+  const opts = [['pipeline','Pipeline'], ['top','Top advisor'],
+                ['queue','Signing queue'], ['quiet','Quiet advisors']];
+
+  const card = document.createElement('div');
+  card.className = 'card col-12 no-print';
+  card.id = 'dailyMsgCard';
+  card.innerHTML =
+    '<h3>The 5pm message</h3>' +
+    '<div class="csub">The same figures, written for the branch WhatsApp group. ' +
+    'Counts only — no client names go out this way. Edit it before you send.</div>' +
+    '<div id="dailyMsgOpts" style="display:flex;flex-wrap:wrap;gap:14px;margin:12px 0 10px">' +
+      opts.map(function(o){
+        return '<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">' +
+               '<input type="checkbox" data-msg="' + o[0] + '" checked> ' + escapeHtml(o[1]) + '</label>';
+      }).join('') +
+    '</div>' +
+    '<textarea id="dailyMsgText" rows="15" spellcheck="false" ' +
+      'style="width:100%;box-sizing:border-box;font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;' +
+      'padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);' +
+      'color:var(--ink);resize:vertical"></textarea>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px">' +
+      '<button class="btn sm" id="dailyMsgWa">Send on WhatsApp</button>' +
+      '<button class="btn sm ghost" id="dailyMsgCopy">Copy the message</button>' +
+    '</div>';
+  body.appendChild(card);
+
+  const ta = card.querySelector('#dailyMsgText');
+  const redraw = function(){ ta.value = dailyMessage(buildDailyReport()); };
+  redraw();
+
+  card.querySelector('#dailyMsgOpts').addEventListener('change', redraw);
+
+  card.querySelector('#dailyMsgWa').addEventListener('click', function(){
+    window.open('https://wa.me/?text=' + encodeURIComponent(ta.value), '_blank', 'noopener');
+  });
+
+  card.querySelector('#dailyMsgCopy').addEventListener('click', function(){
+    const b = this;
+    navigator.clipboard.writeText(ta.value).then(function(){
+      b.textContent = 'Copied';
+      setTimeout(function(){ b.textContent = 'Copy the message'; }, 1700);
+    }).catch(function(){
+      ta.select();
+      b.textContent = 'Press ⌘C / Ctrl+C';
+      setTimeout(function(){ b.textContent = 'Copy the message'; }, 2400);
+    });
+  });
+}
+
 function renderDaily(){
   const d = buildDailyReport();
   const dt = NOW.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
@@ -2854,7 +3052,7 @@ function toggleDaily(){
   const main  = document.querySelector('#appView > .wrap');
   const btn   = document.getElementById('dailyBtn');
   const showing = daily.classList.contains('hide');
-  if (showing){ renderDaily(); daily.classList.remove('hide'); main.classList.add('hide'); btn.textContent = '← Back to dashboard'; }
+  if (showing){ renderDaily(); renderDailyMessage(); daily.classList.remove('hide'); main.classList.add('hide'); btn.textContent = '← Back to dashboard'; }
   else        { daily.classList.add('hide');    main.classList.remove('hide'); btn.textContent = '📋 Daily report'; }
   window.scrollTo(0,0);
 }

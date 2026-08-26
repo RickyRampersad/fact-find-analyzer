@@ -3780,6 +3780,45 @@ const RAI_MASCOT = `<svg class="rai-avatar" viewBox="0 0 64 64" xmlns="http://ww
         </label>
       </div>
 
+      <!-- CLIENT ATTESTATION AND SIGNATURE
+           The form captured the advisor's signature, the direct manager's and
+           the branch manager's — three people attesting to a conversation only
+           one of them had with the client. The client's own signature had
+           nowhere to go, so nothing on the record was the client saying "yes,
+           that is what my advisor did and what I agreed to".
+
+           That is the signature that matters most if a sale is ever
+           questioned: without it the file is the branch's account of the
+           meeting, unchallenged by the only other person in the room.
+
+           Signable here at the appointment, or by the client from the link in
+           their summary email — factfind360.com/confirm writes into this same
+           data-sig="client" pad, so the two routes cannot disagree. -->
+      <div class="field" id="clientSignBlock"
+           style="border:1.5px solid #0D9488; background:#F0FDFA;
+                  border-radius:10px; padding:14px; margin-top:14px">
+        <label style="font-weight:700; color:#0F766E; font-size:14px">
+          Client&rsquo;s Signature <span style="color:#DC2626">*</span></label>
+        <div class="hint" style="margin:4px 0 10px">
+          I confirm the information recorded here is mine, that the
+          recommendations above were explained to me, and that the decision
+          shown is the one I made.
+        </div>
+        <div class="sig-row">
+          <div class="sig-block">
+            <label>Client Signature</label>
+            <canvas class="sig-pad" data-sig="client"></canvas>
+            <div class="sig-actions">
+              <span>Sign on the pad above</span>
+              <button class="sig-clear" type="button" onclick="clearSig('client')">Clear</button>
+            </div>
+            <label style="margin-top:10px">Date</label>
+            <input type="date" data-field="clientSigDate">
+          </div>
+          <div></div>
+        </div>
+      </div>
+
       <!-- ═══ RAI WHAT-IF CLOSING SIMULATOR ═══
            Live scenarios that bring the sale home. Sliders + preset buttons.
            Reveals once core data is present. Screen-only (not in the PDF). -->
@@ -7170,12 +7209,53 @@ function rulesForPlan(planStr) {
 // ctx: { age, amount, term, occClass, monthlyPremium }
 function checkPlanRules(planStr, ctx) {
   const r = rulesForPlan(planStr);
-  if (!r) return [];
   ctx = ctx || {};
   const out = [];
   const age = (ctx.age == null) ? null : Number(ctx.age);
   const amt = Number(ctx.amount) || 0;
-  const add = function (level, msg) { out.push({ level: level, msg: msg, src: r.src, key: r.key }); };
+  const label = r ? r.key : String(planStr || '').trim();
+  const add = function (level, msg) {
+    out.push({ level: level, msg: msg, src: r ? r.src : '', key: label });
+  };
+
+  if (!label) return out;
+
+  // ---- the row was never finished -------------------------------------
+  // Every amount and premium rule below is guarded by "> 0", so a row with a
+  // plan chosen and the figures left blank satisfied all of them in silence.
+  // That is what reaches the client as "not set" against COVER and PREMIUM on
+  // a plan the letter says has been approved for them, and there is no reading
+  // of an approval letter where that is acceptable.
+  //
+  // This sits above the "is the product known" exit on purpose. The row that
+  // sent "not set" to a client was Lifestyle Special Edition, which is not in
+  // the library — so the old early return meant the one row carrying the
+  // largest figure in the case was the one row nothing checked.
+  //
+  // Premium is asked of every product: a plan being recommended has a price,
+  // whatever kind of plan it is. Cover is not — health plans reimburse against
+  // a schedule of benefits rather than a sum assured, so demanding a figure
+  // there would be asking the advisor to invent one. Where the product is
+  // unknown we cannot tell which it is, so a missing sum assured is raised as
+  // a warning rather than a blocker.
+  if (!(Number(ctx.monthlyPremium) > 0)) {
+    add('error', label + ' has no premium. As it stands the client’s approval letter prints "not set" where the price belongs.');
+  }
+  if (!amt) {
+    if (!r) {
+      add('warn', label + ' has no cover amount. If it is not a health plan the client’s approval letter will print "not set" where the sum assured belongs.');
+    } else if (r.type !== 'health') {
+      add('error', label + ' has no cover amount. As it stands the client’s approval letter prints "not set" where the sum assured belongs.');
+    }
+  }
+
+  // ---- the product is not in the library -------------------------------
+  // Nothing below this point can run: no issue ages, no minimums, no maximums,
+  // no premium floors. Say so rather than returning a clean bill of health.
+  if (!r) {
+    add('warn', label + ' is not in the branch Products library, so its issue ages, minimum and maximum sums and premium rules are not being checked here. Confirm them against the product sheet before this goes to the client.');
+    return out;
+  }
 
   if (r.unverified) {
     add('warn', r.key + ' limits are not held in the branch Products library. Confirm issue ages, minimums and maximums with Head Office before you quote them to the client.');
@@ -10296,8 +10376,34 @@ function computePersistencyScore() {
   (function(){
     const w = 10; let pts, note, band;
     const qualMax = (typeof FI !== 'undefined' && FI.fi_uwMaxLife) ? FI.fi_uwMaxLife : 0;
+    // Only life sums assured belong in this comparison. fi_uwMaxLife is the
+    // income-qualifying ceiling for LIFE cover, and the loop used to add every
+    // row into it: a disability income benefit, a health plan and a retirement
+    // fund target were all counted as though they were a death benefit.
+    //
+    // A client taking a TT$3.8m retirement plan was therefore read as carrying
+    // TT$3.8m of life cover, pushed over the ceiling, and scored down for an
+    // over-insurance referral that no underwriter would ever raise. The same
+    // addition upstream is what reports a branch "cover recommended" figure in
+    // the hundreds of millions and a recommend-ratio above 100% for every
+    // advisor at once.
+    //
+    // Excluded by type: health reimburses against a schedule of benefits,
+    // pa-di pays a monthly income, annuity-deferred is a savings target. None
+    // of the three is a sum payable on death. Products the library does not
+    // know are still counted — better to overstate here than to silently drop
+    // real cover — and checkPlanRules() now says when a plan is unknown.
+    const NOT_LIFE_COVER = ['health', 'pa-di', 'annuity-deferred'];
     let chosenCover = 0;
-    for (let i = 1; i <= 6; i++) chosenCover += num(state['dec' + i + 'Amt']);
+    for (let i = 1; i <= 6; i++) {
+      const amt = num(state['dec' + i + 'Amt']);
+      if (!amt) continue;
+      const rule = (typeof rulesForPlan === 'function')
+        ? rulesForPlan(state['dec' + i + 'Plan'] || state['rec' + i + 'Rec'])
+        : null;
+      if (rule && NOT_LIFE_COVER.indexOf(rule.type) >= 0) continue;
+      chosenCover += amt;
+    }
     if (annualIncome <= 0) { pts = w*0.4; band='amber'; note='Income unknown — coverage fit not testable.'; }
     else if (chosenCover <= 0) { pts = w*0.5; band='amber'; note='No cover amount selected yet.'; }
     else if (qualMax > 0 && chosenCover > qualMax * 1.05) { pts = w*0.4; band='amber'; note='Selected cover exceeds the income-qualifying ceiling — expect underwriting referral.'; }

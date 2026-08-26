@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="theme-color" content="#0E1F4D">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Your comments · RR Branch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,600&family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --navy:#0B1836; --teal:#0D7A70; --teal-lt:#2DD4BF; --gold:#9A6B04;
+  --good:#0E7A54; --crit:#B23A2B;
+  --paper:#FFFFFF; --ground:#F4F6FA; --sunk:#EDF1F7;
+  --ink:#0F172A; --ink-2:#3F4A5C; --muted:#697489; --line:#DDE3EC;
+  --shadow:0 1px 2px rgba(11,24,54,.05), 0 10px 28px -16px rgba(11,24,54,.22);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --navy:#0A1224; --teal:#2DD4BF; --teal-lt:#5EEAD4; --gold:#F5B324;
+    --good:#34D399; --crit:#F87171;
+    --paper:#111A2E; --ground:#080D1A; --sunk:#0D1526;
+    --ink:#E9EEF6; --ink-2:#C2CBDA; --muted:#8A94A8; --line:#212B41;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -18px rgba(0,0,0,.85);
+  }
+}
+:root[data-theme="dark"]{
+  --navy:#0A1224; --teal:#2DD4BF; --teal-lt:#5EEAD4; --gold:#F5B324;
+  --good:#34D399; --crit:#F87171;
+  --paper:#111A2E; --ground:#080D1A; --sunk:#0D1526;
+  --ink:#E9EEF6; --ink-2:#C2CBDA; --muted:#8A94A8; --line:#212B41;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -18px rgba(0,0,0,.85);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font:16.5px/1.62 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+header{background:radial-gradient(620px 320px at 88% -20%,rgba(45,212,191,.18),transparent 62%),var(--navy);
+  color:#fff;padding:24px 18px 26px}
+.hin{max-width:620px;margin:0 auto}
+.eyebrow{font-size:10.5px;font-weight:800;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--teal-lt);margin:0 0 8px}
+h1{font-family:Newsreader,Georgia,serif;font-size:clamp(25px,6vw,33px);font-weight:600;
+  line-height:1.16;letter-spacing:-.019em;margin:0;text-wrap:balance}
+.wrap{max-width:620px;margin:0 auto;padding:22px 18px 64px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;
+  padding:18px 19px;box-shadow:var(--shadow);margin-bottom:16px}
+.case{display:grid;gap:9px;margin-bottom:4px}
+.row{display:flex;gap:12px;font-size:14.6px;line-height:1.5}
+.row .k{color:var(--muted);min-width:74px;flex:none;font-weight:600}
+.row .v{color:var(--ink);font-weight:600}
+h2{font-size:15.5px;font-weight:800;margin:0 0 7px;letter-spacing:-.005em}
+.why{border-left:3px solid var(--gold);background:var(--sunk);border-radius:0 10px 10px 0;
+  padding:13px 15px;font-size:14.8px;line-height:1.58;color:var(--ink-2);white-space:pre-wrap}
+label{display:block;font-size:15.5px;font-weight:800;margin:0 0 4px}
+.hint{font-size:13.6px;color:var(--muted);margin:0 0 11px;line-height:1.5}
+textarea{width:100%;min-height:190px;padding:13px 14px;border:1.5px solid var(--line);
+  border-radius:11px;background:var(--sunk);color:var(--ink);resize:vertical;
+  font:15.5px/1.6 Inter,-apple-system,sans-serif}
+textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,122,112,.16)}
+.count{font-size:12.6px;color:var(--muted);text-align:right;margin:6px 2px 0}
+button{width:100%;border:0;border-radius:12px;padding:16px;cursor:pointer;
+  font:800 16.5px Inter,sans-serif;background:var(--teal);color:#fff;
+  box-shadow:0 9px 24px -12px rgba(13,122,112,.9)}
+button:hover:not(:disabled){filter:brightness(1.07)}
+button:disabled{opacity:.55;cursor:default;box-shadow:none}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.msg{border-radius:11px;padding:13px 15px;font-size:14.6px;line-height:1.55;margin-bottom:14px}
+.msg.err{background:rgba(178,58,43,.1);border:1.5px solid rgba(178,58,43,.4);color:var(--crit);font-weight:600}
+.msg.ok{background:rgba(14,122,84,.1);border:1.5px solid rgba(14,122,84,.4);color:var(--good);font-weight:600}
+.foot{font-size:13px;color:var(--muted);text-align:center;line-height:1.6;padding-top:6px}
+.hide{display:none!important}
+.spin{text-align:center;color:var(--muted);font-size:14.6px;padding:30px 0}
+.done h2{font-family:Newsreader,Georgia,serif;font-size:24px;font-weight:600;margin:0 0 8px}
+.done p{margin:0 0 10px;font-size:15.2px;color:var(--ink-2)}
+</style>
+</head>
+<body>
+
+<header><div class="hin">
+  <p class="eyebrow">Ricky Rampersad Branch · Guardian Life</p>
+  <h1>Your comments on this case</h1>
+</div></header>
+
+<div class="wrap">
+
+  <div id="loading" class="spin">Opening the case…</div>
+
+  <div id="failed" class="hide">
+    <div class="msg err" id="failMsg"></div>
+    <div class="foot">If you were expecting to comment on a case, ask for a fresh link.
+      Each one opens a single case and stops working once used.</div>
+  </div>
+
+  <div id="form" class="hide">
+    <div class="card">
+      <div class="case" id="caseFacts"></div>
+    </div>
+
+    <div class="card" id="whyCard">
+      <h2>Why it came back</h2>
+      <div class="why" id="whyText"></div>
+    </div>
+
+    <div class="card">
+      <label for="comment">Your comments</label>
+      <p class="hint">This goes onto the fact find against this case. Write it for the
+        advisor — they act on it.</p>
+      <textarea id="comment" maxlength="4000" spellcheck="true"
+        placeholder="What you checked, what you want changed, and anything the advisor should say to the client."></textarea>
+      <div class="count"><span id="count">0</span> / 4000</div>
+    </div>
+
+    <div class="msg err hide" id="saveErr"></div>
+    <button id="save" type="button">Save my comments</button>
+    <div class="foot">You are not signing anything and this does not approve the case.
+      It records your comments and nothing else.</div>
+  </div>
+
+  <div id="done" class="hide">
+    <div class="card done">
+      <h2>Saved.</h2>
+      <p id="doneWho"></p>
+      <p>It is on the fact find now and the advisor can see it. This link has stopped
+        working — ask for a fresh one if you need to add anything.</p>
+    </div>
+    <div class="foot">You can close this page.</div>
+  </div>
+
+</div>
+
+<script>
+/* ── The direct manager's comment box ────────────────────────────────────
+   One case, one field, no sign-in.
+
+   A manager sending a case back gets asked for comments by email. Rather
+   than parse the reply — where a phone signature, quoted history and HTML
+   all end up in the field, and where anyone able to spoof the From address
+   can write onto a compliance record — the email carries a link with a
+   single-case token. This page spends it.
+
+   The token is the whole authorisation. It names one case, it is minted by
+   the server when the send-back email goes out, and the server retires it
+   once spent. Nothing here decides who anyone is; the page cannot read a
+   case the token does not name, and it never sees the fact find.
+
+   POST with Content-Type text/plain is deliberate: it keeps the request in
+   the "simple request" class so the browser sends no preflight, which
+   Apps Script would not answer. Same pattern queue_decide already uses. */
+
+var ENDPOINT = 'https://script.google.com/macros/s/'
+  + 'AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
+
+var $ = function (id) { return document.getElementById(id); };
+var TOKEN = new URLSearchParams(location.search).get('t') || '';
+
+function show(id) { ['loading', 'failed', 'form', 'done'].forEach(function (k) {
+  $(k).classList.toggle('hide', k !== id); }); }
+
+function fail(text) { $('failMsg').textContent = text; show('failed'); }
+
+function esc(s) { return String(s == null ? '' : s); }
+
+function post(body) {
+  return fetch(ENDPOINT, {
+    method: 'POST',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  }).then(function (r) { return r.json(); });
+}
+
+function factRow(k, v) {
+  if (!v) return '';
+  var row = document.createElement('div');
+  row.className = 'row';
+  var kd = document.createElement('div'); kd.className = 'k'; kd.textContent = k;
+  var vd = document.createElement('div'); vd.className = 'v'; vd.textContent = v;
+  row.appendChild(kd); row.appendChild(vd);
+  return row;
+}
+
+/* ---- open ---- */
+if (!TOKEN) {
+  fail('This link is missing its case. Open the link from the email exactly as it was sent — copying part of it leaves the case behind.');
+} else {
+  post({ stage: 'dm_open', t: TOKEN })
+    .then(function (j) {
+      if (!j || !j.ok) {
+        throw new Error((j && j.error) || 'This link is no longer valid.');
+      }
+      var facts = $('caseFacts');
+      [ factRow('Client', esc(j.clientName)),
+        factRow('Advisor', esc(j.advisorName)),
+        factRow('Submitted', esc(j.submitted)),
+        factRow('Sent back', esc(j.returnedAt)) ]
+        .forEach(function (r) { if (r) facts.appendChild(r); });
+
+      if (j.returnReason) { $('whyText').textContent = j.returnReason; }
+      else { $('whyCard').classList.add('hide'); }
+
+      if (j.existing) { $('comment').value = j.existing; $('count').textContent = j.existing.length; }
+
+      $('doneWho').textContent = j.clientName
+        ? 'Your comments are recorded against ' + j.clientName + '’s case.'
+        : 'Your comments are recorded against this case.';
+
+      show('form');
+      $('comment').focus();
+    })
+    .catch(function (e) {
+      fail(e.message === 'Failed to fetch'
+        ? 'Could not reach the branch server. Check your connection and open the link again.'
+        : e.message);
+    });
+}
+
+/* ---- type ---- */
+$('comment').addEventListener('input', function () {
+  $('count').textContent = this.value.length;
+  $('saveErr').classList.add('hide');
+});
+
+/* ---- save ---- */
+$('save').addEventListener('click', function () {
+  var text = $('comment').value.trim();
+  var err = $('saveErr');
+  if (!text) {
+    err.textContent = 'Write your comments first — an empty box tells the advisor nothing.';
+    err.classList.remove('hide');
+    $('comment').focus();
+    return;
+  }
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  err.classList.add('hide');
+
+  post({ stage: 'dm_comment', t: TOKEN, comment: text })
+    .then(function (j) {
+      if (!j || !j.ok) throw new Error((j && j.error) || 'Could not save your comments.');
+      show('done');
+      window.scrollTo(0, 0);
+    })
+    .catch(function (e) {
+      btn.disabled = false;
+      btn.textContent = 'Save my comments';
+      err.textContent = (e.message === 'Failed to fetch'
+        ? 'Could not reach the branch server. Your comments are still in the box — try again.'
+        : e.message + ' Your comments are still in the box.');
+      err.classList.remove('hide');
+    });
+});
+</script>
+</body>
+</html>
