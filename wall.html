@@ -1530,6 +1530,26 @@ setInterval(function(){
        gap between two bars as the people lost between those two steps. */
     var counts = STAGES.map(function(st){ return at(st.min); }).concat([booked]);
     var labels = STAGES.map(function(st){ return st.label; }).concat(['Booked']);
+
+    /* Where the links are meant to end up. The wall already holds the fact
+       find figures — lastGood is the same object every other panel draws from
+       — so the two halves of the funnel can sit on one screen.
+
+       They are NOT the same population and the panel says so. Prospecting
+       counts the links on the board; the fact find counts everything the
+       branch submitted this month, including walk-ins, referrals and renewals
+       that never came from a link. Drawing them as one continuous funnel would
+       claim a conversion nobody has measured.
+
+       Tying them properly means carrying the prospect's token onto the fact
+       find when it is submitted. Until that exists these are two true numbers
+       side by side, not one number pretending to be a rate. */
+    var M = (lastGood && lastGood.month) || null;
+    var tail = M ? [
+      { label: 'Fact find done', n: Number(M.submitted || 0) },
+      { label: 'Signed off',     n: Number(M.approved  || 0) }
+    ] : [];
+
     var f = $('pxFunnel');
     f.innerHTML = '';
     labels.forEach(function(lab, i){
@@ -1546,6 +1566,36 @@ setInterval(function(){
           '<span style="color:#7E93B0;font-weight:600"> · ' + pc(n, sent) + '</span></div>';
       f.appendChild(row);
     });
+
+    if (tail.length) {
+      var sep = document.createElement('div');
+      sep.style.cssText = 'display:grid;grid-template-columns:13em minmax(0,1fr);gap:.8em;'
+        + 'align-items:center;font-size:.52em;font-weight:800;letter-spacing:.07em;'
+        + 'text-transform:uppercase;color:#7E93B0;margin:.35em 0 .1em';
+      sep.innerHTML = '<div>The branch' + (M.label ? ', ' + String(M.label).replace(/[<>&]/g,'') : ' this month')
+        + '</div><div style="height:1px;background:rgba(255,255,255,.12)"></div>';
+      f.appendChild(sep);
+
+      var top = Math.max(1, tail[0].n);
+      tail.forEach(function(t, i){
+        var row = document.createElement('div');
+        row.style.cssText = 'display:grid;grid-template-columns:13em minmax(0,1fr) 5.5em;'
+                          + 'align-items:center;gap:.8em;font-size:.62em';
+        row.innerHTML =
+          '<div style="font-weight:700;color:#9FB2CC">' + t.label + '</div>' +
+          '<div style="height:1.5em;background:rgba(255,255,255,.06);border-radius:.35em;overflow:hidden">' +
+            '<div style="height:100%;width:' + Math.max(2, t.n / top * 100) + '%;border-radius:.35em;' +
+            'background:' + (i ? '#3DDCC7' : '#1A6B62') + '"></div></div>' +
+          '<div class="num" style="font-weight:800;text-align:right">' + t.n + '</div>';
+        f.appendChild(row);
+      });
+
+      var note = document.createElement('div');
+      note.style.cssText = 'font-size:.5em;color:#66788F;margin-top:.5em;line-height:1.45';
+      note.textContent = 'Branch totals for the month — not every fact find came from a link. '
+        + 'Tying a link to the case it became needs the token carried onto the fact find.';
+      f.appendChild(note);
+    }
 
     /* The biggest single drop, named. That is the coaching line — telling a
        branch "23 sent" says nothing they can act on; telling them most of the
