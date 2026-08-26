@@ -707,9 +707,39 @@
       <div class="card"><h2><span>Working the weekend</span><em>who turned up</em></h2><div class="cheer" id="wWho"></div></div>
     </div>
   </section>
+  <!-- 11 · PROSPECTING
+       The only panel here not fed by the fact find. Prospecting has its own
+       Apps Script and has had all along; nothing on a screen ever read it, so
+       the branch could watch every fact find and none of the work that
+       produces one. Asked for the whole branch - no agent code - the same call
+       the daily dash makes. -->
+  <section class="panel" id="p10">
+    <div class="ptitle"><h1 id="t_p10"></h1><span class="tag">Prospecting</span></div>
+    <div style="flex:1; min-height:0; display:grid; grid-template-rows:auto minmax(0,1fr); gap:.7em">
+
+      <div class="stats">
+        <div class="stat"><div class="k">Links sent</div><div class="val num" id="pxSent">&mdash;</div><div class="s" id="pxSentSub">&nbsp;</div></div>
+        <div class="stat"><div class="k">Opened</div><div class="val num" id="pxOpen">&mdash;</div><div class="s" id="pxOpenPc">&nbsp;</div></div>
+        <div class="stat g"><div class="k">Watched it through</div><div class="val num" id="pxWatch">&mdash;</div><div class="s" id="pxWatchPc">&nbsp;</div></div>
+        <div class="stat v"><div class="k">Booked</div><div class="val num" id="pxBook">&mdash;</div><div class="s" id="pxBookPc">&nbsp;</div></div>
+      </div>
+
+      <div class="cols" style="grid-template-columns:minmax(0,1fr) 30em; align-items:stretch; min-height:0">
+        <div class="card" style="min-width:0; display:flex; flex-direction:column">
+          <h2><span>Where they stop</span><em id="pxDropSub"></em></h2>
+          <div id="pxFunnel" style="flex:1; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:.6em"></div>
+        </div>
+        <div class="card" style="min-width:0; display:flex; flex-direction:column">
+          <h2><span>What they say they want</span><em id="pxWantsSub"></em></h2>
+          <div id="pxWants" style="flex:1; min-height:0; overflow:hidden"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
 </main>
 
-<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span></div>
+<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span></div>
 <div id="burst"></div>
 
 <script>
@@ -717,7 +747,7 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
 var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
 
-var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 10;
+var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 11;
 var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 /* Calendar volume: one hue, dark to light. Validated as an ordinal ramp against
    this surface — monotone lightness, every step clear of the card behind it. */
@@ -1345,6 +1375,163 @@ setInterval(function(){
   var u=location.href.split('#')[0].replace(/[?&]v=\d+/,'');
   location.replace(u+(u.indexOf('?')>-1?'&':'?')+'v='+Date.now());
 },3600000);
+
+/* ═══ PROSPECTING ═══════════════════════════════════════════════════════
+   Its own Apps Script, deployed and answering since before this wall
+   existed. JSONP because Apps Script sends no CORS headers and a script
+   tag has never needed them - the same reason the daily dash uses it.
+
+   No agent code on the call: the wall counts the whole branch.
+
+   If it fails the panel says so rather than showing zeros. A wall reading
+   0 sent, 0 opened is a branch that did no prospecting; a wall reading
+   "not reachable" is a wall with a problem. Those must not look alike on
+   a screen nobody is standing in front of. */
+(function prospecting(){
+  var PX_ENDPOINT = 'https://script.google.com/macros/s/'
+    + 'AKfycbzfRo6pS2l8s9GN-E9_aSqshqMs_C2WyWEtaRePPwD0y8o2ttz7zcRE9CEw4OScORX1/exec';
+
+  var $ = function(id){ return document.getElementById(id); };
+  var STAGES = [
+    { k:'sent',    label:'Link sent',        min:0 },
+    { k:'opened',  label:'Opened it',        min:1 },
+    { k:'watched', label:'Watched it through',min:2 },
+    { k:'picked',  label:'Said what they want',min:3 }
+  ];
+
+  function pc(n, of){ return of ? Math.round(n / of * 100) + '%' : '—'; }
+
+  function render(rows){
+    var sent = rows.length;
+    var at = function(min){
+      return rows.filter(function(p){ return Number(p.s || 0) >= min; }).length;
+    };
+    var booked = rows.filter(function(p){ return !!p.booked; }).length;
+
+    /* This panel's headline comes from its own data, not from the fact-find
+       feed that titles every other panel — nothing in action=wall knows a
+       prospecting link was ever sent. */
+    var t = $('t_p10');
+    if (t) {
+      t.innerHTML = sent
+        ? '<b>' + sent + '</b> ' + (sent === 1 ? 'link' : 'links') + ' out, <b>' +
+          at(1) + '</b> opened'
+        : 'No links out yet';
+    }
+
+    $('pxSent').textContent  = sent;
+    $('pxSentSub').textContent = sent === 1 ? 'one prospect' : 'prospects on the board';
+    $('pxOpen').textContent  = at(1);
+    $('pxOpenPc').textContent  = pc(at(1), sent) + ' of sent';
+    $('pxWatch').textContent = at(2);
+    $('pxWatchPc').textContent = pc(at(2), sent) + ' of sent';
+    $('pxBook').textContent  = booked;
+    $('pxBookPc').textContent  = pc(booked, sent) + ' of sent';
+
+    /* The funnel. Each bar is a share of what was sent, so the eye reads the
+       gap between two bars as the people lost between those two steps. */
+    var counts = STAGES.map(function(st){ return at(st.min); }).concat([booked]);
+    var labels = STAGES.map(function(st){ return st.label; }).concat(['Booked']);
+    var f = $('pxFunnel');
+    f.innerHTML = '';
+    labels.forEach(function(lab, i){
+      var n = counts[i], w = sent ? Math.max(2, n / sent * 100) : 2;
+      var row = document.createElement('div');
+      row.style.cssText = 'display:grid;grid-template-columns:13em minmax(0,1fr) 5.5em;'
+                        + 'align-items:center;gap:.8em;font-size:.62em';
+      row.innerHTML =
+        '<div style="font-weight:700;color:#9FB2CC">' + lab + '</div>' +
+        '<div style="height:1.5em;background:rgba(255,255,255,.06);border-radius:.35em;overflow:hidden">' +
+          '<div style="height:100%;width:' + w + '%;border-radius:.35em;background:' +
+          (i === labels.length - 1 ? '#F5B324' : '#12A594') + '"></div></div>' +
+        '<div class="num" style="font-weight:800;text-align:right">' + n +
+          '<span style="color:#7E93B0;font-weight:600"> · ' + pc(n, sent) + '</span></div>';
+      f.appendChild(row);
+    });
+
+    /* The biggest single drop, named. That is the coaching line — telling a
+       branch "23 sent" says nothing they can act on; telling them most of the
+       loss is between opened and watched says what to change. */
+    var worst = -1, worstAt = '';
+    for (var i = 1; i < counts.length; i++) {
+      var lost = counts[i-1] - counts[i];
+      if (lost > worst) { worst = lost; worstAt = labels[i-1] + ' → ' + labels[i]; }
+    }
+    $('pxDropSub').textContent = (sent && worst > 0)
+      ? 'biggest drop ' + worstAt.toLowerCase() + ', ' + worst + ' lost'
+      : (sent ? 'nobody has dropped out' : '');
+
+    /* What prospects picked for themselves, before an advisor said anything.
+       wants may arrive as a list or as one string. */
+    var tally = {};
+    rows.forEach(function(p){
+      var w = p.wants;
+      if (!w) return;
+      (Array.isArray(w) ? w : String(w).split(/\s*[,;·|]\s*/)).forEach(function(x){
+        x = String(x).trim();
+        if (x) tally[x] = (tally[x] || 0) + 1;
+      });
+    });
+    var top = Object.keys(tally).map(function(k){ return { k:k, n:tally[k] }; })
+                    .sort(function(a,b){ return b.n - a.n; }).slice(0, 6);
+    var wEl = $('pxWants');
+    wEl.innerHTML = '';
+    if (!top.length) {
+      wEl.innerHTML = '<div style="font-size:.62em;color:#7E93B0;padding:.6em 0">'
+        + (sent ? 'Nobody has picked a need yet.' : '') + '</div>';
+      $('pxWantsSub').textContent = '';
+    } else {
+      $('pxWantsSub').textContent = 'in their own words, before advice';
+      var max = top[0].n;
+      top.forEach(function(t){
+        var row = document.createElement('div');
+        row.style.cssText = 'display:grid;grid-template-columns:minmax(0,1fr) 3em;'
+                          + 'align-items:center;gap:.7em;font-size:.62em;margin-bottom:.5em';
+        row.innerHTML =
+          '<div><div style="color:#D6E2F2;margin-bottom:.25em;white-space:nowrap;' +
+            'overflow:hidden;text-overflow:ellipsis">' + t.k.replace(/[<>&]/g,'') + '</div>' +
+          '<div style="height:.45em;background:rgba(255,255,255,.06);border-radius:.3em">' +
+            '<div style="height:100%;width:' + (t.n / max * 100) + '%;background:#3DDCC7;' +
+            'border-radius:.3em"></div></div></div>' +
+          '<div class="num" style="font-weight:800;text-align:right">' + t.n + '</div>';
+        wEl.appendChild(row);
+      });
+    }
+  }
+
+  function unreachable(){
+    var t = $('t_p10');
+    if (t) t.innerHTML = 'Prospecting';
+    ['pxSent','pxOpen','pxWatch','pxBook'].forEach(function(id){ $(id).textContent = '—'; });
+    $('pxSentSub').textContent = 'board not reachable';
+    $('pxDropSub').textContent = 'the prospecting board did not answer';
+    $('pxFunnel').innerHTML = '<div style="font-size:.62em;color:#7E93B0">'
+      + 'No figures rather than wrong ones. This retries on the next poll.</div>';
+  }
+
+  function poll(){
+    var cb = 'rrbWall' + (Math.floor(Date.now() / 1000));
+    var done = false;
+    function cleanup(){
+      var el = document.getElementById(cb);
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+      try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+    }
+    window[cb] = function(data){
+      done = true; cleanup();
+      try { render((data && data.prospects) || []); } catch (e) { unreachable(); }
+    };
+    var sc = document.createElement('script');
+    sc.id = cb;
+    sc.src = PX_ENDPOINT + '?action=board&callback=' + cb;
+    sc.onerror = function(){ cleanup(); unreachable(); };
+    document.head.appendChild(sc);
+    setTimeout(function(){ if (!done) { cleanup(); unreachable(); } }, 15000);
+  }
+
+  poll();
+  setInterval(poll, POLL_MS);
+})();
 </script>
 <div class="rrb-credit" style="position:fixed;left:14px;bottom:8px;z-index:60;
   font-size:.52em;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#3E5170">
