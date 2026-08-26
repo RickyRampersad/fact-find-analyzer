@@ -537,6 +537,9 @@
         <div class="hmini"><div><div class="k">Cover recommended</div><div class="s" style="font-size:.72em;color:var(--ink-3)">month to date</div></div><div class="v num t" id="hCover">—</div></div>
         <div class="hmini"><div><div class="k">Monthly premium</div><div class="s" style="font-size:.72em;color:var(--ink-3)">month to date</div></div><div class="v num" style="color:var(--gold)" id="hPrem">—</div></div>
       </div>
+      <div id="noDecLine" style="display:none;margin-top:.55em;font-size:.62em;line-height:1.5;color:#F5B324;padding:.5em .7em;background:rgba(245,179,36,.09);border-left:3px solid #F5B324;border-radius:0 .4em .4em 0"></div>
+      <div style="display:none">
+      </div>
     </div>
     <div class="card grow">
       <h2><span>Leaderboard</span><em id="wkLbl">this week</em></h2>
@@ -1079,6 +1082,28 @@ function render(d){
   countTo($('wkRec'), W.api||0, big);
   setText('wkApiSub', (WP.apps||0)+' app'+((WP.apps||0)===1?'':'s')+' picked up this week');
   setText('wkPipeSub', (WP.clients||0)+' client'+((WP.clients||0)===1?'':'s')+' taking cover');
+
+  /* Why 'taken' looks thinner than it is.
+
+     A case where nobody filled in Section 10 Step 3 carries no decision, so
+     the branch has no record of what the client took. It counts as a fact
+     find and it counts toward need, and then it contributes nothing to taken
+     or to picked up — not because the client took nothing, but because
+     nobody said. Left unexplained the board reads as a closing problem when
+     it is a recording one, and the wrong thing gets coached.
+
+     Silent until the feed carries the count, so it never guesses. */
+  var nd = (M && (M.noDecision || M.noDec)) || 0;
+  var ndEl = $('noDecLine');
+  if (ndEl) {
+    if (nd > 0) {
+      ndEl.style.display = '';
+      ndEl.innerHTML = '<b>' + nd + '</b> case' + (nd === 1 ? '' : 's') +
+        ' carr' + (nd === 1 ? 'ies' : 'y') + ' no client decision, so nothing they took is counted here.';
+    } else {
+      ndEl.style.display = 'none';
+    }
+  }
   setText('wkRecSub', (W.submitted||0)+' fact find'+((W.submitted||0)===1?'':'s')+' · '+big(W.need||0)+' need found');
   /* Days worked this week — which days the branch actually turned up. */
   var CAL=d.calendar||{};
