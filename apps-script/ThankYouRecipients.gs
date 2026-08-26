@@ -1,16 +1,25 @@
 /**
  * ThankYouRecipients.gs — who gets the client's thank-you email.
  *
- * THE RULE
- *   To    the client
- *   Cc    the advisor who did the fact find        (visible on purpose)
- *   Bcc   that advisor's direct manager
- *   Bcc   the branch manager                       (temporary — see below)
+ * THE RULE — two client emails, two different jobs, two copy lists.
  *
- * The advisor is visible because the client should see their own advisor is
- * on it. The manager is not, because a manager showing in Cc on a client
- * email reads as escalation, and a reply-all would put the client's answer —
- * income, health, family — in front of everyone at once.
+ *   Stage 'thankyou'  — sent when the fact find is submitted.
+ *     To   the client            check it, rate the advisor, sign it
+ *     Cc   the direct manager    the case is about to land on their desk
+ *     Bcc  the branch manager
+ *
+ *   Stage 'approved'  — sent after the manager has signed it off.
+ *     To   the client            what was approved, and why
+ *     Cc   the advisor           they pick the conversation up from here
+ *     Bcc  the branch manager
+ *
+ * The advisor is not on the thank-you on purpose. That email asks the client
+ * to rate them, and a rating sent with the person being rated in the copy
+ * list is not a rating. By the approved stage it is already in.
+ *
+ * The branch manager is blind-copied on both. A manager visible in Cc on a
+ * client email reads as escalation, and a reply-all would put the client's
+ * answer — income, health, family — in front of everyone at once.
  *
  * TY_CONFIG.ALWAYS_BCC is the branch manager's own "copy me for now" while
  * the flow is being watched. It is one line and it is meant to be deleted
@@ -62,9 +71,24 @@ var TY_CONFIG = {
   // Temporary. Delete the address to stop the branch manager's blind copies.
   ALWAYS_BCC: ['Ricky.Rampersad@myguardiangroup.com'],
 
-  // The advisor who did the fact find, in Cc beside their direct manager.
-  // Both of them get it; the branch manager is blind-copied and nowhere else.
-  CC_ADVISOR: true
+  // Who is copied changes with the stage, because the two emails are doing
+  // different jobs.
+  //
+  // 'thankyou' goes out when the fact find is submitted. The client is being
+  // asked to check it, rate the advisor and sign. The advisor is deliberately
+  // NOT copied — a client rating someone who is reading over their shoulder
+  // is not rating anything. The direct manager is copied because the case is
+  // about to land on their desk.
+  //
+  // 'approved' goes out after the manager signs. The rating is already in,
+  // and now the advisor should see what their client was told, because they
+  // are the one picking up the conversation.
+  //
+  // The branch manager is blind-copied on both and visible on neither.
+  CC_BY_STAGE: {
+    thankyou: { manager: true,  advisor: false },
+    approved: { manager: false, advisor: true  }
+  }
 };
 
 /* ── helpers ───────────────────────────────────────────────────────────── */
@@ -121,9 +145,16 @@ function tyManagerEmail_(dmName) {
  * Log `problems` either way; that is how a blank manager address gets noticed
  * instead of quietly never being copied.
  */
-function tyRecipients_(row) {
+function tyRecipients_(row, stage) {
   row = row || {};
   var problems = [];
+
+  stage = String(stage || 'thankyou').toLowerCase();
+  var who = TY_CONFIG.CC_BY_STAGE[stage];
+  if (!who) {
+    problems.push('Unknown stage "' + stage + '" — copied nobody but the branch manager.');
+    who = { manager: false, advisor: false };
+  }
 
   var client = tyClean_(row.email) || tyClean_(row.adviceClientEmail);
   if (!tyIsEmail_(client)) {
@@ -132,11 +163,14 @@ function tyRecipients_(row) {
   }
 
   var cc = [];
-  var mgr = tyManagerEmail_(row.dmName);
-  if (mgr.ok) cc.push(mgr.email);
-  else problems.push(mgr.why + ' The manager was not copied.');
 
-  if (TY_CONFIG.CC_ADVISOR) {
+  if (who.manager) {
+    var mgr = tyManagerEmail_(row.dmName);
+    if (mgr.ok) cc.push(mgr.email);
+    else problems.push(mgr.why + ' The manager was not copied.');
+  }
+
+  if (who.advisor) {
     var agent = tyClean_(row.agentEmail);
     if (tyIsEmail_(agent)) cc.push(agent);
     else problems.push('No advisor email on this fact find, so the advisor was not copied.');

@@ -87,12 +87,88 @@ function approvalSplitPlans_(row) {
   return { taken: taken, notTaken: notTaken };
 }
 
+/* ── leading with the need that was actually answered ──────────────────── */
+
+/**
+ * Which kind of need a recommendation row is answering.
+ *
+ * Read off the need the advisor chose on the row, not the product name — the
+ * same product can answer more than one need, and the need is what the client
+ * recognises.
+ */
+function approvalNeedKind_(needText) {
+  var s = String(needText || '').toLowerCase();
+  if (/retire|pension|annuit/.test(s))              return 'retirement';
+  if (/disab|income protect/.test(s))               return 'income';
+  if (/critical|illness/.test(s))                   return 'illness';
+  if (/health|medical/.test(s))                     return 'health';
+  if (/education|university|school/.test(s))        return 'education';
+  if (/debt|mortgage|loan/.test(s))                 return 'debt';
+  if (/life|expense|estate|breadwinner|replace/.test(s)) return 'life';
+  return 'other';
+}
+
+/**
+ * The "what we found" lines, led by the one the client is actually doing
+ * something about.
+ *
+ * Shivanna took a pension. Her letter opened by telling her that her family
+ * would be short TT$919,000 if she died tomorrow — a true and serious figure,
+ * and nothing to do with the plan she bought. Leading with it makes the letter
+ * read as though the life shortfall is what she has just dealt with.
+ *
+ * So the finding matching the need she answered goes first, marked as the one
+ * being addressed. The rest stay, moved down and framed as what a later review
+ * would look at. Nothing is hidden; the order stops it misleading.
+ */
+function approvalFindings_(row, takenKinds) {
+  var f = [];
+  var add = function (kind, text) { if (text) f.push({ kind: kind, text: text }); };
+
+  var lifeGap  = apNum_(apGet_(row, 'insuranceNeed_calc')) || apNum_(apGet_(row, 'totalNeed_calc'));
+  var debts    = apNum_(apGet_(row, 'totalDebts_calc'));
+  var retire   = apNum_(apGet_(row, 'retirementGap'));
+
+  if (retire)  add('retirement', 'To retire on the income you described, you would need about ' +
+                    apMoney_(retire) + ' put aside by then.');
+  if (lifeGap) add('life', 'If something happened to you tomorrow, your family would be short by about ' +
+                    apMoney_(lifeGap) + ' of what they would need.');
+  if (debts)   add('debt', 'You have ' + apMoney_(debts) +
+                    ' of borrowing that would not simply disappear.');
+
+  var answered = [], later = [];
+  f.forEach(function (item) {
+    if (takenKinds.indexOf(item.kind) > -1) answered.push(item);
+    else later.push(item);
+  });
+  return { answered: answered, later: later };
+}
+
 /* ── the html ──────────────────────────────────────────────────────────── */
 
 function approvalPlanSections_(row) {
   var split = approvalSplitPlans_(row);
   var taken = split.taken, notTaken = split.notTaken;
   var h = [];
+
+  // What the client is actually doing something about decides what this
+  // letter opens with.
+  var kinds = [];
+  taken.forEach(function (p) {
+    var k = approvalNeedKind_(p.need || p.plan);
+    if (kinds.indexOf(k) < 0) kinds.push(k);
+  });
+  var found = approvalFindings_(row, kinds);
+
+  if (found.answered.length) {
+    h.push('<h3 style="font:700 13px/1.4 Arial,sans-serif;letter-spacing:.08em;' +
+           'text-transform:uppercase;color:#0F766E;margin:22px 0 8px">' +
+           'What this is for</h3>');
+    found.answered.forEach(function (item) {
+      h.push('<p style="font:400 15px/1.6 Arial,sans-serif;color:#0F172A;margin:0 0 8px">' +
+             apEsc_(item.text) + '</p>');
+    });
+  }
 
   /* ---- what is actually being arranged ---- */
   if (taken.length) {
@@ -157,7 +233,21 @@ function approvalPlanSections_(row) {
     });
   }
 
-  return { html: h.join('\n'), taken: taken, notTaken: notTaken };
+  /* ---- the findings this plan does not answer ---- */
+  if (found.later.length) {
+    h.push('<h3 style="font:700 13px/1.4 Arial,sans-serif;letter-spacing:.08em;' +
+           'text-transform:uppercase;color:#697489;margin:26px 0 8px">' +
+           'Worth looking at another time</h3>' +
+           '<p style="font:400 14px/1.6 Arial,sans-serif;color:#697489;margin:0 0 10px">' +
+           'These are not part of what has been arranged. They are things a full ' +
+           'review would normally come back to.</p>');
+    found.later.forEach(function (item) {
+      h.push('<p style="font:400 14px/1.6 Arial,sans-serif;color:#697489;margin:0 0 7px">' +
+             apEsc_(item.text) + '</p>');
+    });
+  }
+
+  return { html: h.join('\n'), taken: taken, notTaken: notTaken, findings: found };
 }
 
 /* ── self test ─────────────────────────────────────────────────────────── */
