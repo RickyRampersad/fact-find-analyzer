@@ -1494,6 +1494,18 @@ setInterval(function(){
     return { minute: n / 1440, hour: n / 24, day: n, week: n * 7, month: n * 30 }[m[2]];
   }
 
+  /* How they got here. /meet/ stamps every booking and every arrival with
+     one of sent, forwarded or direct — it is the only place that knows both
+     the name a link was addressed to and the name the person actually typed.
+
+     Read tolerantly, and absent until the board is storing and returning it:
+     the row below only appears when something is actually classified, so it
+     shows nothing rather than reporting every arrival as sent. */
+  function arrivalOf(p){
+    var a = String(p.arrival || p.via || p.source_kind || '').trim().toLowerCase();
+    return (a === 'forwarded' || a === 'direct' || a === 'sent') ? a : '';
+  }
+
   function whoSent(p){
     return String(p.advisor || p.adv || p.agentName || p.n_adv || '').trim()
         || String(p.agent || p.a || p.code || '').trim();
@@ -1613,6 +1625,25 @@ setInterval(function(){
       var lost = counts[i-1] - counts[i];
       if (lost > worst) { worst = lost; worstAt = labels[i-1] + ' → ' + labels[i]; }
     }
+    /* Arrivals nobody was sent to. A forwarded link is somebody else's client
+       passing it on, and a scanned code is a stranger — both belong to the
+       branch until an advisor is put against them, and neither is visible
+       anywhere today. */
+    var fwd = rows.filter(function(p){ return arrivalOf(p) === 'forwarded'; }).length;
+    var dir = rows.filter(function(p){ return arrivalOf(p) === 'direct'; }).length;
+    if (fwd || dir) {
+      var un = document.createElement('div');
+      un.style.cssText = 'margin-top:.55em;padding:.5em .7em;border-radius:.35em;'
+        + 'background:rgba(245,179,36,.13);font-size:.56em;line-height:1.5;color:#F5B324;'
+        + 'font-weight:700';
+      un.textContent = (fwd + dir) + ' came in unclaimed — '
+        + (fwd ? fwd + ' forwarded on' : '')
+        + (fwd && dir ? ', ' : '')
+        + (dir ? dir + ' scanned a code' : '')
+        + '. Nobody is assigned to them.';
+      f.appendChild(un);
+    }
+
     /* Aging. A link nobody opened a fortnight ago is not a prospect any more,
        and a booked one has already done its job — so only the unbooked are
        counted, and only the ones old enough to say something. */
