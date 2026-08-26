@@ -271,8 +271,16 @@ function rrbLetterCheck() {
   var last = sheet.getLastRow();
   if (last < 2) { Logger.log('No cases on the sheet.'); return; }
 
-  var wrong = 0, right = 0, undecided = 0, checked = 0;
-  Logger.log('=== approved cases: what the letter says ===');
+  // Logger.log ignores %-26s padding and prints the format string verbatim —
+  // the same trap rrbShowHierarchy hit. Pad before formatting, never in it.
+  var pad = function (v, n) {
+    var t = String(v == null ? '' : v);
+    if (t.length >= n) return t.slice(0, n);
+    return t + new Array(n - t.length + 1).join(' ');
+  };
+
+  var wrong = 0, right = 0, undecided = 0, checked = 0, overstated = 0;
+  Logger.log('=== approved cases: what the client was told they hold ===');
   Logger.log('');
 
   for (var r = 2; r <= last; r++) {
@@ -281,45 +289,48 @@ function rrbLetterCheck() {
     if (_str(d.status).toLowerCase().indexOf('approv') < 0) continue;
     checked++;
 
-    var oldC = 0, oldP = 0;
+    var oldCover = 0, oldPrem = 0, lines = 0;
     for (var i = 1; i <= 6; i++) {
       if (!_str(d['rec' + i + 'Rec'])) continue;
-      oldC += rrbNum_(d['rec' + i + 'Amt']);
-      oldP += rrbNum_(d['rec' + i + 'Prem']);
+      lines++;
+      oldCover += rrbNum_(d['rec' + i + 'Amt']);
+      oldPrem  += rrbNum_(d['rec' + i + 'Prem']);
     }
     var t = rrbTookTable_(d);
-    var name = _str(d.clientName) || _str(d.adviceClientName) || '(no name)';
+    var name = pad(_str(d.clientName) || _str(d.adviceClientName) || '(no name)', 24);
 
     if (!t.decided) {
       undecided++;
-      Logger.log('  ~ %-26s no decision recorded — new letter shows the recommendation ' +
-                 'with no total', name);
+      Logger.log('  ~  ' + name + '  no decision recorded — new letter shows no total');
       continue;
     }
-    if (Math.round(oldC) === Math.round(t.cover) && Math.round(oldP) === Math.round(t.prem)) {
+    if (Math.round(oldCover) === Math.round(t.cover) &&
+        Math.round(oldPrem) === Math.round(t.prem)) {
       right++;
-      Logger.log('    %-26s took everything — letter unchanged (%s)', name, rrbMoney_(t.cover));
+      Logger.log('     ' + name + '  took everything — letter unchanged');
       continue;
     }
     wrong++;
-    Logger.log('  * %-26s WAS %s / %s per month', name, rrbMoney_(oldC) || 'no cover', rrbMoney_(oldP) || '—');
-    Logger.log('    %-26s NOW %s / %s per month  (%s of %s lines)', '',
-               rrbMoney_(t.cover) || 'no cover', rrbMoney_(t.prem) || '—', t.count,
-               t.count + (function () { var n = 0; for (var j = 1; j <= 6; j++)
-                 if (_str(d['rec' + j + 'Rec'])) n++; return n - t.count; })());
+    if (oldCover > t.cover) overstated++;
+    Logger.log('  *  ' + name + '  WAS  ' + pad(rrbMoney_(oldCover) || 'no cover', 14) +
+               pad((rrbMoney_(oldPrem) || '—') + '/mo', 12) + lines + ' plans');
+    Logger.log('     ' + pad('', 24) + '  NOW  ' + pad(rrbMoney_(t.cover) || 'no cover', 14) +
+               pad((rrbMoney_(t.prem) || '—') + '/mo', 12) + t.count + ' taken');
   }
 
   Logger.log('');
-  Logger.log('%s approved case(s) checked.', checked);
-  Logger.log('  %s already correct — the client took everything recommended.', right);
-  Logger.log('  %s OVERSTATED — those letters told the client they hold more than they do.', wrong);
-  Logger.log('  %s carry no decision — the new letter shows no total on those.', undecided);
-  if (wrong) {
+  Logger.log(checked + ' approved case(s) checked.');
+  Logger.log('  ' + right + ' already correct — the client took everything recommended.');
+  Logger.log('  ' + wrong + ' change, of which ' + overstated + ' were OVERSTATED.');
+  Logger.log('  ' + undecided + ' carry no decision — the new letter shows no total on those.');
+  if (overstated) {
     Logger.log('');
-    Logger.log('Each of those is a letter already in somebody\'s inbox, on branch letterhead,');
-    Logger.log('naming cover they do not have. Worth a call before anyone else finds out.');
+    Logger.log('Those ' + overstated + ' are letters already sitting in somebody\'s inbox, on');
+    Logger.log('branch letterhead, naming cover they do not have. Worth a call before');
+    Logger.log('anybody else finds out.');
   }
-  return { checked: checked, wrong: wrong, right: right, undecided: undecided };
+  return { checked: checked, wrong: wrong, overstated: overstated,
+           right: right, undecided: undecided };
 }
 
 /** Who would be copied on the newest approved case. Reads only, sends nothing. */
@@ -333,14 +344,16 @@ function rrbRecipientCheck() {
     var rcp = rrbApprovalRecipients_(d);
     Logger.log('Newest approved case: %s', _str(d.clientName) || '(no name)');
     Logger.log('');
-    Logger.log('  WAS   to:  %s', rcp.to || '(none captured)');
-    Logger.log('        cc:  %s   <- the client could read this', MAIL_CONFIG.branchManager);
+    Logger.log('  WAS   to:  ' + (rcp.to || '(none captured)'));
+    Logger.log('        cc:  ' + MAIL_CONFIG.branchManager + '   <- the client can read this');
     Logger.log('');
-    Logger.log('  NOW   to:  %s', rcp.to || '(none captured)');
-    Logger.log('        cc:  %s', rcp.cc || '(none)');
-    Logger.log('        bcc: %s', rcp.bcc || '(none — already in the cc)');
-    if (!rcp.to) Logger.log('');
-    if (!rcp.to) Logger.log('  No client address on this case. Nothing has ever been sent to them.');
+    Logger.log('  NOW   to:  ' + (rcp.to || '(none captured)'));
+    Logger.log('        cc:  ' + (rcp.cc || '(none)'));
+    Logger.log('        bcc: ' + (rcp.bcc || '(none — already in the cc)'));
+    if (!rcp.to) {
+      Logger.log('');
+      Logger.log('  No client address on this case. Nothing has ever been sent to them.');
+    }
     return rcp;
   }
   Logger.log('No approved cases yet.');
