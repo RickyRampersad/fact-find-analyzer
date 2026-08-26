@@ -737,9 +737,27 @@
 
     </div>
   </section>
+  <!-- 12 · WAITING FOR AN ADVISOR
+       Arrivals nobody was sent to. A forwarded link belongs to the advisor
+       whose link it was; a scanned code belongs to nobody until the branch
+       puts a name against it. Until that happens this panel is where they are
+       visible, which is more than they have ever been. -->
+  <section class="panel" id="p11">
+    <div class="ptitle"><h1 id="t_p11"></h1><span class="tag">Unclaimed</span></div>
+    <div class="cols" style="grid-template-columns:minmax(0,1fr) 30em; align-items:stretch; min-height:0; flex:1">
+      <div class="card" style="min-width:0; display:flex; flex-direction:column">
+        <h2><span>Waiting for an advisor</span><em id="uqSub"></em></h2>
+        <div id="uqList" style="flex:1; min-height:0; overflow:hidden"></div>
+      </div>
+      <div class="card" style="min-width:0; display:flex; flex-direction:column">
+        <h2><span>What they came for</span><em id="uqNeedSub"></em></h2>
+        <div id="uqNeeds" style="flex:1; min-height:0; overflow:hidden"></div>
+      </div>
+    </div>
+  </section>
 </main>
 
-<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span></div>
+<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span></div>
 <div id="burst"></div>
 
 <script>
@@ -747,7 +765,7 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
 var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
 
-var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 11;
+var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 12;
 var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 /* Calendar volume: one hue, dark to light. Validated as an ordinal ramp against
    this surface — monotone lightness, every step clear of the card behind it. */
@@ -1758,6 +1776,107 @@ setInterval(function(){
     }
   }
 
+  /* Waiting for an advisor.
+
+     A lead nobody has been put against is worth less every day it sits, and
+     until now none of them were visible at all. The panel names them, says how
+     they arrived and how long they have waited, and aggregates what they came
+     for — because the thing that decides who to assign is what they asked
+     about, not who happens to be free. */
+  function paintUnclaimed(rows){
+    var unclaimed = rows.filter(function(p){
+      var a = arrivalOf(p);
+      if (a !== 'forwarded' && a !== 'direct') return false;
+      return !(p.assigned || p.assignedTo || p.owner);
+    });
+
+    var t = $('t_p11');
+    if (t) {
+      t.innerHTML = unclaimed.length
+        ? '<b>' + unclaimed.length + '</b> waiting for an advisor'
+        : 'Everyone has an advisor';
+    }
+
+    var list = $('uqList'), needs = $('uqNeeds');
+    if (!list || !needs) return;
+    list.innerHTML = ''; needs.innerHTML = '';
+
+    if (!unclaimed.length) {
+      $('uqSub').textContent = '';
+      $('uqNeedSub').textContent = '';
+      list.innerHTML = '<div style="font-size:.62em;color:#7E93B0;padding:.7em 0">'
+        + 'Nothing has come in unassigned. Every prospect on the board belongs to somebody.</div>';
+      return;
+    }
+
+    /* Oldest first. A scanned code from this morning can wait; one from last
+       week is the reason somebody stopped waiting. */
+    unclaimed.sort(function(a, b){
+      var da = daysSince(a), db = daysSince(b);
+      return (db === null ? -1 : db) - (da === null ? -1 : da);
+    });
+
+    $('uqSub').textContent = 'oldest first';
+    unclaimed.slice(0, 6).forEach(function(p){
+      var d = daysSince(p);
+      var age = d === null ? '' : (d < 1 ? 'today' : Math.round(d) + (Math.round(d) === 1 ? ' day' : ' days'));
+      var hot = d !== null && d >= 2;
+      var how = arrivalOf(p) === 'forwarded' ? 'forwarded on' : 'scanned a code';
+      var row = document.createElement('div');
+      row.style.cssText = 'padding:.5em 0;border-top:1px solid rgba(255,255,255,.07)';
+      row.innerHTML =
+        '<div style="display:flex;justify-content:space-between;gap:.7em;align-items:baseline">'
+        + '<div style="font-size:.66em;font-weight:800;white-space:nowrap;overflow:hidden;'
+        + 'text-overflow:ellipsis">' + String(p.n || 'Someone').replace(/[<>&]/g, '') + '</div>'
+        + '<div class="num" style="font-size:.56em;font-weight:800;white-space:nowrap;color:'
+        + (hot ? '#F5B324' : '#7E93B0') + '">' + age + '</div></div>'
+        + '<div style="font-size:.54em;color:#7E93B0;margin-top:.15em">' + how + '</div>';
+      list.appendChild(row);
+    });
+    if (unclaimed.length > 6) {
+      var more = document.createElement('div');
+      more.style.cssText = 'font-size:.54em;color:#7E93B0;padding-top:.55em';
+      more.textContent = '+ ' + (unclaimed.length - 6) + ' more waiting';
+      list.appendChild(more);
+    }
+
+    /* What they came for, across all of them. This is the assignment brief:
+       four people asking about retirement is a different call from four
+       asking what happens to the mortgage. */
+    var tally = {};
+    unclaimed.forEach(function(p){
+      var w = p.wants;
+      if (!w) return;
+      (Array.isArray(w) ? w : String(w).split(/\s*[,;·|]\s*/)).forEach(function(x){
+        x = String(x).trim();
+        if (x) tally[x] = (tally[x] || 0) + 1;
+      });
+    });
+    var top = Object.keys(tally).map(function(k){ return { k: k, n: tally[k] }; })
+                    .sort(function(a, b){ return b.n - a.n; }).slice(0, 6);
+    if (!top.length) {
+      $('uqNeedSub').textContent = '';
+      needs.innerHTML = '<div style="font-size:.62em;color:#7E93B0;padding:.7em 0">'
+        + 'None of them said what they were after before stopping.</div>';
+      return;
+    }
+    $('uqNeedSub').textContent = 'what to weigh when assigning';
+    var max = top[0].n;
+    top.forEach(function(x){
+      var row = document.createElement('div');
+      row.style.cssText = 'display:grid;grid-template-columns:minmax(0,1fr) 3em;'
+        + 'align-items:center;gap:.7em;font-size:.6em;margin-bottom:.5em';
+      row.innerHTML =
+        '<div><div style="color:#D6E2F2;margin-bottom:.25em;white-space:nowrap;overflow:hidden;'
+        + 'text-overflow:ellipsis">' + x.k.replace(/[<>&]/g, '') + '</div>'
+        + '<div style="height:.45em;background:rgba(255,255,255,.06);border-radius:.3em">'
+        + '<div style="height:100%;width:' + (x.n / max * 100) + '%;background:#F5B324;'
+        + 'border-radius:.3em"></div></div></div>'
+        + '<div class="num" style="font-weight:800;text-align:right">' + x.n + '</div>';
+      needs.appendChild(row);
+    });
+  }
+
   function unreachable(){
     var t = $('t_p10');
     if (t) t.innerHTML = 'Prospecting';
@@ -1778,7 +1897,8 @@ setInterval(function(){
     }
     window[cb] = function(data){
       done = true; cleanup();
-      try { render((data && data.prospects) || []); } catch (e) { unreachable(); }
+      try { var rs = (data && data.prospects) || []; render(rs); paintUnclaimed(rs); }
+      catch (e) { unreachable(); }
     };
     var sc = document.createElement('script');
     sc.id = cb;
