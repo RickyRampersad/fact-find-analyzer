@@ -1,61 +1,74 @@
 #!/usr/bin/env bash
-# Narration for the fact find update film — what changed, and the one thing
-# it needs from an advisor.
+# Narration for the enhancements film — the flow, end to end.
 #
 #   ./build-voice.sh
 #
-# Needs edge-tts (pip install edge-tts). Free, no account, no licence, so
-# nothing here needs clearing before it goes on WhatsApp or a wall screen.
+# Andrew at -3%, same as the launch and prospecting films. Three films that
+# share a voice and a key sound like one organisation.
 #
-# Same voice and rate as the launch and prospecting films. Three films that
-# share a voice and a key sound like one organisation; three that do not sound
-# like three suppliers. Andrew at -3% reads slightly under natural pace, lets a
-# full stop land, and does not smile — which matters here, because this film
-# tells thirty-four people that nine client letters went out wrong.
-#
-# Written to be spoken. Short declarative sentences, one idea each. The numbers
-# carry the weight, so they are said plainly and not sold.
-#
-# When it has run, send the durations it prints. The film is cut to the
-# rendered audio — TIMINGS at the top of enhancements.html is currently
-# ESTIMATES and says so. Estimates are how the last film shipped out of sync.
+# This one is NOT a correction notice. It walks an advisor through what now
+# happens between pressing submit and a client holding a signed plan, and the
+# tone is a welcome, not an apology.
 set -euo pipefail
 cd "$(dirname "$0")"
 
 VOICE="en-US-AndrewMultilingualNeural"
 RATE="-3%"
 
-say () {  # say <index> <text>
-  local n="$1"; shift
+say () { local n="$1"; shift
   printf '  line%02d  %s\n' "$n" "$1"
   edge-tts --voice "$VOICE" --rate="$RATE" --text "$1" --write-media "$(printf 'line%02d.mp3' "$n")"
 }
 
-echo "Narration — $VOICE at $RATE"
+echo "Narration — $VOICE at $RATE"; echo
+
+say 1 "The fact find just got a great deal better. Here is what happens now, from the moment you press submit."
+
+say 2 "You finish with your client and you submit. That is the last thing you have to do."
+
+say 3 "Your client hears from us within seconds. Their own copy, in plain words. What you found. What you recommended. And why, in your words, not ours."
+
+say 4 "Your manager gets the case on their phone. The figures, the reason, and anything worth a second look, already pulled out."
+
+say 5 "They approve and sign it right there. No sign in. No form. Their signature goes straight onto the fact find."
+
+say 6 "The moment they do, your client gets their plan."
+
+say 7 "And here is the part that changed. That letter now says what your client actually took. Not everything you showed them. What they chose."
+
+say 8 "What they turned down is on it too, in their own words, so nothing looks like it was never offered."
+
+say 9 "Then look at who receives it. Your client. Copied to their direct manager, and to you."
+
+say 10 "Sales support is off it. The branch manager is blind copied. Your client sees the people who advised them, and nobody else."
+
+say 11 "Then they sign. I confirm the recommendations were explained to me, and the decision shown is the one I made."
+
+say 12 "Their hand, on your file. That is the strongest thing a fact find can carry."
+
+say 13 "One section. Three steps. Section ten, step three, is where all of this comes from."
+
 echo
-
-say 1 "Something changed on the fact find this week. One minute, and it affects every case you write."
-
-say 2 "When your manager approves a case, your client gets a letter. Until this week that letter listed everything you recommended, added it up, and called it approved."
-
-say 3 "So a client who took one plan was told they hold all of them. Nine clients were. One was told he holds three million dollars of cover. He holds a hundred and fifty thousand."
-
-say 4 "That was not something any advisor did. The letter was reading the wrong column."
-
-say 5 "It now reads what the client actually decided. Section ten. Step three."
-
-say 6 "Eleven cases came through with step three empty. Empty means the letter has nothing to report, so it reports nothing."
-
-say 7 "Fill it in and three things follow. The letter is right. What they turned down is written down, with their own reason beside it. And the client signs to say the decision was theirs."
-
-say 8 "It is also where your production comes from. A case with no decision recorded is a case the branch cannot count."
-
-say 9 "The wall now shows how many cases are missing it. It sits under the month, in amber, and it counts down as you fill them in."
-
-say 10 "One section. Three steps. The third one is the one that matters."
-
-echo
-echo "Durations — paste these into TIMINGS in enhancements.html:"
+echo "Durations:"
 for f in line*.mp3; do
-  printf '  %-12s %6.2fs\n' "$f" "$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$f")"
+  printf '  %-12s %6.2fs\n' "$f" "$(python3 -c "
+import sys,struct
+f=open('$f','rb').read()
+# frame-count MP3 duration: 24kHz mono, count frames
+i=0;n=0
+while i<len(f)-4:
+    if f[i]==0xFF and (f[i+1]&0xE0)==0xE0:
+        br=[0,32,40,48,56,64,80,96,112,128,160,192,224,256,320,0][(f[i+2]>>4)&0xF]
+        sr=[44100,48000,32000,0][(f[i+2]>>2)&0x3]
+        ver=(f[i+1]>>3)&0x3
+        if ver==2: sr//=2
+        elif ver==0: sr//=4
+        if br==0 or sr==0: i+=1; continue
+        pad=(f[i+2]>>1)&1
+        fl=(144*br*1000)//sr+pad
+        if fl<4: i+=1; continue
+        n+=1; i+=fl
+    else: i+=1
+print(round(n*1152/24000,2))
+")"
 done
