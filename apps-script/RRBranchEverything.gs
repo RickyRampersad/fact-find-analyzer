@@ -9,7 +9,7 @@
  *
  *   1. Who viewed the wall.        The wall now asks people to sign in.
  *                                  Without this, it asks and records nothing.
- *   2. The PDF on approval.        Meera got an approval email with no fact
+ *   2. The PDF on approval.        Narissa got an approval email with no fact
  *                                  find attached. So has every advisor on
  *                                  every approved case since this went live.
  *   3. One 5pm digest, not two.    Two triggers fire at 17:00 every day.

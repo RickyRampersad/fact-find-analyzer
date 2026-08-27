@@ -14,6 +14,26 @@
 # birth, incomes, existing policy details and the recommendations made
 # against them. no-store keeps that out of shared-device browser caches;
 # no-referrer stops anything the page links out to from receiving the URL.
+# ─────────────────────────────────────────────────────────────────────────────
+# apps-script/ IS NOT PART OF THE SITE.
+#
+# The publish directory is the repository root, so every file in the repo is
+# also a URL. That included apps-script/, which holds installation notes for
+# the Google Apps Script side — and one of those notes carried a worked
+# example of rrbLetterCheck's output using REAL CLIENT NAMES and their cover
+# figures. It was readable by anybody at
+# factfind360.com/apps-script/INSTALL-client-letter.md
+#
+# The names are gone from the files now. This makes sure the directory is not
+# served regardless of what ends up in it later, because the next person to
+# drop a note in there should not have to remember that the folder is public.
+# ─────────────────────────────────────────────────────────────────────────────
+[[redirects]]
+  from = "/apps-script/*"
+  to = "/index.html"
+  status = 404
+  force = true
+
 [[headers]]
   for = "/ffproject.html"
   [headers.values]

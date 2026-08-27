@@ -1,17 +1,17 @@
 # Carrying the prospect token onto the fact find
 
 One column and two lines. It is the difference between *"the branch did 12 fact
-finds"* and *"Meera sent 4 links, 3 booked, 2 became fact finds and one is
+finds"* and *"Narissa sent 4 links, 3 booked, 2 became fact finds and one is
 written."*
 
 ## What is already true
 
-An advisor sends `…/meet/a/A08413/?t=C7PKTTD&c=Randolph`.
+An advisor sends `…/meet/a/A08413/?t=C7PKTTD&c=Kevon`.
 
 - `C7PKTTD` is written to the **prospecting** sheet when the link is sent —
   `logSend()` posts `action=link` with `agent`, `advisor`, `token`, `name`,
   `phone` and `at`.
-- Randolph taps it. The token stays on the address the whole way through
+- Kevon taps it. The token stays on the address the whole way through
   `/meet/`.
 - He books. The advisor opens the fact find.
 - **The token stops there.** Nothing carries it across, so the fact find has no

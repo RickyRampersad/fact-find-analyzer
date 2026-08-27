@@ -86,9 +86,9 @@ This is the part worth doing slowly.
 You will see a line for every approved case. Something like:
 
 ```
-  *  Shivanna Paraj          WAS  TT$5,400,000  TT$2,410/mo  4 plans
+  *  Anisa Ramkissoon          WAS  TT$5,400,000  TT$2,410/mo  4 plans
                              NOW  TT$480,000    TT$500/mo    1 taken
-     Randolph Sooklal        took everything — letter unchanged
+     Kevon Ramkissoon        took everything — letter unchanged
   ~  Kavita Singh            no decision recorded — new letter shows no total
 ```
 
@@ -118,14 +118,14 @@ a job for Monday.
 2. **▶ Run**.
 
 ```
-Newest approved case: Shivanna Paraj
+Newest approved case: Anisa Ramkissoon
 
-  WAS   to:  shivanna.paraj@gmail.com
-        cc:  ricky.rampersad@myguardiangroup.com   <- the client can read this
+  WAS   to:  anisa.ramkissoon@example.com
+        cc:  branch.manager@myguardiangroup.com   <- the client can read this
 
-  NOW   to:  shivanna.paraj@gmail.com
-        cc:  akaash.kalladeen@myguardiangroup.com,meera.persadkhan@myguardiangroup.com
-        bcc: ricky.rampersad@myguardiangroup.com
+  NOW   to:  anisa.ramkissoon@example.com
+        cc:  their.manager@myguardiangroup.com,narissa.mohammed@example.com
+        bcc: branch.manager@myguardiangroup.com
 ```
 
 Today your address is on the client's own letter where they can see it, and the

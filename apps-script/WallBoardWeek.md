@@ -22,7 +22,7 @@ week: {
   api: 28172,
   board: [
     { a: 'Varun Seegolam',    n: 2, api: 14820 },
-    { a: 'Meera Persad Khan', n: 1, api:  8640 },
+    { a: 'Narissa Mohammed', n: 1, api:  8640 },
     { a: 'Neil Ramnanan',     n: 1, api:  4712 }
   ]
 }

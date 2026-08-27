@@ -3,7 +3,7 @@
  *
  * WHAT HAPPENED
  *
- * Meera signed off a case and got the approval email with no PDF. So did
+ * Narissa signed off a case and got the approval email with no PDF. So did
  * every other advisor on every other approved case, since the day this went
  * live. It is not a one-off and it is not something she did.
  *

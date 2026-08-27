@@ -7,10 +7,10 @@ nothing anywhere says otherwise.
 
 ## Two kinds, and they are not the same
 
-**Forwarded.** Randolph got Meera's link, thought it was worth passing to his
-wife, and she filled it in. That referral exists because of Meera's work — her
+**Forwarded.** Kevon got Narissa's link, thought it was worth passing to his
+wife, and she filled it in. That referral exists because of Narissa's work — her
 message, her credibility, her client trusting her enough to pass it on. It goes
-to **Meera**, automatically. Taking it off her and handing it to somebody else
+to **Narissa**, automatically. Taking it off her and handing it to somebody else
 punishes exactly the behaviour the branch wants.
 
 **Scanned.** A code on a business card or at a stand. No relationship produced
