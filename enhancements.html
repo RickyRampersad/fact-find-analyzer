@@ -3,6 +3,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>What happens now</title>
 <meta name="description" content="RR Branch — from the moment you press submit to a client's hand on the file.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ══════════════════════════════════════════════════════════════════════════
    factfind360 — the branch's own tokens, lifted verbatim from wall.html so
@@ -20,25 +23,41 @@
    No Georgia on the film's own furniture. The wall has never used it.
    ══════════════════════════════════════════════════════════════════════════ */
 :root{
-  /* wall.html, verbatim */
-  --ground:#070C16; --panel:#0D1524; --panel-2:#121C2E;
-  --line:#1C2942; --line-2:#293853;
-  --ink:#F3F7FD; --ink-2:#93A7C4; --ink-3:#5E7297;
-  --gold:#F5B935; --gold-deep:#B98216; --amber:#FBBF24;
-  --teal:#2DD4BF; --teal-deep:#0D9488; --red:#FB7185; --violet:#A78BFA;
-  /* the email surface, for the props only */
+  /* ── factfind360, as it actually looks on screen ────────────────────────
+     Read off the LANDING PAGE, not off the variable list. Those are not the
+     same thing and taking the second for the first got this wrong twice.
+
+     The site is TEAL-LED. The hero runs slate into deep teal, the word that
+     carries the headline is bright cyan, and so is the play button, the
+     eyebrow, and every section kicker. Gold appears once, on a duration —
+     "5 MIN 12 · SOUND ON". It is metadata, not the identity.
+
+     And the display face is a serif: Fraunces, with Inter underneath. The
+     wall's variable list has no font in it, which is how I talked myself
+     into system sans and out of the face the branch actually uses.
+     ─────────────────────────────────────────────────────────────────────── */
+  --slate:#0f172a; --deep:#134E4A;                 /* the hero gradient */
+  --cyan:#5EEAD4;                                   /* THE accent */
+  --teal:#2DD4BF; --teal-mid:#0D9488; --teal-deep:#0F766E;
+  --tint:#ECFDF8;
+  --ground:#081018; --panel:#0F2027; --panel-2:#142C31;
+  --line:#1E3A3C; --line-2:#2A4F50;
+  --ink:#F1F8F7; --ink-2:#9DBFBC; --ink-3:#6B9490;
+  --gold:#F5B935;                                   /* metadata only */
+  --red:#FB7185;
+  /* the email surface keeps its own — those props ARE emails */
   --mail-navy:#0E1F4D; --mail-teal:#0D9488; --mail-ink:#0F172A;
   --mail-soft:#334155; --mail-mute:#556070; --mail-line:#E2E8F0;
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --display:Fraunces,Georgia,"Times New Roman",serif;
+  --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--ground);overflow:hidden}
 body{font:400 16px/1.55 var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased}
 #stage{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden}
-.bg{position:absolute;inset:0;
- background:radial-gradient(130% 90% at 50% -10%,#16305F 0%,#0D1524 44%,var(--ground) 100%)}
+.bg{position:absolute;inset:0;background:linear-gradient(150deg,var(--slate),var(--deep))}
 .glow{position:absolute;left:50%;top:50%;width:160vmax;height:160vmax;transform:translate(-50%,-50%);
- background:radial-gradient(circle,rgba(245,185,53,.13) 0%,transparent 52%);opacity:0;
+ background:radial-gradient(circle,rgba(94,234,212,.14) 0%,transparent 52%);opacity:0;
  transition:opacity 1.5s ease}
 .glow.up{opacity:1}
 .grain{position:absolute;inset:0;opacity:.42;pointer-events:none;
@@ -50,23 +69,26 @@ body{font:400 16px/1.55 var(--sans);color:var(--ink);-webkit-font-smoothing:anti
 .wrap{width:min(1120px,94vw);text-align:center}
 
 /* Display type is the wall's: system sans, heavy, tight, never serif. */
-h1{font-weight:800;letter-spacing:-.035em;line-height:1.05;font-size:clamp(32px,6vw,74px)}
-h2{font-weight:800;letter-spacing:-.028em;line-height:1.14;font-size:clamp(25px,4.2vw,50px)}
+h1{font-family:var(--display);font-weight:700;letter-spacing:-.022em;line-height:1.07;
+ font-size:clamp(32px,5.8vw,72px)}
+h2{font-family:var(--display);font-weight:700;letter-spacing:-.018em;line-height:1.16;
+ font-size:clamp(25px,4.1vw,49px)}
 
 /* .k from wall.html — the branch's kicker, wide-tracked and gold. */
 .kick{font-size:clamp(10.5px,1.3vw,13px);letter-spacing:.2em;text-transform:uppercase;
- font-weight:800;color:var(--gold);margin-bottom:clamp(13px,2vw,22px)}
-.kick.teal{color:var(--teal)}
+ font-weight:800;color:var(--cyan);margin-bottom:clamp(13px,2vw,22px)}
+.kick.gold{color:var(--gold)}
 .sub{color:var(--ink-2);font-size:clamp(14.5px,1.75vw,20px);line-height:1.6;max-width:46ch;
  margin:clamp(13px,2vw,21px) auto 0}
-.gold{color:var(--gold)}.teal{color:var(--teal)}.red{color:var(--red)}
+.gold{color:var(--cyan)}.teal{color:var(--cyan)}.red{color:var(--red)}
 
 /* The wall's signature move: a very large tabular figure. */
-.num{font-variant-numeric:tabular-nums;letter-spacing:-.045em;font-weight:800;line-height:.92;
+.num{font-family:var(--display);font-variant-numeric:tabular-nums;letter-spacing:-.038em;
+ font-weight:700;line-height:.94;
  font-size:clamp(46px,10.5vw,132px)}
 
 /* the gold rule that runs under every wall panel title */
-.rule{height:3px;width:64px;background:var(--gold);margin:0 auto clamp(15px,2.2vw,24px);
+.rule{height:3px;width:64px;background:var(--cyan);margin:0 auto clamp(15px,2.2vw,24px);
  border-radius:2px;transform:scaleX(0);transform-origin:center;
  transition:transform .75s cubic-bezier(.34,1.2,.4,1)}
 .on .rule{transform:scaleX(1)}
@@ -145,7 +167,7 @@ h2{font-weight:800;letter-spacing:-.028em;line-height:1.14;font-size:clamp(25px,
  opacity:0;transform:translateY(18px);transition:all .72s cubic-bezier(.34,1.15,.42,1)}
 .on .card{opacity:1;transform:none}
 .on .card:nth-child(2){transition-delay:.2s}.on .card:nth-child(3){transition-delay:.4s}
-.card .n{font-size:clamp(24px,3vw,36px);color:var(--teal);line-height:1;font-weight:800}
+.card .n{font-size:clamp(24px,3vw,36px);color:var(--cyan);line-height:1;font-weight:800}
 .card p{margin-top:9px;font-size:clamp(13px,1.5vw,16px);line-height:1.55;color:var(--ink-2)}
 .card p b{color:var(--ink)}
 
@@ -155,8 +177,8 @@ h2{font-weight:800;letter-spacing:-.028em;line-height:1.14;font-size:clamp(25px,
  opacity:0;transform:translateY(11px);transition:all .6s cubic-bezier(.34,1.2,.4,1)}
 .on .chip{opacity:1;transform:none}
 .on .chip:nth-child(2){transition-delay:.18s}.on .chip:nth-child(3){transition-delay:.36s}
-.chip.hot{background:var(--gold);color:#0D1524;border-color:var(--gold);
- box-shadow:0 0 0 5px rgba(245,185,53,.17)}
+.chip.hot{background:var(--cyan);color:#0F2027;border-color:var(--cyan);
+ box-shadow:0 0 0 5px rgba(94,234,212,.18)}
 
 .cap{color:var(--ink-3);font-size:clamp(11.5px,1.35vw,14.5px);margin-top:13px}
 
@@ -165,7 +187,7 @@ h2{font-weight:800;letter-spacing:-.028em;line-height:1.14;font-size:clamp(25px,
  color:var(--ink);text-shadow:0 2px 16px rgba(0,0,0,.92);opacity:0;transition:opacity .38s;
  pointer-events:none;z-index:40}
 #cc.on{opacity:1}
-#prog{position:fixed;left:0;bottom:0;height:3px;width:0;background:var(--gold);z-index:60}
+#prog{position:fixed;left:0;bottom:0;height:3px;width:0;background:var(--cyan);z-index:60}
 /* Sound needs a gesture — every browser blocks audio until one arrives, and
    no policy or flag gets round it. So the film does NOT wait behind a play
    button: it starts on load with captions, and offers sound as an extra.
@@ -173,9 +195,9 @@ h2{font-weight:800;letter-spacing:-.028em;line-height:1.14;font-size:clamp(25px,
    That is also the right behaviour for the wall, which nobody ever taps and
    which runs muted anyway. On a phone one tap adds Andrew from the top. */
 #snd{position:fixed;left:16px;bottom:13px;z-index:70;cursor:pointer;
- background:var(--gold);color:#0D1524;border-radius:999px;padding:10px 18px;
+ background:var(--cyan);color:#0F2027;border-radius:999px;padding:10px 18px;
  font-size:13px;font-weight:800;letter-spacing:-.01em;display:flex;gap:7px;align-items:center;
- box-shadow:0 8px 26px rgba(245,185,53,.3);animation:nudge 2.6s ease-in-out infinite}
+ box-shadow:0 8px 26px rgba(94,234,212,.32);animation:nudge 2.6s ease-in-out infinite}
 #snd[hidden]{display:none}
 #snd .spk{font-size:15px;line-height:1}
 @keyframes nudge{0%,88%,100%{transform:translateY(0)}94%{transform:translateY(-3px)}}
@@ -288,7 +310,7 @@ h2{font-weight:800;letter-spacing:-.028em;line-height:1.14;font-size:clamp(25px,
 
   <section class="scene" data-s="8"><div class="wrap">
     <div class="kick">The moment they do</div><div class="rule"></div>
-    <div class="num gold" id="heroNum">TT$0</div>
+    <div class="num" style="color:var(--cyan)" id="heroNum">TT$0</div>
     <p class="sub" style="font-size:clamp(16px,2.1vw,24px);color:var(--ink);margin-top:clamp(16px,2.4vw,26px)">
       of cover, in your client&rsquo;s hands.</p>
   </div></section>
