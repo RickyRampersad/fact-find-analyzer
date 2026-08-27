@@ -662,6 +662,50 @@
 
   .ptitle{flex-wrap:wrap; gap:.3em}
   table{display:block; max-width:100%; overflow-x:auto}
+
+  /* A FLOOR UNDER THE TYPE.
+     The wall sizes everything in em off the root, and the production panels
+     added later nest .72em labels inside .9em cards inside .85em columns.
+     That compounds: measured smallest rendered text on p13 was 7.3px, which
+     is a smudge on a phone and fine on a wall four metres away.
+     max() clamps the COMPUTED size, so it catches the compounding wherever
+     it happens rather than needing each offender found by hand. */
+  /* A FLOOR UNDER THE SMALL TYPE.
+     Everything here is sized in em off the root, and labels nest — .72em
+     inside .9em inside .85em — so the smallest rendered text measured 7.2px.
+     Fine on a wall at four metres, a smudge in the hand.
+
+     I tried `.panel *{font-size:max(1em,11px)}` first, thinking a universal
+     rule would catch the compounding wherever it happened. It made things
+     worse: 1em resolves to the INHERITED size, so applying it to every
+     element replaced each one's own size with its parent's and flattened
+     the whole type scale. Measured smallest went 7.2px to 6.9px.
+
+     Raising the root instead would need about 25px to lift the smallest
+     over 11, and at 25px the headline figures no longer fit the screen.
+
+     So: explicit pixel floors on the specific labels that compound, which
+     is a short and finite list because only the label classes nest. */
+  .panel .tag{font-size:11px !important}
+  .panel .pper i{font-size:11px !important}
+  .panel .pbar .t{font-size:11.5px !important}
+  .panel h2 em, .panel h2 span{font-size:11.5px !important}
+  .panel .col .top{font-size:12px !important}
+  .panel .k, .panel .s, .panel .met span, .panel small{font-size:11px !important}
+  /* The production panels merged from PR #3 brought their own label classes,
+     found by measuring what was actually VISIBLE and under 11px rather than
+     by reading the CSS — the hidden header rows report a font-size too and
+     had me chasing labels nobody can see. */
+  .panel .lbl, .panel .cn, .panel .rk, .panel .ar{font-size:11px !important}
+  .panel .nm{font-size:12px !important}
+  .panel .vv{font-size:12.5px !important}
+
+  /* Seven equal columns on a 390px screen is 55px each — they fit, and
+     nothing in them can be read. Let the wide ones keep their shape and
+     scroll inside their own box; the page itself never scrolls sideways. */
+  .panel [style*="repeat(7"], .panel [style*="repeat(5"]{
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+  }
 }
 
 /* A phone held sideways is still a phone, not a wall. */
