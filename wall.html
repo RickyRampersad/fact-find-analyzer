@@ -662,6 +662,37 @@
 
   .ptitle{flex-wrap:wrap; gap:.3em}
 
+  /* THE PERIOD TILES.
+     .stats.five is repeat(5,1fr) and .stat .val is 3.1em. On a 390px phone
+     that is a 65px column holding a 50px figure: "TT$6.30M" needs about 250px
+     and what showed was "TT$" with the number sliced off, under a label that
+     had wrapped to "AUGUS" and "YEAR TO DATE" stacked three deep.
+     Two across on a phone, one on a very narrow one, and the figure sized to
+     the viewport instead of to a root that knows nothing about the column. */
+  .stats, .stats.five{grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+                      gap:.55em !important}
+  .stats .stat, .stats.five .stat{padding:.7em .8em !important; min-width:0}
+  .stat .val, .stats.five .val{
+    font-size:clamp(19px,6.4vw,30px) !important; line-height:1.12 !important;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .stat .k, .stats.five .k{font-size:10.5px !important; letter-spacing:.09em !important;
+    white-space:normal; line-height:1.25}
+  .stat .s, .stats.five .s{font-size:11px !important; line-height:1.35}
+  @media (max-width:359px){
+    .stats, .stats.five{grid-template-columns:1fr !important}
+  }
+
+  /* WIDE CHARTS.
+     Seven or eight months across a phone is 45px a month, and the figure over
+     each bar is wider than the bar. They keep their shape and scroll inside
+     their own box; the page itself never scrolls sideways. */
+  .panel [style*="repeat(7"], .panel [style*="repeat(8"],
+  .panel [style*="repeat(5"], #pdMonths, .mchart{
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+  }
+  .panel [style*="repeat(7"] > *, .panel [style*="repeat(8"] > *{min-width:4.4em}
+
   /* THE SOUND BUTTON.
      It measured 52 x 19 px on a phone and sat in the header at 18px from the
      top. The voice was working the whole time - it could not be found or hit.
