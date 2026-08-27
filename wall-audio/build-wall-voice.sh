@@ -53,7 +53,7 @@ say 12 "Leads nobody was sent to. Scanned off a card or a stand. These wait unti
 
 say 13 "Today. This week. August. Quarter three. And the year. Forty seven applications this month for eight hundred and thirty six thousand."
 
-say 14 "Varun Seegolam leads the year on six hundred and thirty eight thousand from twenty seven policies. Aidan Eugene wrote sixty seven policies for less than that. Case size is the whole difference."
+say 14 "Varun leads the year on six hundred and thirty eight thousand from twenty seven policies. Aidan wrote sixty seven policies for less than that. Case size is the whole difference."
 
 say 15 "This is the number to look at. Ten million in API written and waiting on requirements. That is more than the entire year picked up. The average wait is one hundred and nine days."
 
