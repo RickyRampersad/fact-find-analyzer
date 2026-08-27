@@ -144,3 +144,62 @@ function rrbWallViewsToday() {
  * is not a question a page can answer honestly while the data behind it
  * answers to a key printed in that same page.
  */
+
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ *  SEEING WHO IS VIEWING, WITHOUT OPENING THE SCRIPT EDITOR
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * GET ?action=wall_viewers&token=…
+ *
+ * Returns the recent views for the wall's own "Who is looking" panel.
+ *
+ * BRANCH SCOPE ONLY. This is a record of where staff have been, and an agent
+ * has no business reading it — nor does a unit manager, whose people would be
+ * in it. rrbScopeForRole_ already draws that line for case data; the same line
+ * applies here, and more sharply, because this is about people rather than
+ * cases.
+ *
+ * Add one line in Code.gs beside the other actions:
+ *
+ *     else if (action === "wall_viewers") out = rrbWallViewers(e);
+ *
+ * Not cacheable. A cached answer would show a stale list and, worse, could
+ * serve one manager's view of the branch to somebody else.
+ */
+function rrbWallViewers(e) {
+  var me = null;
+  try { me = rrbAuthorize_(e); } catch (err) {}
+  if (!me) return RRB_EXPIRED;
+  if (!me.scope || me.scope.kind !== 'branch') {
+    return { ok: false, error: 'Only the Branch Manager can see who has been viewing.' };
+  }
+
+  var sh = rrbViewSheet_();
+  if (sh.getLastRow() < 2) return { ok: true, views: [], today: 0, people: 0 };
+
+  var take = Math.min(300, sh.getLastRow() - 1);
+  var vals = sh.getRange(sh.getLastRow() - take + 1, 1, take, 6).getValues();
+  var tz = Session.getScriptTimeZone();
+  var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+
+  var views = [], seenToday = {}, nToday = 0;
+  for (var i = vals.length - 1; i >= 0; i--) {
+    var r = vals[i];
+    var d = r[0] instanceof Date ? r[0] : new Date(r[0]);
+    if (isNaN(d.getTime())) continue;
+    var day = Utilities.formatDate(d, tz, 'yyyy-MM-dd');
+    if (day === today) { nToday++; seenToday[_str(r[2]) || _str(r[1])] = 1; }
+    if (views.length < 40) {
+      views.push({
+        at:   d.toISOString(),
+        when: Utilities.formatDate(d, tz, 'h:mm a'),
+        day:  day === today ? 'today' : Utilities.formatDate(d, tz, 'EEE d MMM'),
+        name: _str(r[1]), code: _str(r[2]), role: _str(r[3]), unit: _str(r[4])
+      });
+    }
+  }
+  return { ok: true, views: views, today: nToday,
+           people: Object.keys(seenToday).length };
+}
