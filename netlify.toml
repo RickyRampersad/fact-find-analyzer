@@ -47,3 +47,15 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "no-referrer"
     Cache-Control = "no-store"
+
+# wall-audio/ IS NOT PART OF THE SITE EITHER.
+#
+# The narration is built there and embedded into wall.html as a data URI, so
+# the loose MP3s are build output, not something the site needs to serve.
+# They read out advisor names and production figures, which is the same class
+# of thing as the apps-script note above.
+[[redirects]]
+  from = "/wall-audio/*"
+  to = "/index.html"
+  status = 404
+  force = true
