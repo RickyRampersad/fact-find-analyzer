@@ -706,13 +706,13 @@
      the whole width. Sized to its words, tall enough to hit, and back
      on the control row with the others. */
   #pdSnd, #pdXls, #wvBtn{
-    min-height:44px; padding:.5em .95em !important;
-    font-size:13px !important; font-weight:800 !important;
+    min-height:40px; padding:.3em .62em !important;
+    font-size:11.5px !important; font-weight:700 !important;
     border-radius:.55em !important; width:auto !important;
     display:inline-flex !important; align-items:center; margin:.15em .3em .15em 0;
   }
   #pdSnd{ background:rgba(45,212,191,.12) !important;
-          border:1.5px solid var(--teal) !important; color:var(--teal) !important; }
+          border:1px solid var(--teal) !important; color:var(--teal) !important; }
   #pdSnd.on{ background:var(--teal) !important; color:#08131A !important; }
   table{display:block; max-width:100%; overflow-x:auto}
 
@@ -891,6 +891,75 @@
   font:inherit; font-size:.85em; font-weight:700; cursor:pointer}
 
 /* the panel dots */
+
+/* ═══ THE WHOLE BRANCH ══════════════════════════════════════════════════
+   Every advisor, apps and API, across four periods. This is a table on
+   purpose: a bar chart answers "who is biggest", and the question this
+   panel exists for is "where is MY name and what does it say". Names are
+   the point, so nothing is truncated and no row is dropped.
+   Two column groups side by side, because 30-odd names down one column
+   makes a list nobody reads to the bottom of. */
+.rost{display:grid; gap:0 1.6em; min-height:0; flex:1;
+  grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start}
+.rgrp{min-width:0; display:flex; flex-direction:column}
+.rhd{display:grid; align-items:end; gap:.3em;
+  grid-template-columns:1.6em minmax(0,1fr) repeat(4,minmax(3.6em,4.4em));
+  padding:0 .2em .35em; border-bottom:1px solid var(--line)}
+.rhd .rh{font-size:max(.56em,10px); letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-3); text-align:right; line-height:1.15; font-weight:700}
+.rhd .rh.nm{text-align:left}
+.rhd .rh.cur{color:var(--gold)}
+.rrow{display:grid; align-items:center; gap:.3em;
+  grid-template-columns:1.6em minmax(0,1fr) repeat(4,minmax(3.6em,4.4em));
+  padding:.26em .2em; border-bottom:1px solid rgba(255,255,255,.045)}
+.rrow:hover{background:rgba(255,255,255,.035)}
+.rrow .rrk{font-size:max(.6em,10px); color:var(--ink-3); text-align:center;
+  font-variant-numeric:tabular-nums}
+.rrow .rnm{font-size:max(.72em,12px); color:#fff; font-weight:600;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.rcell{text-align:right; line-height:1.15; font-variant-numeric:tabular-nums}
+.rcell b{display:block; font-size:max(.68em,11px); color:var(--teal); font-weight:700}
+.rcell i{display:block; font-size:max(.54em,9.5px); color:var(--ink-3); font-style:normal}
+.rcell.cur b{color:var(--gold)}
+.rcell.zero b{color:var(--ink-3); font-weight:400}
+.rcell.zero i{color:transparent}
+/* Top three carry a tint rather than a medal - a medal on a four-period
+   table reads as "best this year" when the eye is on the week column. */
+.rrow.t1 .rnm{color:var(--gold)}
+.rrow.t2 .rnm,.rrow.t3 .rnm{color:#FFE9B0}
+.rfoot{display:grid; align-items:center; gap:.3em;
+  grid-template-columns:1.6em minmax(0,1fr) repeat(4,minmax(3.6em,4.4em));
+  padding:.4em .2em 0; margin-top:.25em; border-top:2px solid var(--line)}
+.rfoot .rnm{font-size:max(.66em,11px); color:var(--ink-2); font-weight:700;
+  text-transform:uppercase; letter-spacing:.06em}
+.rfoot .rcell b{color:#fff}
+.rgap{font-size:max(.6em,10.5px); color:var(--gold); line-height:1.45;
+  padding:.5em .7em; margin-top:.5em; background:rgba(245,185,53,.09);
+  border-left:3px solid var(--gold); border-radius:0 .35em .35em 0}
+@media (max-width:1100px){
+  .rost{grid-template-columns:minmax(0,1fr); overflow-y:auto}
+}
+@media (max-width:700px){
+  /* A NAME GETS ITS OWN LINE.
+     Four periods across a 390px screen leaves about nine characters for the
+     advisor - which turned every name into "Anthony ..." and defeated the
+     point of the panel. So on a phone the row becomes two lines: the name
+     in full across the top, the four periods underneath it. The rank spans
+     both, which is what keeps the numbers lined up under the name rather
+     than under the rank. */
+  .rhd,.rrow,.rfoot{grid-template-columns:1.5em repeat(4,minmax(0,1fr))}
+  .rrow,.rfoot{row-gap:.1em; padding:.42em .2em}
+  .rrow .rrk,.rfoot .rrk{grid-row:1 / span 2; align-self:center}
+  .rrow .rnm,.rfoot .rnm{grid-column:2 / -1; white-space:normal;
+    overflow:visible; text-overflow:clip; font-size:max(.74em,12.5px);
+    line-height:1.2; margin-bottom:.1em}
+  .rhd .rh.nm{display:none}
+  .rhd{grid-template-columns:1.5em repeat(4,minmax(0,1fr))}
+  .rhd .rh:first-child{grid-column:1}
+  .rcell b{font-size:max(.66em,11px)}
+  .rcell i{font-size:max(.52em,9px)}
+}
+
 .pdot{width:.62em; height:.62em; min-width:9px; min-height:9px; padding:0;
   border-radius:50%; border:0; cursor:pointer; background:rgba(255,255,255,.22);
   transition:background .2s, transform .2s, box-shadow .2s}
@@ -1256,9 +1325,16 @@
     </div>
     <div class="pdnote">Above the line is production. Below it is business the branch has already won and not yet counted.</div>
   </section>
+
+  <!-- 17 · THE WHOLE BRANCH — every advisor, four periods, apps and API -->
+  <section class="panel" id="p16">
+    <div class="ptitle"><h1 id="t_p16"></h1><span class="tag">The branch</span></div>
+    <div class="rost" id="pdRoster"></div>
+    <div class="pdnote" id="pdRosterNote">Every advisor in the branch. Not by unit.</div>
+  </section>
 </main>
 
-<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span><span class="tk" id="k13"></span><span class="tk" id="k14"></span><span class="tk" id="k15"></span></div>
+<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span><span class="tk" id="k13"></span><span class="tk" id="k14"></span><span class="tk" id="k15"></span><span class="tk" id="k16"></span></div>
 <div id="burst"></div>
 
 <script>
@@ -1266,7 +1342,7 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
 var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
 
-var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 16;
+var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 17;
 var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 /* Calendar volume: one hue, dark to light. Validated as an ordinal ramp against
    this surface — monotone lightness, every step clear of the card behind it. */
@@ -3169,6 +3245,111 @@ var PROD = {
          q('pdBands'), {tone:'warm', rank:false, big:true, nar:true});
     rows(P.held.books.map(function(b){ return {a:shortName(b.a), n:b.n+' apps', api:b.api}; }),
          q('pdBooks'), {tone:'warm', big:true, nar:true});
+    paintRoster(P);
+  }
+
+
+    /* ═══ THE WHOLE BRANCH ══════════════════════════════════════════════
+       Every advisor by name, apps and API, across week / month / quarter /
+       year. Branch-wide - units do not come into it.
+
+       The feed today carries per-advisor figures for ONE period and branch
+       totals for the other three. So each cell is drawn from whatever the
+       feed actually holds and left visibly empty where it holds nothing.
+       An empty cell is a request to the feed; an invented one is a number
+       somebody would act on. */
+  function paintRoster(P){
+    var box = q('pdRoster'); if(!box) return;
+    var per = [
+      {k:'w', lbl:'Week',    tot:P.week},
+      {k:'m', lbl:(P.month && P.month.label) || 'Month', tot:P.month},
+      {k:'q', lbl:(P.quarter && P.quarter.label) || 'Qtr', tot:P.quarter},
+      {k:'y', lbl:'Year',    tot:P.ytd}
+    ];
+
+    /* Prefer a real roster. Fall back to the board, which is one period
+       wide, rather than showing nothing at all. */
+    var src = P.roster && P.roster.length ? P.roster : null;
+    var list;
+    if(src){
+      list = src.map(function(r){ return r; });
+    } else {
+      list = (P.board||[]).map(function(b){
+        return {a:b.a, w:null, m:null, q:null, y:{n:b.n, api:b.api}};
+      });
+    }
+    /* Ordered by the biggest period we have a per-advisor split for, so the
+       ranking means something whichever columns are populated. */
+    var ord = ['y','q','m','w'].filter(function(k){
+      return list.some(function(r){ return r[k]; }); })[0] || 'y';
+    list = list.slice().sort(function(a,b){
+      return ((b[ord]||{}).api||0) - ((a[ord]||{}).api||0); });
+
+    function cell(r, p){
+      var v = r[p.k];
+      if(!v) return '<div class="rcell zero"><b>&middot;</b><i>&nbsp;</i></div>';
+      var cur = (p.k==='w') ? ' cur' : '';
+      return '<div class="rcell'+cur+'"><b>'+v.n+'</b><i>'+money(v.api)+'</i></div>';
+    }
+    function head(){
+      return '<div class="rhd"><div class="rh"></div><div class="rh nm">Advisor</div>'+
+        per.map(function(p){
+          return '<div class="rh'+(p.k==='w'?' cur':'')+'">'+esc(p.lbl)+'</div>'; }).join('')+
+        '</div>';
+    }
+    function foot(){
+      return '<div class="rfoot"><div class="rrk"></div><div class="rnm">Branch</div>'+
+        per.map(function(p){
+          var t = p.tot||{};
+          return '<div class="rcell"><b>'+(t.n!=null?t.n:'&middot;')+'</b>'+
+                 '<i>'+(t.api!=null?money(t.api):'&nbsp;')+'</i></div>'; }).join('')+
+        '</div>';
+    }
+
+    /* Two groups side by side. Splitting on the halfway point keeps rank
+       order reading down the left column then down the right. */
+    /* Two groups only when there are enough names to need them. Eight rows
+       split down the middle is two short stubs and a lot of empty wall. */
+
+    var split = list.length >= 14;
+    var half = split ? Math.ceil(list.length/2) : list.length;
+    var groups = split ? [list.slice(0,half), list.slice(half)] : [list];
+    box.style.gridTemplateColumns = split ? '' : 'minmax(0,1fr)';
+    box.innerHTML = groups.map(function(g, gi){
+      if(!g.length) return '';
+      return '<div class="rgrp">'+head()+ g.map(function(r, i){
+        var rank = gi*half + i;
+        return '<div class="rrow'+(rank<3?' t'+(rank+1):'')+'">'+
+          '<div class="rrk">'+(rank+1)+'</div>'+
+          '<div class="rnm">'+esc(r.a)+'</div>'+
+          per.map(function(p){ return cell(r, p); }).join('')+
+        '</div>'; }).join('') + (gi===groups.length-1 ? foot() : '') + '</div>';
+    }).join('');
+
+    /* Say what is missing, and name it, so the gap is a task rather than a
+       mystery. Counting it beats asserting it - if the feed starts carrying
+       roster the note disappears on its own. */
+    var have = per.filter(function(p){
+      return list.some(function(r){ return r[p.k]; }); }).length;
+    var named = list.reduce(function(s,r){ return s + ((r[ord]||{}).api||0); }, 0);
+    var branch = ((ord==='y'?P.ytd:ord==='q'?P.quarter:ord==='m'?P.month:P.week)||{}).api||0;
+    var note = q('pdRosterNote');
+    if(note){
+      if(have === 4 && src){
+        note.innerHTML = list.length+' advisors. Apps and API, branch-wide, '+
+          'week to year to date.';
+      } else {
+        var pct = branch ? Math.round(named/branch*100) : 0;
+        note.innerHTML = '<span style="color:var(--gold)">'+list.length+' advisors named, '+
+          pct+'% of branch API.</span> The feed sends per-advisor figures for one period '+
+          'and branch totals for the rest &mdash; the empty cells fill themselves the day '+
+          'it sends <b>roster</b>.';
+      }
+    }
+    var lead = list[0];
+    set('t_p16', lead ? '<b>'+esc(lead.a)+'</b> leads the branch on '+
+                        money((lead[ord]||{}).api||0)
+                      : 'The whole branch');
   }
 
   paint();
