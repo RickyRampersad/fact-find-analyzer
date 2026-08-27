@@ -1182,6 +1182,72 @@
   .subrow.tt .sl{padding-left:.2em}
 }
 
+
+/* ═══ THE ADVISORS ═════════════════════════════════════════════════════════
+   One line each: what they write, when they wrote it, and what it came to.
+   The mix bar is the point of the panel - two advisors on the same API can
+   be running completely different books, and that is a coaching conversation
+   the numbers alone never start. Widths are API, not policy count: three
+   pension cases can outweigh thirty life ones and the bar has to say so. */
+.agb{display:block; flex:1; min-height:0; overflow:auto;
+  border:1px solid var(--line); border-radius:.4em}
+.agr{display:grid; align-items:center; gap:.5em;
+  grid-template-columns:1.7em minmax(7em,1.15fr) minmax(0,1.5fr) repeat(4,minmax(2.6em,3.1em)) 4.6em 5.6em;
+  padding:.3em .55em; border-bottom:1px solid rgba(255,255,255,.05)}
+.agr:hover{background:rgba(255,255,255,.03)}
+.agr.hd{position:sticky; top:0; z-index:3; background:#12242F; border-bottom:1px solid var(--line)}
+.agr.hd>*{font-size:max(.54em,9px); font-weight:800; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-3); text-align:right}
+.agr.hd .anm,.agr.hd .amix{text-align:left}
+.agr .ark{font-size:max(.6em,10px); color:var(--ink-4); text-align:center;
+  font-variant-numeric:tabular-nums}
+.agr.t1 .ark,.agr.t2 .ark,.agr.t3 .ark{color:var(--gold); font-weight:800}
+.agr .anm{min-width:0}
+.agr .anm b{display:block; font-size:max(.74em,12px); color:#fff; font-weight:700;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.agr .anm i{display:block; font-size:max(.54em,9px); color:var(--ink-4);
+  font-style:normal; letter-spacing:.04em; text-transform:uppercase;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.amix{display:flex; height:1.55em; border-radius:.25em; overflow:hidden;
+  background:rgba(255,255,255,.05)}
+.amix span{display:flex; align-items:center; justify-content:center;
+  font-size:max(.54em,9px); font-weight:800; color:#04211D; min-width:0;
+  transition:width .8s cubic-bezier(.2,.75,.3,1); overflow:hidden}
+.amix .life{background:linear-gradient(180deg,var(--teal),var(--teal-deep))}
+.amix .pens{background:linear-gradient(180deg,var(--gold),var(--gold-deep))}
+.amix .pa  {background:linear-gradient(180deg,#E08AA0,#A8324A); color:#fff}
+.agq{text-align:right; font-size:max(.62em,10px); color:var(--ink-2);
+  font-variant-numeric:tabular-nums}
+.agq.now{color:var(--teal); font-weight:800}
+.agq.zero{color:var(--ink-4)}
+.agr .aw,.agr .ay{text-align:right; font-variant-numeric:tabular-nums}
+.agr .aw{font-size:max(.64em,10.5px); color:var(--teal); font-weight:700}
+.agr .ay{font-size:max(.7em,11.5px); color:#fff; font-weight:800}
+.agr .ay em{display:block; font-style:normal; font-size:max(.52em,9px);
+  color:var(--gold); font-weight:700}
+.agkey{display:flex; gap:1.1em; padding:.45em .2em 0; font-size:max(.56em,9.5px);
+  color:var(--ink-3); font-weight:700}
+.agkey i{display:inline-block; width:.75em; height:.75em; border-radius:.2em;
+  margin-right:.35em; vertical-align:middle}
+.agkey i.life{background:var(--teal)} .agkey i.pens{background:var(--gold)}
+.agkey i.pa{background:#A8324A}
+/* THE NAME GETS A LINE OF ITS OWN.
+   Nine columns across 390px left the advisor about eight characters and cut
+   every one of the thirty two names. On a phone the row is three lines: who
+   they are, what their book is made of, then the figures. */
+@media (max-width:820px){
+  .agr{grid-template-columns:1.5em repeat(6,minmax(0,1fr)); row-gap:.12em;
+       padding:.45em .5em}
+  .agr .ark{grid-row:1 / span 3; align-self:start; padding-top:.15em}
+  .agr .anm{grid-column:2 / -1}
+  .agr .anm b{font-size:max(.72em,11.5px); white-space:normal}
+  .agr .amix{grid-column:2 / -1; height:1.2em}
+  .agr.hd{display:none}
+  .agq,.agr .aw,.agr .ay{font-size:max(.58em,9.5px)}
+  .agr .ay{font-size:max(.64em,10.5px)}
+  .agr .ay em{font-size:max(.5em,8.5px)}
+}
+
 .pdot{width:.62em; height:.62em; min-width:9px; min-height:9px; padding:0;
   border-radius:50%; border:0; cursor:pointer; background:rgba(255,255,255,.22);
   transition:background .2s, transform .2s, box-shadow .2s}
@@ -1498,9 +1564,16 @@
     </div>
     <div class="pdnote" id="pdRosterNote"></div>
   </section>
+
+  <!-- 14 · THE ADVISORS — what each one writes, and when -->
+  <section class="panel" id="p13">
+    <div class="ptitle"><h1 id="t_p13"></h1><span class="tag">Advisors</span></div>
+    <div class="agb" id="agBoard"></div>
+    <div class="pdnote" id="agNote"></div>
+  </section>
 </main>
 
-<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span></div>
+<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span><span class="tk" id="k13"></span></div>
 <div id="burst"></div>
 
 <script>
@@ -1508,7 +1581,7 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
 var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
 
-var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 13;
+var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 14;
 var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 /* Calendar volume: one hue, dark to light. Validated as an ordinal ramp against
    this surface — monotone lightness, every step clear of the card behind it. */
@@ -2299,8 +2372,15 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
      three and are hittable. */
   var dots=document.createElement('div');
   dots.id='pDots';
-  dots.style.cssText='display:flex;gap:.34em;align-items:center;flex-wrap:wrap;'+
-    'max-width:15em;padding:.15em .2em';
+  /* Centred along the bottom rather than tucked in beside the buttons.
+     They are the one control somebody reaches for from across the room,
+     and the corner is where a thumb goes for Hold, not for slide nine. */
+  dots.style.cssText='position:fixed;left:50%;bottom:9px;transform:translateX(-50%);'
+    +'z-index:61;display:flex;gap:.42em;align-items:center;justify-content:center;'
+    +'flex-wrap:wrap;max-width:60vw;padding:.3em .55em;border-radius:2em;'
+    +'background:rgba(8,19,26,.55);opacity:.5;transition:opacity .2s';
+  dots.onmouseenter=function(){ dots.style.opacity='1'; };
+  dots.onmouseleave=function(){ dots.style.opacity='.5'; };
   for(var di=0; di<PANELS; di++){
     (function(n){
       var d=document.createElement('button');
@@ -2311,7 +2391,7 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
       dots.appendChild(d);
     })(di);
   }
-  bar.appendChild(dots);
+  document.body.appendChild(dots);
 
 
   var hold=btn('\u2016 Hold','Hold this panel',function(){
@@ -3942,6 +4022,7 @@ var PROD = {
     rows(P.held.books.map(function(b){ return {a:shortName(b.a), n:b.n+' apps', api:b.api}; }),
          q('pdBooks'), {tone:'warm', big:true, nar:true});
     paintRoster(P);
+    if(P.agents) paintAgents(P);
   }
 
 
@@ -4034,6 +4115,68 @@ var PROD = {
     });
   }
 
+
+  /* ── THE ADVISORS ─────────────────────────────────────────────────────────
+     One line each. The mix bar is the reason this panel exists: two advisors
+     on the same API can be running completely different books, and that is a
+     conversation the totals never start. Segment widths are API rather than
+     policy count, because three pension cases can outweigh thirty life ones
+     and a bar drawn on counts would hide exactly that. */
+  function paintAgents(A){
+    var box = q('agBoard'); if(!box) return false;
+    var ags = (A && A.agents) || [];
+    if(!ags.length) return false;
+    function k(v){ v = Number(v)||0;
+      return v >= 1e6 ? '$'+(v/1e6).toFixed(2)+'M'
+           : v >= 1e3 ? '$'+Math.round(v/1e3)+'k' : '$'+Math.round(v); }
+    var CUR = 3;   /* the quarter we are in; the others are history */
+    var head = '<div class="agr hd"><div class="ark"></div><div class="anm">Advisor</div>'
+             + '<div class="amix">Book &mdash; life, pension, personal accident</div>'
+             + '<div>Q1</div><div>Q2</div><div>Q3</div><div>Q4</div>'
+             + '<div>Week</div><div>Year</div></div>';
+    box.innerHTML = head + ags.map(function(a, i){
+      var mix = a.mix || [], tot = 0;
+      mix.forEach(function(m){ tot += m.api || 0; });
+      function seg(name, cls){
+        var m = null;
+        mix.forEach(function(x){ if(x.k === name) m = x; });
+        if(!m || !m.api) return '';
+        var pc = tot ? (m.api / tot * 100) : 0;
+        /* Under about six per cent there is no room for a number, and a
+           number clipped in half is worse than none. */
+        return '<span class="' + cls + '" style="width:' + pc.toFixed(1) + '%" title="'
+             + name + ' · ' + m.apps + ' apps · ' + k(m.api) + '">'
+             + (pc > 6 ? m.apps : '') + '</span>';
+      }
+      function qc(n){
+        var v = (a.q && a.q['q'+n]) || null;
+        var cls = 'agq' + (n === CUR ? ' now' : '') + (v ? '' : ' zero');
+        return '<div class="' + cls + '">' + (v ? k(v[1]) : '·') + '</div>';
+      }
+      var w = a.w, y = a.y || [0,0], inc = a.inc || [0,0];
+      return '<div class="agr' + (i < 3 ? ' t'+(i+1) : '') + '">'
+        + '<div class="ark">' + (i+1) + '</div>'
+        + '<div class="anm"><b>' + esc(a.name) + '</b><i>' + esc(a.unit || '') + '</i></div>'
+        + '<div class="amix">' + seg('LIFE','life') + seg('PENSION','pens')
+                               + seg('PERSONAL ACCIDENT','pa') + '</div>'
+        + qc(1) + qc(2) + qc(3) + qc(4)
+        + '<div class="aw">' + (w ? k(w[1]) : '·') + '</div>'
+        + '<div class="ay">' + k(y[1]) + '<em>' + y[0] + ' apps'
+        + (inc[1] ? ' · +' + k(inc[1]) + ' inc' : '') + '</em></div>'
+        + '</div>';
+    }).join('');
+    var lead = ags[0];
+    set('t_p13', lead ? '<b>' + esc(lead.name) + '</b> leads on ' + k(lead.y[1])
+                      : 'The advisors');
+    var note = q('agNote');
+    if(note) note.innerHTML =
+      '<span class="agkey"><span><i class="life"></i>Life</span>'
+      + '<span><i class="pens"></i>Pension</span>'
+      + '<span><i class="pa"></i>Personal accident</span>'
+      + '<span style="color:var(--ink-4)">bar width is API, not policy count</span></span>';
+    return true;
+  }
+
   function paintSubmitted(S){
     var box = q('pdRoster'); if(!box) return false;
     function n0(v){ return (v===null||v===undefined||v==='') ? '' : Math.round(v).toLocaleString('en-US'); }
@@ -4090,6 +4233,24 @@ var PROD = {
     if(P.submitted && P.submitted.rows && P.submitted.rows.length){
       if(paintSubmitted(P.submitted)) return;
     }
+    /* A blank panel is indistinguishable from a branch that wrote nothing.
+       Say which of the two it is, and name what would fix it. */
+    (function(){
+      var b = q('pdRoster'), n = q('pdRosterNote');
+      if(!b) return;
+      b.innerHTML = '<div style="padding:1.4em;font-size:.72em;line-height:1.6;color:var(--ink-2)">'
+        + '<div style="color:var(--gold);font-weight:800;margin-bottom:.5em">'
+        + 'Waiting on the production feed.</div>'
+        + 'The layout and the download are built and tested. The figures come from '
+        + '<b>action=submitted</b>, which is returning zeros because the tab it reads is named '
+        + '<b>Branch Production Pick Up Date ThiS YEA SF</b> and it looks for '
+        + '<b>Branch Production Pick Up Date This Year</b> &mdash; so it is classified as a '
+        + 'roster tab and the new-business half reads nothing.'
+        + '<div style="margin-top:.7em;color:var(--ink-4)">Rename that tab and this panel fills itself.</div>'
+        + '</div>';
+      if(n) n.innerHTML = '';
+      set('t_p12', 'Production submitted');
+    })();
     var box = q('pdRoster'); if(!box) return;
     box.className = 'rost';
     var per = [
