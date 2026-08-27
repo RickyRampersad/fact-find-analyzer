@@ -1520,17 +1520,38 @@ function renderSpotlight(d){
 function headlines(d){
   var M=d.month||{}, W=d.week||{}, WK=d.weekend||{week:0}, q=d.queue||{}, L=(d.leaders||[])[0];
   var mp=(d.managerPerf||[]).filter(function(x){return x.reviewed>0;});
+    /* The people, not just the totals.
+       Eleven of thirteen headlines were a number and a noun - "TT$85.0M of
+       protection found this month" - which tells a branch what it did and
+       nobody who did it. A board that never says a name is a board nobody
+       looks for themselves in. */
+    var MO=(d.monthLeaders||[])[0], YR=(d.yearLeaders||[])[0];
+    var fastest=mp.filter(function(x){return x.medianDays!==null;})
+                  .sort(function(a,b){return a.medianDays-b.medianDays;})[0];
+    var busiest=mp.slice().sort(function(a,b){return (b.pending||0)-(a.pending||0);})[0];
+    /* First name only where the full one would crowd the line out. */
+    var first=function(n){ return String(n||'').trim().split(/\s+/)[0]||''; };
   var ds=mp.map(function(m){return m.medianDays;}).filter(function(x){return x!==null;}).sort(function(a,b){return a-b;});
   var md=ds.length? ds[Math.floor(ds.length/2)] : null;
   var set=function(id,html){ var el=$(id); if(el) el.innerHTML=html; };
-  set('t_p0', M.need>0 ? '<b>'+big(M.need)+'</b> of protection found this month'
-                       : 'The board is open');
-  set('t_p1', M.submitted? '<b>'+M.submitted+'</b> fact finds in '+(M.label||'this month')
-                         : 'Momentum starts today');
+  set('t_p0', L ? '<b>'+esc(L.name)+'</b> leads on '+big(L.need||0)+' found'+
+                (M.need>0 ? ' &middot; '+big(M.need)+' across the branch this month' : '')
+          : (M.need>0 ? '<b>'+big(M.need)+'</b> of protection found this month'
+                      : 'The board is open'));
+  set('t_p1', MO ? '<b>'+esc(MO.name)+'</b> on '+MO.count+' this month'+
+                 (M.submitted ? ' &middot; '+M.submitted+' across the branch' : '')
+          : (M.submitted ? '<b>'+M.submitted+'</b> fact finds in '+(M.label||'this month')
+                         : 'Momentum starts with one'));
   set('t_p2', L? 'Leading the week: <i>'+esc(L.name)+'</i>' : 'Recognition');
-  set('t_p3', q.pending? '<b>'+q.pending+'</b> waiting on a manager'
-                       : 'The queue is <b>clear</b>');
-  set('t_p4', md!==null? 'Managers decide in <b>'+md+' days</b>' : 'How managers are managing');
+  set('t_p3', q.pending
+    ? '<b>'+q.pending+'</b> waiting on a manager'+
+      (q.oldestWho ? ' &middot; the oldest is <b>'+esc(q.oldestWho)+'</b>&rsquo;s, '+
+                     q.oldestDays+' day'+(q.oldestDays===1?'':'s') : '')
+    : 'The queue is <b>clear</b>');
+  set('t_p4', fastest
+    ? '<b>'+esc(first(fastest.name))+'</b> answers fastest &mdash; '+fastest.medianDays+' days'+
+      (md!==null ? ' &middot; '+md+' across the branch' : '')
+    : (md!==null ? 'Managers decide in <b>'+md+' days</b>' : 'How managers are managing'));
   var WPP=(d.production&&d.production.wtd)||{api:0,pipeline:0};
   set('t_p5', WPP.api>0 ? '<b>'+big(WPP.api)+'</b> picked up this week'
             : (WPP.pipeline>0 ? '<b>'+big(WPP.pipeline)+'</b> in pipeline this week'
