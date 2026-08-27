@@ -995,6 +995,43 @@
   #p16 .rost{overflow:visible}
 }
 
+
+/* ═══ SUBMITTED — the production report as it is circulated ════════════════
+   Unit, then manager, then every agent with their code. Three levels that
+   have to be tellable apart from across a room, which is what the indent
+   and the two tints are for. Same column order as the sheet so the screen
+   and the download are the same document. */
+.subt{display:block; width:100%; min-height:0; flex:1; overflow:auto}
+.subrow{display:grid; align-items:center; gap:.3em;
+  grid-template-columns:minmax(0,1fr) repeat(6,minmax(3.2em,5.2em));
+  padding:.22em .4em; border-bottom:1px solid rgba(255,255,255,.045)}
+.subrow .sc{text-align:right; font-variant-numeric:tabular-nums;
+  font-size:max(.68em,11px); color:var(--ink-2)}
+.subrow .sc.m{color:var(--teal)}
+.subrow .sl{font-size:max(.7em,11.5px); color:#fff; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis}
+.subrow.hd{position:sticky; top:0; z-index:2; background:#14361c;
+  border-bottom:0; padding:.34em .4em}
+.subrow.hd .sl,.subrow.hd .sc{font-size:max(.58em,10px); font-weight:800;
+  letter-spacing:.06em; text-transform:uppercase; color:#DCEBD2}
+.subrow.u  {background:rgba(248,201,201,.13)}
+.subrow.mg {background:rgba(253,233,233,.07)}
+.subrow.u .sl,.subrow.mg .sl{font-weight:800}
+.subrow.u .sc,.subrow.mg .sc{font-weight:750; color:#fff}
+.subrow.u .sl{padding-left:0}
+.subrow.mg .sl{padding-left:1em}
+.subrow.ag .sl{padding-left:2.2em; color:var(--ink-1)}
+.subrow.tt{background:#1B3A1B; border-top:2px solid #4E7A34;
+  border-bottom:0; position:sticky; bottom:0}
+.subrow.tt .sl,.subrow.tt .sc{font-weight:800; color:#fff}
+@media (max-width:820px){
+  .subrow{grid-template-columns:minmax(0,1fr) repeat(6,minmax(2.4em,1fr)); gap:.18em}
+  .subrow .sc{font-size:max(.6em,9.5px)}
+  .subrow .sl{font-size:max(.62em,10px)}
+  .subrow.mg .sl{padding-left:.5em}
+  .subrow.ag .sl{padding-left:1.1em}
+}
+
 .pdot{width:.62em; height:.62em; min-width:9px; min-height:9px; padding:0;
   border-radius:50%; border:0; cursor:pointer; background:rgba(255,255,255,.22);
   transition:background .2s, transform .2s, box-shadow .2s}
@@ -3104,6 +3141,109 @@ var PROD = {
   }
   /* sheets: [{name, rows:[[cell,...],...]}] — a number stays a number so it
      can be summed on arrival, everything else is inline text. */
+  /* THE WORKBOOK HAS STYLES NOW.
+     It was writing bare <c> cells with no styles.xml at all, so every export
+     opened as undifferentiated text - no bold, no fills, no thousands
+     separators, no column widths. The branch production report is read as a
+     hierarchy: unit, then manager, then agent, and you have to be able to see
+     which row is which at a glance. That is formatting, not decoration.
+
+     Style indices used below:
+       1 banner      white on green, bold, centred
+       2 header      bold on green
+       3 unit        bold on rose
+       4 manager     bold on light rose
+       5 agent       plain
+       6 total       bold on green, top border
+       7 int         plain integer
+       8 money       #,##0.00
+       9 int bold  10 money bold      (unit / manager / total numbers)
+      11 money plain on rose  12 money plain on light rose  - unused headers */
+  function xlStyles(){
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+    '<numFmts count="2">'+
+      '<numFmt numFmtId="164" formatCode="#,##0"/>'+
+      '<numFmt numFmtId="165" formatCode="#,##0.00"/>'+
+    '</numFmts>'+
+    '<fonts count="4">'+
+      '<font><sz val="10"/><name val="Calibri"/></font>'+
+      '<font><b/><sz val="10"/><name val="Calibri"/></font>'+
+      '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'+
+      '<font><b/><sz val="10"/><color rgb="FF1F3B1F"/><name val="Calibri"/></font>'+
+    '</fonts>'+
+    '<fills count="5">'+
+      '<fill><patternFill patternType="none"/></fill>'+
+      '<fill><patternFill patternType="gray125"/></fill>'+
+      '<fill><patternFill patternType="solid"><fgColor rgb="FF4E7A34"/><bgColor indexed="64"/></patternFill></fill>'+
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFF8C9C9"/><bgColor indexed="64"/></patternFill></fill>'+
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFFDE9E9"/><bgColor indexed="64"/></patternFill></fill>'+
+    '</fills>'+
+    '<borders count="2">'+
+      '<border><left/><right/><top/><bottom/><diagonal/></border>'+
+      '<border><left/><right/><top style="thin"><color rgb="FF4E7A34"/></top><bottom style="double"><color rgb="FF4E7A34"/></bottom><diagonal/></border>'+
+    '</borders>'+
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+    '<cellXfs count="11">'+
+      '<xf numFmtId="0"   fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+      '<xf numFmtId="0"   fontId="2" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center"/></xf>'+
+      '<xf numFmtId="0"   fontId="2" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'+
+      '<xf numFmtId="0"   fontId="1" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'+
+      '<xf numFmtId="0"   fontId="1" fillId="4" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'+
+      '<xf numFmtId="0"   fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+      '<xf numFmtId="0"   fontId="2" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>'+
+      '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'+
+      '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'+
+      '<xf numFmtId="164" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>'+
+      '<xf numFmtId="165" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>'+
+    '</cellXfs>'+
+    '</styleSheet>';
+  }
+
+  /* THE SUBMITTED SHEET.
+     This is the branch production report as it is actually circulated -
+     unit, then manager, then every agent under them with their code, across
+     week, month and year to date. The export has to come out in that shape
+     because that is the shape people read it in; a differently arranged
+     workbook of the same numbers is a different document.
+
+     Blank stays blank. The report leaves a cell empty where an advisor did
+     nothing that period rather than writing a zero, and a zero reads as a
+     measured result where an empty cell reads as no activity. Faizal
+     Mohammed's row is the case in point: it carries a real 0.00 for the
+     month, and that is not the same as the blank above it. */
+  function submittedSheet(){
+    var S = (typeof PROD !== 'undefined' && PROD.submitted) || null;
+    if(!S || !S.rows || !S.rows.length) return null;
+    var IND = ['', '   ', '      '];
+    var out = [];
+    out.push([{v:'SUBMITTED', s:1}, '', '', '', '', '', '']);
+    out.push([{v:'Hierarchy', s:2}, {v:'Apps -W', s:2}, {v:'API - W', s:2},
+              {v:'Apps -M', s:2}, {v:'Api -M', s:2},
+              {v:'Apps -Y', s:2}, {v:'API', s:2}]);
+    function num(p, i, style){
+      var v = (p && p[i] !== null && p[i] !== undefined) ? p[i] : '';
+      return {v:v, s:style};
+    }
+    S.rows.forEach(function(r){
+      var lab = r.lvl === 0 ? 3 : r.lvl === 1 ? 4 : 5;
+      var ni  = r.lvl === 2 ? 7 : 9;
+      var mi  = r.lvl === 2 ? 8 : 10;
+      out.push([{v: IND[r.lvl] + r.label, s: lab},
+                num(r.w,0,ni), num(r.w,1,mi),
+                num(r.m,0,ni), num(r.m,1,mi),
+                num(r.y,0,ni), num(r.y,1,mi)]);
+    });
+    var t = S.total || {};
+    out.push([{v:'Total', s:6},
+              num(t.w,0,6), num(t.w,1,6),
+              num(t.m,0,6), num(t.m,1,6),
+              num(t.y,0,6), num(t.y,1,6)]);
+    return { name:'Submitted', rows:out,
+             cols:[34, 9, 14, 9, 14, 9, 15],
+             merges:['A1:G1'] };
+  }
+
   function buildXlsx(sheets){
     var parts=[];
     parts.push({name:'[Content_Types].xml', data:
@@ -3112,6 +3252,7 @@ var PROD = {
       '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
       '<Default Extension="xml" ContentType="application/xml"/>'+
       '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+      '<Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/>'+
       sheets.map(function(_,i){ return '<Override PartName="/xl/worksheets/sheet'+(i+1)+
         '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('')+
       '</Types>'});
@@ -3126,26 +3267,36 @@ var PROD = {
       'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+
       sheets.map(function(sh,i){ return '<sheet name="'+xesc(sh.name)+'" sheetId="'+(i+1)+
         '" r:id="rId'+(i+1)+'"/>'; }).join('')+'</sheets></workbook>'});
+    parts.push({name:'xl/styles.xml', data: xlStyles()});
     parts.push({name:'xl/_rels/workbook.xml.rels', data:
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
-      sheets.map(function(_,i){ return '<Relationship Id="rId'+(i+1)+
-        '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" '+
-        'Target="worksheets/sheet'+(i+1)+'.xml"/>'; }).join('')+'</Relationships>'});
+      sheets.map(function(_,i){ return '<Relationship Id=\"rId'+(i+1)+
+        '\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" '+
+        'Target=\"worksheets/sheet'+(i+1)+'.xml\"/>'; }).join('')+
+      '<Relationship Id=\"rIdS\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/>'+
+      '</Relationships>'});
     sheets.forEach(function(sh,i){
       var rows=sh.rows.map(function(r,ri){
         var cells=r.map(function(v,ci){
-          var ref=colName(ci)+(ri+1);
+          var ref=colName(ci)+(ri+1), st=0;
+          if(v && typeof v==='object'){ st=v.s||0; v=v.v; }
+          var sa = st ? ' s="'+st+'"' : '';
+          if(v===null || v===undefined || v==='') return sa ? '<c r="'+ref+'"'+sa+'/>' : '';
           if(typeof v==='number' && isFinite(v))
-            return '<c r="'+ref+'"><v>'+v+'</v></c>';
-          return '<c r="'+ref+'" t="inlineStr"><is><t>'+xesc(v)+'</t></is></c>';
+            return '<c r="'+ref+'"'+sa+'><v>'+v+'</v></c>';
+          return '<c r="'+ref+'"'+sa+' t="inlineStr"><is><t>'+xesc(v)+'</t></is></c>';
         }).join('');
         return '<row r="'+(ri+1)+'">'+cells+'</row>';
       }).join('');
+      var cols = sh.cols ? '<cols>'+sh.cols.map(function(w,ci){
+        return '<col min="'+(ci+1)+'" max="'+(ci+1)+'" width="'+w+'" customWidth="1"/>'; }).join('')+'</cols>' : '';
+      var merges = sh.merges ? '<mergeCells count="'+sh.merges.length+'">'+
+        sh.merges.map(function(m){ return '<mergeCell ref="'+m+'"/>'; }).join('')+'</mergeCells>' : '';
       parts.push({name:'xl/worksheets/sheet'+(i+1)+'.xml', data:
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
         '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
-        '<sheetData>'+rows+'</sheetData></worksheet>'});
+        cols+'<sheetData>'+rows+'</sheetData>'+merges+'</worksheet>'});
     });
     return zipStore(parts);
   }
@@ -3350,8 +3501,46 @@ var PROD = {
        feed actually holds and left visibly empty where it holds nothing.
        An empty cell is a request to the feed; an invented one is a number
        somebody would act on. */
+  function paintSubmitted(S){
+    var box = q('pdRoster'); if(!box) return false;
+    box.className = 'subt';
+    var C = ['Apps -W','API - W','Apps -M','Api -M','Apps -Y','API'];
+    function n0(v){ return (v===null||v===undefined||v==='') ? '' : Math.round(v).toLocaleString('en-US'); }
+    function n2(v){ return (v===null||v===undefined||v==='') ? ''
+                    : v.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+    function cells(r){
+      var p=[r.w,r.m,r.y], out='';
+      for(var i=0;i<3;i++){
+        var a=p[i]||[];
+        out += '<div class="sc">'+n0(a[0])+'</div>'+
+               '<div class="sc m">'+n2(a[1])+'</div>';
+      }
+      return out;
+    }
+    var html = '<div class="subrow hd"><div class="sl">Hierarchy</div>'+
+      C.map(function(c){ return '<div class="sc">'+c+'</div>'; }).join('')+'</div>';
+    html += S.rows.map(function(r){
+      var cls = r.lvl===0 ? 'u' : r.lvl===1 ? 'mg' : 'ag';
+      return '<div class="subrow '+cls+'"><div class="sl">'+esc(r.label)+'</div>'+cells(r)+'</div>';
+    }).join('');
+    var t = S.total||{};
+    html += '<div class="subrow tt"><div class="sl">Total</div>'+cells(t)+'</div>';
+    box.innerHTML = html;
+    set('t_p16', 'Production submitted &middot; <b>'+n2((t.y||[])[1])+'</b> year to date');
+    var note=q('pdRosterNote');
+    if(note) note.innerHTML = 'As at '+esc(S.asAt||'')+
+      ' &middot; <span style="color:var(--gold)">confidential — branch management only</span>';
+    return true;
+  }
+
   function paintRoster(P){
+    /* The circulated report wins when we have it - it is the document
+       people actually read, and it names every agent under every manager. */
+    if(P.submitted && P.submitted.rows && P.submitted.rows.length){
+      if(paintSubmitted(P.submitted)) return;
+    }
     var box = q('pdRoster'); if(!box) return;
+    box.className = 'rost';
     var per = [
       {k:'w', lbl:'Week',    tot:P.week},
       {k:'m', lbl:(P.month && P.month.label) || 'Month', tot:P.month},
@@ -3451,6 +3640,7 @@ var PROD = {
      SpreadsheetML is parsed back into rows and repacked as a real xlsx,
      so nothing about WHAT is exported has to be rewritten to fix HOW. */
   function bookToSheets(){
+    var first = submittedSheet();
     var doc=new DOMParser().parseFromString(buildBook(),'application/xml');
     var out=[];
     [].forEach.call(doc.getElementsByTagName('Worksheet'), function(ws){
@@ -3469,6 +3659,7 @@ var PROD = {
       });
       out.push({name:name.slice(0,31), rows:rows});
     });
+    if(first) out.unshift(first);
     return out;
   }
   
@@ -3601,6 +3792,7 @@ var PROD = {
     document.getElementById('wgate').classList.add('gone');
     nameBadge(WHO);
     xlsFor(WHO);
+    submittedFor(WHO);
     viewersFor(WHO);
     logView(WHO);
   }
@@ -3680,6 +3872,39 @@ var PROD = {
      script behind rrbAuthorize_. See apps-script/WallSpreadsheetAccess.md.
      ──────────────────────────────────────────────────────────────────────── */
   var ADMIN_CODE = 'rrb-admin';   // the fallback link, for a screen with no session
+  /* ── THE SUBMITTED REPORT IS NOT IN THIS FILE ──────────────────────────
+     It names every agent in the branch with their code and what they wrote.
+     wall.html is served by Netlify from the repository root, so anything
+     baked into it is readable by anyone who opens the page source - the
+     sign-in gate hides it from the screen and from nobody else. Putting the
+     report in here would publish the branch's production, which is the exact
+     opposite of what it is marked.
+
+     So it is fetched, with the session token, and the script decides. Branch
+     scope and admins get rows; everybody else gets nothing and the panel
+     falls back to the board. That is a real boundary rather than a drawn
+     one - the bytes never reach a browser that should not have them. */
+  function submittedFor(who){
+    if(!who || !who.token) return;
+    var branch = !!(who.scope && who.scope.kind === 'branch');
+    if(!branch) return;
+    var url = ENDPOINT + '?action=submitted&token=' + encodeURIComponent(who.token) +
+              '&_=' + Date.now();
+    var kill = setTimeout(function(){ try{ ctl.abort(); }catch(e){} }, 20000);
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    fetch(url, {cache:'no-store', redirect:'follow',
+                signal: ctl ? ctl.signal : undefined})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        clearTimeout(kill);
+        if(j && j.ok && j.submitted && j.submitted.rows && j.submitted.rows.length){
+          PROD.submitted = j.submitted;
+          paint();
+        }
+      })
+      .catch(function(){ clearTimeout(kill); });
+  }
+
   function xlsFor(who){
     var btn = document.getElementById('pdXls');
     if(!btn) return;
