@@ -1050,6 +1050,26 @@
   .subrow.ag .sl{padding-left:1.1em}
 }
 
+
+/* ═══ WHO IS USING PROSPECTING ═════════════════════════════════════════════
+   Five columns of small numbers against a name. Sent is the one that says
+   whether somebody is using the tool at all; the rest say whether it worked. */
+.pxw{display:grid; align-items:center; gap:.3em;
+  grid-template-columns:minmax(0,1fr) repeat(5,minmax(2.1em,2.8em));
+  padding:.24em .2em; border-bottom:1px solid rgba(255,255,255,.05)}
+.pxw.hd{border-bottom:1px solid var(--line); padding-bottom:.34em}
+.pxw.hd span{font-size:max(.52em,9px); letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-3); font-weight:800; text-align:right}
+.pxw.hd span:first-child{text-align:left}
+.pxw .nm{font-size:max(.68em,11px); color:#fff; font-weight:600;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.pxw b{font-size:max(.68em,11px); font-weight:700; text-align:right;
+  font-variant-numeric:tabular-nums; color:var(--ink-2)}
+.pxw b.s{color:var(--teal)}
+.pxw b.z{color:var(--ink-3); font-weight:400}
+.pxw b.bk{color:var(--gold)}
+.pxnote{font-size:max(.58em,10px); color:var(--ink-3); padding:.5em .2em 0; line-height:1.45}
+
 .pdot{width:.62em; height:.62em; min-width:9px; min-height:9px; padding:0;
   border-radius:50%; border:0; cursor:pointer; background:rgba(255,255,255,.22);
   transition:background .2s, transform .2s, box-shadow .2s}
@@ -1310,7 +1330,7 @@
         <div class="stat v"><div class="k">Booked</div><div class="val num" id="pxBook">&mdash;</div><div class="s" id="pxBookPc">&nbsp;</div></div>
       </div>
 
-      <div class="cols" style="grid-template-columns:minmax(0,1fr) 30em; align-items:stretch; min-height:0">
+      <div class="cols" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr); align-items:stretch; min-height:0">
         <div class="card" style="min-width:0; display:flex; flex-direction:column">
           <h2><span>Where they stop</span><em id="pxDropSub"></em></h2>
           <div id="pxFunnel" style="flex:1; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:.6em"></div>
@@ -1318,6 +1338,10 @@
         <div class="card" style="min-width:0; display:flex; flex-direction:column">
           <h2><span>What they say they want</span><em id="pxWantsSub"></em></h2>
           <div id="pxWants" style="flex:1; min-height:0; overflow:hidden"></div>
+        </div>
+        <div class="card" style="min-width:0; display:flex; flex-direction:column">
+          <h2><span>Who is using it</span><em id="pxWhoSub"></em></h2>
+          <div id="pxWho" style="flex:1; min-height:0; overflow:auto"></div>
         </div>
       </div>
 
@@ -2161,6 +2185,10 @@ function showPanel(i){
       var kids=dd.children;
       for(var q=0;q<kids.length;q++) kids[q].classList.toggle('on', q===panel);
   }
+  /* Stay where you were. A reload used to drop back to panel one, so
+     anyone looking at panel eleven and pulling to refresh lost their
+     place - on a phone that is the normal way to get fresh figures. */
+  try{ localStorage.setItem('rrbPanel', String(panel)); }catch(e){}
   if(lastGood) render(lastGood);
 }
 function rotate(){
@@ -2173,7 +2201,12 @@ function rotate(){
      panel, used by the arrows, the dots, the keyboard and the clock alike. */
   showPanel(panel + 1);
 }
-$('p0').classList.add('on'); $('k0').classList.add('on');
+/* Restore the panel this device was last on, before anything paints. */
+try{
+  var _p = parseInt(localStorage.getItem('rrbPanel'), 10);
+  if(!isNaN(_p) && _p >= 0 && _p < PANELS) panel = _p;
+}catch(e){}
+$('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
 
 /* Controls. Small and in a corner, because this is a wall — somebody walks up
    to it to hold a panel while they talk over it, and walks away again. Also
@@ -2756,6 +2789,123 @@ setInterval(function(){
     });
   }
 
+  /* ── WHO IS USING PROSPECTING ────────────────────────────────────────────
+     The branch call returns every prospect with no advisor on it, so the
+     panel could say how the branch was doing and never who was doing it.
+     ?action=board&a=<code> does attribute - one call per advisor - so the
+     board is assembled from those.
+
+     The agent codes are NOT written into this file. This page is served from
+     the repository root and anything in it is public; the branch roster is
+     not. They come from the signed-in fact-find endpoint, so the per-advisor
+     view appears for somebody signed in and the branch funnel still works for
+     the television without one.
+
+     Polled on its own slow clock. Thirty-odd JSONP calls belong nowhere near
+     the forty second refresh, and who is prospecting does not change minute
+     to minute. */
+  var PXAGENTS = [], pxWhoRows = null, pxWhoAt = 0;
+
+  /* shortName() belongs to the production closure. This panel is its own
+     IIFE and cannot see it - the reference threw and took the whole
+     render with it. */
+  function pxShort(n){
+    var w = String(n||'').trim().split(/\s+/);
+    return w.length < 2 ? (w[0]||'') : w[0] + ' ' + w[w.length-1].charAt(0) + '.';
+  }
+
+  function pxRenderWho(){
+    var box = $('pxWho'), sub = $('pxWhoSub');
+    if(!box) return;
+    if(!pxWhoRows){
+      box.innerHTML = '<div class="pxnote">The per-advisor view reads the branch roster, '
+        + 'which needs a sign-in. The funnel beside it is the whole branch and does not.</div>';
+      if(sub) sub.textContent = '';
+      return;
+    }
+    var used = pxWhoRows.filter(function(r){ return r.sent > 0; });
+    used.sort(function(a,b){ return b.sent - a.sent || b.booked - a.booked; });
+    if(sub) sub.textContent = used.length + ' of ' + pxWhoRows.length;
+    if(!used.length){
+      box.innerHTML = '<div class="pxnote">Nobody has sent a link yet.</div>';
+      return;
+    }
+    var head = '<div class="pxw hd"><span>Advisor</span><span>Sent</span><span>Open</span>'
+             + '<span>Watch</span><span>Said</span><span>Book</span></div>';
+    box.innerHTML = head + used.map(function(r){
+      function cell(v, cls){ return '<b class="' + (v ? (cls||'') : 'z') + '">' + (v||'·') + '</b>'; }
+      return '<div class="pxw"><div class="nm">' + esc(pxShort(r.name)) + '</div>'
+        + cell(r.sent,'s') + cell(r.opened) + cell(r.watched) + cell(r.said)
+        + cell(r.booked,'bk') + '</div>';
+    }).join('')
+    + '<div class="pxnote">' + used.length + ' of ' + pxWhoRows.length
+    + ' advisors have sent a link. The rest have not started.</div>';
+  }
+
+  /* One JSONP call per advisor, spaced out so thirty of them do not all land
+     at once. Same callback discipline as the branch poll. */
+  function pxAgentBoard(code, done){
+    var cb = 'rrbPx' + code.replace(/[^A-Za-z0-9]/g,'') + Math.floor(Math.random()*1e6);
+    var fired = false;
+    function cleanup(){
+      var el = document.getElementById(cb);
+      if(el && el.parentNode) el.parentNode.removeChild(el);
+      try{ delete window[cb]; }catch(e){ window[cb] = undefined; }
+    }
+    window[cb] = function(data){
+      fired = true; cleanup();
+      done((data && data.prospects) || []);
+    };
+    var sc = document.createElement('script');
+    sc.id = cb;
+    sc.src = PX_ENDPOINT + '?action=board&a=' + encodeURIComponent(code) + '&callback=' + cb;
+    sc.onerror = function(){ cleanup(); done(null); };
+    document.head.appendChild(sc);
+    setTimeout(function(){ if(!fired){ cleanup(); done(null); } }, 20000);
+  }
+
+  function pxPollAgents(){
+    if(!PXAGENTS.length) return;
+    var out = [], pending = PXAGENTS.length;
+    PXAGENTS.forEach(function(a, i){
+      setTimeout(function(){
+        pxAgentBoard(a.code, function(ps){
+          if(ps){
+            out.push({
+              name: a.name, code: a.code,
+              sent:    ps.length,
+              opened:  ps.filter(function(p){ return p.s >= 1; }).length,
+              watched: ps.filter(function(p){ return p.s >= 2; }).length,
+              said:    ps.filter(function(p){ return p.s >= 3 || (p.wants && p.wants.length); }).length,
+              booked:  ps.filter(function(p){ return p.booked; }).length
+            });
+          } else {
+            out.push({name:a.name, code:a.code, sent:0, opened:0, watched:0, said:0, booked:0});
+          }
+          if(--pending === 0){ pxWhoRows = out; pxWhoAt = Date.now(); pxRenderWho(); }
+        });
+      }, i * 160);
+    });
+  }
+
+  /* The roster, from the signed-in endpoint. Codes never touch this file. */
+  function pxLoadRoster(who){
+    if(!who || !who.token) { pxRenderWho(); return; }
+    var url = ENDPOINT + '?action=roster&token=' + encodeURIComponent(who.token) +
+              '&_=' + Date.now();
+    fetch(url, {cache:'no-store', redirect:'follow'})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        var list = (j && j.ok && j.roster) || [];
+        PXAGENTS = list.filter(function(r){ return r && r.code; })
+                       .map(function(r){ return {code:r.code, name:r.name || r.code}; });
+        if(PXAGENTS.length){ pxPollAgents(); setInterval(pxPollAgents, 300000); }
+        else pxRenderWho();
+      })
+      .catch(function(){ pxRenderWho(); });
+  }
+  window.rrbPxRoster = pxLoadRoster;
+
   function unreachable(){
     var t = $('t_p10');
     if (t) t.innerHTML = 'Prospecting';
@@ -2788,6 +2938,7 @@ setInterval(function(){
   }
 
   poll();
+  pxRenderWho();
   setInterval(poll, POLL_MS);
 })();
 </script>
@@ -4034,6 +4185,7 @@ var PROD = {
     nameBadge(WHO);
     xlsFor(WHO);
     submittedFor(WHO);
+    if(window.rrbPxRoster) window.rrbPxRoster(WHO);
     viewersFor(WHO);
     logView(WHO);
   }
