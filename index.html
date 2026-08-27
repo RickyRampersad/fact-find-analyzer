@@ -1037,9 +1037,45 @@ async function fetchJson(url,ms){
   // to googleusercontent.com, and a cold container has to spin up before it
   // replies at all. Seven seconds was comfortably inside that on a first call,
   // so a perfectly healthy server was reported as unreachable.
+  // Every failure used to arrive at the caller as one anonymous throw, so a
+  // timed-out cold start, a 500, an HTML error page and a genuinely dead
+  // network all printed "Cannot reach the branch server". That message was a
+  // guess in three cases out of four, and it is the reason a dashboard showing
+  // NO DATA could not be diagnosed from the screen. Each one now carries what
+  // actually happened.
   ms=ms||20000; var ctrl=new AbortController(); var t=setTimeout(function(){ctrl.abort();},ms);
-  try{ var res=await fetch(url,{method:'GET',signal:ctrl.signal,redirect:'follow'}); return await res.json(); }
-  finally{ clearTimeout(t); }
+  var res;
+  try{
+    res = await fetch(url,{method:'GET',signal:ctrl.signal,redirect:'follow'});
+  }catch(e){
+    clearTimeout(t);
+    var err = new Error(e && e.name === 'AbortError'
+      ? 'The branch server did not answer within ' + Math.round(ms/1000) + ' seconds.'
+      : 'No reply from the branch server. The connection failed before it answered.');
+    err.kind = (e && e.name === 'AbortError') ? 'timeout' : 'network';
+    throw err;
+  }
+  clearTimeout(t);
+  if(!res.ok){
+    var e2 = new Error('The branch server answered ' + res.status + ' ' + (res.statusText||'') + '.');
+    e2.kind = 'status';
+    throw e2;
+  }
+  var body = await res.text();
+  try{
+    return JSON.parse(body);
+  }catch(e3){
+    // Apps Script returns an HTML page when the script throws, or when the
+    // deployment is set to require a Google sign-in. Both look like this.
+    var looksHtml = /^\s*<|<html|<!DOCTYPE/i.test(body);
+    var e4 = new Error(looksHtml
+      ? 'The branch server replied with a web page instead of data. Usually the '
+        + 'script threw an error, or the deployment is no longer set to "Anyone".'
+      : 'The branch server replied with something that is not data.');
+    e4.kind = 'notjson';
+    e4.sample = body.slice(0, 200);
+    throw e4;
+  }
 }
 
 // ---- branch roster ----
@@ -1362,13 +1398,55 @@ async function doLogin(ev){
 
   btn.disabled=false; btn.textContent='Sign in';
   if(!who) return false;
+  await enterApp(who);
+  return false;
+}
+
+// One way into the dashboard, used by sign-in and by restoreSession alike, so
+// the two cannot drift apart.
+async function enterApp(who){
   SESSION=Object.assign({},who,{scope:who.scope||scopeFor(who)});
   document.getElementById('loginView').classList.add('hide');
   document.getElementById('appView').classList.remove('hide');
   document.getElementById('whoName').textContent=SESSION.name;
-  document.getElementById('whoRole').textContent=SESSION.role+(SESSION.scope.kind==='unit'?' · '+UNIT[SESSION.scope.unitKey]:'');
+  document.getElementById('whoRole').textContent=SESSION.role+(SESSION.scope.kind==='unit'?' \u00b7 '+UNIT[SESSION.scope.unitKey]:'');
   await refreshData();
-  return false;
+}
+
+// SIGNING IN ONCE PER VISIT WAS NOT THE INTENT.
+// doLogin has always written the session to localStorage under `rrbSession`,
+// and logout has always removed it - but nothing ever read it back. SESSION
+// could only be set by signing in, so every arrival at this page, including a
+// reload or a return from the fact find, went to the sign-in screen with a
+// perfectly good token sitting in storage. wall.html reads exactly this key,
+// which is why the wall remembered who you were and the dashboard did not.
+//
+// The token is the authority, not this record: if the server has expired it,
+// ?action=data answers {expired:true} and refreshData calls logout(). This
+// only saves asking before the server has been given a chance to answer. The
+// local age check is a courtesy so an obviously dead session does not paint
+// the dashboard first and empty it a moment later.
+var SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;   // matches the server's token life
+
+async function restoreSession(){
+  var raw;
+  try{ raw = localStorage.getItem('rrbSession'); }catch(e){ return false; }
+  if(!raw) return false;
+  var who;
+  try{ who = JSON.parse(raw); }catch(e){
+    try{ localStorage.removeItem('rrbSession'); }catch(e2){}
+    return false;
+  }
+  if(!who || !who.token || !who.name){
+    try{ localStorage.removeItem('rrbSession'); }catch(e){}
+    return false;
+  }
+  if(who.at && (Date.now() - who.at) > SESSION_MAX_AGE_MS){
+    try{ localStorage.removeItem('rrbSession'); }catch(e){}
+    return false;
+  }
+  await enterApp(who);
+  return true;
 }
 // Where the fact-find form lives. Relative path assumes it's hosted alongside
 // this dashboard (e.g. both deployed to the same Netlify site). Change to an
@@ -1424,12 +1502,27 @@ async function refreshData(){
       var url=ep+(ep.indexOf('?')>-1?'&':'?')+'action=data&token='+encodeURIComponent(SESSION.token||'')+
               '&email='+encodeURIComponent(SESSION.email||'')+
               '&code='+encodeURIComponent(SESSION.code||'');
-      var j=await fetchJson(url);
+      var j;
+      try{
+        j = await fetchJson(url);
+      }catch(e1){
+        // A cold Apps Script container can miss the first call and answer the
+        // second comfortably. Worth exactly one more try, and only for the two
+        // failures a retry can actually fix.
+        if(e1.kind === 'timeout' || e1.kind === 'network'){
+          j = await fetchJson(url, 30000);
+        } else {
+          throw e1;
+        }
+      }
       if(j && j.ok && Array.isArray(j.rows)){ rows=j.rows.map(normalizeRow); SRC='live'; }
       else if(j && j.expired){ logout(); return; }
       else LOAD_ERROR=(j && j.error) ? j.error : 'The server returned no data.';
     }catch(e){
-      LOAD_ERROR='Cannot reach the branch server. Showing nothing rather than stale figures.';
+      LOAD_ERROR = (e && e.message)
+        ? e.message + ' Showing nothing rather than stale figures.'
+        : 'Cannot reach the branch server. Showing nothing rather than stale figures.';
+      if(window.console) console.error('refreshData failed:', e && e.kind, e);
     }
     if(rows) await loadRoster(rows);
   }
@@ -3284,11 +3377,20 @@ if(DEMO_MODE){
     }catch(e){}
   });
 } else {
-  // The dropdown has to be filled before anyone can sign in, so this is the one
-  // call the dashboard makes without a session. It returns names only.
-  loadAccessNames().then(function(){
-    var f=document.getElementById('liName');
-    if(f) f.focus();
+  // A session already on this device goes straight in. Only when there is
+  // none do we prepare the sign-in box - filling and focusing a form nobody
+  // is going to see would steal focus from the dashboard behind it.
+  restoreSession().then(function(restored){
+    if(restored) return;
+    // The dropdown has to be filled before anyone can sign in, so this is the
+    // one call the dashboard makes without a session. It returns names only.
+    return loadAccessNames().then(function(){
+      var f=document.getElementById('liName');
+      if(f) f.focus();
+    });
+  }).catch(function(e){
+    if(window.console) console.error('boot failed:', e);
+    return loadAccessNames();
   });
 }
 
