@@ -785,9 +785,64 @@
   html{font-size:24px}
   main{max-width:2400px; margin:0 auto}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SIGN IN TO VIEW.
+
+   Two modes, because the wall has two audiences and they are not the same.
+
+   THE SCREEN in the branch runs unattended on a television. It cannot sign
+   in and nobody is standing there to do it for it, so it opens with
+   ?screen=<key> and shows no sign-in at all. That is what the key has always
+   been for: it authenticates a SCREEN.
+
+   A PERSON opening wall.html on a phone or a laptop signs in, with the same
+   agent number and access code the dashboard uses, and the same session. Sign
+   in on either and the other knows you.
+
+   What this gives you is attribution: who looked, and when. What it is not is
+   a lock - WALL_KEY is in this page's source, so anyone who reads it can
+   still reach the feed directly. Doing that properly means rrbWall accepting
+   a session token instead of a screen key, which is a change in the Apps
+   Script; the spec is in apps-script/WallSignIn.md.
+   ══════════════════════════════════════════════════════════════════════════ */
+#wgate{position:fixed; inset:0; z-index:200; display:grid; place-items:center;
+  background:radial-gradient(120% 90% at 50% 0%, #16305F 0%, #0D1524 45%, #070C16 100%);
+  padding:1.2em}
+#wgate.gone{display:none}
+#wgate .card{width:min(370px,92vw); background:var(--panel); border:1px solid var(--line-2);
+  border-radius:1em; padding:1.5em 1.4em; box-shadow:0 30px 80px rgba(0,0,0,.55)}
+#wgate h2{font-size:1.15em; font-weight:800; letter-spacing:-.01em; margin-bottom:.15em}
+#wgate p{font-size:.78em; color:var(--ink-3); line-height:1.5; margin-bottom:1.1em}
+#wgate label{display:block; font-size:.68em; font-weight:800; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-2); margin-bottom:.3em}
+#wgate input{width:100%; box-sizing:border-box; background:var(--panel-2);
+  border:1px solid var(--line-2); border-radius:.5em; padding:.7em .8em;
+  color:var(--ink); font:inherit; font-size:.92em; margin-bottom:.8em; min-height:44px}
+#wgate input:focus{outline:none; border-color:var(--teal)}
+#wgate button{width:100%; min-height:46px; background:var(--teal); color:#08131A;
+  border:0; border-radius:.55em; font:inherit; font-size:.92em; font-weight:800;
+  cursor:pointer}
+#wgate .err{color:var(--red); font-size:.78em; margin-top:.6em; min-height:1.1em}
+#whoami{font-size:.66em; color:var(--ink-2); font-weight:700; white-space:nowrap}
+#whoami b{color:var(--teal)}
 </style>
 </head>
 <body>
+<div id="wgate">
+  <div class="card">
+    <h2>The branch wall</h2>
+    <p>Sign in to view. Same agent number and access code as your dashboard.</p>
+    <label for="wgCode">Agent number</label>
+    <input id="wgCode" type="text" autocomplete="username" placeholder="e.g. A10024"
+           autocapitalize="characters" spellcheck="false">
+    <label for="wgPw">Access code</label>
+    <input id="wgPw" type="password" autocomplete="current-password" placeholder="Your access code">
+    <button id="wgGo" type="button">Sign in</button>
+    <div class="err" id="wgErr" role="alert"></div>
+  </div>
+</div>
+
 
 <header>
   <svg class="shield" viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg" aria-label="Ricky Rampersad Branch">
@@ -2985,6 +3040,123 @@ var PROD = {
      control needs the dashboard, which already signs people in and knows a
      branch manager from an agent. See apps-script/WallSpreadsheetAccess.md.
      ──────────────────────────────────────────────────────────────────────── */
+
+  /* ── WHO IS VIEWING ───────────────────────────────────────────────────────
+     The screen in the branch opens with ?screen=<key> and never sees a
+     sign-in — it is a television, there is nobody to type. Everyone else
+     signs in with the same agent number and access code as the dashboard,
+     and shares its session, so signing in on either is signing in on both.
+
+     Every view is posted to the script with the person's token. Silent if
+     that endpoint does not exist yet — a view that cannot be logged must
+     still be a view that works.
+
+     Honest about the limit: WALL_KEY is in this page's source, so this
+     attributes viewing rather than restricting it. Restricting it means
+     rrbWall taking a session token instead of a screen key. See
+     apps-script/WallSignIn.md. */
+  var WHO = null;
+
+  function wallSession(){
+    try{
+      var raw = localStorage.getItem('rrbSession');
+      if(!raw) return null;
+      var o = JSON.parse(raw);
+      return (o && o.token) ? o : null;
+    }catch(e){ return null; }
+  }
+
+  function logView(who){
+    if(!who || !who.token) return;
+    try{
+      var u = ENDPOINT + '?action=wall_view&token=' + encodeURIComponent(who.token) +
+              '&at=' + encodeURIComponent(new Date().toISOString());
+      fetch(u, {mode:'no-cors', cache:'no-store'}).catch(function(){});
+    }catch(e){}
+  }
+
+  function nameBadge(who){
+    var h = document.querySelector('header');
+    if(!h) return;
+    var el = document.getElementById('whoami');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'whoami';
+      var clock = document.getElementById('clock');
+      if(clock && clock.parentNode) clock.parentNode.insertBefore(el, clock);
+      else h.appendChild(el);
+    }
+    el.innerHTML = who ? ('Viewing as <b>' + (who.name || who.code || 'you') + '</b>')
+                       : 'Branch screen';
+  }
+
+  function openWall(who){
+    WHO = who || null;
+    document.getElementById('wgate').classList.add('gone');
+    nameBadge(WHO);
+    logView(WHO);
+  }
+
+  (function gateWall(){
+    var qs;
+    try{ qs = new URLSearchParams(location.search); }catch(e){ qs = null; }
+
+    /* The television. Unattended, no sign-in, and the badge says plainly that
+       nobody is behind it. */
+    if(qs && qs.get('screen') === WALL_KEY){ openWall(null); return; }
+
+    var sess = wallSession();
+    if(sess){ openWall(sess); return; }
+
+    var go = document.getElementById('wgGo');
+    var codeEl = document.getElementById('wgCode');
+    var pwEl = document.getElementById('wgPw');
+    var errEl = document.getElementById('wgErr');
+
+    function attempt(){
+      var code = (codeEl.value||'').trim().toUpperCase();
+      var pw = pwEl.value||'';
+      if(!code || !pw){ errEl.textContent = 'Both fields, please.'; return; }
+      go.disabled = true; go.textContent = 'Checking…'; errEl.textContent = '';
+      var cb = 'wcb' + Date.now();
+      var done = false;
+      window[cb] = function(r){
+        done = true;
+        try{ delete window[cb]; }catch(e){ window[cb] = undefined; }
+        if(sc.parentNode) sc.parentNode.removeChild(sc);
+        go.disabled = false; go.textContent = 'Sign in';
+        if(r && r.ok){
+          /* The same key the dashboard writes, so one sign-in serves both. */
+          try{ localStorage.setItem('rrbSession', JSON.stringify(r)); }catch(e){}
+          openWall(r);
+        } else {
+          errEl.textContent = (r && r.error) || 'Incorrect number or access code.';
+          pwEl.value = ''; pwEl.focus();
+        }
+      };
+      var sc = document.createElement('script');
+      sc.src = ENDPOINT + '?action=login&code=' + encodeURIComponent(code) +
+               '&pw=' + encodeURIComponent(pw) + '&callback=' + cb;
+      sc.onerror = function(){
+        if(done) return;
+        go.disabled = false; go.textContent = 'Sign in';
+        errEl.textContent = 'Could not reach the branch server.';
+      };
+      document.body.appendChild(sc);
+      setTimeout(function(){
+        if(done) return;
+        go.disabled = false; go.textContent = 'Sign in';
+        errEl.textContent = 'The branch server did not answer.';
+      }, 15000);
+    }
+
+    go.addEventListener('click', attempt);
+    [codeEl, pwEl].forEach(function(el){
+      el.addEventListener('keydown', function(e){ if(e.key === 'Enter') attempt(); });
+    });
+    codeEl.focus();
+  })();
+
   var ADMIN_CODE = 'rrb-admin';   // change this, then share only the link
   try{
     if (new URLSearchParams(location.search).get('admin') === ADMIN_CODE)
