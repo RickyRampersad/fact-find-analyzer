@@ -1053,6 +1053,13 @@
     <div class="card grow">
       <h2><span>Total API picked up</span><em>year to date &middot; new business + increases</em></h2>
       <div class="grow" id="pdBoard" style="display:flex; flex-direction:column; justify-content:space-evenly; min-height:0"></div>
+      <div style="margin-top:.75em;padding-top:.7em;border-top:1px solid var(--line)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:.6em">
+          <div class="k" style="color:var(--teal)">Started this week</div>
+          <div class="s" id="pdWkSum"></div>
+        </div>
+        <div id="pdWeek" style="margin-top:.45em"></div>
+      </div>
     </div>
   </section>
 
@@ -2332,7 +2339,16 @@ var PROD_ENDPOINT = '';
 var PROD = {
   asOf: '27 Aug 2026',
   today: { n:0,   api:0 },
-  week:  { n:4,   api:28172 },
+  week:  { n:4,   api:28172,
+    /* WHO started this week, with their apps and their API.
+       Deliberately empty. The branch totals above are real; a per-advisor
+       split is not in the feed, and inventing four names to fill a panel
+       is how a made-up figure gets quoted back as fact by Friday.
+       WallBoard.gs needs to return:
+           week.board = [{a:'Advisor Name', n:<apps>, api:<annualised>}, ...]
+       The panel renders it the moment it arrives, and says plainly that
+       it is missing until then. */
+    board: [] },
   month: { label:'August', n:47, api:836414 },
   quarter:{ label:'Q3', n:144, api:1570328 },
   ytd:   { n:785, api:6300970 },
@@ -2758,6 +2774,31 @@ var PROD = {
                       : 'The board');
     rows(P.board.map(function(b){ return {a:b.a, n:b.n+' pol', api:b.api}; }),
          q('pdBoard'), {medal:true});
+
+    /* WHO STARTED THIS WEEK.
+       The board above is the running total, which rewards whoever has been
+       at it longest. This is the other question a Monday morning asks: who
+       has opened their account since the week turned. */
+    var wk = (P.week && P.week.board) || [];
+    var wkSum = q('pdWkSum'), wkBox = q('pdWeek');
+    if(wkSum) wkSum.innerHTML = money(P.week.api)+' &middot; '+P.week.n+' apps';
+    if(wkBox){
+      if(wk.length){
+        rows(wk.map(function(b){ return {a:shortName(b.a), n:b.n+' apps', api:b.api}; }),
+             wkBox, {tone:'teal', big:true});
+      } else if(P.week.n > 0){
+        /* Honest rather than empty: the total is real, the names are not in
+           the feed, and a plausible guess would be worse than a gap. */
+        wkBox.innerHTML = '<div style="font-size:.72em;color:var(--gold);line-height:1.5;'+
+          'padding:.5em .7em;background:rgba(245,185,53,.09);'+
+          'border-left:3px solid var(--gold);border-radius:0 .35em .35em 0">'+
+          '<b>'+P.week.n+'</b> picked up this week for <b>'+money(P.week.api)+'</b>, '+
+          'but the feed does not say who yet.</div>';
+      } else {
+        wkBox.innerHTML = '<div style="font-size:.72em;color:var(--ink-3);padding:.4em 0">'+
+          'Nobody on the board yet this week.</div>';
+      }
+    }
 
     set('t_p14','<b>'+money(P.held.api)+'</b> written and waiting on requirements');
     set('pdHeldSub', P.held.n+' &middot; '+P.held.avgDays+'d avg');
