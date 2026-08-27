@@ -670,7 +670,28 @@
      is a smudge on a phone and fine on a wall four metres away.
      max() clamps the COMPUTED size, so it catches the compounding wherever
      it happens rather than needing each offender found by hand. */
-  /* A FLOOR UNDER THE SMALL TYPE.
+  /* Seven equal columns on a 390px screen is 55px each — they fit, and
+     nothing in them can be read. Let the wide ones keep their shape and
+     scroll inside their own box; the page itself never scrolls sideways. */
+  .panel [style*="repeat(7"], .panel [style*="repeat(5"]{
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE TYPE FLOOR, for every hand-held size — not just portrait phones.
+
+   These lived inside the max-width:820px block, so a phone held sideways
+   (844px wide) and an iPad Pro missed them completely: 132 and 76 elements
+   still rendering under 10.5px. The floor belongs to "small enough to hold",
+   not to "portrait".
+
+   Above about 1200px it is a no-op — .7em of a 16px root is already 11.2px —
+   so there is no need to bound the top of this range carefully.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1200px), (max-height: 560px){
+  /* Floors, in px, on the labels that compound.
      Everything here is sized in em off the root, and labels nest — .72em
      inside .9em inside .85em — so the smallest rendered text measured 7.2px.
      Fine on a wall at four metres, a smudge in the hand.
@@ -697,20 +718,55 @@
      by reading the CSS — the hidden header rows report a font-size too and
      had me chasing labels nobody can see. */
   .panel .lbl, .panel .cn, .panel .rk, .panel .ar{font-size:11px !important}
+  .panel .pdlbl, .panel .pdnote, .panel .r, .panel .pper i,
+  .panel .chart i, .panel .col i{font-size:11px !important}
+  /* The column headers are hidden on a phone but SHOWN on a tablet, which is
+     right — there is room for them there. They still need the floor. */
+  .panel .lhead div, .panel .lhead span,
+  .panel .phd span, .panel .phd div{font-size:11px !important}
   .panel .nm{font-size:12px !important}
   .panel .vv{font-size:12.5px !important}
 
-  /* Seven equal columns on a 390px screen is 55px each — they fit, and
-     nothing in them can be read. Let the wide ones keep their shape and
-     scroll inside their own box; the page itself never scrolls sideways. */
-  .panel [style*="repeat(7"], .panel [style*="repeat(5"]{
-    overflow-x:auto; -webkit-overflow-scrolling:touch;
-  }
 }
 
-/* A phone held sideways is still a phone, not a wall. */
-@media (max-width: 950px) and (orientation: landscape){
-  html{font-size:calc(10px + .9vw)}
+/* ══════════════════════════════════════════════════════════════════════════
+   THE LADDER.
+
+   calc(9px + .70vw) alone is not adaptive, it is one curve. It gives 11.7px
+   on a phone, 16px on a tablet and 27px on a 4K wall, and it assumes the
+   LAYOUT works at all of them — which the fixed em tracks do not.
+
+   So each band is named and sized for what it actually is.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* TABLET — 821 to 1180. Wide enough to keep the two-column grid, not wide
+   enough for tracks that assume a television. The fixed em columns become
+   minmax(0,…) so they can compress instead of pushing off the edge. */
+@media (min-width: 821px) and (max-width: 1180px){
+  html{font-size:calc(10px + .78vw)}
+  .lrow, .prow{grid-template-columns:1.5em 2.5em minmax(0,1fr)
+                                     repeat(3,minmax(0,auto)) !important}
+  .cols{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+  .hero{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+  .panel [style*="repeat(7"]{overflow-x:auto}
+}
+
+/* A PHONE HELD SIDEWAYS is still a phone. Short and wide: the grid can stay
+   landscape, but a panel taller than 390px of screen has to scroll inside
+   itself rather than run off the bottom. */
+@media (max-height: 500px) and (orientation: landscape){
+  html{font-size:calc(9px + .85vw)}
+  .panel{overflow-y:auto; -webkit-overflow-scrolling:touch}
+  header{padding-top:.2em; padding-bottom:.2em}
+  .brand small{display:none}
+}
+
+/* THE WALL, and anything bigger. Past about 2200px the vw term runs away —
+   27px at 4K, 36px on a 5K panel — and the layout starts to look like a
+   poster rather than a board. Cap it and let the extra width breathe. */
+@media (min-width: 2200px){
+  html{font-size:24px}
+  main{max-width:2400px; margin:0 auto}
 }
 </style>
 </head>
