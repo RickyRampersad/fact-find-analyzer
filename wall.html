@@ -77,7 +77,10 @@
   .panel{position:absolute; inset:0; padding:1.25em 1.5em; display:flex; flex-direction:column; gap:.95em;
          opacity:0; transform:translateY(.7em) scale(.995); pointer-events:none;
          transition:opacity .6s ease, transform .6s cubic-bezier(.2,.7,.3,1)}
-  .panel.on{opacity:1; transform:none}
+  /* The active panel takes pointer events back so its charts can be hovered.
+     Inactive panels keep pointer-events:none, so nothing underneath the one
+     on screen can ever be reached. */
+  .panel.on{opacity:1; transform:none; pointer-events:auto}
 
   .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:.9em}
   /* On the producer panels the board is the point, so the tiles give it their
@@ -527,6 +530,39 @@
   .pdbar i.warm{background:linear-gradient(90deg,#8A2E3F,#E8768B)}
   .pdrow.norank{grid-template-columns:minmax(6em,1.15fr) minmax(4em,1.5fr) 5.6em 3.4em}
   .pdrow.big{padding:.95em 0}
+  /* Three-up cards are narrow, so the row tightens rather than truncating names. */
+  .pdrow.nar{grid-template-columns:minmax(0,1.15fr) minmax(2em,.85fr) 4.9em 3em; gap:.5em}
+  .pdrow.nar.norank{grid-template-columns:minmax(0,1.15fr) minmax(2em,.85fr) 4.9em 3em}
+  .pdrow.nar .rk{display:none}
+  .pdrow.nar .nm{font-size:.8em}
+  .pdrow.nar .vv{font-size:.82em}
+  .pdrow.nar .cn{font-size:.63em}
+  /* Day by day: pickups rise from the axis, apps still waiting hang below it.
+     One shared money scale, so the two directions are honestly comparable. */
+  .pddays{flex:1; display:flex; gap:.4em; align-items:stretch; min-height:0; padding-top:.3em}
+  .pdcol{flex:1; display:flex; flex-direction:column; min-width:0}
+  .pdup{flex:1; display:flex; align-items:flex-end}
+  .pdup i{width:100%; height:0; border-radius:.2em .2em 0 0;
+          background:linear-gradient(180deg,var(--teal),var(--teal-deep));
+          transition:height .8s cubic-bezier(.2,.75,.3,1)}
+  .pddn{flex:1; display:flex; align-items:flex-start}
+  .pddn i{width:100%; height:0; border-radius:0 0 .2em .2em;
+          background:linear-gradient(180deg,#A8324A,#6E2233);
+          transition:height .8s cubic-bezier(.2,.75,.3,1)}
+  .pdaxis{height:1px; background:var(--line-2); flex:none}
+  .pdlbl{font-size:.6em; text-align:center; color:var(--ink-3); font-weight:700;
+         padding-top:.35em; letter-spacing:.03em}
+  .pdcol.today .pdlbl{color:var(--teal)}
+  .pdcol:hover .pdup i, .pdcol:hover .pddn i{filter:brightness(1.3)}
+  .pdcol:hover .pdlbl{color:var(--ink)}
+  .pdtip{position:fixed; z-index:70; pointer-events:none; display:none;
+         background:#0B1620; border:1px solid var(--line-2); border-radius:.5em;
+         padding:.6em .85em; font-size:.62em; line-height:1.55; color:var(--ink-2);
+         box-shadow:0 10px 34px rgba(0,0,0,.6); white-space:nowrap}
+  .pdtip b{color:var(--ink); font-weight:800}
+  .pdtip .sw{display:inline-block; width:.65em; height:.65em; border-radius:.15em;
+             margin-right:.4em; vertical-align:.02em}
+  .pdrow:hover .nm{color:var(--teal)}
   .pdnote{font-size:.66em; color:var(--ink-3); font-weight:650; letter-spacing:.03em;
           padding-top:.5em; text-align:center}
   @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
@@ -792,10 +828,16 @@
       <div class="stat"><div class="k" id="pdMoK">This month</div><div class="val num" id="pdMo">—</div><div class="s" id="pdMoS">&nbsp;</div></div>
       <div class="stat g"><div class="k">Year to date</div><div class="val num" id="pdYr">—</div><div class="s" id="pdYrS">&nbsp;</div></div>
     </div>
-    <div class="card grow" style="margin-top:.9em">
-      <h2><span>Month by month</span>
-        <span class="key"><span><i style="background:var(--teal)"></i>new business</span><span><i style="background:var(--gold)"></i>increases</span></span></h2>
-      <div class="chart" id="pdChart"></div>
+    <div class="cols" style="margin-top:.9em; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)">
+      <div class="card" style="min-width:0">
+        <h2><span>Month by month</span>
+          <span class="key"><span><i style="background:var(--teal)"></i>new business</span><span><i style="background:var(--gold)"></i>increases</span></span></h2>
+        <div class="chart" id="pdChart"></div>
+      </div>
+      <div class="card" style="min-width:0">
+        <h2><span>By unit</span><em>year to date</em></h2>
+        <div class="grow" id="pdUnits" style="display:flex; flex-direction:column; justify-content:space-evenly; min-height:0"></div>
+      </div>
     </div>
   </section>
 
@@ -811,21 +853,41 @@
   <!-- 15 · HELD BACK — written, waiting on requirements -->
   <section class="panel" id="p14">
     <div class="ptitle"><h1 id="t_p14"></h1><span class="tag">Held back</span></div>
-    <div class="cols" style="flex:1; min-height:0">
+    <div class="cols" style="flex:1; min-height:0; grid-template-columns:repeat(3,minmax(0,1fr))">
       <div class="card" style="min-width:0">
-        <h2><span>How long it has waited</span><em id="pdHeldSub"></em></h2>
+        <h2><span>How long it waited</span><em id="pdHeldSub"></em></h2>
         <div class="grow" id="pdBands" style="display:flex; flex-direction:column; justify-content:space-evenly; min-height:0"></div>
       </div>
       <div class="card" style="min-width:0">
-        <h2><span>Largest books waiting</span><em>by advisor</em></h2>
+        <h2><span>By unit</span><em>waiting</em></h2>
+        <div class="grow" id="pdHeldUnits" style="display:flex; flex-direction:column; justify-content:space-evenly; min-height:0"></div>
+      </div>
+      <div class="card" style="min-width:0">
+        <h2><span>Largest books</span><em>by advisor</em></h2>
         <div class="grow" id="pdBooks" style="display:flex; flex-direction:column; justify-content:space-evenly; min-height:0"></div>
       </div>
     </div>
     <div class="pdnote">Every requirement closed turns one of these rows into production.</div>
   </section>
+
+  <!-- 16 · DAY BY DAY — what went out against what came in -->
+  <section class="panel" id="p15">
+    <div class="ptitle"><h1 id="t_p15"></h1><span class="tag">Day by day</span></div>
+    <div class="stats tight">
+      <div class="stat v"><div class="k">Picked up</div><div class="val num" id="pdDupN">—</div><div class="s" id="pdDupS">&nbsp;</div></div>
+      <div class="stat"><div class="k">Came in, still waiting</div><div class="val num" id="pdDinN">—</div><div class="s" id="pdDinS">&nbsp;</div></div>
+      <div class="stat g"><div class="k">Net</div><div class="val num" id="pdNet">—</div><div class="s" id="pdNetS">&nbsp;</div></div>
+    </div>
+    <div class="card grow" style="margin-top:.9em">
+      <h2><span>Last three weeks</span>
+        <span class="key"><span><i style="background:var(--teal)"></i>picked up</span><span><i style="background:#A8324A"></i>waiting</span></span></h2>
+      <div class="pddays" id="pdDays"></div>
+    </div>
+    <div class="pdnote">Above the line is production. Below it is business the branch has already won and not yet counted.</div>
+  </section>
 </main>
 
-<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span><span class="tk" id="k13"></span><span class="tk" id="k14"></span></div>
+<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span><span class="tk" id="k13"></span><span class="tk" id="k14"></span><span class="tk" id="k15"></span></div>
 <div id="burst"></div>
 
 <script>
@@ -833,7 +895,7 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
 var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
 
-var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 15;
+var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 16;
 var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 /* Calendar volume: one hue, dark to light. Validated as an ordinal ramp against
    this surface — monotone lightness, every step clear of the card behind it. */
@@ -2039,12 +2101,37 @@ var PROD = {
     {a:'Ricky Rampersad',    n:22, api:309970},
     {a:'Aleema Mohammed-Ali',n:58, api:254893}
   ],
+  /* Units are the report's own hierarchy. Shares are of Total API and sum to
+     the year figure exactly, so a unit tile can be read against the headline. */
+  units: [
+    {u:"Ricky's unit",  n:307, api:2833428, heldN:80, heldApi:3967471},
+    {u:"Gary's unit",   n:229, api:1327343, heldN:46, heldApi:699873},
+    {u:"Kerwyn's unit", n:158, api:1071605, heldN:26, heldApi:398998},
+    {u:"Akaash's unit", n:91,  api:1068594, heldN:25, heldApi:4893957}
+  ],
+  /* Weekdays only — a wall column for a Saturday nobody worked reads as a
+     bad day rather than no day. Today is included even when still empty. */
+  days: [
+    {d:'11', w:'Tue', up:0,      upN:0,  dn:24540,  dnN:4},
+    {d:'12', w:'Wed', up:0,      upN:0,  dn:0,      dnN:1},
+    {d:'13', w:'Thu', up:0,      upN:0,  dn:7020,   dnN:1},
+    {d:'14', w:'Fri', up:301339, upN:22, dn:75608,  dnN:2},
+    {d:'17', w:'Mon', up:15225,  upN:1,  dn:53624,  dnN:8},
+    {d:'18', w:'Tue', up:10028,  upN:2,  dn:39979,  dnN:1},
+    {d:'19', w:'Wed', up:0,      upN:0,  dn:363724, dnN:3},
+    {d:'20', w:'Thu', up:19250,  upN:2,  dn:192562, dnN:1},
+    {d:'21', w:'Fri', up:57018,  upN:10, dn:5433,   dnN:2},
+    {d:'24', w:'Mon', up:0,      upN:0,  dn:327613, dnN:8},
+    {d:'25', w:'Tue', up:25557,  upN:3,  dn:4570,   dnN:1},
+    {d:'26', w:'Wed', up:2615,   upN:1,  dn:17639,  dnN:4},
+    {d:'27', w:'Thu', up:0,      upN:0,  dn:0,      dnN:0, today:true}
+  ],
   held: {
     n:180, api:10040219, avgDays:109,
     bands: [
-      {k:'Under 2 weeks',      n:31,  api:1087772},
-      {k:'2 weeks – 2 months', n:24,  api:201932},
-      {k:'Over 2 months',      n:125, api:8750515}
+      {k:'Under 2 weeks',  n:31,  api:1087772},
+      {k:'2 wks – 2 mo',   n:24,  api:201932},
+      {k:'Over 2 months',  n:125, api:8750515}
     ],
     books: [
       {a:'Akaash Kalladeen', n:6,  api:4305200},
@@ -2073,7 +2160,7 @@ var PROD = {
     box.innerHTML = list.map(function(x,i){
       /* Medals only where being first is an achievement. On the held-back
          panel the top row is the biggest problem, so it gets no medal. */
-      var cls = 'pdrow' + (o.big?' big':'') + (o.rank===false?' norank':'')
+      var cls = 'pdrow' + (o.big?' big':'') + (o.nar?' nar':'') + (o.rank===false?' norank':'')
               + (o.medal && i<3 ? ' t'+(i+1) : '');
       return '<div class="'+cls+'">'+
         (o.rank===false ? '' : '<div class="rk">'+(i+1)+'</div>')+
@@ -2093,6 +2180,33 @@ var PROD = {
       });
     });
   }
+
+  /* One tooltip for every chart on these panels. A wall is mostly watched from
+     across the room, but somebody always walks up to a bar and points at it. */
+  var tip=null;
+  function tipEl(){
+    if(!tip){ tip=document.createElement('div'); tip.className='pdtip'; document.body.appendChild(tip); }
+    return tip;
+  }
+  function bindTip(box, html){
+    box.addEventListener('mousemove', function(e){
+      var host=e.target.closest('[data-tip]'); var t=tipEl();
+      if(!host){ t.style.display='none'; return; }
+      t.innerHTML = html(host.dataset.tip);
+      t.style.display='block';
+      var r=t.getBoundingClientRect();
+      t.style.left=Math.min(e.clientX+16, innerWidth-r.width-12)+'px';
+      t.style.top=Math.max(12, e.clientY-r.height-14)+'px';
+    });
+    box.addEventListener('mouseleave', function(){ if(tip) tip.style.display='none'; });
+  }
+  /* Narrow cards get first name plus initial — the wall reads it at a glance
+     and the full name is on the leaderboard two panels earlier. */
+  function shortName(n){
+    var w=String(n).trim().split(/\s+/);
+    return w.length<2 ? n : w[0]+' '+w[w.length-1].charAt(0)+'.';
+  }
+  function sw(c){ return '<span class="sw" style="background:'+c+'"></span>'; }
 
   function paint(){
     var P=PROD;
@@ -2122,6 +2236,66 @@ var PROD = {
           setTimeout(function(){ g.style.height=g.dataset.h+'%'; }, 30*i);
         });
       });
+      if(!ch.dataset.bound){
+        ch.dataset.bound='1';
+        bindTip(ch, function(idx){
+          var x=PROD.months[+idx];
+          return '<b>'+x.m+' &middot; '+money(x.nb+x.inc)+'</b><br>'+
+            sw('var(--teal)')+'new business <b>'+money(x.nb)+'</b><br>'+
+            sw('var(--gold)')+'increases <b>'+money(x.inc)+'</b>';
+        });
+      }
+    }
+
+    /* Units — same row vocabulary as the board, no medals: a unit tile is a
+       share of the branch, not a race position. */
+    var uTot = P.units.reduce(function(a,x){ return a+x.api; },0) || 1;
+    rows(P.units.map(function(x){
+      return {a:x.u, n:Math.round(x.api/uTot*100)+'%', api:x.api};
+    }), q('pdUnits'), {rank:false, big:true});
+    rows(P.units.slice().sort(function(a,b){ return b.heldApi-a.heldApi; }).map(function(x){
+      return {a:x.u.replace(/'s unit$/,''), n:x.heldN+' apps', api:x.heldApi};
+    }), q('pdHeldUnits'), {tone:'warm', rank:false, big:true, nar:true});
+
+    /* Day by day. One scale across both directions so the eye can compare
+       what left the tray against what landed in it. */
+    var D=P.days, dmx=1;
+    D.forEach(function(x){ dmx=Math.max(dmx,x.up,x.dn); });
+    var upT=D.reduce(function(a,x){return a+x.up;},0), upC=D.reduce(function(a,x){return a+x.upN;},0);
+    var dnT=D.reduce(function(a,x){return a+x.dn;},0), dnC=D.reduce(function(a,x){return a+x.dnN;},0);
+    set('t_p15', dnT>upT
+      ? '<b>'+money(dnT-upT)+'</b> more came in than went out these three weeks'
+      : '<b>'+money(upT-dnT)+'</b> more picked up than came in these three weeks');
+    set('pdDupN', money(upT)); set('pdDupS', upC+' policies, 3 weeks');
+    set('pdDinN', money(dnT)); set('pdDinS', dnC+' apps still not picked up');
+    set('pdNet',  (upT-dnT>=0?'+':'\u2212')+money(Math.abs(upT-dnT)).replace('TT$',''));
+    set('pdNetS', upT>=dnT ? 'the tray is emptying' : 'the tray is filling');
+    /* A negative net is not good news, so it does not get the good-news colour. */
+    var netEl=q('pdNet');
+    if(netEl) netEl.style.color = upT>=dnT ? 'var(--teal)' : '#F0899C';
+    var dbox=q('pdDays');
+    if(dbox){
+      dbox.innerHTML = D.map(function(x,i){
+        return '<div class="pdcol'+(x.today?' today':'')+'" data-tip="'+i+'">'+
+          '<div class="pdup"><i data-h="'+(x.up/dmx*100)+'"></i></div>'+
+          '<div class="pdaxis"></div>'+
+          '<div class="pddn"><i data-h="'+(x.dn/dmx*100)+'"></i></div>'+
+          '<div class="pdlbl">'+x.w+' '+x.d+'</div></div>';
+      }).join('');
+      requestAnimationFrame(function(){
+        dbox.querySelectorAll('.pdup i, .pddn i').forEach(function(b,i){
+          setTimeout(function(){ b.style.height=b.dataset.h+'%'; }, 22*i);
+        });
+      });
+      if(!dbox.dataset.bound){
+        dbox.dataset.bound='1';
+        bindTip(dbox, function(idx){
+          var x=PROD.days[+idx];
+          return '<b>'+x.w+' '+x.d+' August</b>'+(x.today?' &middot; today':'')+'<br>'+
+            sw('var(--teal)')+'picked up <b>'+money(x.up)+'</b> &middot; '+x.upN+'<br>'+
+            sw('#A8324A')+'still waiting <b>'+money(x.dn)+'</b> &middot; '+x.dnN;
+        });
+      }
     }
 
     var lead = P.board[0];
@@ -2131,11 +2305,11 @@ var PROD = {
          q('pdBoard'), {medal:true});
 
     set('t_p14','<b>'+money(P.held.api)+'</b> written and waiting on requirements');
-    set('pdHeldSub', P.held.n+' apps &middot; avg '+P.held.avgDays+' days');
+    set('pdHeldSub', P.held.n+' &middot; '+P.held.avgDays+'d avg');
     rows(P.held.bands.map(function(b){ return {a:b.k, n:b.n+' apps', api:b.api}; }),
-         q('pdBands'), {tone:'warm', rank:false, big:true});
-    rows(P.held.books.map(function(b){ return {a:b.a, n:b.n+' apps', api:b.api}; }),
-         q('pdBooks'), {tone:'warm', big:true});
+         q('pdBands'), {tone:'warm', rank:false, big:true, nar:true});
+    rows(P.held.books.map(function(b){ return {a:shortName(b.a), n:b.n+' apps', api:b.api}; }),
+         q('pdBooks'), {tone:'warm', big:true, nar:true});
   }
 
   paint();
@@ -2165,6 +2339,8 @@ var PROD = {
           PROD.months = p.monthly.map(function(x){ return {m:x.m, nb:x.api||0, inc:x.inc||0}; });
         if(p.leaders&&p.leaders.length)
           PROD.board = p.leaders.slice(0,8).map(function(x){ return {a:x.a, n:x.n, api:x.api}; });
+        if(p.units&&p.units.length) PROD.units=p.units;
+        if(p.days&&p.days.length)   PROD.days=p.days;
         if(p.heldBack){
           PROD.held = {n:p.heldBack.n, api:p.heldBack.api, avgDays:p.heldBack.avgDays,
             bands:p.heldBack.bands||PROD.held.bands,
