@@ -2161,16 +2161,13 @@ function showPanel(i){
 }
 function rotate(){
   if(paused) return;
-  panel=(panel+1)%PANELS;
-  /* Adding a panel and forgetting its tick used to throw here and freeze the
-     board on whatever was showing. Missing elements are now skipped. */
-  for(var i=0;i<PANELS;i++){
-    var pn=$('p'+i), kk=$('k'+i);
-    if(pn) pn.classList.toggle('on', i===panel);
-    if(kk) kk.classList.toggle('on', i===panel);
-  }
-  // re-run the entry animations for the panel coming into view
-  if(lastGood) render(lastGood);
+  /* This used to carry its own copy of showPanel's body - the same loop over
+     the panels and ticks, and nothing else. So the automatic rotation moved
+     the panels while the slide number and the navigation dots kept whatever
+     the last manual move had set them to, which is why the corner read
+     "01 / 17 The money" over every panel on the board. One way to change
+     panel, used by the arrows, the dots, the keyboard and the clock alike. */
+  showPanel(panel + 1);
 }
 $('p0').classList.add('on'); $('k0').classList.add('on');
 
@@ -3071,7 +3068,13 @@ var PROD = {
     /* Already speaking this one - leave it alone. Re-seeking a line that is
        mid-sentence is a stutter, and the wall repaints often enough that it
        was happening several times a line. */
-    if(said === id && voxBusy()) return;
+    /* Already said this panel's line - leave it alone whether or not it is
+       still playing. announce() runs on a 700ms interval, so the moment a
+       line finished, voxBusy() went false, this guard fell through and the
+       same line started again. And again, for as long as the panel showed:
+       roughly two extra readings per panel at a fifteen second rotation.
+       That is the duplication, and it is most of what "robotic" was. */
+    if(said === id) return;
     said = id;
     var seg = VSEG[id];
     /* Sample-accurate path. start(0, offset, length) plays exactly this
