@@ -1070,6 +1070,73 @@
 .pxw b.bk{color:var(--gold)}
 .pxnote{font-size:max(.58em,10px); color:var(--ink-3); padding:.5em .2em 0; line-height:1.45}
 
+
+/* ═══ SUBMITTED — head office's report, to the column ══════════════════════
+   Hierachy, Apps -W, API - W, Apps -Y, API. Five columns because that is
+   what the branch is sent every Friday; a sixth would be a different
+   document. Unit and manager rows carry the report's own salmon, the total
+   its green, and standout figures its gold. */
+.subt{display:block; width:100%; min-height:0; flex:1; overflow:auto;
+  border:1px solid var(--line); border-radius:.4em}
+.subrow{display:grid; align-items:center;
+  grid-template-columns:minmax(0,1fr) 5.4em 8.6em 5.4em 9.4em;
+  border-bottom:1px solid rgba(255,255,255,.06)}
+.subrow>*{padding:.3em .55em}
+.subrow .sc{text-align:right; font-variant-numeric:tabular-nums;
+  font-size:max(.7em,11px); color:var(--ink-1)}
+.subrow .sl{font-size:max(.72em,11.5px); color:var(--ink-1);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.subrow.hd{position:sticky; top:0; z-index:3; background:#1E3A24; border-bottom:0}
+.subrow.hd>*{font-size:max(.6em,10px); font-weight:800; color:#E8F2E4;
+  letter-spacing:.03em}
+.subrow.hd .sc{text-align:right}
+.subrow.u  {background:#5A3430}
+.subrow.mg {background:#4A2E2B}
+.subrow.u .sl,.subrow.mg .sl,.subrow.u .sc,.subrow.mg .sc{font-weight:800; color:#FFE7E2}
+.subrow.mg .sl{padding-left:1.5em}
+.subrow.ag .sl{padding-left:2.8em; color:var(--ink-2)}
+.subrow .sc.hi{background:rgba(245,185,53,.24); color:#FFE9B0; font-weight:800}
+.subrow.tt{background:#1E3A24; border-bottom:0; position:sticky; bottom:0}
+.subrow.tt>*{font-weight:800; color:#EAF5E6; font-size:max(.72em,11.5px)}
+@media (max-width:820px){
+  .subrow{grid-template-columns:minmax(0,1fr) 3.2em 5.2em 3.2em 5.8em}
+  .subrow>*{padding:.26em .3em}
+  .subrow .sc{font-size:max(.6em,9.5px)}
+  .subrow .sl{font-size:max(.62em,10px)}
+  .subrow.mg .sl{padding-left:.7em}
+  .subrow.ag .sl{padding-left:1.3em}
+}
+
+
+/* ═══ THE TICKER ═══════════════════════════════════════════════════════════
+   Two rails over the report: API on top, applications under it, the way a
+   market board stacks price over volume. Every advisor who picked up this
+   year goes past.
+
+   The run is duplicated and the track translated by exactly half its width,
+   so the loop closes on itself with no jump - the second copy is already
+   where the first one started. Paused with the board, because a rail sliding
+   under a held panel is the thing you held the panel to stop. */
+.tkr{position:relative; overflow:hidden; border:1px solid var(--line);
+  border-radius:.4em; background:rgba(8,19,26,.55); height:2.1em; flex:none}
+.tkr.apps{margin-top:.3em; height:1.85em; background:rgba(8,19,26,.38)}
+.tkr .tkrun{display:flex; align-items:center; height:100%; width:max-content;
+  will-change:transform; animation:tkrslide 90s linear infinite}
+.tkr.apps .tkrun{animation-duration:120s}
+.tkr.hold .tkrun{animation-play-state:paused}
+@keyframes tkrslide{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.tkq{display:inline-flex; align-items:baseline; gap:.4em; padding:0 1.1em;
+  border-right:1px solid rgba(255,255,255,.07); white-space:nowrap}
+.tkq .sym{font-size:max(.62em,10px); font-weight:800; letter-spacing:.06em;
+  color:var(--ink-3)}
+.tkq .val{font-size:max(.74em,12px); font-weight:800; color:#fff;
+  font-variant-numeric:tabular-nums}
+.tkq .chg{font-size:max(.6em,10px); font-weight:800}
+.tkq .chg.up{color:var(--teal)} .tkq .chg.flat{color:var(--ink-4)}
+.tkr.apps .tkq .val{color:var(--gold); font-size:max(.68em,11px)}
+@media (max-width:820px){ .tkr{height:1.9em} .tkr.apps{height:1.7em}
+  .tkq{padding:0 .7em} }
+
 .pdot{width:.62em; height:.62em; min-width:9px; min-height:9px; padding:0;
   border-radius:50%; border:0; cursor:pointer; background:rgba(255,255,255,.22);
   transition:background .2s, transform .2s, box-shadow .2s}
@@ -1370,9 +1437,18 @@
 
 
 
+
+  <!-- 13 · PRODUCTION SUBMITTED — head office's own report, live -->
+  <section class="panel" id="p12">
+    <div class="ptitle"><h1 id="t_p12"></h1><span class="tag">Submitted</span></div>
+    <div class="tkr" id="tkrApi"><div class="tkrun"></div></div>
+    <div class="tkr apps" id="tkrApp"><div class="tkrun"></div></div>
+    <div class="subt" id="pdRoster"></div>
+    <div class="pdnote" id="pdRosterNote"></div>
+  </section>
 </main>
 
-<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span></div>
+<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span></div>
 <div id="burst"></div>
 
 <script>
@@ -1380,7 +1456,7 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
 var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
 
-var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 12;
+var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 13;
 var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 /* Calendar volume: one hue, dark to light. Validated as an ordinal ramp against
    this surface — monotone lightness, every step clear of the card behind it. */
@@ -3527,14 +3603,19 @@ var PROD = {
      measured result where an empty cell reads as no activity. Faizal
      Mohammed's row is the case in point: it carries a real 0.00 for the
      month, and that is not the same as the blank above it. */
+  /* THE DOWNLOAD IS THE REPORT, NOT AN EXPORT OF THE SCREEN.
+     Same five columns, same order, same banner and the same colours, so what
+     lands in an inbox is the sheet the branch already recognises. Blank stays
+     blank: the report leaves a cell empty where an advisor did nothing that
+     week rather than writing a zero, and a zero is a measured result where an
+     empty cell is no activity. */
   function submittedSheet(){
     var S = (typeof PROD !== 'undefined' && PROD.submitted) || null;
     if(!S || !S.rows || !S.rows.length) return null;
     var IND = ['', '   ', '      '];
     var out = [];
-    out.push([{v:'SUBMITTED', s:1}, '', '', '', '', '', '']);
-    out.push([{v:'Hierarchy', s:2}, {v:'Apps -W', s:2}, {v:'API - W', s:2},
-              {v:'Apps -M', s:2}, {v:'Api -M', s:2},
+    out.push([{v:'SUBMITTED', s:1}, '', '', '', '']);
+    out.push([{v:'Hierachy', s:2}, {v:'Apps -W', s:2}, {v:'API - W', s:2},
               {v:'Apps -Y', s:2}, {v:'API', s:2}]);
     function num(p, i, style){
       var v = (p && p[i] !== null && p[i] !== undefined) ? p[i] : '';
@@ -3546,17 +3627,22 @@ var PROD = {
       var mi  = r.lvl === 2 ? 8 : 10;
       out.push([{v: IND[r.lvl] + r.label, s: lab},
                 num(r.w,0,ni), num(r.w,1,mi),
-                num(r.m,0,ni), num(r.m,1,mi),
                 num(r.y,0,ni), num(r.y,1,mi)]);
     });
     var t = S.total || {};
     out.push([{v:'Total', s:6},
               num(t.w,0,6), num(t.w,1,6),
-              num(t.m,0,6), num(t.m,1,6),
               num(t.y,0,6), num(t.y,1,6)]);
+    /* Who pulled it and when. The sheet is marked branch management only and
+       leaves this building in email; a copy with no name on it is a copy
+       nobody is accountable for. */
+    var who = (typeof WHO !== 'undefined' && WHO && WHO.name) ? WHO.name : 'a branch screen';
+    out.push([]);
+    out.push([{v:'Downloaded ' + (S.asAt||'') + ' by ' + who
+               + ' — CONFIDENTIAL, branch management only', s:0}]);
     return { name:'Submitted', rows:out,
-             cols:[34, 9, 14, 9, 14, 9, 15],
-             merges:['A1:G1'] };
+             cols:[36, 10, 16, 10, 17],
+             merges:['A1:E1'] };
   }
 
   function buildXlsx(sheets){
@@ -3816,35 +3902,107 @@ var PROD = {
        feed actually holds and left visibly empty where it holds nothing.
        An empty cell is a request to the feed; an invented one is a number
        somebody would act on. */
+  /* HEAD OFFICE'S REPORT, TO THE COLUMN.
+     Hierachy, Apps -W, API - W, Apps -Y, API. The branch is sent this every
+     Friday and reads it in that shape; a rearrangement of the same numbers is
+     a different document and gets checked against the one people know rather
+     than trusted.
+
+     Gold marks a standout the way the circulated sheet marks it: the biggest
+     figure in its column among the agent rows. Unit and manager rows carry
+     the salmon, the total the green. */
+
+  /* Build both rails from the same report the table is drawn from, so a
+     figure on the rail and the same figure in the table can never disagree.
+     A week's movement is shown against the year to date it came out of -
+     that is the only "change" this data actually has. */
+  function tickerFrom(S){
+    var ag = (S.rows||[]).filter(function(r){ return r.lvl === 2 && r.y && r.y[1]; });
+    if(!ag.length) return;
+    ag = ag.slice().sort(function(a,b){ return (b.y[1]||0) - (a.y[1]||0); });
+
+    function sym(label){
+      var m = String(label||'').match(/^([A-Z]\d+)\s*-\s*(.*)$/);
+      return m ? m[1] : String(label||'').slice(0,6).toUpperCase();
+    }
+    function k(v){
+      v = Number(v)||0;
+      return v >= 1e6 ? '$' + (v/1e6).toFixed(2) + 'M'
+           : v >= 1e3 ? '$' + Math.round(v/1e3) + 'k' : '$' + Math.round(v);
+    }
+    function run(box, make){
+      var one = ag.map(make).join('');
+      box.querySelector('.tkrun').innerHTML = one + one;   // two copies, -50%
+    }
+    var a = q('tkrApi'), b = q('tkrApp');
+    if(a) run(a, function(r){
+      var wk = (r.w||[])[1] || 0;
+      return '<span class="tkq"><span class="sym">' + esc(sym(r.label)) + '</span>'
+           + '<span class="val">' + k(r.y[1]) + '</span>'
+           + '<span class="chg ' + (wk ? 'up' : 'flat') + '">'
+           + (wk ? '▲ ' + k(wk) : '–') + '</span></span>';
+    });
+    if(b) run(b, function(r){
+      var wa = (r.w||[])[0] || 0;
+      return '<span class="tkq"><span class="sym">' + esc(sym(r.label)) + '</span>'
+           + '<span class="val">' + ((r.y||[])[0]||0) + ' apps</span>'
+           + '<span class="chg ' + (wa ? 'up' : 'flat') + '">'
+           + (wa ? '▲ ' + wa : '–') + '</span></span>';
+    });
+  }
+  /* Hold stops the rails as well. */
+  window.rrbTickerHold = function(on){
+    ['tkrApi','tkrApp'].forEach(function(id){
+      var e = q(id); if(e) e.classList.toggle('hold', !!on);
+    });
+  };
+
   function paintSubmitted(S){
     var box = q('pdRoster'); if(!box) return false;
-    box.className = 'subt';
-    var C = ['Apps -W','API - W','Apps -M','Api -M','Apps -Y','API'];
     function n0(v){ return (v===null||v===undefined||v==='') ? '' : Math.round(v).toLocaleString('en-US'); }
-    function n2(v){ return (v===null||v===undefined||v==='') ? ''
-                    : v.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2}); }
-    function cells(r){
-      var p=[r.w,r.m,r.y], out='';
-      for(var i=0;i<3;i++){
-        var a=p[i]||[];
-        out += '<div class="sc">'+n0(a[0])+'</div>'+
-               '<div class="sc m">'+n2(a[1])+'</div>';
-      }
-      return out;
+    function money(v){ return (v===null||v===undefined||v==='') ? ''
+      : '$' + Number(v).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+    var ag = S.rows.filter(function(r){ return r.lvl === 2; });
+    function peak(pick){
+      var m = 0;
+      ag.forEach(function(r){ var v = pick(r); if(v > m) m = v; });
+      return m;
     }
-    var html = '<div class="subrow hd"><div class="sl">Hierarchy</div>'+
-      C.map(function(c){ return '<div class="sc">'+c+'</div>'; }).join('')+'</div>';
+    var pkWa = peak(function(r){ return (r.w||[])[0]||0; }),
+        pkWi = peak(function(r){ return (r.w||[])[1]||0; }),
+        pkYa = peak(function(r){ return (r.y||[])[0]||0; }),
+        pkYi = peak(function(r){ return (r.y||[])[1]||0; });
+
+    function cells(r, hi){
+      var w = r.w||[], y = r.y||[];
+      function c(txt, isHi){ return '<div class="sc' + (isHi?' hi':'') + '">' + txt + '</div>'; }
+      return c(n0(w[0]),    hi && w[0] && w[0] === pkWa)
+           + c(money(w[1]), hi && w[1] && w[1] === pkWi)
+           + c(n0(y[0]),    hi && y[0] && y[0] === pkYa)
+           + c(money(y[1]), hi && y[1] && y[1] === pkYi);
+    }
+
+    var html = '<div class="subrow hd"><div class="sl">Hierachy</div>'
+             + '<div class="sc">Apps -W</div><div class="sc">API - W</div>'
+             + '<div class="sc">Apps -Y</div><div class="sc">API</div></div>';
     html += S.rows.map(function(r){
-      var cls = r.lvl===0 ? 'u' : r.lvl===1 ? 'mg' : 'ag';
-      return '<div class="subrow '+cls+'"><div class="sl">'+esc(r.label)+'</div>'+cells(r)+'</div>';
+      var cls = r.lvl === 0 ? 'u' : r.lvl === 1 ? 'mg' : 'ag';
+      return '<div class="subrow ' + cls + '"><div class="sl">' + esc(r.label) + '</div>'
+           + cells(r, r.lvl === 2) + '</div>';
     }).join('');
-    var t = S.total||{};
-    html += '<div class="subrow tt"><div class="sl">Total</div>'+cells(t)+'</div>';
+    var t = S.total || {};
+    html += '<div class="subrow tt"><div class="sl">Total</div>' + cells(t, false) + '</div>';
     box.innerHTML = html;
-    set('t_p16', 'Production submitted &middot; <b>'+n2((t.y||[])[1])+'</b> year to date');
-    var note=q('pdRosterNote');
-    if(note) note.innerHTML = 'As at '+esc(S.asAt||'')+
-      ' &middot; <span style="color:var(--gold)">confidential — branch management only</span>';
+
+    var tw = (t.w||[]), ty = (t.y||[]);
+    set('t_p12', 'Week ' + (S.week || '') + ' &middot; <b>' + n0(tw[0]) + '</b> apps '
+               + money(tw[1]) + ' &middot; year to date <b>' + n0(ty[0]) + '</b> apps '
+               + money(ty[1]));
+    var note = q('pdRosterNote');
+    if(note) note.innerHTML = 'As at ' + esc(S.asAt||'') + ' &middot; '
+      + '<span style="color:var(--gold)">confidential — branch management only</span>';
+    tickerFrom(S);
     return true;
   }
 
