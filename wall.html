@@ -2385,11 +2385,13 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
      at the same size and colour, and the two smeared into each other.
      It is the one thing on that row anybody reads, so it gets a solid
      ground and real contrast. */
-  no.style.cssText='padding:.5em .85em;border-radius:.5em;'+
+  /* Centred with the dots rather than parked in the corner beside Hold.
+     The label and the dots answer the same question - which panel is this,
+     and how do I get to another - so they belong together and in the one
+     place the eye already goes. */
+  no.style.cssText='padding:.34em .8em;border-radius:.5em;'+
     'background:rgba(6,14,20,.94);border:1px solid var(--line-2);'+
-    'font-size:13px;font-weight:800;white-space:nowrap;'+
-    'align-self:center;margin-right:.35em';
-  bar.appendChild(no);
+    'font-size:13px;font-weight:800;white-space:nowrap;text-align:center';
 
   /* DOTS, NOT ARROWS.
      An arrow tells you there is a previous panel. Sixteen dots tell you
@@ -2402,12 +2404,9 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
   /* Centred along the bottom rather than tucked in beside the buttons.
      They are the one control somebody reaches for from across the room,
      and the corner is where a thumb goes for Hold, not for slide nine. */
-  dots.style.cssText='position:fixed;left:50%;bottom:9px;transform:translateX(-50%);'
-    +'z-index:61;display:flex;gap:.42em;align-items:center;justify-content:center;'
-    +'flex-wrap:wrap;max-width:60vw;padding:.3em .55em;border-radius:2em;'
-    +'background:rgba(8,19,26,.55);opacity:.5;transition:opacity .2s';
-  dots.onmouseenter=function(){ dots.style.opacity='1'; };
-  dots.onmouseleave=function(){ dots.style.opacity='.5'; };
+  dots.style.cssText='display:flex;gap:.42em;align-items:center;justify-content:center;'
+    +'flex-wrap:wrap;max-width:60vw;padding:.28em .5em;border-radius:2em;'
+    +'background:rgba(8,19,26,.55)';
   for(var di=0; di<PANELS; di++){
     (function(n){
       var d=document.createElement('button');
@@ -2418,7 +2417,17 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
       dots.appendChild(d);
     })(di);
   }
-  document.body.appendChild(dots);
+  /* One centred rail: the slide label above, the dots under it. */
+  var rail=document.createElement('div');
+  rail.id='pRail';
+  rail.style.cssText='position:fixed;left:50%;bottom:9px;transform:translateX(-50%);'
+    +'z-index:61;display:flex;flex-direction:column;align-items:center;gap:.3em;'
+    +'opacity:.55;transition:opacity .2s;pointer-events:auto';
+  rail.onmouseenter=function(){ rail.style.opacity='1'; };
+  rail.onmouseleave=function(){ rail.style.opacity='.55'; };
+  rail.appendChild(no);
+  rail.appendChild(dots);
+  document.body.appendChild(rail);
 
 
   var hold=btn('\u2016 Hold','Hold this panel',function(){
@@ -4278,6 +4287,18 @@ var PROD = {
       if(n) n.innerHTML = '';
       set('t_p12', 'Production submitted');
     })();
+    /* Return. Without it the block above painted the explanation and then
+       paintRoster carried straight on and overwrote it with the eight-advisor
+       fallback - which is the year to date, not the submitted report, and
+       looked like the panel half working. */
+    (function(){
+      var t = q('tkrApi'), a = q('tkrApp'), g = q('incChart');
+      if(t) t.style.display = 'none';
+      if(a) a.style.display = 'none';
+      var card = g && g.closest ? g.closest('.subgraph') : null;
+      if(card) card.style.display = 'none';
+    })();
+    return;
     var box = q('pdRoster'); if(!box) return;
     box.className = 'rost';
     var per = [
