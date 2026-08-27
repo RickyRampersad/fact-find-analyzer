@@ -1233,6 +1233,7 @@
           <span class="st"><i>API rec</i></span></span>
         <span class="r">API picked up</span></div>
       <div class="rows grow" id="yRace" style="margin-top:.4em"></div>
+      <div id="yGap" class="pdnote" style="display:none; margin-top:.5em; text-align:left"></div>
     </div>
   </section>
 
@@ -1549,6 +1550,32 @@ function richRows(list, box, key){
 
 /* The producer board. One advisor, the whole funnel: what they found, what
    they recommended, what the client took, and what it is worth annualised. */
+/* ── IS THE YEAR BOARD ACTUALLY THE YEAR'S TOP EIGHT? ──────────────────────
+   The feed sends eight advisors for the year and eight for the month, and
+   the year eight are not picked by count - on 27 August it sent Jamil Khan
+   and Joy Barbara Sammah on two apiece while leaving out Rajiv Soodoo, who
+   had nine that month alone and so cannot have fewer than nine for the year.
+   The board was sorting the wrong eight people correctly.
+
+   The wall cannot fix that - the missing rows never arrive - but it can
+   refuse to present the list as a ranking when it demonstrably is not one.
+   Anyone on the month board whose month count beats the smallest count on
+   the year board has to be on the year board, because the month is inside
+   the year. If somebody like that is missing, say so and name them.
+   Nothing shows when the feed is right, so this clears itself. */
+function yearBoardGap(d){
+  var yl = d.yearLeaders || [], ml = d.monthLeaders || [];
+  if(yl.length < 2 || !ml.length) return null;
+  var have = {}, i;
+  for(i=0;i<yl.length;i++) have[yl[i].name] = true;
+  var floor = yl[0].count || 0;
+  for(i=1;i<yl.length;i++) floor = Math.min(floor, yl[i].count || 0);
+  var missing = ml.filter(function(m){
+    return !have[m.name] && (m.count || 0) > floor;
+  }).sort(function(a,b){ return (b.count||0)-(a.count||0); });
+  return missing.length ? missing : null;
+}
+
 function producerRows(list, box, key, rankOn){
   if(!list.length){
     box.innerHTML='<div class="empty">Nothing on the board yet. First one up sets the pace.</div>';
@@ -1697,7 +1724,11 @@ function headlines(d){
                      q.oldestDays+' day'+(q.oldestDays===1?'':'s') : '')
     : 'The queue is <b>clear</b>');
   set('t_p4', fastest
-    ? '<b>'+esc(first(fastest.name))+'</b> answers fastest &mdash; '+fastest.medianDays+' days'+
+    ? '<b>'+esc(first(fastest.name))+'</b> answers fastest &mdash; '+
+      /* A median of 0 is same-day, which is the best result there is.
+         Printed as "0 days" it reads as a number that failed to load. */
+      (fastest.medianDays===0 ? 'same day'
+                              : fastest.medianDays+' day'+(fastest.medianDays===1?'':'s'))+
       (md!==null ? ' &middot; '+md+' across the branch' : '')
     : (md!==null ? 'Managers decide in <b>'+md+' days</b>' : 'How managers are managing'));
   var WPP=(d.production&&d.production.wtd)||{api:0,pipeline:0};
@@ -1954,6 +1985,17 @@ function render(d){
   setText('wkY', Y.label||'Year');
   setText('wkM', M.label||'Month');
   producerRows(d.yearLeaders||[], $('yRace'), 'yr', 'pickedUp');
+  (function(){
+    var gap = yearBoardGap(d), el = $('yGap');
+    if(!el) return;
+    if(!gap){ el.style.display='none'; return; }
+    var who = gap.slice(0,3).map(function(m){
+      return esc(m.name)+' ('+m.count+' this month)'; }).join(' &middot; ');
+    el.style.display='block';
+    el.innerHTML = '<span style="color:var(--gold)">Year board incomplete.</span> '+
+      'The feed sends eight names and these are not among them, though the month '+
+      'they are already credited with puts them on it: '+who+'.';
+  })();
 
   /* 3 · recognition */
   renderSpotlight(d);
@@ -2289,6 +2331,22 @@ setInterval(function(){
      Read tolerantly, and absent until the board is storing and returning it:
      the row below only appears when something is actually classified, so it
      shows nothing rather than reporting every arrival as sent. */
+  /* WIRING CHECKS ARE NOT PROSPECTS.
+     The board carries rows put there to prove the pipe works - WIRE001 and
+     LIVECHK1 on 27 August - and they were being counted as links sent, which
+     walks straight into the funnel and the drop-off. Two in twenty one is
+     ten per cent of the top of the funnel.
+
+     Named rather than guessed at, and the count of what was dropped is shown
+     on the panel. A number quietly filtered is as hard to trust as one
+     quietly inflated. */
+  function isWiringCheck(p){
+    var tok = String(p.token || '').trim();
+    var nm  = String(p.n || '').trim();
+    return /^(wire|livechk|livecheck|test|demo|sample|check)[-_ ]?\d*$/i.test(tok)
+        || /\btest\b/i.test(nm);
+  }
+
   function arrivalOf(p){
     var a = String(p.arrival || p.via || p.source_kind || '').trim().toLowerCase();
     return (a === 'forwarded' || a === 'direct' || a === 'sent') ? a : '';
@@ -2299,8 +2357,10 @@ setInterval(function(){
         || String(p.agent || p.a || p.code || '').trim();
   }
 
-  function render(rows){
-    var sent = rows.length;
+  function render(all){
+    var checks = all.filter(isWiringCheck);
+    var rows   = all.filter(function(p){ return !isWiringCheck(p); });
+    var sent   = rows.length;
     var at = function(min){
       return rows.filter(function(p){ return Number(p.s || 0) >= min; }).length;
     };
@@ -2318,7 +2378,9 @@ setInterval(function(){
     }
 
     $('pxSent').textContent  = sent;
-    $('pxSentSub').textContent = sent === 1 ? 'one prospect' : 'prospects on the board';
+    $('pxSentSub').textContent = (sent === 1 ? 'one prospect' : 'prospects on the board')
+      + (checks.length ? ' \u00b7 ' + checks.length + ' wiring check'
+                         + (checks.length === 1 ? '' : 's') + ' not counted' : '');
     $('pxOpen').textContent  = at(1);
     $('pxOpenPc').textContent  = pc(at(1), sent) + ' of sent';
     $('pxWatch').textContent = at(2);
@@ -2553,18 +2615,35 @@ setInterval(function(){
      they arrived and how long they have waited, and aggregates what they came
      for — because the thing that decides who to assign is what they asked
      about, not who happens to be free. */
-  function paintUnclaimed(rows){
+  function paintUnclaimed(all){
+    /* Same denominator as the funnel two panels along. Nineteen there and
+       twenty one here is two panels disagreeing about the same board. */
+    var rows = all.filter(function(p){ return !isWiringCheck(p); });
     var unclaimed = rows.filter(function(p){
       var a = arrivalOf(p);
       if (a !== 'forwarded' && a !== 'direct') return false;
       return !(p.assigned || p.assignedTo || p.owner);
     });
 
+    /* THE BOARD HAS TO HAVE SAID SOMETHING BEFORE THIS CAN CLAIM ANYTHING.
+       arrivalOf() returns '' when a row carries no classification, so with a
+       board that has never stored `arrival` every row falls out of the filter
+       and the panel concluded "Everyone has an advisor" - asserting a clean
+       desk from a field that does not exist. On 27 August that was nought of
+       twenty one rows classified, and the panel said everybody was covered.
+
+       The prospecting panel two along already draws this distinction, and its
+       own comment says why: not reachable and nothing to report must not look
+       alike on a screen nobody is standing in front of. Same rule here. */
+    var classified = rows.filter(function(p){ return !!arrivalOf(p); }).length;
+
     var t = $('t_p11');
     if (t) {
-      t.innerHTML = unclaimed.length
-        ? '<b>' + unclaimed.length + '</b> waiting for an advisor'
-        : 'Everyone has an advisor';
+      t.innerHTML = !classified
+        ? 'Unclaimed leads'
+        : (unclaimed.length
+            ? '<b>' + unclaimed.length + '</b> waiting for an advisor'
+            : 'Everyone has an advisor');
     }
 
     var list = $('uqList'), needs = $('uqNeeds');
@@ -2574,8 +2653,15 @@ setInterval(function(){
     if (!unclaimed.length) {
       $('uqSub').textContent = '';
       $('uqNeedSub').textContent = '';
-      list.innerHTML = '<div style="font-size:.62em;color:#7E93B0;padding:.7em 0">'
-        + 'Nothing has come in unassigned. Every prospect on the board belongs to somebody.</div>';
+      list.innerHTML = classified
+        ? '<div style="font-size:.62em;color:#7E93B0;padding:.7em 0">'
+          + 'Nothing has come in unassigned. Every prospect on the board belongs to somebody.</div>'
+        : '<div style="font-size:.62em;color:var(--gold);line-height:1.5;padding:.5em .7em;'
+          + 'background:rgba(245,185,53,.09);border-left:3px solid var(--gold);'
+          + 'border-radius:0 .35em .35em 0">The board does not say how these arrived. '
+          + '<b>' + rows.length + '</b> prospects and not one classified as sent, forwarded '
+          + 'or scanned, so this panel cannot tell an unclaimed lead from a claimed one. '
+          + 'It fills itself the day the board returns <b>arrival</b>.</div>';
       return;
     }
 
