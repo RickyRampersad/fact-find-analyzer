@@ -1137,6 +1137,51 @@
 @media (max-width:820px){ .tkr{height:1.9em} .tkr.apps{height:1.7em}
   .tkq{padding:0 .7em} }
 
+
+/* The report and the trend, side by side. On a phone the graph goes under
+   the table rather than beside it - two columns on 390px is two unreadable
+   columns. */
+.subwrap{display:grid; gap:.7em; flex:1; min-height:0;
+  grid-template-columns:minmax(0,1fr) 21em}
+.subgraph{display:flex; flex-direction:column; min-width:0}
+.incchart{flex:1; min-height:7em; display:flex; align-items:flex-end; gap:.42em;
+  padding-top:.5em}
+.incbar{flex:1; display:flex; flex-direction:column; justify-content:flex-end;
+  align-items:center; gap:.3em; height:100%}
+.incbar .stack{width:100%; display:flex; flex-direction:column;
+  justify-content:flex-end; flex:1; gap:2px}
+.incbar .nb,.incbar .inc{width:100%; border-radius:.2em .2em 0 0; height:0;
+  transition:height .9s cubic-bezier(.2,.75,.3,1)}
+.incbar .nb{background:linear-gradient(180deg,var(--teal),var(--teal-deep))}
+.incbar .inc{background:linear-gradient(180deg,var(--gold),var(--gold-deep));
+  border-radius:.2em}
+.incbar .ml{font-size:max(.54em,9px); color:var(--ink-3); font-weight:700}
+.inckey{display:flex; gap:1em; padding-top:.5em; font-size:max(.56em,9.5px);
+  color:var(--ink-3); font-weight:700}
+.inckey i{display:inline-block; width:.75em; height:.75em; border-radius:.2em;
+  margin-right:.35em; vertical-align:middle}
+.inckey i.nb{background:var(--teal)} .inckey i.inc{background:var(--gold)}
+@media (max-width:1100px){
+  .subwrap{grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) auto}
+  .subgraph{min-height:9em}
+}
+/* THE NAME GETS ITS OWN LINE ON A PHONE.
+   Five columns across 390px left about nine characters for the advisor, so
+   nineteen of the thirty two names were cut mid-surname - and the name is
+   the reason anybody looks at this panel. Two lines: the name across the
+   top, the four figures underneath, the way the roster panel does it. */
+@media (max-width:700px){
+  .subrow{grid-template-columns:repeat(4,minmax(0,1fr)); row-gap:0}
+  .subrow .sl{grid-column:1 / -1; white-space:normal; overflow:visible;
+    text-overflow:clip; padding-bottom:.05em; font-weight:700}
+  .subrow.hd .sl{display:none}
+  .subrow.hd{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .subrow.ag .sl{padding-left:1.1em; color:var(--ink-1)}
+  .subrow.mg .sl{padding-left:.55em}
+  .subrow .sc{font-size:max(.62em,10px); padding-top:0}
+  .subrow.tt .sl{padding-left:.2em}
+}
+
 .pdot{width:.62em; height:.62em; min-width:9px; min-height:9px; padding:0;
   border-radius:50%; border:0; cursor:pointer; background:rgba(255,255,255,.22);
   transition:background .2s, transform .2s, box-shadow .2s}
@@ -1443,7 +1488,14 @@
     <div class="ptitle"><h1 id="t_p12"></h1><span class="tag">Submitted</span></div>
     <div class="tkr" id="tkrApi"><div class="tkrun"></div></div>
     <div class="tkr apps" id="tkrApp"><div class="tkrun"></div></div>
-    <div class="subt" id="pdRoster"></div>
+    <div class="subwrap">
+      <div class="subt" id="pdRoster"></div>
+      <div class="card subgraph">
+        <h2><span>Increases against new business</span><em>API by month</em></h2>
+        <div id="incChart" class="incchart"></div>
+        <div class="inckey"><span><i class="nb"></i>New business</span><span><i class="inc"></i>Increases</span></div>
+      </div>
+    </div>
     <div class="pdnote" id="pdRosterNote"></div>
   </section>
 </main>
@@ -3957,6 +4009,31 @@ var PROD = {
     });
   };
 
+
+  /* New business against increases, month by month, so somebody can see
+     whether the increases book is actually moving. Both are API on the same
+     axis - the whole question is their relative size, and two axes would let
+     that be drawn to say anything. */
+  function incChart(S){
+    var box = q('incChart'); if(!box) return;
+    var s = S.series || [];
+    if(!s.length){ box.innerHTML = ''; return; }
+    var top = 1;
+    s.forEach(function(m){ var t = (m.nb||0) + (m.inc||0); if(t > top) top = t; });
+    box.innerHTML = s.map(function(m){
+      var nb = Math.round((m.nb||0) / top * 100), inc = Math.round((m.inc||0) / top * 100);
+      return '<div class="incbar"><div class="stack">'
+           + '<i class="inc" data-h="' + inc + '"></i>'
+           + '<i class="nb"  data-h="' + nb  + '"></i>'
+           + '</div><div class="ml">' + esc(m.m) + '</div></div>';
+    }).join('');
+    requestAnimationFrame(function(){
+      box.querySelectorAll('.stack i').forEach(function(b, i){
+        setTimeout(function(){ b.style.height = b.dataset.h + '%'; }, 30 * i);
+      });
+    });
+  }
+
   function paintSubmitted(S){
     var box = q('pdRoster'); if(!box) return false;
     function n0(v){ return (v===null||v===undefined||v==='') ? '' : Math.round(v).toLocaleString('en-US'); }
@@ -4003,6 +4080,7 @@ var PROD = {
     if(note) note.innerHTML = 'As at ' + esc(S.asAt||'') + ' &middot; '
       + '<span style="color:var(--gold)">confidential — branch management only</span>';
     tickerFrom(S);
+    incChart(S);
     return true;
   }
 
