@@ -504,6 +504,31 @@
   .ticks{display:flex; gap:.4em; justify-content:center; padding:.55em 0 0}
   .tk{width:2.4em; height:.2em; border-radius:.1em; background:var(--line-2); transition:background .4s}
   .tk.on{background:var(--teal)}
+
+  /* Production panels (Salesforce). Compact ranked rows: rank, name, bar,
+     money, count. Prefixed pd- so nothing here can collide with the fact-find
+     board's own row classes. */
+  .pdrow{display:grid; grid-template-columns:2.1em minmax(6em,1.15fr) minmax(4em,1.5fr) 5.4em 3.1em;
+         align-items:center; gap:.85em; padding:.44em 0; border-top:1px solid var(--line)}
+  .pdrow:first-child{border-top:0}
+  .pdrow .rk{display:grid; place-items:center; width:1.75em; height:1.75em; border-radius:50%;
+             font-size:.78em; font-weight:800; border:1.5px solid var(--line-2); color:var(--ink-3)}
+  .pdrow.t1 .rk{border-color:#F5B935; color:#F5B935; background:rgba(245,185,53,.1)}
+  .pdrow.t2 .rk{border-color:#DCE3EC; color:#DCE3EC; background:rgba(220,227,236,.07)}
+  .pdrow.t3 .rk{border-color:#E0975A; color:#E0975A; background:rgba(224,151,90,.08)}
+  .pdrow .nm{font-weight:750; font-size:.87em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .pdrow .vv{text-align:right; font-weight:800; font-size:.9em}
+  .pdrow .cn{text-align:right; font-size:.68em; color:var(--ink-3); font-weight:700; white-space:nowrap}
+  .pdbar{height:.5em; border-radius:.25em; background:rgba(255,255,255,.06); overflow:hidden}
+  .pdbar i{display:block; height:100%; border-radius:.25em; width:0;
+           background:linear-gradient(90deg,var(--teal-deep),var(--teal));
+           transition:width .9s cubic-bezier(.2,.75,.3,1)}
+  .pdbar i.gold{background:linear-gradient(90deg,var(--gold-deep),var(--gold))}
+  .pdbar i.warm{background:linear-gradient(90deg,#8A2E3F,#E8768B)}
+  .pdrow.norank{grid-template-columns:minmax(6em,1.15fr) minmax(4em,1.5fr) 5.6em 3.4em}
+  .pdrow.big{padding:.95em 0}
+  .pdnote{font-size:.66em; color:var(--ink-3); font-weight:650; letter-spacing:.03em;
+          padding-top:.5em; text-align:center}
   @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
 </style>
 </head>
@@ -758,9 +783,49 @@
       </div>
     </div>
   </section>
+
+  <!-- 13 · PRODUCTION — what the branch picked up (Salesforce) -->
+  <section class="panel" id="p12">
+    <div class="ptitle"><h1 id="t_p12"></h1><span class="tag">Production</span></div>
+    <div class="stats tight">
+      <div class="stat v"><div class="k">This week</div><div class="val num" id="pdWk">—</div><div class="s" id="pdWkS">&nbsp;</div></div>
+      <div class="stat"><div class="k" id="pdMoK">This month</div><div class="val num" id="pdMo">—</div><div class="s" id="pdMoS">&nbsp;</div></div>
+      <div class="stat g"><div class="k">Year to date</div><div class="val num" id="pdYr">—</div><div class="s" id="pdYrS">&nbsp;</div></div>
+    </div>
+    <div class="card grow" style="margin-top:.9em">
+      <h2><span>Month by month</span>
+        <span class="key"><span><i style="background:var(--teal)"></i>new business</span><span><i style="background:var(--gold)"></i>increases</span></span></h2>
+      <div class="chart" id="pdChart"></div>
+    </div>
+  </section>
+
+  <!-- 14 · THE BOARD — Total API by advisor -->
+  <section class="panel" id="p13">
+    <div class="ptitle"><h1 id="t_p13"></h1><span class="tag">The board</span></div>
+    <div class="card grow">
+      <h2><span>Total API picked up</span><em>year to date &middot; new business + increases</em></h2>
+      <div class="grow" id="pdBoard" style="display:flex; flex-direction:column; justify-content:space-evenly; min-height:0"></div>
+    </div>
+  </section>
+
+  <!-- 15 · HELD BACK — written, waiting on requirements -->
+  <section class="panel" id="p14">
+    <div class="ptitle"><h1 id="t_p14"></h1><span class="tag">Held back</span></div>
+    <div class="cols" style="flex:1; min-height:0">
+      <div class="card" style="min-width:0">
+        <h2><span>How long it has waited</span><em id="pdHeldSub"></em></h2>
+        <div class="grow" id="pdBands" style="display:flex; flex-direction:column; justify-content:space-evenly; min-height:0"></div>
+      </div>
+      <div class="card" style="min-width:0">
+        <h2><span>Largest books waiting</span><em>by advisor</em></h2>
+        <div class="grow" id="pdBooks" style="display:flex; flex-direction:column; justify-content:space-evenly; min-height:0"></div>
+      </div>
+    </div>
+    <div class="pdnote">Every requirement closed turns one of these rows into production.</div>
+  </section>
 </main>
 
-<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span></div>
+<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span><span class="tk" id="k13"></span><span class="tk" id="k14"></span></div>
 <div id="burst"></div>
 
 <script>
@@ -768,7 +833,7 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
 var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
 
-var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 12;
+var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 15;
 var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 /* Calendar volume: one hue, dark to light. Validated as an ordinal ramp against
    this surface — monotone lightness, every step clear of the card behind it. */
@@ -1935,6 +2000,182 @@ setInterval(function(){
 
   poll();
   setInterval(poll, POLL_MS);
+})();
+</script>
+<script>
+/* ═══ PRODUCTION · panels 13–15 ════════════════════════════════════════════
+   The branch production wall, folded into this board as three panels.
+
+   The measure is Total API, exactly as the Monday report defines it:
+   CLIENT_PORTFOLIO__c on Production_Picked_up_Date__c (Total_API__c) plus
+   Policy_Increases__c on Increase_Production_Picked_Up_Date__c
+   (API_Increase__c). Increase_API__c is the joint-split field and is NOT the
+   branch basis — do not swap it in without re-checking against the report.
+
+   PROD_ENDPOINT is the WallBoard.gs /exec URL from the boards repo. Left
+   blank, these panels show the snapshot below and say when it was taken.
+   That is deliberate: a wall that holds a true old number beats one that
+   goes blank, and this board hangs where staff can see it. */
+var PROD_ENDPOINT = '';
+
+var PROD = {
+  asOf: '27 Aug 2026',
+  week:  { n:4,   api:28172 },
+  month: { label:'August', n:47, api:836414 },
+  ytd:   { n:785, api:6300970 },
+  months: [
+    {m:'Jan', nb:921362, inc:132330}, {m:'Feb', nb:717399, inc:34092},
+    {m:'Mar', nb:694176, inc:47430},  {m:'Apr', nb:685817, inc:139841},
+    {m:'May', nb:769186, inc:87190},  {m:'Jun', nb:449384, inc:52435},
+    {m:'Jul', nb:729421, inc:4493},   {m:'Aug', nb:836414, inc:0}
+  ],
+  board: [
+    {a:'Varun Seegolam',     n:27, api:637563},
+    {a:'Gary Sookdeo',       n:50, api:462011},
+    {a:'Anthony Simmons',    n:64, api:454380},
+    {a:'Aidan Eugene',       n:67, api:382922},
+    {a:'Fawwaz Mohamed',     n:28, api:352783},
+    {a:'Randolph Gonzales',  n:23, api:347321},
+    {a:'Ricky Rampersad',    n:22, api:309970},
+    {a:'Aleema Mohammed-Ali',n:58, api:254893}
+  ],
+  held: {
+    n:180, api:10040219, avgDays:109,
+    bands: [
+      {k:'Under 2 weeks',      n:31,  api:1087772},
+      {k:'2 weeks – 2 months', n:24,  api:201932},
+      {k:'Over 2 months',      n:125, api:8750515}
+    ],
+    books: [
+      {a:'Akaash Kalladeen', n:6,  api:4305200},
+      {a:'Ricky Rampersad',  n:40, api:3334300},
+      {a:'Fawwaz Mohamed',   n:4,  api:333480},
+      {a:'Varun Seegolam',   n:17, api:317573},
+      {a:'Gary Sookdeo',     n:7,  api:238182}
+    ]
+  }
+};
+
+(function production(){
+  function q(id){ return document.getElementById(id); }
+  function esc(t){ return String(t).replace(/[&<>]/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); }
+  function money(n){ n=Math.round(n);
+    if(n>=1e6) return 'TT$'+(n/1e6).toFixed(n>=1e7?1:2)+'M';
+    if(n>=1e3) return 'TT$'+Math.round(n/1e3)+'k';
+    return 'TT$'+n; }
+  function set(id,html){ var e=q(id); if(e) e.innerHTML=html; }
+
+  function rows(list, box, o){
+    if(!box) return;
+    o = o || {};
+    var top = list.length ? Math.max.apply(null, list.map(function(x){return x.api;})) : 1;
+    box.innerHTML = list.map(function(x,i){
+      /* Medals only where being first is an achievement. On the held-back
+         panel the top row is the biggest problem, so it gets no medal. */
+      var cls = 'pdrow' + (o.big?' big':'') + (o.rank===false?' norank':'')
+              + (o.medal && i<3 ? ' t'+(i+1) : '');
+      return '<div class="'+cls+'">'+
+        (o.rank===false ? '' : '<div class="rk">'+(i+1)+'</div>')+
+        '<div class="nm">'+esc(x.a)+'</div>'+
+        '<div class="pdbar"><i class="'+(o.tone||'')+'" data-w="'+Math.max(2,Math.round(x.api/top*100))+'"></i></div>'+
+        '<div class="vv num">'+money(x.api)+'</div>'+
+        '<div class="cn">'+x.n+'</div></div>';
+    }).join('');
+    grow(box);
+  }
+  /* Bars start at zero and fill when the panel comes round, so the board
+     reads as movement rather than a static table. */
+  function grow(box){
+    requestAnimationFrame(function(){
+      box.querySelectorAll('.pdbar i').forEach(function(b,i){
+        setTimeout(function(){ b.style.width=b.dataset.w+'%'; }, 40*i);
+      });
+    });
+  }
+
+  function paint(){
+    var P=PROD;
+    set('t_p12','<b>'+money(P.ytd.api)+'</b> picked up for production this year');
+    set('pdWk',  money(P.week.api));
+    set('pdWkS', P.week.n+' '+(P.week.n===1?'policy':'policies')+' picked up');
+    set('pdMoK', P.month.label);
+    set('pdMo',  money(P.month.api));
+    set('pdMoS', P.month.n+' picked up, month to date');
+    set('pdYr',  money(P.ytd.api));
+    set('pdYrS', P.ytd.n+' pickups &middot; Total API');
+
+    var mx = Math.max.apply(null, P.months.map(function(x){ return x.nb+x.inc; })) || 1;
+    var ch = q('pdChart');
+    if(ch){
+      ch.innerHTML = P.months.map(function(x,i){
+        var last = i===P.months.length-1;
+        return '<div class="col'+(last?' today':'')+'">'+
+          '<div class="top num">'+money(x.nb+x.inc)+'</div>'+
+          '<div class="stack">'+
+            '<div class="seg a" data-h="'+(x.inc/mx*100)+'"></div>'+
+            '<div class="seg n" data-h="'+(x.nb/mx*100)+'"></div>'+
+          '</div><div class="lbl">'+x.m+'</div></div>';
+      }).join('');
+      requestAnimationFrame(function(){
+        ch.querySelectorAll('.seg').forEach(function(g,i){
+          setTimeout(function(){ g.style.height=g.dataset.h+'%'; }, 30*i);
+        });
+      });
+    }
+
+    var lead = P.board[0];
+    set('t_p13', lead ? '<b>'+esc(lead.a)+'</b> leads the branch on '+money(lead.api)
+                      : 'The board');
+    rows(P.board.map(function(b){ return {a:b.a, n:b.n+' pol', api:b.api}; }),
+         q('pdBoard'), {medal:true});
+
+    set('t_p14','<b>'+money(P.held.api)+'</b> written and waiting on requirements');
+    set('pdHeldSub', P.held.n+' apps &middot; avg '+P.held.avgDays+' days');
+    rows(P.held.bands.map(function(b){ return {a:b.k, n:b.n+' apps', api:b.api}; }),
+         q('pdBands'), {tone:'warm', rank:false, big:true});
+    rows(P.held.books.map(function(b){ return {a:b.a, n:b.n+' apps', api:b.api}; }),
+         q('pdBooks'), {tone:'warm', big:true});
+  }
+
+  paint();
+  /* Repaint when one of these panels rotates into view, so the bars animate
+     each time round rather than only on the first pass. */
+  var seen = -1;
+  setInterval(function(){
+    for(var i=12;i<=14;i++){
+      var el=q('p'+i);
+      if(el && el.classList.contains('on') && seen!==i){ seen=i; paint(); return; }
+    }
+    if(![12,13,14].some(function(i){
+      var e=q('p'+i); return e && e.classList.contains('on'); })) seen=-1;
+  }, 700);
+
+  if(!PROD_ENDPOINT) return;
+  function pull(){
+    fetch(PROD_ENDPOINT+'?_='+Date.now(), {cache:'no-store'})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        var p=j&&j.production; if(!p||!p.ytd) return;
+        PROD.week  = {n:(p.week.n||0)+(p.week.incN||0),  api:(p.week.api||0)+(p.week.inc||0)};
+        PROD.month = {label:p.month.label||PROD.month.label,
+                      n:(p.month.n||0)+(p.month.incN||0), api:(p.month.api||0)+(p.month.inc||0)};
+        PROD.ytd   = {n:(p.ytd.n||0)+(p.ytd.incN||0),    api:(p.ytd.api||0)+(p.ytd.inc||0)};
+        if(p.monthly&&p.monthly.length)
+          PROD.months = p.monthly.map(function(x){ return {m:x.m, nb:x.api||0, inc:x.inc||0}; });
+        if(p.leaders&&p.leaders.length)
+          PROD.board = p.leaders.slice(0,8).map(function(x){ return {a:x.a, n:x.n, api:x.api}; });
+        if(p.heldBack){
+          PROD.held = {n:p.heldBack.n, api:p.heldBack.api, avgDays:p.heldBack.avgDays,
+            bands:p.heldBack.bands||PROD.held.bands,
+            books:(p.heldBack.byAgent||[]).slice(0,5)};
+        }
+        paint();
+      })
+      .catch(function(e){ console.warn('production feed:', e.message); });
+  }
+  pull();
+  setInterval(pull, 15*60*1000);
 })();
 </script>
 <div class="rrb-credit" style="position:fixed;left:14px;bottom:8px;z-index:60;
