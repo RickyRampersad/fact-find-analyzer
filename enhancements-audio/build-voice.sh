@@ -32,9 +32,9 @@ say 4 "And look at what sits at the top of page one. The Insurance Act. Schedule
 
 say 5 "That is not a rule the branch invented. It is printed on the form, and your client signs directly underneath it."
 
-say 6 "Your client hears from us within seconds. Their own copy, in plain words, with your reason beside every single plan."
+say 6 "Your client hears from us within seconds. Their own copy. In plain words. Your reason sits beside every plan."
 
-say 7 "Your manager gets the case on their phone. The figures, the reason, and anything worth a second look, already pulled out."
+say 7 "Your manager gets the case on their phone. The figures. The reason. Anything worth a second look. All of it pulled out already."
 
 say 8 "They approve and sign it right there. No sign in. No form. Their signature goes straight onto the fact find."
 
@@ -42,7 +42,7 @@ say 9 "The moment they do, your client gets their plan."
 
 say 10 "And here is what changed. That letter now says what your client actually took. Not everything you showed them. What they chose."
 
-say 11 "What they turned down is on it too, in their own words. Critical illness. Revisit in March, when the car loan finishes."
+say 11 "What they turned down is on it too. In their own words. Critical illness. Revisit in March. When the car loan finishes."
 
 say 12 "Then look at who receives it. Your client. Copied to their direct manager, and to you."
 
@@ -50,11 +50,11 @@ say 13 "Sales support is off it. The branch manager is blind copied. Your client
 
 say 14 "Then they sign. I confirm the recommendations were explained to me, and the decision shown is the one I made."
 
-say 15 "That is what keeps business on the books. A client who understood what they bought, and chose it themselves, does not walk away in month nine."
+say 15 "That is what keeps business on the books. A client who understood what they bought. And chose it themselves. That client does not walk away in month nine."
 
 say 16 "Proper needs assessment. Real client engagement. Every step of it on Guardian's own paper."
 
-say 17 "One section. Three steps. Section ten, step three, is where all of this comes from."
+say 17 "One section. Three steps. Section ten. Step three. That is where all of this comes from."
 
 echo
 echo "Durations:"
