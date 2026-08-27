@@ -1371,9 +1371,16 @@ async function doLogin(ev){
       // a draft holds a household's whole financial position, so the server has
       // to know who is asking. An agent code cannot answer that — it is printed
       // on every fact find.
+      // scope and unitKey travel with it. The server decides what somebody can
+      // see; scopeFor() only guesses from the role text, and for a unit manager
+      // it needs unitKey - which was not being stored, so a restored unit
+      // manager got {kind:'unit', unitKey:''}, matched no rows and landed on an
+      // empty dashboard with nothing said. Store what the server sent.
       try{ localStorage.setItem('rrbSession', JSON.stringify({
         code: who.code||code, name: who.name||'', email: who.email||'',
-        role: who.role||'', unit: who.unit||'', token: j.token||'', at: Date.now()
+        role: who.role||'', unit: who.unit||'', unitKey: who.unitKey||'',
+        scope: who.scope||scopeFor(who),
+        token: j.token||'', at: Date.now()
       })); }catch(e){}
     } else if (j && j.success === false && /unknown action/i.test(String(j.message||''))) {
       // The server answered, but it has never heard of "login". That is a
@@ -1529,6 +1536,17 @@ async function refreshData(){
 
   if(!rows){ ALL=[]; buildFilterBar(); render(); return; }
 
+  // AN EMPTY ANSWER IS A STATE, NOT A BLANK SCREEN.
+  // rows===[] is truthy, so it sailed past the check above, through the filter
+  // below and into render() as a dashboard of empty panels with nothing said
+  // anywhere on it. "No data" with no reason given is the one outcome nobody
+  // can act on.
+  if(!rows.length){
+    LOAD_ERROR='The branch server answered, and signed you in, but returned no fact finds. '
+      + 'That is the server\'s answer rather than a connection problem.';
+    ALL=[]; buildFilterBar(); render(); return;
+  }
+
   // Role scoping. The server is expected to scope ?action=data already; this is
   // a second line of defence, not the only one — the data no longer ships in
   // the page, so there is nothing here to peel back by editing the client.
@@ -1536,8 +1554,16 @@ async function refreshData(){
   ALL=rows.filter(function(r){
     if(sc.kind==='agent')  return r.agentCode===sc.code;
     return scHasUnit(sc, r.unitKey);
-    return false;
   });
+
+  // The server sent rows and this page threw all of them away. That is this
+  // page's fault, not an empty branch, and it must not look like one.
+  if(rows.length && !ALL.length){
+    LOAD_ERROR='The server sent ' + rows.length + ' fact find' + (rows.length===1?'':'s')
+      + ', but none matched your access scope (' + (sc && sc.kind ? sc.kind : 'unknown')
+      + '). Nothing is wrong with the data \u2014 sign out and back in, and if it '
+      + 'persists the scope on your sign-in is wrong.';
+  }
   buildFilterBar();
   render();
 }
