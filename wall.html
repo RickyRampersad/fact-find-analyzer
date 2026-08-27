@@ -1248,6 +1248,17 @@
   .agr .ay em{font-size:max(.5em,8.5px)}
 }
 
+
+#wgate .gsplit{display:flex; align-items:center; gap:.7em; margin:1.1em 0 .8em;
+  color:var(--ink-4); font-size:.8em}
+#wgate .gsplit::before,#wgate .gsplit::after{content:''; flex:1; height:1px;
+  background:var(--line)}
+#wgate button.ghost{background:transparent; border:1px solid var(--line-2);
+  color:var(--ink-2)}
+#wgate button.ghost:hover{border-color:var(--teal); color:var(--teal)}
+#wgate .ghint{font-size:.76em; color:var(--ink-4); line-height:1.5; margin-top:.7em}
+#wgate .ok{color:var(--teal); font-size:.82em; margin-top:.6em}
+
 .pdot{width:.62em; height:.62em; min-width:9px; min-height:9px; padding:0;
   border-radius:50%; border:0; cursor:pointer; background:rgba(255,255,255,.22);
   transition:background .2s, transform .2s, box-shadow .2s}
@@ -1282,6 +1293,22 @@
     <input id="wgPw" type="password" autocomplete="current-password" placeholder="Your access code">
     <button id="wgGo" type="button">Sign in</button>
     <div class="err" id="wgErr" role="alert"></div>
+    <div class="gsplit"><span>or</span></div>
+    <button id="wgGuest" type="button" class="ghost">Visiting? Get a code by email</button>
+    <div id="wgGuestBox" hidden>
+      <label for="wgEmail">Your email</label>
+      <input id="wgEmail" type="email" autocomplete="email" placeholder="you@company.com"
+             spellcheck="false">
+      <button id="wgSend" type="button">Send me a code</button>
+      <div id="wgCodeBox" hidden>
+        <label for="wgOtp">Code from your email</label>
+        <input id="wgOtp" type="text" inputmode="numeric" autocomplete="one-time-code"
+               placeholder="6 digits" maxlength="6" spellcheck="false">
+        <button id="wgOtpGo" type="button">View the wall</button>
+      </div>
+      <div class="err" id="wgGErr" role="alert"></div>
+      <div class="ghint">A visitor pass shows the whole board for two hours. Codes go only to addresses the branch allows.</div>
+    </div>
   </div>
 </div>
 
@@ -4562,6 +4589,96 @@ var PROD = {
       }
     }
 
+
+    /* ── A VISITOR PASS ───────────────────────────────────────────────────
+       Somebody with no agent number asks for a code, it goes to their own
+       address, and that code buys two hours of the branch board. The email
+       step is the whole point: an email box on its own lets anybody type
+       anybody's address and walk in, where a code sent to the address means
+       the person holding it owns it.
+
+       A guest sees the whole board, production included. That is the point of
+       the pass, so the boundary is not what they can see once they are in -
+       it is who can get a code at all, and that is GUEST_DOMAINS on the
+       server. The spreadsheet export stays branch-scope only: reading a board
+       on screen and carrying the branch's production out as a file are not
+       the same act. */
+    var gBtn = document.getElementById('wgGuest'),
+        gBox = document.getElementById('wgGuestBox'),
+        gMail= document.getElementById('wgEmail'),
+        gSend= document.getElementById('wgSend'),
+        gCode= document.getElementById('wgCodeBox'),
+        gOtp = document.getElementById('wgOtp'),
+        gGo  = document.getElementById('wgOtpGo'),
+        gErr = document.getElementById('wgGErr');
+
+    function gsay(msg, good){
+      if(!gErr) return;
+      gErr.textContent = msg || '';
+      gErr.className = good ? 'ok' : 'err';
+    }
+    function gpost(action, params){
+      var u = ENDPOINT + '?action=' + action;
+      for(var k in params) u += '&' + k + '=' + encodeURIComponent(params[k]);
+      u += '&_=' + Date.now();
+      return fetch(u, {cache:'no-store', redirect:'follow'}).then(function(r){ return r.json(); });
+    }
+
+    if(gBtn) gBtn.addEventListener('click', function(){
+      gBox.hidden = !gBox.hidden;
+      gBtn.textContent = gBox.hidden ? 'Visiting? Get a code by email'
+                                     : 'Use an agent number instead';
+      if(!gBox.hidden && gMail) gMail.focus();
+    });
+
+    if(gSend) gSend.addEventListener('click', function(){
+      var em = (gMail.value || '').trim();
+      if(!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(em)){ gsay('Enter a valid email address.'); return; }
+      gSend.disabled = true; gSend.textContent = 'Sending…'; gsay('');
+      gpost('guest_request', {email: em}).then(function(j){
+        gSend.disabled = false; gSend.textContent = 'Send me a code';
+        if(j && j.ok){
+          gCode.hidden = false;
+          /* Deliberately not "we sent it": the server answers the same way for
+             an address it will not serve, so promising delivery would be a lie
+             a third of the time. */
+          gsay('If that address is allowed, a code is on its way. It lasts '
+               + (j.ttl || 15) + ' minutes.', true);
+          if(gOtp) gOtp.focus();
+        } else {
+          gsay((j && j.error) || 'Could not send a code just now.');
+        }
+      }).catch(function(){
+        gSend.disabled = false; gSend.textContent = 'Send me a code';
+        gsay('Could not reach the branch server.');
+      });
+    });
+
+    if(gGo) gGo.addEventListener('click', function(){
+      var em = (gMail.value || '').trim(), c = (gOtp.value || '').trim();
+      if(!c){ gsay('Enter the code from your email.'); return; }
+      gGo.disabled = true; gGo.textContent = 'Checking…'; gsay('');
+      gpost('guest_verify', {email: em, code: c}).then(function(j){
+        gGo.disabled = false; gGo.textContent = 'View the wall';
+        if(j && j.ok && j.token){
+          try{ localStorage.setItem('rrbSession', JSON.stringify({
+            code:'', name:j.name||'Guest', email:j.email||em, role:'guest',
+            unit:'', unitKey:'', scope:{kind:'guest'}, token:j.token, at:Date.now()
+          })); }catch(e){}
+          openWall(j);
+        } else {
+          gsay((j && j.error) || 'That code is not right.');
+        }
+      }).catch(function(){
+        gGo.disabled = false; gGo.textContent = 'View the wall';
+        gsay('Could not reach the branch server.');
+      });
+    });
+    [gMail, gOtp].forEach(function(el){
+      if(el) el.addEventListener('keydown', function(e){
+        if(e.key === 'Enter'){ (el === gMail ? gSend : gGo).click(); }
+      });
+    });
     go.addEventListener('click', attempt);
     [codeEl, pwEl].forEach(function(el){
       el.addEventListener('keydown', function(e){ if(e.key === 'Enter') attempt(); });
@@ -4597,6 +4714,83 @@ var PROD = {
      scope and admins get rows; everybody else gets nothing and the panel
      falls back to the board. That is a real boundary rather than a drawn
      one - the bytes never reach a browser that should not have them. */
+  /* THE ENDPOINT DOES NOT SPEAK THIS PANEL'S SHAPE.
+     action=submitted answers {success, branch, units, agents, monthly} keyed
+     by code; the panel draws {rows, total} as a hierarchy. Nothing converted
+     between them, so this fetch would have quietly matched nothing even after
+     the source tab is fixed - the panel would have stayed empty and the tab
+     rename would have looked like it did not work.
+
+     Read tolerantly. The agents object is empty while the source tab is
+     misnamed, so its exact field names cannot be confirmed yet; take the
+     first of each plausible spelling and leave anything missing blank rather
+     than inventing a zero. */
+  function submittedAdapt(j){
+    if(!j || !(j.ok || j.success)) return null;
+    var units = j.units || {}, agents = j.agents || {}, br = j.branch || {};
+    function pick(o){
+      for(var i = 1; i < arguments.length; i++){
+        var k = arguments[i];
+        if(o && o[k] !== undefined && o[k] !== null) return o[k];
+      }
+      return null;
+    }
+    /* Exact keys only. The first cut fell back from week_apps to apps, so a
+       feed with no week split printed the YEAR under Apps -W - the two columns
+       read identically and looked like a working week. A blank week column is
+       correct when the feed has no week in it. */
+    function pair(o){
+      var a = null, v = null, i;
+      for(i = 1; i < arguments.length; i += 2){
+        if(a === null) a = pick(o, arguments[i]);
+        if(v === null) v = pick(o, arguments[i+1]);
+      }
+      return (a === null && v === null) ? null : [a || 0, v || 0];
+    }
+    /* Which manager an advisor sits under, and which unit that manager rolls
+       into. The report nests the four units into two; if the feed does not
+       say, the advisor is listed under whatever unit it does give. */
+    var byUnit = {};
+    Object.keys(agents).forEach(function(code){
+      var a = agents[code] || {};
+      var u = pick(a, 'unit', 'unit_code', 'primary_branch', 'unit_manager') || 'unassigned';
+      (byUnit[u] = byUnit[u] || []).push({
+        code: code,
+        name: pick(a, 'name', 'agent', 'agent_name') || code,
+        w: pair(a, 'week_apps','week_api', 'wtd_apps','wtd_api'),
+        y: pair(a, 'apps','api', 'submitted_apps','submitted_api')
+      });
+    });
+    var rows = [];
+    Object.keys(units).sort().forEach(function(u){
+      rows.push({lvl:0, label:u,
+                 w: pair(units[u], 'week_apps','week_api', 'wtd_apps','wtd_api'),
+                 y: pair(units[u], 'apps','api', 'submitted_apps','submitted_api')});
+      (byUnit[u] || []).sort(function(a,b){
+        return ((b.y||[])[1]||0) - ((a.y||[])[1]||0);
+      }).forEach(function(a){
+        rows.push({lvl:2, label: a.code + ' - ' + a.name, w:a.w, y:a.y});
+      });
+      delete byUnit[u];
+    });
+    /* Anyone the feed placed nowhere still gets a line. Dropping an advisor
+       off a production board silently is the one thing it must never do. */
+    Object.keys(byUnit).forEach(function(u){
+      rows.push({lvl:0, label: u === 'unassigned' ? 'Not placed in a unit' : u, w:null, y:null});
+      byUnit[u].forEach(function(a){
+        rows.push({lvl:2, label: a.code + ' - ' + a.name, w:a.w, y:a.y});
+      });
+    });
+    if(!rows.length) return null;
+    return {
+      asAt: j.last_refreshed || '',
+      week: null,                       /* the feed carries no week split yet */
+      rows: rows,
+      total: {w: pair(br, 'week_apps','week_api', 'wtd_apps','wtd_api'),
+              y: pair(br, 'submitted_apps','submitted_api', 'apps','api')}
+    };
+  }
+
   function submittedFor(who){
     if(!who || !who.token) return;
     var branch = !!(who.scope && who.scope.kind === 'branch');
@@ -4610,8 +4804,10 @@ var PROD = {
       .then(function(r){ return r.json(); })
       .then(function(j){
         clearTimeout(kill);
-        if(j && j.ok && j.submitted && j.submitted.rows && j.submitted.rows.length){
-          PROD.submitted = j.submitted;
+        /* Either shape: the documented one, or what the server sends today. */
+        var S = (j && j.submitted && j.submitted.rows) ? j.submitted : submittedAdapt(j);
+        if(S && S.rows && S.rows.length){
+          PROD.submitted = S;
           paint();
         }
       })
