@@ -1,32 +1,27 @@
 /**
- * RRBranchProductionBoard.gs — the production board, end to end, from the
- * spreadsheet to the wall, with nothing in between that can be misnamed.
+ * pbBoard.gs — the production board, read straight from the spreadsheet.
  *
- * INSTALL — two steps, then you are done.
+ * EVERY NAME IN THIS FILE STARTS WITH pb.
+ * The previous version defined rrbProdBoard, and so did the copy already in
+ * this project - two definitions of the same name, and Apps Script ran the
+ * old one every time. That is why the same ReferenceError kept coming back
+ * from a line number that does not exist in the new code. Nothing here can
+ * collide with anything already in the project.
  *
- *   1. Paste this whole file in as a new script file.
- *   2. In doGet's router, next to the other actions, add ONE line:
+ * TO USE
+ *   1. Left sidebar, + next to Files, Script. Call it pbBoard.
+ *   2. Paste this whole file in, replacing the "function myFunction" stub.
+ *   3. Ctrl+S to save.
+ *   4. Function dropdown at the top: choose pbCheck. Press Run.
  *
- *          if (action === 'prodboard') return rrbProdBoard(e);
+ * Delete any earlier file you pasted this into. Leaving it there is what
+ * caused the clash.
  *
- *      Deploy > Manage deployments > edit > Version: New version > Deploy.
+ * ONCE THE LOG LOOKS RIGHT, and only then, add one line to doGet's router:
  *
- * Then run rrbProdBoardCheck() once and read the log. It prints what it
- * found, what it could not find, and the totals - so if anything is wrong
- * the log says which thing, rather than the wall going quietly empty.
+ *       if (action === 'prodboard') return pbBoard(e);
  *
- * WHY THIS EXISTS RATHER THAN A FIX TO action=submitted
- * That action reads two tabs by exact name and three columns by fixed letter,
- * and every one of those is a thing that can drift. It has: the new-business
- * tab is called "...ThiS YEA SF" so it is not matched at all, and the
- * increases tab IS matched and still returns zero. Two failures, both silent,
- * both invisible from the wall.
- *
- * This finds the tabs by their stem, finds the columns by their HEADINGS
- * rather than by letter, accepts a date whether the cell holds a real Date or
- * text, and computes the week itself. Rename a tab, move a column, or paste
- * dates as text, and it still reads. Nothing here needs Salesforce
- * credentials - the figures are already in the sheet.
+ * then Deploy > Manage deployments > edit > New version > Deploy.
  */
 
 var PB_TZ = 'America/Port_of_Spain';
@@ -153,7 +148,7 @@ function pbRead_(sheet, want, log) {
 
 /* ── the board ──────────────────────────────────────────────────────────── */
 
-function rrbProdBoardData_() {
+function pbData_() {
   var now = new Date();
   var year = now.getFullYear();
   var jan1 = new Date(year, 0, 1);
@@ -243,7 +238,7 @@ function rrbProdBoardData_() {
 }
 
 /* Its own JSON output, under its own name. This file assumed the project
-   had a shared JSON helper and it does not - rrbProdBoard threw a
+   had a shared JSON helper and it does not - pbBoard threw a
    ReferenceError on the first run. Nothing here depends on a helper existing
    elsewhere now, and the pb_ prefix cannot collide with anything already in
    the project. */
@@ -253,30 +248,30 @@ function pbJson_(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function rrbProdBoard(e) {
+function pbBoard(e) {
   /* Pressed Run rather than called by the server. There is no request object
      and so no session, and every earlier attempt at this ended in "expired"
      or worse. Behave like the check instead, so it does not matter which of
      the two is selected in the dropdown. */
-  if (!e || !e.parameter) return rrbProdBoardCheck();
+  if (!e || !e.parameter) return pbCheck();
 
   var who = (typeof rrbAuthorize_ === 'function') ? rrbAuthorize_(e) : null;
   if (!who || !who.ok) return pbJson_({ ok: false, error: 'Your session has expired. Please sign in again.' });
   var scope = (typeof rrbScopeForRole_ === 'function') ? rrbScopeForRole_(who) : null;
   if (!scope || scope.kind !== 'branch') return pbJson_({ ok: true, submitted: null });
 
-  var d = rrbProdBoardData_();
+  var d = pbData_();
   return pbJson_({ ok: true, submitted: d.submitted, diag: d._diag });
 }
 
 /**
- * RUN THIS ONE, not rrbProdBoard.
- * rrbProdBoard is the web-app handler: it expects the request object the
+ * RUN THIS ONE, not pbBoard.
+ * pbBoard is the web-app handler: it expects the request object the
  * server hands it, so pressing Run on it directly means there is no session
  * and it answers "expired" at best. This reads the sheet exactly the same way
  * and prints what it found.
  */
-function rrbProdBoardCheck() {
+function pbCheck() {
   /* Name the spreadsheet and list every tab first. "NOT FOUND" on its own
      sent me looking at column names when the script was reading the wrong
      file entirely; this makes that impossible to mistake again. */
@@ -291,7 +286,7 @@ function rrbProdBoardCheck() {
   }
   console.log('');
 
-  var d = rrbProdBoardData_(), g = d._diag, s = d.submitted;
+  var d = pbData_(), g = d._diag, s = d.submitted;
   console.log('NEW BUSINESS tab : ' + (g.newBusinessTab || 'NOT FOUND'));
   console.log('   columns       : ' + g.newBusinessCols);
   console.log('   dated rows    : ' + g.newBusinessRows);
