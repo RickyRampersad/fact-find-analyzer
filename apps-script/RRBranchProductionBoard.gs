@@ -275,33 +275,45 @@ function rrbProdBoardCheck() {
      sent me looking at column names when the script was reading the wrong
      file entirely; this makes that impossible to mistake again. */
   var book = pbBook_();
-  Logger.log('SPREADSHEET      : ' + (book ? book.getName() : 'NONE OPENED'));
-  Logger.log('   id            : ' + (book ? book.getId() : '-'));
+  console.log('SPREADSHEET      : ' + (book ? book.getName() : 'NONE OPENED'));
+  console.log('   id            : ' + (book ? book.getId() : '-'));
   if (book) {
-    Logger.log('   tabs          :');
+    console.log('   tabs          :');
     book.getSheets().forEach(function (sh) {
-      Logger.log('      "' + sh.getName() + '"  rows=' + sh.getLastRow());
+      console.log('      "' + sh.getName() + '"  rows=' + sh.getLastRow());
     });
   }
-  Logger.log('');
+  console.log('');
 
   var d = rrbProdBoardData_(), g = d._diag, s = d.submitted;
-  Logger.log('NEW BUSINESS tab : ' + (g.newBusinessTab || 'NOT FOUND'));
-  Logger.log('   columns       : ' + g.newBusinessCols);
-  Logger.log('   dated rows    : ' + g.newBusinessRows);
-  Logger.log('');
-  Logger.log('INCREASES tab    : ' + (g.increasesTab || 'NOT FOUND'));
-  Logger.log('   columns       : ' + g.increasesCols);
-  Logger.log('   dated rows    : ' + g.increasesRows);
-  Logger.log('');
-  Logger.log('Week starts      : ' + g.weekFrom);
-  Logger.log('Advisors found   : ' + g.agents);
-  Logger.log('Board rows       : ' + s.rows.length);
-  Logger.log('TOTAL week       : ' + s.total.w[0] + ' apps  $' + s.total.w[1].toFixed(2));
-  Logger.log('TOTAL year       : ' + s.total.y[0] + ' apps  $' + s.total.y[1].toFixed(2));
-  Logger.log('');
+  console.log('NEW BUSINESS tab : ' + (g.newBusinessTab || 'NOT FOUND'));
+  console.log('   columns       : ' + g.newBusinessCols);
+  console.log('   dated rows    : ' + g.newBusinessRows);
+  console.log('');
+  console.log('INCREASES tab    : ' + (g.increasesTab || 'NOT FOUND'));
+  console.log('   columns       : ' + g.increasesCols);
+  console.log('   dated rows    : ' + g.increasesRows);
+  console.log('');
+  console.log('Week starts      : ' + g.weekFrom);
+  console.log('Advisors found   : ' + g.agents);
+  console.log('Board rows       : ' + s.rows.length);
+  console.log('TOTAL week       : ' + s.total.w[0] + ' apps  $' + s.total.w[1].toFixed(2));
+  console.log('TOTAL year       : ' + s.total.y[0] + ' apps  $' + s.total.y[1].toFixed(2));
+  console.log('');
   s.rows.slice(0, 14).forEach(function (r) {
-    Logger.log('  ' + (r.lvl ? '    ' : '') + r.label +
+    console.log('  ' + (r.lvl ? '    ' : '') + r.label +
                '   y=' + (r.y ? r.y[0] + '/' + r.y[1].toFixed(2) : '-'));
   });
+
+  /* Returned as well as logged. Logger.log wrote nothing visible on the last
+     run - ten seconds of work and an empty log - so the headline figures come
+     back as the function's result too, where the editor always shows them. */
+  return 'TABS ' + (book ? book.getSheets().length : 0) +
+         ' | NB tab: ' + (g.newBusinessTab || 'NOT FOUND') +
+         ' (' + g.newBusinessRows + ' rows)' +
+         ' | INC tab: ' + (g.increasesTab || 'NOT FOUND') +
+         ' (' + g.increasesRows + ' rows)' +
+         ' | advisors ' + g.agents +
+         ' | week ' + s.total.w[0] + '/' + s.total.w[1].toFixed(2) +
+         ' | year ' + s.total.y[0] + '/' + s.total.y[1].toFixed(2);
 }
