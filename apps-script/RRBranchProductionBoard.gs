@@ -225,17 +225,34 @@ function rrbProdBoardData_() {
   };
 }
 
-function rrbProdBoard(e) {
-  var who = (typeof rrbAuthorize_ === 'function') ? rrbAuthorize_(e) : null;
-  if (!who || !who.ok) return rrbJson_({ ok: false, error: 'Your session has expired. Please sign in again.' });
-  var scope = (typeof rrbScopeForRole_ === 'function') ? rrbScopeForRole_(who) : null;
-  if (!scope || scope.kind !== 'branch') return rrbJson_({ ok: true, submitted: null });
-
-  var d = rrbProdBoardData_();
-  return rrbJson_({ ok: true, submitted: d.submitted, diag: d._diag });
+/* Its own JSON output, under its own name. This file assumed the project
+   had a shared JSON helper and it does not - rrbProdBoard threw a
+   ReferenceError on the first run. Nothing here depends on a helper existing
+   elsewhere now, and the pb_ prefix cannot collide with anything already in
+   the project. */
+function pbJson_(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-/** Run this once and read the log. It answers every question at once. */
+function rrbProdBoard(e) {
+  var who = (typeof rrbAuthorize_ === 'function') ? rrbAuthorize_(e) : null;
+  if (!who || !who.ok) return pbJson_({ ok: false, error: 'Your session has expired. Please sign in again.' });
+  var scope = (typeof rrbScopeForRole_ === 'function') ? rrbScopeForRole_(who) : null;
+  if (!scope || scope.kind !== 'branch') return pbJson_({ ok: true, submitted: null });
+
+  var d = rrbProdBoardData_();
+  return pbJson_({ ok: true, submitted: d.submitted, diag: d._diag });
+}
+
+/**
+ * RUN THIS ONE, not rrbProdBoard.
+ * rrbProdBoard is the web-app handler: it expects the request object the
+ * server hands it, so pressing Run on it directly means there is no session
+ * and it answers "expired" at best. This reads the sheet exactly the same way
+ * and prints what it found.
+ */
 function rrbProdBoardCheck() {
   var d = rrbProdBoardData_(), g = d._diag, s = d.submitted;
   Logger.log('NEW BUSINESS tab : ' + (g.newBusinessTab || 'NOT FOUND'));
