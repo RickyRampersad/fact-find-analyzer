@@ -56,8 +56,14 @@ function sfHost_() {
          'https://login.salesforce.com';
 }
 
-/** STEP 2. Run this, open the link it logs. */
+/**
+ * Run this for both steps. Empty CODE means "give me a link"; a filled-in
+ * CODE means "exchange it". The editor's function dropdown does not reliably
+ * follow you to a second function, and there is no reason it should have to.
+ */
 function sfAuth() {
+  if (String(CODE || '').trim()) return sfExchange();
+
   var p = PropertiesService.getScriptProperties();
   var id = p.getProperty('SF_CLIENT_ID');
   if (!id) return 'SF_CLIENT_ID is not stored. Run sfCheck once first.';
