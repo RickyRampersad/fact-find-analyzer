@@ -254,6 +254,12 @@ function pbJson_(obj) {
 }
 
 function rrbProdBoard(e) {
+  /* Pressed Run rather than called by the server. There is no request object
+     and so no session, and every earlier attempt at this ended in "expired"
+     or worse. Behave like the check instead, so it does not matter which of
+     the two is selected in the dropdown. */
+  if (!e || !e.parameter) return rrbProdBoardCheck();
+
   var who = (typeof rrbAuthorize_ === 'function') ? rrbAuthorize_(e) : null;
   if (!who || !who.ok) return pbJson_({ ok: false, error: 'Your session has expired. Please sign in again.' });
   var scope = (typeof rrbScopeForRole_ === 'function') ? rrbScopeForRole_(who) : null;
