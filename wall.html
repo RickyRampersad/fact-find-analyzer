@@ -4578,12 +4578,45 @@ var PROD = {
      apps-script/WallSignIn.md. */
   var WHO = null;
 
+  /* A SESSION OUTLIVES ITS TOKEN, AND THE WALL USED NOT TO NOTICE.
+     Sessions last twelve hours. Past that every authenticated call answers
+     {expired:true} and nothing on this page read that word - so the stored
+     name still went up in the corner, "Viewing as Ricky Rampersad" over a
+     screen of dashes, the status stuck on Connecting, and no way back to the
+     sign-in form short of clearing browser storage by hand. It read as the
+     wall being broken rather than as a session that had simply run out.
+
+     The token says when it dies: base64url payload, a dot, a signature. That
+     is read here rather than asking the server, and rather than repeating
+     "twelve hours" in a second place where it could drift from the first.
+     A token this cannot parse is left to the server to judge - locking
+     somebody out over a parsing quirk is the worse failure. */
+  function wallTokenAlive_(token){
+    try{
+      var body = String(token).split('.')[0];
+      if(!body) return false;
+      var b64 = body.replace(/-/g, '+').replace(/_/g, '/');
+      while(b64.length % 4) b64 += '=';
+      var p = JSON.parse(atob(b64));
+      return !p.exp || Date.now() < p.exp;
+    }catch(e){ return true; }
+  }
+
+  function wallSignOut(){
+    try{ localStorage.removeItem('rrbSession'); }catch(e){}
+    WHO = null;
+  }
+
   function wallSession(){
     try{
       var raw = localStorage.getItem('rrbSession');
       if(!raw) return null;
       var o = JSON.parse(raw);
-      return (o && o.token) ? o : null;
+      if(!o || !o.token) return null;
+      /* Dead token: drop it and return nothing, which sends the caller to the
+         sign-in form. Keeping it would put the name back over the dashes. */
+      if(!wallTokenAlive_(o.token)){ wallSignOut(); return null; }
+      return o;
     }catch(e){ return null; }
   }
 
