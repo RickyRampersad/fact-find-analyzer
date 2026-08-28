@@ -97,9 +97,20 @@ function pbRead_(sheet, want, log) {
   var cDate  = pbCol_(hdr, want.date)  || want.dateFallback  || 0;
   var cApps  = pbCol_(hdr, want.apps)  || want.appsFallback  || 0;
   var cApi   = pbCol_(hdr, want.api)   || want.apiFallback   || 0;
-  var cAgent = pbCol_(hdr, ['agent'], ['email', 'number', 'count']) || 0;
-  var cName  = pbCol_(hdr, ['name'],  ['plan', 'client', 'insured']) || 0;
-  var cUnit  = pbCol_(hdr, ['unit']) || pbCol_(hdr, ['manager']) || 0;
+  /* The code column first, by any of the names it is actually given. My
+     first cut excluded any heading containing "number", which would have
+     thrown away "Agent Number" - the most likely name for the column I
+     want. Then a name column, and the unit if the tab carries one. */
+  var cAgent = pbCol_(hdr, ['agent', 'code'])
+            || pbCol_(hdr, ['agent', 'number'])
+            || pbCol_(hdr, ['agent', 'no'])
+            || pbCol_(hdr, ['agent'], ['email', 'name'])
+            || 0;
+  var cName  = pbCol_(hdr, ['agent', 'name'])
+            || pbCol_(hdr, ['name'], ['plan', 'client', 'insured', 'product'])
+            || 0;
+  if (cName && cName === cAgent) cAgent = 0;   /* one column cannot be both */
+  var cUnit  = pbCol_(hdr, ['unit']) || pbCol_(hdr, ['manager']) || pbCol_(hdr, ['hierarch']) || 0;
 
   out.note = 'date=' + (cDate ? hdr[cDate-1] : 'NOT FOUND') +
              ' | apps=' + (cApps ? hdr[cApps-1] : 'NOT FOUND') +
@@ -140,8 +151,16 @@ function rrbProdBoardData_() {
 
   var nb  = pbRead_(nbTab,  { date: ['pick', 'up', 'date'], apps: ['app', 'count'], api: ['total', 'api'],
                               dateFallback: 1, appsFallback: 7, apiFallback: 8 });
-  var inc = pbRead_(incTab, { date: ['pick', 'up', 'date'], apps: ['app', 'count'], api: ['api'],
+  if (!nb.rows.length && nbTab) {   /* "API" on its own, if "Total API" is not there */
+    nb = pbRead_(nbTab, { date: ['pick', 'up', 'date'], apps: ['app', 'count'], api: ['api'],
+                          dateFallback: 1, appsFallback: 7, apiFallback: 8 });
+  }
+  var inc = pbRead_(incTab, { date: ['pick', 'up', 'date'], apps: ['app', 'count'], api: ['api', 'increase'],
                               dateFallback: 9, appsFallback: 10, apiFallback: 11 });
+  if (!inc.rows.length && incTab) {   /* or any date column the tab does have */
+    inc = pbRead_(incTab, { date: ['date'], apps: ['app', 'count'], api: ['api'],
+                            dateFallback: 9, appsFallback: 10, apiFallback: 11 });
+  }
 
   var agents = {};
   function add(r, isInc) {

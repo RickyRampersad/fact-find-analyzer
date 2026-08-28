@@ -4334,9 +4334,17 @@ var PROD = {
     set('t_p12', 'Week ' + (S.week || '') + ' &middot; <b>' + n0(tw[0]) + '</b> apps '
                + money(tw[1]) + ' &middot; year to date <b>' + n0(ty[0]) + '</b> apps '
                + money(ty[1]));
+    /* A snapshot has to keep saying it is one. The first cut set this once
+       from the fetch and the next repaint overwrote it, so a board that does
+       not move looked exactly like a board that does - which is the worst of
+       the two states to be wrong about. It travels in the payload now. */
     var note = q('pdRosterNote');
-    if(note) note.innerHTML = 'As at ' + esc(S.asAt||'') + ' &middot; '
-      + '<span style="color:var(--gold)">confidential — branch management only</span>';
+    if(note) note.innerHTML = S.snapshot
+      ? 'Salesforce snapshot, ' + esc(S.asAt||'') + ' &middot; '
+        + '<span style="color:var(--gold)">not live — this does not move on its own</span>'
+        + ' &middot; confidential, branch management only'
+      : 'As at ' + esc(S.asAt||'') + ' &middot; '
+        + '<span style="color:var(--gold)">confidential — branch management only</span>';
     tickerFrom(S);
     incChart(S);
     agentOfWeek(S);
@@ -4994,7 +5002,7 @@ var PROD = {
       return tryOne('submitted').then(function(k){
         if(use(k && k.submitted && k.submitted.rows ? k.submitted : submittedAdapt(k))) return;
         return tryOne('roster').then(function(r){
-          use(submittedAdapt(r));
+          if(use(submittedAdapt(r))) return;
           paint();
         });
       });
