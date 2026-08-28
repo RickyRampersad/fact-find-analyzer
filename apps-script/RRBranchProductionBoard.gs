@@ -31,12 +31,29 @@
 
 var PB_TZ = 'America/Port_of_Spain';
 
+/* WHICH SPREADSHEET.
+   getActive() returns the file the script is BOUND to. This project is not
+   bound to the one holding the production tabs - the first run reported both
+   tabs NOT FOUND while action=diag, in the same project, was reading them
+   perfectly well by id. diag names that id, so this uses it, and falls back
+   to getActive() only if opening it fails. */
+var PB_SHEET_ID = '1K65acMFFhmHt17hRozATnYda9t_BB63absPLeLx53h0';
+
+function pbBook_() {
+  if (PB_SHEET_ID) {
+    try { return SpreadsheetApp.openById(PB_SHEET_ID); } catch (err) {}
+  }
+  return SpreadsheetApp.getActive();
+}
+
 /* ── finding things ─────────────────────────────────────────────────────── */
 
 function pbFlat_(s) { return String(s == null ? '' : s).toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
 function pbFindTab_(stems) {
-  var sheets = SpreadsheetApp.getActive().getSheets();
+  var book = pbBook_();
+  if (!book) return null;
+  var sheets = book.getSheets();
   for (var i = 0; i < sheets.length; i++) {
     var f = pbFlat_(sheets[i].getName());
     for (var j = 0; j < stems.length; j++) {
@@ -254,6 +271,20 @@ function rrbProdBoard(e) {
  * and prints what it found.
  */
 function rrbProdBoardCheck() {
+  /* Name the spreadsheet and list every tab first. "NOT FOUND" on its own
+     sent me looking at column names when the script was reading the wrong
+     file entirely; this makes that impossible to mistake again. */
+  var book = pbBook_();
+  Logger.log('SPREADSHEET      : ' + (book ? book.getName() : 'NONE OPENED'));
+  Logger.log('   id            : ' + (book ? book.getId() : '-'));
+  if (book) {
+    Logger.log('   tabs          :');
+    book.getSheets().forEach(function (sh) {
+      Logger.log('      "' + sh.getName() + '"  rows=' + sh.getLastRow());
+    });
+  }
+  Logger.log('');
+
   var d = rrbProdBoardData_(), g = d._diag, s = d.submitted;
   Logger.log('NEW BUSINESS tab : ' + (g.newBusinessTab || 'NOT FOUND'));
   Logger.log('   columns       : ' + g.newBusinessCols);
