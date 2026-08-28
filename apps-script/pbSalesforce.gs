@@ -343,9 +343,22 @@ function sfJson_(o) {
 
 function sfBoard(e) {
   if (!e || !e.parameter) return sfCheck();       /* pressed Run, not called */
+
+  /* rrbAuthorize_ returns THE PERSON, or null. It carries no ok flag, and the
+     first version of this tested for one - so who.ok was undefined on every
+     valid session and the board answered "your session has expired" to a
+     signed-in branch manager. roster, called moments later with the same
+     token, returned all 38 people, which is what gave it away. */
   var who = (typeof rrbAuthorize_ === 'function') ? rrbAuthorize_(e) : null;
-  if (!who || !who.ok) return sfJson_({ ok: false, error: 'Your session has expired. Please sign in again.' });
-  var scope = (typeof rrbScopeForRole_ === 'function') ? rrbScopeForRole_(who) : null;
+  if (!who) return sfJson_({ ok: false, error: 'Your session has expired. Please sign in again.' });
+
+  /* The scope is already worked out and hung on the person. rrbScopeForRole_
+     takes (role, unitKey, code) and was being handed the whole person object
+     as its role, which no test in it matches. Reach for the computed one, and
+     keep the call only as a fallback - with its real arguments. */
+  var scope = who.scope ||
+              ((typeof rrbScopeForRole_ === 'function')
+                 ? rrbScopeForRole_(who.role, who.unitKey, who.code) : null);
   if (!scope || scope.kind !== 'branch') return sfJson_({ ok: true, submitted: null });
   try {
     var d = sfBoardData_();
