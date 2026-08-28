@@ -4,38 +4,28 @@
  * Every name starts with sf so nothing here can collide with anything already
  * in the project.
  *
- * ─── SETUP, ONCE ──────────────────────────────────────────────────────────
+ * ─── HOW TO SET IT UP ─────────────────────────────────────────────────────
  *
- * You already have the connected app. Setup > External Client App Manager >
- * Claude Integration > Settings > OAuth Settings > Consumer Key and Secret.
- * Nothing new needs creating.
+ * 1. Fill in the four blanks in SF_SEED just below. They come from
+ *    Setup > External Client App Manager > Claude Integration > Settings >
+ *    OAuth Settings (Consumer Key and Secret), plus your own Salesforce
+ *    password and security token. Nothing new needs creating.
  *
- * Apps Script > Project Settings (the cog) > Script Properties > Add:
+ * 2. Ctrl+S, then press Run. It does not matter which function the dropdown
+ *    is showing - sfCheck stores the credentials itself before it does
+ *    anything else, and sfCheck is what the dropdown defaults to.
  *
- *      SF_CLIENT_ID       the Consumer Key
- *      SF_CLIENT_SECRET   the Consumer Secret
- *      SF_LOGIN_URL       https://rickyrampersadbranch.my.salesforce.com
+ * 3. When the branch figures come back, blank those four values back to ''
+ *    and save again. They are in Script Properties by then and this block is
+ *    never read for anything else.
  *
- * then EITHER
- *      SF_REFRESH_TOKEN   a refresh token          (preferred)
- * OR
- *      SF_USERNAME        ricky.rampersad@myguardiangroup.com
- *      SF_PASSWORD        your Salesforce password
- *      SF_TOKEN           your security token
- *
- * The refresh token is the better one: no password anywhere, and it is not
- * the flow Salesforce keeps switching off. If you only have the username and
- * password to hand, try those first - sfCheck will say plainly if the org
- * refuses that flow, and name the setting to change.
- *
- * THE CREDENTIALS LIVE ONLY IN SCRIPT PROPERTIES. Nothing here writes them to
- * a sheet, a log or a response, and none of them are in this file.
- *
- * Then run sfCheck and read the log. Only when it looks right, add to doGet:
+ * 4. Only then, add to doGet in the main project:
  *
  *        if (action === 'prodboard') return sfBoard(e);
  *
- * and Deploy > Manage deployments > edit > New version > Deploy.
+ *    and Deploy > Manage deployments > edit > New version > Deploy.
+ *
+ * Nothing below logs a credential or returns one in a response.
  *
  * WHY THIS RATHER THAN THE SHEET
  * The "Branch Production Pick Up Date ThiS YEA SF" tab holds 401 rows where
@@ -44,6 +34,43 @@
  * agrees with Salesforce. A board built on that tab would have been
  * understated by nearly half.
  */
+
+/* ── FILL THESE IN, RUN ONCE, THEN BLANK THEM AGAIN ─────────────────────── */
+
+var SF_SEED = {
+  SF_CLIENT_ID     : '',
+  SF_CLIENT_SECRET : '',
+  SF_LOGIN_URL     : 'https://rickyrampersadbranch.my.salesforce.com',
+  SF_USERNAME      : 'ricky.rampersad@myguardiangroup.com',
+  SF_PASSWORD      : '',
+  SF_TOKEN         : ''
+};
+
+/* Anything non-blank in SF_SEED is written to Script Properties. Values are
+   trimmed on the way in - a space pasted onto the front of a security token
+   is invisible in the editor and looks exactly like a wrong password. */
+function sfSeed_() {
+  var p = PropertiesService.getScriptProperties(), n = 0;
+  Object.keys(SF_SEED).forEach(function (k) {
+    var v = String(SF_SEED[k] == null ? '' : SF_SEED[k]).trim();
+    if (v) { p.setProperty(k, v); n++; }
+  });
+  return n;
+}
+
+/** Which credentials are actually stored. Names only, never values. */
+function sfMissing_() {
+  var p = PropertiesService.getScriptProperties();
+  var miss = [];
+  ['SF_CLIENT_ID', 'SF_CLIENT_SECRET', 'SF_LOGIN_URL'].forEach(function (k) {
+    if (!p.getProperty(k)) miss.push(k);
+  });
+  if (p.getProperty('SF_REFRESH_TOKEN')) return miss;      /* refresh flow */
+  ['SF_USERNAME', 'SF_PASSWORD', 'SF_TOKEN'].forEach(function (k) {
+    if (!p.getProperty(k)) miss.push(k);
+  });
+  return miss;
+}
 
 var SF_API = 'v64.0';
 var SF_TZ  = 'America/Port_of_Spain';
@@ -72,9 +99,8 @@ function sfLogin_() {
       host   = sfProp_('SF_LOGIN_URL') || 'https://login.salesforce.com';
 
   if (!id || !secret) {
-    throw new Error('Script Properties missing SF_CLIENT_ID and/or SF_CLIENT_SECRET. ' +
-      'Get them from Setup > External Client App Manager > Claude Integration > ' +
-      'Settings > OAuth Settings > Consumer Key and Secret.');
+    throw new Error('SF_CLIENT_ID and/or SF_CLIENT_SECRET are not stored yet. ' +
+      'Fill them into SF_SEED at the top of this file, save, and press Run again.');
   }
 
   /* A refresh token is the flow to prefer: it does not carry a password, and
@@ -87,7 +113,7 @@ function sfLogin_() {
   } else {
     if (!user || !pw) {
       throw new Error('Store SF_REFRESH_TOKEN, or else SF_USERNAME, SF_PASSWORD and ' +
-        'SF_TOKEN, in Script Properties.');
+        'SF_TOKEN, via SF_SEED at the top of this file.');
     }
     payload = { grant_type: 'password', client_id: id, client_secret: secret,
                 username: user, password: pw + tok };
@@ -309,8 +335,23 @@ function sfBoard(e) {
   }
 }
 
-/** RUN THIS ONE. Read the log. */
+/**
+ * Press Run with this selected - it is what the dropdown defaults to.
+ * Stores whatever is in SF_SEED first, so there is no second function to
+ * remember and no order to get wrong.
+ */
 function sfCheck() {
+  var seeded = sfSeed_();
+  var miss = sfMissing_();
+  console.log('Seeded this run : ' + seeded + ' value(s) from SF_SEED');
+  if (miss.length) {
+    console.log('STILL MISSING   : ' + miss.join(', '));
+    console.log('');
+    console.log('Fill those into SF_SEED at the top of this file, Ctrl+S, press Run again.');
+    return 'STILL MISSING: ' + miss.join(', ');
+  }
+  console.log('Credentials     : all stored');
+  console.log('');
   try {
     var d = sfBoardData_(), s = d.submitted;
     console.log('SOURCE      : Salesforce');
