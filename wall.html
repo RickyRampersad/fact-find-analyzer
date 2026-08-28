@@ -4981,13 +4981,22 @@ var PROD = {
        classified as a roster tab on the server, so roster may already be
        carrying the rows this panel wants. Speculative, and guarded: if it is
        not production-shaped, nothing changes. */
-    tryOne('submitted').then(function(j){
-      var S = (j && j.submitted && j.submitted.rows) ? j.submitted : submittedAdapt(j);
-      if(S && S.rows && S.rows.length){ PROD.submitted = S; paint(); return; }
-      return tryOne('roster').then(function(r){
-        var S2 = submittedAdapt(r);
-        if(S2 && S2.rows && S2.rows.length){ PROD.submitted = S2; }
-        paint();
+    /* prodboard first: it reads the tabs by stem and the columns by heading,
+       so a renamed tab or a moved column cannot silently empty it, and it
+       computes the week itself. submitted and roster stay behind it as
+       fallbacks until prodboard is installed. */
+    function use(S){
+      if(S && S.rows && S.rows.length){ PROD.submitted = S; paint(); return true; }
+      return false;
+    }
+    tryOne('prodboard').then(function(j){
+      if(use(j && j.submitted && j.submitted.rows ? j.submitted : submittedAdapt(j))) return;
+      return tryOne('submitted').then(function(k){
+        if(use(k && k.submitted && k.submitted.rows ? k.submitted : submittedAdapt(k))) return;
+        return tryOne('roster').then(function(r){
+          use(submittedAdapt(r));
+          paint();
+        });
       });
     });
   }
