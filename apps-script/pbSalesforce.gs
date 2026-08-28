@@ -6,10 +6,19 @@
  *
  * ─── HOW TO SET IT UP ─────────────────────────────────────────────────────
  *
- * 1. Fill in the four blanks in SF_SEED just below. They come from
- *    Setup > External Client App Manager > Claude Integration > Settings >
- *    OAuth Settings (Consumer Key and Secret), plus your own Salesforce
- *    password and security token. Nothing new needs creating.
+ * 1. Fill in the four blanks in SF_SEED just below. The Consumer Key and
+ *    Secret come from Setup > External Client App Manager >
+ *    RRB Dashboard Integration > Settings > OAuth Settings. Then your own
+ *    Salesforce password and security token. Nothing new needs creating.
+ *
+ *    USE RRB DASHBOARD INTEGRATION, NOT CLAUDE INTEGRATION. Checked against
+ *    the org: Claude Integration carries REFRESH_TOKEN and nothing else -
+ *    OauthScopesAPI and OauthScopesFULL are both false, so it cannot read a
+ *    record however good the password is. It fails as invalid_grant,
+ *    "authentication failure", which reads exactly like a wrong password and
+ *    sends you resetting credentials that were right all along.
+ *    RRB Dashboard Integration has API and REFRESH_TOKEN, which is what this
+ *    needs.
  *
  * 2. Ctrl+S, then press Run. It does not matter which function the dropdown
  *    is showing - sfCheck stores the credentials itself before it does
@@ -100,7 +109,9 @@ function sfLogin_() {
 
   if (!id || !secret) {
     throw new Error('SF_CLIENT_ID and/or SF_CLIENT_SECRET are not stored yet. ' +
-      'Fill them into SF_SEED at the top of this file, save, and press Run again.');
+      'Fill them into SF_SEED at the top of this file, save, and press Run again. ' +
+      'They come from RRB Dashboard Integration, not Claude Integration - see ' +
+      'the note at the top.');
   }
 
   /* A refresh token is the flow to prefer: it does not carry a password, and
