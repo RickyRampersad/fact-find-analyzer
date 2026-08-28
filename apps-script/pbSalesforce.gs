@@ -344,27 +344,48 @@ function sfJson_(o) {
 function sfBoard(e) {
   if (!e || !e.parameter) return sfCheck();       /* pressed Run, not called */
 
+  /* EVERY ANSWER CARRIES v.
+     A deployment pinned to an old version is indistinguishable from a live one
+     when both refuse a request in the same words - which cost an evening of
+     arguing about whether a paste had landed or a deploy had. If v is absent
+     from the reply, the code answering is older than this line. */
+  var V = 'sf2';
+
   /* rrbAuthorize_ returns THE PERSON, or null. It carries no ok flag, and the
      first version of this tested for one - so who.ok was undefined on every
-     valid session and the board answered "your session has expired" to a
-     signed-in branch manager. roster, called moments later with the same
-     token, returned all 38 people, which is what gave it away. */
+     valid session and the board told a signed-in branch manager their session
+     had expired. roster, called seconds later on the same token, returned all
+     38 people, which is what gave it away. */
+  var tok = e.parameter.token || '';
   var who = (typeof rrbAuthorize_ === 'function') ? rrbAuthorize_(e) : null;
-  if (!who) return sfJson_({ ok: false, error: 'Your session has expired. Please sign in again.' });
+  if (!who) {
+    /* Three different faults used to share one sentence. Separate them. */
+    return sfJson_({ ok: false, v: V,
+      error: tok ? 'A token arrived but did not resolve to anybody. Sign in again.'
+                 : 'No session token reached the server.' });
+  }
 
   /* The scope is already worked out and hung on the person. rrbScopeForRole_
-     takes (role, unitKey, code) and was being handed the whole person object
-     as its role, which no test in it matches. Reach for the computed one, and
-     keep the call only as a fallback - with its real arguments. */
+     takes (role, unitKey, code) and was being handed the whole person as its
+     role, which none of its tests match. Read the computed one; keep the call
+     as a fallback, with its real arguments. */
   var scope = who.scope ||
               ((typeof rrbScopeForRole_ === 'function')
                  ? rrbScopeForRole_(who.role, who.unitKey, who.code) : null);
-  if (!scope || scope.kind !== 'branch') return sfJson_({ ok: true, submitted: null });
+  if (!scope || scope.kind !== 'branch') {
+    return sfJson_({ ok: true, v: V, submitted: null,
+      note: 'The board is branch-scope only. Signed in as ' + (who.name || '?') +
+            ', role ' + (who.role || '?') + ', scope ' +
+            ((scope && scope.kind) || 'none') + '.' });
+  }
+
   try {
     var d = sfBoardData_();
-    return sfJson_({ ok: true, submitted: d.submitted, agents: d.agents, diag: d.diag });
+    return sfJson_({ ok: true, v: V, submitted: d.submitted,
+                     agents: d.agents, diag: d.diag });
   } catch (err) {
-    return sfJson_({ ok: false, error: String(err && err.message || err) });
+    return sfJson_({ ok: false, v: V,
+                     error: String(err && err.message || err) });
   }
 }
 
