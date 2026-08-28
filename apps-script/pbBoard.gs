@@ -174,13 +174,49 @@ function pbData_() {
                             dateFallback: 9, appsFallback: 10, apiFallback: 11 });
   }
 
+  /* ONE ADVISOR, ONE ROW.
+     The check found fifty five advisors where the branch has thirty two,
+     because the two tabs name people differently: new business carries
+     "A12397 - Fawwaz Mohamed" in one cell, and increases carries just
+     "Fawwaz" in an Agent column. Keyed on the raw text those are two people,
+     and the board splits somebody's own increases away from their new
+     business. So: pull the code out of a combined cell, remember which first
+     name belongs to which code, and use the code as the key wherever one can
+     be found. */
+  var codeOfFirstName = {};
+  function pbSplit_(raw) {
+    var t = String(raw == null ? '' : raw).trim();
+    var m = t.match(/^([A-Za-z]\d{4,6})\s*[-–]\s*(.+)$/);
+    if (m) return { code: m[1].toUpperCase(), name: m[2].trim() };
+    if (/^[A-Za-z]\d{4,6}$/.test(t)) return { code: t.toUpperCase(), name: '' };
+    return { code: '', name: t };
+  }
+  function pbIndex_(rows) {
+    rows.forEach(function (r) {
+      var a = pbSplit_(r.agent), b = pbSplit_(r.name);
+      var code = a.code || b.code, nm = a.name || b.name;
+      if (!code || !nm) return;
+      var first = nm.split(/\s+/)[0].toLowerCase();
+      if (first && !codeOfFirstName[first]) codeOfFirstName[first] = { code: code, name: nm };
+    });
+  }
+  pbIndex_(nb.rows); pbIndex_(inc.rows);
+
   var agents = {};
   function add(r, isInc) {
-    var key = r.agent || r.name || '(unattributed)';
-    var a = agents[key] || (agents[key] = { code: r.agent, name: r.name, unit: r.unit,
+    var a1 = pbSplit_(r.agent), a2 = pbSplit_(r.name);
+    var code = a1.code || a2.code;
+    var name = a1.name || a2.name;
+    if (!code && name) {                    /* a bare first name from increases */
+      var hit = codeOfFirstName[name.split(/\s+/)[0].toLowerCase()];
+      if (hit) { code = hit.code; if (!name || name.indexOf(' ') === -1) name = hit.name; }
+    }
+    var key = code || name || '(unattributed)';
+    var a = agents[key] || (agents[key] = { code: code, name: name, unit: r.unit,
                                             w: [0, 0], y: [0, 0], inc: [0, 0] });
     if (!a.unit && r.unit) a.unit = r.unit;
-    if (!a.name && r.name) a.name = r.name;
+    if (!a.name && name) a.name = name;
+    if (!a.code && code) a.code = code;
     if (r.date >= jan1) { a.y[0] += r.apps; a.y[1] += r.api;
                           if (isInc) { a.inc[0] += r.apps; a.inc[1] += r.api; } }
     if (r.date >= monday) { a.w[0] += r.apps; a.w[1] += r.api; }
