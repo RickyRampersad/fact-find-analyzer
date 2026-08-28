@@ -6,38 +6,36 @@
  *
  * ─── SETUP, ONCE ──────────────────────────────────────────────────────────
  *
- * 1. In Salesforce: Setup > App Manager > New Connected App
- *      Connected App Name:  Branch Wall
- *      Contact Email:       your address
- *      Tick "Enable OAuth Settings"
- *      Callback URL:        https://login.salesforce.com/services/oauth2/success
- *      Selected OAuth Scopes: "Manage user data via APIs (api)"
- *      Untick "Require Proof Key for Code Exchange (PKCE)"
- *      Save, then Continue. Wait ten minutes for it to propagate.
- *      Open it again > Manage Consumer Details to see the Key and Secret.
+ * You already have the connected app. Setup > External Client App Manager >
+ * Claude Integration > Settings > OAuth Settings > Consumer Key and Secret.
+ * Nothing new needs creating.
  *
- * 2. In Apps Script: Project Settings (the cog) > Script Properties > Add:
+ * Apps Script > Project Settings (the cog) > Script Properties > Add:
  *
  *      SF_CLIENT_ID       the Consumer Key
  *      SF_CLIENT_SECRET   the Consumer Secret
+ *      SF_LOGIN_URL       https://rickyrampersadbranch.my.salesforce.com
+ *
+ * then EITHER
+ *      SF_REFRESH_TOKEN   a refresh token          (preferred)
+ * OR
  *      SF_USERNAME        ricky.rampersad@myguardiangroup.com
  *      SF_PASSWORD        your Salesforce password
  *      SF_TOKEN           your security token
- *      SF_LOGIN_URL       https://login.salesforce.com     (optional)
  *
- *    Reset the security token from Salesforce > Settings > Reset My Security
- *    Token if you do not have it; it arrives by email.
+ * The refresh token is the better one: no password anywhere, and it is not
+ * the flow Salesforce keeps switching off. If you only have the username and
+ * password to hand, try those first - sfCheck will say plainly if the org
+ * refuses that flow, and name the setting to change.
  *
- *    THE CREDENTIALS LIVE ONLY IN SCRIPT PROPERTIES. Nothing here writes them
- *    to a sheet, a log or a response, and nothing is stored in this file.
+ * THE CREDENTIALS LIVE ONLY IN SCRIPT PROPERTIES. Nothing here writes them to
+ * a sheet, a log or a response, and none of them are in this file.
  *
- * 3. Run sfCheck. Read the log.
- *
- * 4. Only when that looks right, in doGet's router:
+ * Then run sfCheck and read the log. Only when it looks right, add to doGet:
  *
  *        if (action === 'prodboard') return sfBoard(e);
  *
- *    Deploy > Manage deployments > edit > New version > Deploy.
+ * and Deploy > Manage deployments > edit > New version > Deploy.
  *
  * WHY THIS RATHER THAN THE SHEET
  * The "Branch Production Pick Up Date ThiS YEA SF" tab holds 401 rows where
@@ -65,26 +63,59 @@ function sfProp_(k) {
 }
 
 function sfLogin_() {
-  var id = sfProp_('SF_CLIENT_ID'), secret = sfProp_('SF_CLIENT_SECRET');
-  var user = sfProp_('SF_USERNAME'), pw = sfProp_('SF_PASSWORD'), tok = sfProp_('SF_TOKEN');
-  var host = sfProp_('SF_LOGIN_URL') || 'https://login.salesforce.com';
-  var missing = [];
-  if (!id) missing.push('SF_CLIENT_ID');
-  if (!secret) missing.push('SF_CLIENT_SECRET');
-  if (!user) missing.push('SF_USERNAME');
-  if (!pw) missing.push('SF_PASSWORD');
-  if (missing.length) throw new Error('Script Properties missing: ' + missing.join(', '));
+  var id     = sfProp_('SF_CLIENT_ID'),
+      secret = sfProp_('SF_CLIENT_SECRET'),
+      refresh= sfProp_('SF_REFRESH_TOKEN'),
+      user   = sfProp_('SF_USERNAME'),
+      pw     = sfProp_('SF_PASSWORD'),
+      tok    = sfProp_('SF_TOKEN'),
+      host   = sfProp_('SF_LOGIN_URL') || 'https://login.salesforce.com';
+
+  if (!id || !secret) {
+    throw new Error('Script Properties missing SF_CLIENT_ID and/or SF_CLIENT_SECRET. ' +
+      'Get them from Setup > External Client App Manager > Claude Integration > ' +
+      'Settings > OAuth Settings > Consumer Key and Secret.');
+  }
+
+  /* A refresh token is the flow to prefer: it does not carry a password, and
+     it is not the one Salesforce has been switching off. Falls back to
+     username-password only if no refresh token has been stored. */
+  var payload;
+  if (refresh) {
+    payload = { grant_type: 'refresh_token', client_id: id, client_secret: secret,
+                refresh_token: refresh };
+  } else {
+    if (!user || !pw) {
+      throw new Error('Store SF_REFRESH_TOKEN, or else SF_USERNAME, SF_PASSWORD and ' +
+        'SF_TOKEN, in Script Properties.');
+    }
+    payload = { grant_type: 'password', client_id: id, client_secret: secret,
+                username: user, password: pw + tok };
+  }
 
   var res = UrlFetchApp.fetch(host + '/services/oauth2/token', {
-    method: 'post', muteHttpExceptions: true,
-    payload: { grant_type: 'password', client_id: id, client_secret: secret,
-               username: user, password: pw + tok }
+    method: 'post', muteHttpExceptions: true, payload: payload
   });
   var body = res.getContentText();
   if (res.getResponseCode() !== 200) {
-    /* Salesforce says why, and it is usually one of three things. Passed
-       through as-is rather than summarised: the real message names which. */
-    throw new Error('Salesforce login refused (' + res.getResponseCode() + '): ' + body);
+    var hint = '';
+    /* Name the setting rather than the error code. "unsupported_grant_type"
+       on a correctly built request means one thing in this org and there is
+       no reason to make anybody look it up. */
+    if (body.indexOf('unsupported_grant_type') > -1 ||
+        body.indexOf('inactive') > -1) {
+      hint = '  >>> The username-password flow is switched off in this org. ' +
+             'Either tick Setup > Identity > OAuth and OpenID Connect Settings > ' +
+             '"Allow OAuth Username-Password Flows", or store a refresh token ' +
+             'in SF_REFRESH_TOKEN instead.';
+    } else if (body.indexOf('invalid_grant') > -1) {
+      hint = '  >>> Password or security token wrong, or the token has been ' +
+             'reset since. Salesforce > Settings > Reset My Security Token.';
+    } else if (body.indexOf('invalid_client') > -1) {
+      hint = '  >>> Consumer Key or Secret wrong, or the app has not finished ' +
+             'propagating - that takes about ten minutes after saving.';
+    }
+    throw new Error('Salesforce login refused (' + res.getResponseCode() + '): ' + body + hint);
   }
   var j = JSON.parse(body);
   return { token: j.access_token, url: j.instance_url };
