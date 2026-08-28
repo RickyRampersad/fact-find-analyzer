@@ -1636,7 +1636,25 @@
 
 <script>
 /* ═══ SETTINGS ═════════════════════════════════════════════════════════ */
-var ENDPOINT = 'https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
+/* THE WALL IS ON ITS OWN DEPLOYMENT, AND THAT IS NOT TIDINESS - READ THIS
+   BEFORE CHANGING IT.
+
+   Every other page in the branch - the fact find, the dashboard, the client
+   letter - calls AKfycbyUnSnQtumx9emW..., which is pinned to an older version
+   of the Apps Script project and does not know the prodboard action. Editing
+   an existing deployment to point at a new version kept failing, so the
+   production board lives on a second deployment made from the same project at
+   a later version.
+
+   Checked action for action before switching: ping and pulse return byte-for
+   -byte the same from both. This one is a superset, not a fork.
+
+   The cost is that the branch now runs two deployments, and a future change
+   deployed to only one of them will work here and not elsewhere, or the other
+   way about. When AKfycbyUnSnQtumx... is finally moved to a current version,
+   put that URL back here and delete this note - there is then nothing to
+   remember. */
+var ENDPOINT = 'https://script.google.com/macros/s/AKfycbySZd1Rj_JC4BZh75cIQ6t_LwQdRfXmSiocJbfqc6-QiGfeH6H-NkENPh3ZNh1nAP23ZQ/exec';
 var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
 
 var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 14;
