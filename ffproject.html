@@ -10622,10 +10622,38 @@ function computeIntelligence(c) {
   // could never fire. 'bad' band = premium consumes >50% of surplus, matching
   // the manager note wording ("consumes over half the client's surplus").
   {
+    /* A PREMIUM IS QUOTED IN THE MODE IT IS SOLD IN.
+       This summed them raw and called the total monthly, ignoring the Mode
+       column beside every one of them. Health is where it bites: Provisor and
+       Quantum are quoted ANNUALLY, so a TT$12,000 policy read as $12,000 a
+       month - twelve times over. Against a $5,000 surplus that is 240% and a
+       "high lapse risk" flag on a case actually sitting at 20% and comfortably
+       affordable. Every health case in the branch was scored unaffordable. */
+    const premMonthly = function (amount, mode, plan) {
+      const n = num(amount);
+      if (!n) return 0;
+      const m = String(mode || '').toLowerCase();
+      /* "Semi-Annual" contains "annual". Test it first or it divides by 12. */
+      if (m.indexOf('semi') > -1)    return n / 6;
+      if (m.indexOf('quarter') > -1) return n / 3;
+      if (m.indexOf('annual') > -1)  return n / 12;
+      if (m) return n;                       /* Monthly, said in as many words */
+      /* No mode chosen. Health is quoted annually here, so read it that way
+         rather than overstating it twelvefold; everything else stays monthly,
+         which is what the rest of the form assumes. Driven off the product
+         library so a new health plan added there is covered without an edit. */
+      let rule = null;
+      try { rule = PRODUCT_RULES[String(plan || '').trim()]; } catch (e) {}
+      return (rule && rule.type === 'health') ? n / 12 : n;
+    };
+
     let proposedMonthlyPrem = 0;
     for (let i = 1; i <= 6; i++) {
       const go = (state['dec' + i + 'Go'] || '').toLowerCase();
-      if (go === 'yes' || go === '') proposedMonthlyPrem += num(state['dec' + i + 'Prem']);
+      if (go === 'yes' || go === '')
+        proposedMonthlyPrem += premMonthly(state['dec' + i + 'Prem'],
+                                           state['rec' + i + 'Mode'],
+                                           state['dec' + i + 'Plan'] || state['rec' + i + 'Rec']);
     }
     if (proposedMonthlyPrem === 0)
       proposedMonthlyPrem = stripCurrency((document.getElementById('decTotalPrem') || {}).textContent || '');
