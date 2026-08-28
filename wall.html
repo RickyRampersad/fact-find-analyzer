@@ -5049,16 +5049,29 @@ var PROD = {
        so a renamed tab or a moved column cannot silently empty it, and it
        computes the week itself. submitted and roster stay behind it as
        fallbacks until prodboard is installed. */
-    function use(S){
-      if(S && S.rows && S.rows.length){ PROD.submitted = S; paint(); return true; }
+    /* The board and the per-advisor array arrive together but are separate
+       things: submitted holds the rolled-up rows slide 13 draws, agents holds
+       one entry per advisor with the record-type mix, the four quarters and
+       week and year, which is what slide 14 draws.
+
+       use() took only the board and dropped everything else on the floor, so
+       PROD.agents was never set, paintAgents is guarded by if(P.agents), and
+       The Advisors stayed blank no matter how well the board filled. Two
+       panels, one feed, and only one of them was being kept. */
+    function use(S, j){
+      if(S && S.rows && S.rows.length){
+        PROD.submitted = S;
+        if (j && j.agents && j.agents.length) PROD.agents = j.agents;
+        paint(); return true;
+      }
       return false;
     }
     tryOne('prodboard').then(function(j){
-      if(use(j && j.submitted && j.submitted.rows ? j.submitted : submittedAdapt(j))) return;
+      if(use(j && j.submitted && j.submitted.rows ? j.submitted : submittedAdapt(j), j)) return;
       return tryOne('submitted').then(function(k){
-        if(use(k && k.submitted && k.submitted.rows ? k.submitted : submittedAdapt(k))) return;
+        if(use(k && k.submitted && k.submitted.rows ? k.submitted : submittedAdapt(k), k)) return;
         return tryOne('roster').then(function(r){
-          if(use(submittedAdapt(r))) return;
+          if(use(submittedAdapt(r), r)) return;
           paint();
         });
       });
