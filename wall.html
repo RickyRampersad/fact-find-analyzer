@@ -4349,28 +4349,43 @@ var PROD = {
     if(P.submitted && P.submitted.rows && P.submitted.rows.length){
       if(paintSubmitted(P.submitted)) return;
     }
-    /* A blank panel is indistinguishable from a branch that wrote nothing.
-       Say which of the two it is, and name what would fix it. */
+    /* Say what was actually tried and what came back, rather than a cause I
+       cannot see from here. Twice now I have named a cause that turned out to
+       be only part of it; a panel that reports the attempt lets whoever is
+       standing in front of it tell me the answer instead. */
     (function(){
       var b = q('pdRoster'), n = q('pdRosterNote');
       if(!b) return;
-      b.innerHTML = '<div style="padding:1.4em;font-size:.72em;line-height:1.6;color:var(--ink-2)">'
-        + '<div style="color:var(--gold);font-weight:800;margin-bottom:.5em">'
-        + 'Waiting on the production feed.</div>'
-        + 'The layout and the download are built and tested. The figures come from '
-        + '<b>action=submitted</b>, which is returning zeros because the tab it reads is named '
-        + '<b>Branch Production Pick Up Date ThiS YEA SF</b> and it looks for '
-        + '<b>Branch Production Pick Up Date This Year</b> &mdash; so it is classified as a '
-        + 'roster tab and the new-business half reads nothing.'
-        + '<div style="margin-top:.7em;color:var(--ink-4)">Rename that tab and this panel fills itself.</div>'
+      var rows = (typeof SUBDIAG !== 'undefined' && SUBDIAG.length) ? SUBDIAG : null;
+      var tbl = rows ? rows.map(function(d){
+        var bits = [];
+        if(d.status !== undefined) bits.push('HTTP ' + d.status);
+        if(d.bytes  !== undefined) bits.push(d.bytes + ' bytes');
+        if(d.agents !== undefined) bits.push('agents: ' + d.agents);
+        if(d.roster !== undefined) bits.push('roster: ' + d.roster);
+        if(d.rows   !== undefined) bits.push('rows: ' + d.rows);
+        if(d.branchApi !== undefined) bits.push('branch API: ' + d.branchApi);
+        if(d.keys)  bits.push('keys: ' + d.keys);
+        if(d.note)  bits.push(d.note);
+        return '<div style="display:flex;gap:.8em;padding:.28em 0;'
+             + 'border-bottom:1px solid rgba(255,255,255,.06)">'
+             + '<b style="color:var(--teal);min-width:7em">' + esc(d.action) + '</b>'
+             + '<span style="color:var(--ink-2)">' + esc(bits.join('  ·  ')) + '</span></div>';
+      }).join('') : '<div style="color:var(--ink-3)">No attempt recorded yet.</div>';
+
+      b.innerHTML = '<div style="padding:1.3em;font-size:.72em;line-height:1.6">'
+        + '<div style="color:var(--gold);font-weight:800;margin-bottom:.2em">'
+        + 'The production feed returned nothing.</div>'
+        + '<div style="color:var(--ink-3);margin-bottom:.9em">The board, the download and '
+        + 'the agent-of-the-week strip are built and tested. This is what the wall '
+        + 'asked for and what came back:</div>'
+        + tbl
+        + '<div style="margin-top:1em;color:var(--ink-3)">Send this to Claude. It says '
+        + 'which call failed and how, which is what has been missing.</div>'
         + '</div>';
       if(n) n.innerHTML = '';
       set('t_p12', 'Production submitted');
     })();
-    /* Return. Without it the block above painted the explanation and then
-       paintRoster carried straight on and overwrote it with the eight-advisor
-       fallback - which is the year to date, not the submitted report, and
-       looked like the panel half working. */
     (function(){
       var t = q('tkrApi'), a = q('tkrApp'), g = q('incChart'), aw = q('aowStrip');
       if(aw) aw.style.display = 'none';
@@ -4884,6 +4899,20 @@ var PROD = {
       });
     });
     if(!rows.length) return null;
+    /* AN ALL-ZERO FEED IS NOT A REPORT.
+       The endpoint answers with its four unit keys and every figure zero while
+       the source tab is misread. Passing that through produced a clean table
+       of 26000 / 26001 / 26002 / 26003, all zeros, all the way to a zero
+       Total - which reads as a branch that wrote nothing this year rather
+       than a feed that is not connected. Those are opposite claims and the
+       wall must not confuse them. */
+    var anything = 0;
+    rows.forEach(function(r){
+      ['w','y'].forEach(function(k){
+        var p = r[k]; if(p){ anything += (p[0]||0) + (p[1]||0); }
+      });
+    });
+    if(!anything) return null;
     return {
       asAt: j.last_refreshed || '',
       week: null,                       /* the feed carries no week split yet */
@@ -4893,27 +4922,74 @@ var PROD = {
     };
   }
 
+  /* WHAT THIS ACTUALLY GOT BACK, WRITTEN DOWN.
+     I have told this branch three times what was wrong with the feed and been
+     incomplete twice. The panel asserted a cause it could not verify, which is
+     the same fault I have been fixing everywhere else on this board: stating a
+     conclusion the data does not support.
+
+     So it records the attempt instead. Every action it tries, the HTTP status,
+     the top-level keys that came back and the counts inside them, and that
+     goes on the panel. Whoever is looking at the wall can then say what is
+     actually wrong rather than relaying that it is still empty. */
+  var SUBDIAG = [];
+
   function submittedFor(who){
-    if(!who || !who.token) return;
+    SUBDIAG = [];
+    if(!who || !who.token){
+      SUBDIAG.push({action:'(none)', note:'not signed in — this panel needs a session'});
+      paint(); return;
+    }
     var branch = !!(who.scope && who.scope.kind === 'branch');
-    if(!branch) return;
-    var url = ENDPOINT + '?action=submitted&token=' + encodeURIComponent(who.token) +
-              '&_=' + Date.now();
-    var kill = setTimeout(function(){ try{ ctl.abort(); }catch(e){} }, 20000);
-    var ctl = ('AbortController' in window) ? new AbortController() : null;
-    fetch(url, {cache:'no-store', redirect:'follow',
-                signal: ctl ? ctl.signal : undefined})
-      .then(function(r){ return r.json(); })
-      .then(function(j){
-        clearTimeout(kill);
-        /* Either shape: the documented one, or what the server sends today. */
-        var S = (j && j.submitted && j.submitted.rows) ? j.submitted : submittedAdapt(j);
-        if(S && S.rows && S.rows.length){
-          PROD.submitted = S;
-          paint();
-        }
-      })
-      .catch(function(){ clearTimeout(kill); });
+    SUBDIAG.push({action:'(scope)', note:'signed in as ' + (who.name || '?') +
+                  ', scope ' + ((who.scope && who.scope.kind) || 'none')});
+    if(!branch){
+      SUBDIAG.push({action:'(stop)', note:'branch scope only'});
+      paint(); return;
+    }
+
+    function tryOne(action){
+      var url = ENDPOINT + '?action=' + action + '&token=' +
+                encodeURIComponent(who.token) + '&_=' + Date.now();
+      return fetch(url, {cache:'no-store', redirect:'follow'})
+        .then(function(r){
+          return r.text().then(function(t){
+            var rec = {action:action, status:r.status, bytes:t.length};
+            var j = null;
+            try{ j = JSON.parse(t); }catch(e){ rec.note = 'not JSON'; }
+            if(j){
+              rec.keys = Object.keys(j).slice(0,10).join(', ');
+              if(j.error) rec.note = j.error;
+              /* the counts that decide whether there is anything to draw */
+              if(j.agents) rec.agents = Object.keys(j.agents).length;
+              if(j.roster) rec.roster = (j.roster.length !== undefined)
+                                      ? j.roster.length : Object.keys(j.roster).length;
+              if(j.rows)   rec.rows   = j.rows.length;
+              if(j.branch) rec.branchApi = j.branch.submitted_api;
+            }
+            SUBDIAG.push(rec);
+            return j;
+          });
+        })
+        .catch(function(e){
+          SUBDIAG.push({action:action, note:'request failed: ' + (e && e.message)});
+          return null;
+        });
+    }
+
+    /* submitted first, then roster - the misnamed production tab is being
+       classified as a roster tab on the server, so roster may already be
+       carrying the rows this panel wants. Speculative, and guarded: if it is
+       not production-shaped, nothing changes. */
+    tryOne('submitted').then(function(j){
+      var S = (j && j.submitted && j.submitted.rows) ? j.submitted : submittedAdapt(j);
+      if(S && S.rows && S.rows.length){ PROD.submitted = S; paint(); return; }
+      return tryOne('roster').then(function(r){
+        var S2 = submittedAdapt(r);
+        if(S2 && S2.rows && S2.rows.length){ PROD.submitted = S2; }
+        paint();
+      });
+    });
   }
 
   function xlsFor(who){
