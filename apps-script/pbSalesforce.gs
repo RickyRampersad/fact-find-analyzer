@@ -135,8 +135,17 @@ function sfLogin_() {
              '"Allow OAuth Username-Password Flows", or store a refresh token ' +
              'in SF_REFRESH_TOKEN instead.';
     } else if (body.indexOf('invalid_grant') > -1) {
-      hint = '  >>> Password or security token wrong, or the token has been ' +
-             'reset since. Salesforce > Settings > Reset My Security Token.';
+      /* Salesforce returns this same generic "authentication failure" when the
+         username-password flow is switched off at org level as it does for a
+         wrong password. It will not tell you which, so check the setting
+         first - it is one look, where chasing the password is guesswork. */
+      hint = '  >>> Three things give this identical message, in order of ' +
+             'likelihood: (1) the username-password flow is off - Setup > ' +
+             'Identity > OAuth and OpenID Connect Settings > "Allow OAuth ' +
+             'Username-Password Flows"; (2) the password is wrong, or was ' +
+             'changed since, which silently resets the security token too; ' +
+             '(3) the security token is stale - Settings > Reset My Security ' +
+             'Token, and use the new one.';
     } else if (body.indexOf('invalid_client') > -1) {
       hint = '  >>> Consumer Key or Secret wrong, or the app has not finished ' +
              'propagating - that takes about ten minutes after saving.';
