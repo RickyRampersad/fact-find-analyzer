@@ -31,17 +31,25 @@ var GUEST_MAX_PER_HOUR = 3;     // codes per address per hour
 var GUEST_MAX_PER_DAY  = 40;    // codes in total per day, all addresses
 
 /**
- * WHO MAY ASK FOR A CODE. This is the control that matters.
+ * WHO MAY ASK FOR A CODE.
  *
- * A guest sees the whole board, production included - that is the point of
- * the pass and it is what makes it worth having. So the boundary is not what
- * a guest can see once they are in; it is who can get in at all. Keep this
- * list to addresses the branch would show its production to.
+ * OPEN TO ANY ADDRESS, on the branch manager's instruction, 29 Aug 2026.
  *
- * Emptying it lets ANY address on earth request a code and read the branch's
- * production by advisor. Do that only if that is genuinely what you want.
+ * An empty list means exactly that: anybody who reaches the wall can type any
+ * email, receive a code and read the branch's production by advisor - names,
+ * agent codes, apps and API. That is a deliberate decision, not an oversight,
+ * and it is recorded here so nobody quietly "fixes" it later.
+ *
+ * With the domain gate open, what remains are the rate limits below. They cap
+ * volume, not who: GUEST_MAX_PER_DAY is now the only thing standing between
+ * the board and however many strangers find the address.
+ *
+ * To close it again, put domains back in the list - one entry is enough:
+ *     var GUEST_DOMAINS = ['myguardiangroup.com'];
+ * An address outside the list gets the same reply as one inside, so the page
+ * never reveals who is on it.
  */
-var GUEST_DOMAINS = ['myguardiangroup.com', 'guardiangroup.com'];
+var GUEST_DOMAINS = [];
 
 /* ITS OWN JSON HELPER, UNDER ITS OWN NAME.
    This file called rrbJson_ on the assumption the project had a shared one.
