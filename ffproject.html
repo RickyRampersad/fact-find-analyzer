@@ -12408,6 +12408,76 @@ function buildDebtsTable() {
   });
 }
 
+/* ── HEALTH IS QUOTED ANNUALLY, AND THE BOX SAYS "$/mo" ────────────────────
+   Provisor and Quantum are sold as a yearly figure. The premium cell carries
+   placeholder "$/mo" whatever the plan, and the Mode field beside it is a
+   hidden input, so an advisor typing the annual premium is contradicted by
+   nothing on screen and the file records it as monthly. Downstream every ratio
+   then reads it twelve times too big: a TT$12,000 policy against a TT$5,000
+   surplus scored 240% and came back "high lapse risk, right-size the
+   recommendation" on a case sitting comfortably at 20%.
+
+   Patching the arithmetic alone leaves the stored figure wrong for everything
+   that reads it later, so this fixes it where it is entered: the mode is set
+   to Annual for a health plan, the box says so, and the monthly equivalent is
+   shown under it in the advisor's own numbers.
+
+   An advisor who has picked a mode themselves keeps it. Inference only ever
+   fills a blank, and only ever writes the value it inferred - so changing the
+   plan away from health clears what this put there and nothing else. */
+function rrbPremMode(i) {
+  var premEl = document.querySelector('[data-field="rec' + i + 'Prem"]');
+  var modeEl = document.querySelector('[data-field="rec' + i + 'Mode"]');
+  if (!premEl) return;
+
+  var plan = String((typeof state === 'object' && state['rec' + i + 'Rec']) || '').trim();
+  var rule = null;
+  try { rule = PRODUCT_RULES[plan]; } catch (e) {}
+  var isHealth = !!(rule && rule.type === 'health');
+
+  var mode = String((typeof state === 'object' && state['rec' + i + 'Mode']) || '');
+  var inferred = premEl.dataset.modeInferred === '1';
+
+  if (isHealth && (!mode || inferred)) {
+    state['rec' + i + 'Mode'] = 'Annual';
+    if (modeEl) modeEl.value = 'Annual';
+    premEl.dataset.modeInferred = '1';
+    mode = 'Annual';
+  } else if (!isHealth && inferred) {
+    /* The plan moved off health. Take back only what was inferred. */
+    state['rec' + i + 'Mode'] = '';
+    if (modeEl) modeEl.value = '';
+    delete premEl.dataset.modeInferred;
+    mode = '';
+  }
+
+  var annual = /annual/i.test(mode) && !/semi/i.test(mode);
+  premEl.placeholder = annual ? '$ per YEAR' : '$/mo';
+
+  var hint = document.getElementById('premHint' + i);
+  if (!hint) {
+    hint = document.createElement('div');
+    hint.id = 'premHint' + i;
+    hint.style.cssText = 'font-size:11px;line-height:1.3;margin-top:2px;color:#B45309';
+    premEl.parentNode.appendChild(hint);
+  }
+  var n = num(premEl.value);
+  if (annual && n > 0) {
+    hint.textContent = 'Annual — that is $' +
+      (n / 12).toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' a month';
+    hint.style.display = '';
+  } else if (annual) {
+    hint.textContent = 'Health plans are quoted yearly — enter the ANNUAL premium';
+    hint.style.display = '';
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
+function rrbPremModeAll() {
+  for (var i = 1; i <= 6; i++) rrbPremMode(i);
+}
+
 // ============== INPUT BINDING ==============
 function bindInputs() {
   document.querySelectorAll('[data-field]').forEach(el => {
@@ -12426,6 +12496,12 @@ function bindInputs() {
           const wrap = rb.closest('.radio') || rb.closest('.check') || rb.closest('.radio-block');
           if (wrap) wrap.classList.toggle('checked', rb.checked);
         });
+      }
+      /* A plan or a premium changing can change what the premium MEANS, so
+         re-read the mode before calc() consumes it. */
+      if (/^rec[1-6](Rec|Prem|Mode)$/.test(k)) {
+        if (k.slice(-4) === 'Mode') el.dataset.modeInferred = '';
+        rrbPremMode(k.charAt(3));
       }
       calc();
       updateProgress();
