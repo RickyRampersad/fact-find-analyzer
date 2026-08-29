@@ -372,11 +372,16 @@ function sfBoard(e) {
   var scope = who.scope ||
               ((typeof rrbScopeForRole_ === 'function')
                  ? rrbScopeForRole_(who.role, who.unitKey, who.code) : null);
-  if (!scope || scope.kind !== 'branch') {
+  /* Branch staff and guest passes both see the board. The gate stays, because
+     a scope this does not know about must still be refused - but guest is a
+     scope this knows about now, on the branch manager's instruction. The page
+     hides the download and Who is looking from a guest; those are separate. */
+  var kind = (scope && scope.kind) || '';
+  if (kind !== 'branch' && kind !== 'guest') {
     return sfJson_({ ok: true, v: V, submitted: null,
-      note: 'The board is branch-scope only. Signed in as ' + (who.name || '?') +
-            ', role ' + (who.role || '?') + ', scope ' +
-            ((scope && scope.kind) || 'none') + '.' });
+      note: 'The board needs a branch or guest pass. Signed in as ' +
+            (who.name || '?') + ', role ' + (who.role || '?') +
+            ', scope ' + (kind || 'none') + '.' });
   }
 
   try {

@@ -12,13 +12,19 @@
  *
  * Then Deploy > Manage deployments > edit > Version: New version > Deploy.
  *
- * WHAT A GUEST CAN SEE IS DECIDED HERE, NOT IN THE PAGE.
- * The token this hands back carries {kind:'guest'}. The wall hides the
- * production panels, the spreadsheet and Who is looking from it, but a page
- * can be edited by whoever is looking at it - so ?action=data, ?action=roster
- * and ?action=submitted must all refuse a guest scope on the SERVER too.
- * rrbScopeForRole_ is where that belongs. Until it does, a guest token is a
- * staff token with a politer name.
+ * WHAT A GUEST CAN SEE IS DECIDED ON THE SERVER, NOT IN THE PAGE.
+ * The token this hands back carries {kind:'guest'}.
+ *
+ * THE PRODUCTION BOARD IS OPEN TO A GUEST, on the branch manager's
+ * instruction, 29 Aug 2026. sfBoard admits branch and guest alike. A visitor
+ * shown the wall is being shown the production on it - that is the point of
+ * the pass.
+ *
+ * Still closed to a guest: the spreadsheet download, and Who is looking (a
+ * record of where staff have been). Those are gated in the page, and a page
+ * can be edited by whoever is looking at it, so ?action=data and
+ * ?action=roster must go on refusing a guest scope on the SERVER. That is
+ * rrbScopeForRole_'s job and it is not done here.
  *
  * WHY A CODE AND NOT JUST AN EMAIL BOX.
  * An email box alone lets anybody type anybody's address and walk in. The

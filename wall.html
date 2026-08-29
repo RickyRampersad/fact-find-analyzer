@@ -5009,11 +5009,19 @@ var PROD = {
       SUBDIAG.push({action:'(none)', note:'not signed in — this panel needs a session'});
       paint(); return;
     }
-    var branch = !!(who.scope && who.scope.kind === 'branch');
+    /* A GUEST PASS SEES THE BOARD. That is what the pass is for, and it is
+       the branch manager's decision - a visitor who is shown the wall is
+       being shown the production on it, or there is nothing to show them.
+
+       Only this panel opens up. Who is looking (a record of where staff have
+       been) and the spreadsheet download stay branch-only, and their gates a
+       few lines above and below are deliberately untouched. */
+    var kind = (who.scope && who.scope.kind) || '';
+    var branch = (kind === 'branch' || kind === 'guest');
     SUBDIAG.push({action:'(scope)', note:'signed in as ' + (who.name || '?') +
-                  ', scope ' + ((who.scope && who.scope.kind) || 'none')});
+                  ', scope ' + (kind || 'none')});
     if(!branch){
-      SUBDIAG.push({action:'(stop)', note:'branch scope only'});
+      SUBDIAG.push({action:'(stop)', note:'this panel needs a branch or guest pass'});
       paint(); return;
     }
 
