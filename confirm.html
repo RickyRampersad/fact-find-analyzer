@@ -78,6 +78,25 @@ textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(1
 .spin{text-align:center;color:var(--muted);font-size:15px;padding:34px 0}
 .done h2{font-family:Newsreader,Georgia,serif;font-size:25px;font-weight:600;margin:0 0 9px}
 .done p{margin:0 0 10px;font-size:15.4px;color:var(--ink-2)}
+/* THE STAR ROW. Sits in the signing sheet, above the pad, because the rating
+   has to be captured WITH the confirmation - the agent and the manager are
+   told the client agreed in one message, and the score belongs in it. Asking
+   afterwards means chasing a client who has already closed the tab.
+   Optional, always: nothing here can block a signature. */
+.rateBox{background:var(--sunk);border:1px solid var(--line);border-radius:12px;
+  padding:13px 14px;margin:2px 0 16px}
+.rateQ{font-size:15px;font-weight:700;color:var(--ink);margin:0 0 2px}
+.rateSub{font-size:13.4px;color:var(--muted);margin:0 0 9px}
+.stars{display:flex;gap:4px}
+.star{background:none;border:0;padding:2px 3px;cursor:pointer;line-height:1;
+  font-size:31px;color:var(--line);transition:color .12s,transform .12s}
+.star:hover,.star.lit{color:var(--gold)}
+.star:active{transform:scale(.9)}
+.star:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:6px}
+.rateSaid{font-size:13.8px;font-weight:600;color:var(--teal);margin:8px 0 0}
+.rateNote{width:100%;margin-top:9px;border:1.5px solid var(--line);border-radius:10px;
+  padding:9px 11px;font:15px Inter,sans-serif;color:var(--ink);background:var(--paper);
+  resize:vertical;min-height:60px}
 .back{background:none;border:0;color:var(--teal);font:600 14.6px Inter,sans-serif;
   cursor:pointer;padding:6px 0;width:auto;text-decoration:underline}
 .attest{border-left:3px solid var(--teal);background:var(--sunk);border-radius:0 10px 10px 0;
@@ -184,6 +203,15 @@ textarea:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(1
     <h2 id="ovlTitle" style="font-family:Newsreader,Georgia,serif;font-size:21px;font-weight:600;margin:0 0 8px">Sign to confirm</h2>
     <p class="askp" id="ovlWhat">You are signing to say the information is yours, the
       recommendations were explained to you, and the decision recorded is the one you made.</p>
+
+    <div class="rateBox" id="rateBox">
+      <p class="rateQ" id="rateQ">How did your advisor do?</p>
+      <p class="rateSub">Optional — it takes one tap, and it goes to the branch.</p>
+      <div class="stars" id="stars" role="group" aria-label="Rate your advisor"></div>
+      <p class="rateSaid hide" id="rateSaid"></p>
+      <textarea class="rateNote hide" id="rateNote" maxlength="500"
+        placeholder="Anything you would like the branch to know? (optional)"></textarea>
+    </div>
 
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin:4px 0 7px">
       <h2 style="margin:0">Your signature</h2>
@@ -302,7 +330,14 @@ if (!TOKEN) {
       }
 
       var bits = [];
-      if (j.advisorName) bits.push('Prepared by ' + j.advisorName);
+      if (j.advisorName) {
+        ADVISOR = j.advisorName;
+        /* "How did Narissa do?" asks about a person. "How did your advisor do?"
+           asks about a company, and gets answered like one. */
+        var first = String(ADVISOR).trim().split(/\s+/)[0];
+        if (first) $('rateQ').textContent = 'How did ' + first + ' do?';
+        bits.push('Prepared by ' + j.advisorName);
+      }
       if (j.submitted) bits.push('on ' + j.submitted);
       if (bits.length) $('metaText').textContent = bits.join(' ') + '.';
       else $('metaCard').classList.add('hide');
@@ -392,6 +427,51 @@ $('ovl').addEventListener('click', function (ev) {
   if (ev.target === this) { $('btnCancel').click(); }
 });
 
+/* ---- the star rating ----
+   Captured here rather than chased later. It rides along with the signature in
+   one POST, so the message that tells the agent and the manager "the client
+   agreed" carries the score in the same breath. A rating asked for afterwards
+   is a rating asked of somebody who has already closed the tab.
+
+   Never required, and never in the way: no star, no problem, the signature
+   goes through exactly as before. */
+var ADVISOR = '', RATING = 0;
+
+(function buildStars() {
+  var row = $('stars'), said = $('rateSaid'), note = $('rateNote');
+  if (!row) return;
+  var WORDS = ['', 'Poor', 'Not great', 'Fine', 'Very good', 'Excellent'];
+
+  function paint(n) {
+    for (var i = 0; i < row.children.length; i++) {
+      row.children[i].classList.toggle('lit', i < n);
+    }
+  }
+
+  for (var i = 1; i <= 5; i++) {
+    (function (n) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'star';
+      b.textContent = '\u2605';
+      b.setAttribute('aria-label', n + ' out of 5');
+      b.addEventListener('click', function () {
+        RATING = n;
+        paint(n);
+        said.textContent = WORDS[n] + ' — thank you.';
+        said.classList.remove('hide');
+        /* The box only appears once they have rated. Asking for words from
+           somebody who has not yet given a score is asking twice. */
+        note.classList.remove('hide');
+      });
+      /* Preview on hover, and put it back if they do not commit. */
+      b.addEventListener('mouseenter', function () { paint(n); });
+      row.addEventListener('mouseleave', function () { paint(RATING); });
+      row.appendChild(b);
+    })(i);
+  }
+})();
+
 /* ---- sign and confirm ---- */
 $('btnSign').addEventListener('click', function () {
   var btn = this, err = $('ovlErr');
@@ -404,15 +484,26 @@ $('btnSign').addEventListener('click', function () {
 
   btn.disabled = true; btn.textContent = 'Sending…'; err.classList.add('hide');
 
-  post({ stage: 'client_confirm', t: TOKEN, confirmed: 'yes',
-         sig: pad.toDataURL('image/png') })
+  var body = { stage: 'client_confirm', t: TOKEN, confirmed: 'yes',
+               sig: pad.toDataURL('image/png') };
+  /* Only sent when they actually rated. An unrated case must not arrive
+     looking like a zero - no stars and one star are very different things. */
+  if (RATING > 0) {
+    body.rating = RATING;
+    var rn = ($('rateNote').value || '').trim();
+    if (rn) body.ratingNote = rn;
+  }
+
+  post(body)
     .then(function (j) {
       if (!j || !j.ok) throw new Error((j && j.error) || 'We could not record that.');
       $('ovl').classList.add('hide');
       document.body.style.overflow = '';
       $('doneTitle').textContent = 'Thank you.';
       $('doneBody').textContent = 'Your signature is on your fact find, recording that this is what was '
-        + 'discussed and what you agreed to. Nothing else is needed from you today.';
+        + 'discussed and what you agreed to. Nothing else is needed from you today.'
+        + (RATING > 0 ? ' Thank you for rating ' + (ADVISOR.split(' ')[0] || 'your advisor')
+                        + ' — the branch sees it.' : '');
       show('done');
     })
     .catch(function (e) {
