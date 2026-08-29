@@ -4827,7 +4827,12 @@ var PROD = {
                + (j.ttl || 15) + ' minutes.', true);
           if(gOtp) gOtp.focus();
         } else {
-          gsay((j && j.error) || 'Could not send a code just now.');
+          /* The router answers an action it does not know with {success,
+             message, received_action} - no ok, no error - so this fell to a
+             sentence that named nothing, and "could not send the code" read
+             like a mail problem when guest access was simply not installed on
+             the server. Show what actually came back. */
+          gsay((j && (j.error || j.message)) || 'Could not send a code just now.');
         }
       }).catch(function(){
         gSend.disabled = false; gSend.textContent = 'Send me a code';
@@ -4848,7 +4853,7 @@ var PROD = {
           })); }catch(e){}
           openWall(j);
         } else {
-          gsay((j && j.error) || 'That code is not right.');
+          gsay((j && (j.error || j.message)) || 'That code is not right.');
         }
       }).catch(function(){
         gGo.disabled = false; gGo.textContent = 'View the wall';
