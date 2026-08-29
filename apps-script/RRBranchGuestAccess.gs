@@ -43,6 +43,18 @@ var GUEST_MAX_PER_DAY  = 40;    // codes in total per day, all addresses
  */
 var GUEST_DOMAINS = ['myguardiangroup.com', 'guardiangroup.com'];
 
+/* ITS OWN JSON HELPER, UNDER ITS OWN NAME.
+   This file called rrbJson_ on the assumption the project had a shared one.
+   It does not, so every guest_request died with "rrbJson_ is not defined"
+   before it reached the mail - which the page reported as "could not send the
+   code just now", pointing at email when the fault was here. Exactly the
+   mistake pbSalesforce.gs made, and made again before it was learned from.
+   Nothing in this file now depends on a helper existing elsewhere. */
+function rrbGuestJson_(o) {
+  return ContentService.createTextOutput(JSON.stringify(o))
+                       .setMimeType(ContentService.MimeType.JSON);
+}
+
 function rrbGuestSheet_() {
   var ss = SpreadsheetApp.getActive();
   var sh = ss.getSheetByName('Guest Access');
@@ -66,14 +78,14 @@ function rrbGuestRequest(e) {
   var email = rrbGuestNorm_((e && e.parameter && e.parameter.email) || '');
 
   if (!rrbGuestLooksLikeEmail_(email)) {
-    return rrbJson_({ ok: false, error: 'That does not look like an email address.' });
+    return rrbGuestJson_({ ok: false, error: 'That does not look like an email address.' });
   }
   if (GUEST_DOMAINS.length) {
     var dom = email.split('@')[1];
     if (GUEST_DOMAINS.indexOf(dom) === -1) {
       // Deliberately the same shape as success. Telling a stranger which
       // domains are allowed is telling them what to try next.
-      return rrbJson_({ ok: true, sent: true });
+      return rrbGuestJson_({ ok: true, sent: true });
     }
   }
 
@@ -89,7 +101,7 @@ function rrbGuestRequest(e) {
     if (issued > hourAgo && rrbGuestNorm_(rows[i][0]) === email) mine++;
   }
   if (mine >= GUEST_MAX_PER_HOUR || today >= GUEST_MAX_PER_DAY) {
-    return rrbJson_({ ok: false, error: 'Too many requests. Try again later.' });
+    return rrbGuestJson_({ ok: false, error: 'Too many requests. Try again later.' });
   }
 
   var code = String(Math.floor(100000 + Math.random() * 900000));
@@ -109,13 +121,13 @@ function rrbGuestRequest(e) {
       'nobody can use it without this email.</p></div>'
   });
 
-  return rrbJson_({ ok: true, sent: true, ttl: GUEST_TTL_MIN });
+  return rrbGuestJson_({ ok: true, sent: true, ttl: GUEST_TTL_MIN });
 }
 
 function rrbGuestVerify(e) {
   var email = rrbGuestNorm_((e && e.parameter && e.parameter.email) || '');
   var code  = String(((e && e.parameter && e.parameter.code) || '')).trim();
-  if (!email || !code) return rrbJson_({ ok: false, error: 'Enter your email and the code.' });
+  if (!email || !code) return rrbGuestJson_({ ok: false, error: 'Enter your email and the code.' });
 
   var sh = rrbGuestSheet_();
   var rows = sh.getDataRange().getValues();
@@ -125,9 +137,9 @@ function rrbGuestVerify(e) {
   for (var i = rows.length - 1; i >= 1; i--) {
     if (rrbGuestNorm_(rows[i][0]) !== email) continue;
     if (String(rows[i][1]).trim() !== code)  continue;
-    if (rows[i][4])                          return rrbJson_({ ok: false, error: 'That code has been used.' });
+    if (rows[i][4])                          return rrbGuestJson_({ ok: false, error: 'That code has been used.' });
     var exp = rows[i][3] ? new Date(rows[i][3]) : null;
-    if (!exp || exp < now)                   return rrbJson_({ ok: false, error: 'That code has expired.' });
+    if (!exp || exp < now)                   return rrbGuestJson_({ ok: false, error: 'That code has expired.' });
 
     sh.getRange(i + 1, 5).setValue(now);   // used, once
 
@@ -141,9 +153,9 @@ function rrbGuestVerify(e) {
       token: rrbGuestToken_(email, now),
       expiresAt: new Date(now.getTime() + GUEST_SESSION_HRS * 3600e3).toISOString()
     };
-    return rrbJson_(who);
+    return rrbGuestJson_(who);
   }
-  return rrbJson_({ ok: false, error: 'That code is not right.' });
+  return rrbGuestJson_({ ok: false, error: 'That code is not right.' });
 }
 
 /**
@@ -151,9 +163,32 @@ function rrbGuestVerify(e) {
  * the server can tell them apart. Uses the project's existing secret; if
  * rrbSecret_() is named differently in your build, point this at it.
  */
+/* The signing key. rrbSecret_ is the project's own, and using it keeps a guest
+   token verifiable by the same code that verifies everything else - so this
+   asks for it first. But this file assumed a helper existed once already, and
+   that assumption is what made every guest_request fail with a message about
+   email. Not making it twice: if rrbSecret_ is not there, fall back to the
+   property it reads, and only mint a new one if that is empty too.
+
+   A generated key is stored, not returned to a caller, and never logged. */
+function rrbGuestSecret_() {
+  if (typeof rrbSecret_ === 'function') {
+    try { var k = rrbSecret_(); if (k) return k; } catch (e) {}
+  }
+  var props = PropertiesService.getScriptProperties();
+  var k2 = props.getProperty('RRB_PROP_SECRET');
+  if (k2) return k2;
+  /* Nothing to share a key with yet. Mint one and keep it, so guest tokens
+     issued today still verify tomorrow. */
+  var made = Utilities.base64EncodeWebSafe(
+    Utilities.computeHmacSha256Signature(Utilities.getUuid(), Utilities.getUuid()));
+  props.setProperty('RRB_PROP_SECRET', made);
+  return made;
+}
+
 function rrbGuestToken_(email, issued) {
   var payload = 'guest|' + email + '|' + issued.getTime();
-  var sig = Utilities.computeHmacSha256Signature(payload, rrbSecret_());
+  var sig = Utilities.computeHmacSha256Signature(payload, rrbGuestSecret_());
   return Utilities.base64EncodeWebSafe(payload) + '.' +
          Utilities.base64EncodeWebSafe(sig);
 }
