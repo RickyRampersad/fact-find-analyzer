@@ -55,8 +55,33 @@ function rrbGuestJson_(o) {
                        .setMimeType(ContentService.MimeType.JSON);
 }
 
+/* WHICH WORKBOOK THE GUEST LOG LIVES IN.
+   getActive() returns the spreadsheet the script is BOUND to. This project is
+   standalone, so it returned null and every guest_request threw on the next
+   line - before the mail, before the allowlist, before anything. The page
+   reported that as "could not send the code just now", which pointed at email
+   for the third time in this one file.
+
+   pbBoard.gs made this exact mistake earlier in the week and it was fixed
+   there by opening the book explicitly. Same fix, and no getActive() left as
+   anything but a last resort.
+
+   The drafts tab and the medical panel already live in FF_SHEET_ID, so the
+   guest log belongs beside them rather than in a workbook of its own. */
+function rrbGuestBook_() {
+  if (typeof FF_SHEET_ID === 'string' && FF_SHEET_ID) {
+    try { return SpreadsheetApp.openById(FF_SHEET_ID); } catch (e) {}
+  }
+  var id = PropertiesService.getScriptProperties().getProperty('RRB_GUEST_SHEET_ID');
+  if (id) { try { return SpreadsheetApp.openById(id); } catch (e) {} }
+  var active = SpreadsheetApp.getActive();
+  if (active) return active;
+  throw new Error('No workbook to keep the guest log in. FF_SHEET_ID is not ' +
+    'reachable and no RRB_GUEST_SHEET_ID is set in Script Properties.');
+}
+
 function rrbGuestSheet_() {
-  var ss = SpreadsheetApp.getActive();
+  var ss = rrbGuestBook_();
   var sh = ss.getSheetByName('Guest Access');
   if (!sh) {
     sh = ss.insertSheet('Guest Access');
@@ -74,7 +99,7 @@ function rrbGuestLooksLikeEmail_(e) {
   return /^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(e);
 }
 
-function rrbGuestRequest(e) {
+function rrbGuestRequestBody_(e) {
   var email = rrbGuestNorm_((e && e.parameter && e.parameter.email) || '');
 
   if (!rrbGuestLooksLikeEmail_(email)) {
@@ -124,7 +149,7 @@ function rrbGuestRequest(e) {
   return rrbGuestJson_({ ok: true, sent: true, ttl: GUEST_TTL_MIN });
 }
 
-function rrbGuestVerify(e) {
+function rrbGuestVerifyBody_(e) {
   var email = rrbGuestNorm_((e && e.parameter && e.parameter.email) || '');
   var code  = String(((e && e.parameter && e.parameter.code) || '')).trim();
   if (!email || !code) return rrbGuestJson_({ ok: false, error: 'Enter your email and the code.' });
@@ -205,5 +230,30 @@ function rrbGuestCheck() {
   for (var i = Math.max(1, rows.length - 10); i < rows.length; i++) {
     Logger.log('  ' + rows[i][0] + '  issued ' + rows[i][2] +
                '  used ' + (rows[i][4] || 'no'));
+  }
+}
+
+/* WHATEVER HAPPENS IN THERE, ANSWER JSON.
+   An uncaught throw in a web-app handler makes Apps Script return an HTML
+   error page. The wall calls JSON.parse on it, that fails too, and the page
+   falls back to its generic sentence - which is how a null spreadsheet came to
+   read as "could not send the code just now" and cost three round trips
+   pointing at email.
+
+   These two doors now always return JSON, and a server-side failure says so
+   in words the diagnostic panel can print. */
+function rrbGuestRequest(e) {
+  try { return rrbGuestRequestBody_(e); }
+  catch (err) {
+    return rrbGuestJson_({ ok: false,
+      error: 'Guest access failed on the server: ' + (err && err.message || err) });
+  }
+}
+
+function rrbGuestVerify(e) {
+  try { return rrbGuestVerifyBody_(e); }
+  catch (err) {
+    return rrbGuestJson_({ ok: false,
+      error: 'Guest access failed on the server: ' + (err && err.message || err) });
   }
 }
