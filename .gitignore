@@ -1,0 +1,8 @@
+
+# THE LIVE APPS SCRIPT PROJECT — NEVER COMMIT THIS.
+# Pulled from Drive so the backend can be read and edited here, but this
+# repository is PUBLIC and Netlify serves its root. These files carry the
+# session-token signing scheme, the password check, and the ids of the
+# workbook holding every client fact find. apps-script/ is 404'd by
+# netlify.toml, but a public git repo needs no web server to leak.
+apps-script/live/
