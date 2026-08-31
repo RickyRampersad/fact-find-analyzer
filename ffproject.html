@@ -5124,9 +5124,21 @@ function applyMode() {
   // — it reveals the override block. A Direct Manager grant never sets it.
   window.BM_ROLE = (grantRole === 'branch_manager');
 
-  if      (LOAD_ID && isMgrRole) MODE = 'manager';
-  else if (LOAD_ID)              MODE = 'view';
-  else                           MODE = 'agent';
+  // An advisor reopening their OWN case that a manager sent back. The server
+  // grants this only against a signed agent_edit token for this submission,
+  // and only while the case is still open — see ffLoadById.
+  //
+  // Without it there was no way back into a case at all: every ?id= link is
+  // read-only, so the only route to a correction was a blank form, retyped
+  // from scratch, which the server then filed under a fresh id as a NEW case.
+  // That is why one client ended up with three records, and why the send-back
+  // email's own advice — "reopen the fact find and send it again" — could not
+  // be followed. The id is kept through the hydrate below, so resubmitting
+  // updates that case and counts as its next round.
+  if      (LOAD_ID && isMgrRole)             MODE = 'manager';
+  else if (LOAD_ID && grantRole === 'agent') MODE = 'agent';
+  else if (LOAD_ID)                          MODE = 'view';
+  else                                       MODE = 'agent';
 
   document.body.classList.toggle('agent-mode',   MODE === 'agent');
   document.body.classList.toggle('manager-mode', MODE === 'manager');
