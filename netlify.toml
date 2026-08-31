@@ -48,6 +48,30 @@
     Referrer-Policy = "no-referrer"
     Cache-Control = "no-store"
 
+# The wall was left out of the two blocks above, and it is the page most likely
+# to be read on a device nobody owns. It carries client names, every advisor's
+# production and the branch roster; it runs on a screen in the office; and a
+# visitor pass now opens it to any email address that asks for a code. Without
+# no-store, what was last on that screen sits in the cache for whoever opens
+# the browser next.
+[[headers]]
+  for = "/wall.html"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+# The client's own signing page: the plan, the sums assured, the premiums and
+# the box they draw their signature in. It opens from a link in their email, so
+# it is read on phones and family tablets more than anywhere else on the site.
+# Same class of content as the fact find, and it was missing the same header.
+[[headers]]
+  for = "/confirm.html"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
 # wall-audio/ IS NOT PART OF THE SITE EITHER.
 #
 # The narration is built there and embedded into wall.html as a data URI, so
