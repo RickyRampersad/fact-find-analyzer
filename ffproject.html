@@ -5108,15 +5108,20 @@ function applyMode() {
   // read-only `?id=` link could add `&role=manager` and sign off their own
   // case. Self-review on a document that goes to underwriting.
   //
-  // A URL `role=` is now only honoured on an untokenised legacy link, and only
-  // to keep links already sitting in inboxes working during rollout. Once the
-  // server sets TOKENS_REQUIRED it stops mattering entirely, because the load
-  // itself is refused without a token.
-  const urlRole = params.get('role') || '';
-  const legacyLink = !LOAD_TOKEN;
-  const grantRole = REVIEW_GRANT ? REVIEW_GRANT.role
-                  : (legacyLink && (urlRole === 'manager' || urlRole === 'direct_manager' ||
-                                    urlRole === 'branch_manager') ? urlRole : 'view');
+  // The rollout that comment described is now finished, so the exception it
+  // carved out is gone with it.
+  //
+  // `role=` in the address granted manager mode on any untokenised link — and
+  // review links were never tokenised, so every one of them was untokenised
+  // and the exception was the rule. An advisor holding the read-only link to
+  // their own case could append &role=manager and get the sign-off boxes. The
+  // server accepted that sign-off without checking anything and recorded it
+  // under the real direct manager's name.
+  //
+  // A role now comes from the server's validated grant or not at all. `role=`
+  // survives in review links only so an old one still lands on the right page;
+  // it grants nothing.
+  const grantRole = REVIEW_GRANT ? REVIEW_GRANT.role : 'view';
 
   const isMgrRole = (grantRole === 'manager' || grantRole === 'direct_manager' ||
                      grantRole === 'branch_manager');
