@@ -1396,11 +1396,31 @@ async function doLogin(ev){
       err.textContent=(j && j.error) ? j.error : 'Sign-in failed. Check your name and password.';
     }
   }catch(e){
-    err.textContent = (e && e.message==='no-endpoint')
-      ? 'No data endpoint is configured, so sign-in is unavailable.'
-      : (e && e.name==='AbortError')
-        ? 'The branch server did not answer in time. It sleeps when unused and can take a few seconds to wake — press Sign in again.'
-        : 'Cannot reach the branch server. Check your connection and try again.';
+    // Say which of the four failures it was.
+    //
+    // fetchJson works out the difference between a cold-start timeout, a dead
+    // connection, an HTTP error and an HTML page returned instead of data —
+    // and then this handler threw all of it away and printed one guess. The
+    // guess was "Cannot reach the branch server", which is what an advisor
+    // reported, and it is true in only one of the four cases. The other three
+    // send whoever is helping them looking in the wrong place.
+    //
+    // The AbortError branch was dead as well: fetchJson catches the abort and
+    // rethrows a plain Error, so e.name is never 'AbortError'. A timed-out
+    // cold start printed the connection message too.
+    var kind = e && e.kind;
+    err.textContent =
+        (e && e.message === 'no-endpoint')
+          ? 'No data endpoint is configured, so sign-in is unavailable.'
+      : (kind === 'timeout')
+          ? 'The branch server did not answer in 20 seconds. It sleeps when unused and takes a moment to wake — press Sign in again.'
+      : (kind === 'network')
+          ? 'Could not reach the branch server at all. Check the connection, then try again.'
+      : (kind === 'status')
+          ? (e.message + ' Nothing is wrong with your details — tell the branch office what this says.')
+      : (kind === 'notjson')
+          ? (e.message + ' Tell the branch office what this says.')
+      : ((e && e.message) || 'Sign-in could not be completed.');
   }
 
   btn.disabled=false; btn.textContent='Sign in';
