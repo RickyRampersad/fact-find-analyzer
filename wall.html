@@ -705,7 +705,7 @@
      branch's own name. A thumb needs 44px of HEIGHT. It does not need
      the whole width. Sized to its words, tall enough to hit, and back
      on the control row with the others. */
-  #pdXls, #wvBtn{
+  #pdXls{
     min-height:40px; padding:.3em .62em !important;
     font-size:11.5px !important; font-weight:700 !important;
     border-radius:.55em !important; width:auto !important;
@@ -889,24 +889,6 @@
    for fifteen of sixteen people is a broken panel, and a list of where staff
    have been does not belong on a screen in a waiting room.
    ══════════════════════════════════════════════════════════════════════════ */
-#wvBtn{display:none}
-#wvBtn.on{display:inline-block}
-#wvWrap{position:fixed; inset:0; z-index:180; display:none; place-items:center;
-  background:rgba(4,8,14,.82); padding:1.2em}
-#wvWrap.on{display:grid}
-#wvCard{width:min(520px,94vw); max-height:82vh; overflow:auto; background:var(--panel);
-  border:1px solid var(--line-2); border-radius:1em; padding:1.3em 1.3em 1em;
-  box-shadow:0 30px 80px rgba(0,0,0,.6)}
-#wvCard h3{font-size:1.05em; font-weight:800; letter-spacing:-.01em}
-#wvCard .sub{font-size:.72em; color:var(--ink-3); margin-top:.15em; margin-bottom:.9em}
-#wvList .r{display:grid; grid-template-columns:1fr auto; gap:.5em; align-items:baseline;
-  padding:.5em 0; border-top:1px solid var(--line)}
-#wvList .n{font-size:.86em; font-weight:700}
-#wvList .m{font-size:.7em; color:var(--ink-3)}
-#wvList .t{font-size:.72em; color:var(--ink-2); white-space:nowrap; text-align:right}
-#wvClose{width:100%; min-height:44px; margin-top:1em; background:var(--panel-2);
-  border:1px solid var(--line-2); color:var(--ink); border-radius:.55em;
-  font:inherit; font-size:.85em; font-weight:700; cursor:pointer}
 
 /* the panel dots */
 
@@ -1304,14 +1286,6 @@
 </style>
 </head>
 <body>
-<div id="wvWrap">
-  <div id="wvCard">
-    <h3>Who is looking</h3>
-    <div class="sub" id="wvSub">Loading&hellip;</div>
-    <div id="wvList"></div>
-    <button id="wvClose" type="button">Close</button>
-  </div>
-</div>
 <div id="wgate">
   <div class="card">
     <h2>The branch wall</h2>
@@ -1354,7 +1328,6 @@
   <a class='howto' href='/walkthrough' title='Watch the walkthrough'>
     <span class="tri"></span>How it works</a>
   <button class="hbtn" id="pdXls" type="button" hidden title="Download production as a spreadsheet">&#8681; Spreadsheet</button>
-  <button class="hbtn" id="wvBtn" type="button" title="Who has been viewing the wall">&#128065; Who is looking</button>
   <button class="hbtn" id="pdSnd" type="button" title="Narration and music">&#9834;</button>
   <div class="live"><span class="dot" id="dot"></span><span id="liveTxt">Live</span></div>
   <div class="clock num" id="clock">—<span id="date"></span></div>
@@ -4625,14 +4598,6 @@ var PROD = {
     }catch(e){ return null; }
   }
 
-  function logView(who){
-    if(!who || !who.token) return;
-    try{
-      var u = ENDPOINT + '?action=wall_view&token=' + encodeURIComponent(who.token) +
-              '&at=' + encodeURIComponent(new Date().toISOString());
-      fetch(u, {mode:'no-cors', cache:'no-store'}).catch(function(){});
-    }catch(e){}
-  }
 
   function nameBadge(who){
     var h = document.querySelector('header');
@@ -4649,63 +4614,6 @@ var PROD = {
                        : 'Branch screen';
   }
 
-  /* ── WHO IS LOOKING ───────────────────────────────────────────────────────
-     The button appears only at branch scope. The server checks that again
-     in rrbWallViewers - a hidden button is a courtesy to the fourteen
-     people who should not see it, not a control over the one who might
-     edit the page. This is a record of where staff have been, so the real
-     refusal has to be server-side. */
-  function viewersFor(who){
-    var btn = document.getElementById('wvBtn');
-    if(!btn) return;
-    var branch = who && who.scope && who.scope.kind === 'branch';
-    btn.classList.toggle('on', !!branch);
-    if(!branch) return;
-  
-    var wrap = document.getElementById('wvWrap');
-    var list = document.getElementById('wvList');
-    var sub  = document.getElementById('wvSub');
-  
-    async function load(){
-      sub.textContent='Loading\u2026'; list.innerHTML='';
-      var ctrl=new AbortController();
-      var t=setTimeout(function(){ ctrl.abort(); }, 20000);
-      try{
-        var url=ENDPOINT+'?action=wall_viewers&token='+
-                encodeURIComponent((WHO&&WHO.token)||'');
-        var res=await fetch(url,{method:'GET',signal:ctrl.signal,redirect:'follow'});
-        var r=await res.json();
-        if(!r||!r.ok){
-          /* Much the commonest reason is that the action is not installed yet.
-             Name it rather than saying something went wrong. */
-          sub.textContent=(r&&(r.error||r.message))||
-            'The branch script has no wall_viewers action yet.';
-          return;
-        }
-        sub.textContent = r.today
-          ? (r.today+' view'+(r.today===1?'':'s')+' today from '+r.people+' '+
-             (r.people===1?'person':'people'))
-          : 'Nobody has opened the wall today.';
-        if(!r.views||!r.views.length){
-          list.innerHTML='<div class="m" style="padding:.6em 0">Nothing recorded yet.</div>';
-          return;
-        }
-        list.innerHTML=r.views.map(function(v){
-          return '<div class="r"><div><div class="n">'+esc(v.name||v.code)+
-            '</div><div class="m">'+esc([v.code,v.role,v.unit].filter(Boolean).join(' \u00b7 '))+
-            '</div></div><div class="t">'+esc(v.when)+'<br>'+esc(v.day)+'</div></div>';
-        }).join('');
-      }catch(e){
-        sub.textContent = (e&&e.name==='AbortError')
-          ? 'The branch server did not answer.'
-          : 'Could not reach the branch server.';
-      }finally{ clearTimeout(t); }
-    }
-  
-    btn.onclick = function(){ wrap.classList.add('on'); load(); };
-    document.getElementById('wvClose').onclick = function(){ wrap.classList.remove('on'); };
-    wrap.onclick = function(e){ if(e.target === wrap) wrap.classList.remove('on'); };
-  }
 
   function openWall(who){
     WHO = who || null;
@@ -4714,8 +4622,6 @@ var PROD = {
     xlsFor(WHO);
     submittedFor(WHO);
     if(window.rrbPxRoster) window.rrbPxRoster(WHO);
-    viewersFor(WHO);
-    logView(WHO);
   }
 
   (function gateWall(){
@@ -5013,9 +4919,10 @@ var PROD = {
        the branch manager's decision - a visitor who is shown the wall is
        being shown the production on it, or there is nothing to show them.
 
-       Only this panel opens up. Who is looking (a record of where staff have
-       been) and the spreadsheet download stay branch-only, and their gates a
-       few lines above and below are deliberately untouched. */
+       Only this panel opens up. The spreadsheet download stays branch-only,
+       and its gate a few lines below is deliberately untouched. (Who is
+       looking used to be gated here too; it was removed on the branch
+       manager's instruction, 2 September 2026.) */
     var kind = (who.scope && who.scope.kind) || '';
     var branch = (kind === 'branch' || kind === 'guest');
     SUBDIAG.push({action:'(scope)', note:'signed in as ' + (who.name || '?') +
