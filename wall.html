@@ -1283,6 +1283,64 @@
   .pdot{width:11px; height:11px}
   #pDots{gap:.55em !important; max-width:none !important}
 }
+
+  /* ── SETTLEMENT (panel 15) ────────────────────────────────────────────── */
+  .stl{display:grid; grid-template-rows:auto 1fr; gap:.8em; height:100%; min-height:0}
+  .stlHero{background:linear-gradient(180deg,rgba(45,212,191,.10),rgba(13,21,36,.6));
+    border:1px solid var(--line); border-radius:1em; padding:.85em 1.1em}
+  .stlBig{display:flex; align-items:baseline; gap:.55em; flex-wrap:wrap}
+  .stlBig b{font-size:2.6em; font-weight:800; letter-spacing:-.02em; line-height:1;
+    font-variant-numeric:tabular-nums}
+  .stlOf{font-size:.95em; color:var(--ink-2)}
+  .stlPct{margin-left:auto; font-size:1.5em; font-weight:800; color:var(--teal);
+    font-variant-numeric:tabular-nums}
+  .stlBar{position:relative; height:1.05em; border-radius:.6em; background:var(--panel-2);
+    border:1px solid var(--line); margin:.6em 0 .35em; overflow:visible}
+  .stlFill{position:absolute; inset:0 auto 0 0; border-radius:.6em;
+    background:linear-gradient(90deg,var(--teal-deep),var(--teal));
+    box-shadow:0 0 1.4em var(--teal-glow); transition:width .9s cubic-bezier(.22,1,.36,1)}
+  .stlGoal{position:absolute; top:-.35em; bottom:-.35em; width:2px; background:var(--gold)}
+  .stlGoal span{position:absolute; top:-1.35em; left:50%; transform:translateX(-50%);
+    font-size:.62em; font-weight:800; color:var(--gold); white-space:nowrap}
+  .stlSub{display:flex; gap:1.4em; flex-wrap:wrap; font-size:.82em; color:var(--ink-2)}
+  .stlSub b{color:var(--ink); font-variant-numeric:tabular-nums}
+  .stlGrid{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:.8em; min-height:0}
+  .stlCard{background:var(--panel); border:1px solid var(--line); border-radius:1em;
+    padding:.7em .85em; display:flex; flex-direction:column; min-height:0}
+  .stlCap{display:flex; align-items:center; gap:.5em; font-size:.68em; font-weight:800;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); margin-bottom:.5em}
+  .stlPills{margin-left:auto; display:flex; gap:.3em}
+  .stlPill{font:inherit; font-size:.92em; font-weight:800; letter-spacing:.06em; cursor:pointer;
+    background:var(--panel-2); color:var(--ink-3); border:1px solid var(--line);
+    border-radius:2em; padding:.18em .8em; min-height:2.1em}
+  .stlPill.on{background:var(--teal-deep); color:#fff; border-color:var(--teal)}
+  .stlMons{display:grid; grid-template-columns:repeat(12,1fr); gap:.28em; align-items:end;
+    flex:1; min-height:0}
+  .stlMon{display:flex; flex-direction:column; justify-content:flex-end; height:100%;
+    gap:.3em; background:none; border:0; cursor:pointer; padding:0; font:inherit}
+  .stlMonBar{border-radius:.3em .3em 0 0; background:var(--line-2); min-height:2px;
+    transition:height .7s cubic-bezier(.22,1,.36,1), background .2s}
+  .stlMon.has .stlMonBar{background:linear-gradient(180deg,var(--teal),var(--teal-deep))}
+  .stlMon.on .stlMonBar{background:linear-gradient(180deg,var(--gold),var(--gold-deep))}
+  .stlMon.best .stlMonBar{box-shadow:0 0 .9em var(--teal-glow)}
+  .stlMonL{font-size:.62em; color:var(--ink-3); text-align:center; font-weight:700}
+  .stlMon.on .stlMonL{color:var(--gold)}
+  .stlLeague{display:flex; flex-direction:column; gap:.26em; overflow:hidden; flex:1; min-height:0}
+  .stlRow{display:grid; grid-template-columns:1.6em 1fr auto; gap:.6em; align-items:baseline;
+    padding:.24em .1em; border-bottom:1px solid var(--line)}
+  .stlRow:last-child{border-bottom:0}
+  .stlPos{font-size:.78em; font-weight:800; color:var(--ink-3); font-variant-numeric:tabular-nums}
+  .stlRow.top1 .stlPos{color:var(--gold)}
+  .stlNm{font-size:.9em; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .stlVal{font-size:.9em; font-weight:800; font-variant-numeric:tabular-nums; text-align:right}
+  .stlVal i{font-style:normal; font-size:.74em; color:var(--ink-3); margin-left:.4em}
+  .stlQuota{font-size:.72em; color:var(--ink-3); line-height:1.5}
+  .stlQuota b{color:var(--ink-2)}
+  @media (max-width:900px){
+    .stlGrid{grid-template-columns:1fr; grid-template-rows:auto 1fr}
+    .stlBig b{font-size:2em}
+  }
+
 </style>
 </head>
 <body>
@@ -1602,9 +1660,14 @@
     <div class="agb" id="agBoard"></div>
     <div class="pdnote" id="agNote"></div>
   </section>
+  <section class="panel" id="p14">
+    <div class="ptitle"><h1 id="t_p14"></h1><span class="tag">Settlement</span></div>
+    <div class="stl" id="stlBoard"></div>
+    <div class="pdnote" id="stlNote"></div>
+  </section>
 </main>
 
-<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span><span class="tk" id="k13"></span></div>
+<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span><span class="tk" id="k13"></span><span class="tk" id="k14"></span></div>
 <div id="burst"></div>
 
 <script>
@@ -1635,7 +1698,7 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec';
 var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
 
-var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 14;
+var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 15;
 var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 /* Calendar volume: one hue, dark to light. Validated as an ordinal ramp against
    this surface — monotone lightness, every step clear of the card behind it. */
@@ -4615,6 +4678,153 @@ var PROD = {
   }
 
 
+
+  /* ── SETTLEMENT (panel 15) ────────────────────────────────────────────────
+     What the branch has actually banked, against the quota the branch is set.
+
+     The quota is not a round number somebody picked. Every agent carries the
+     API assigned for their year in the business - 412,500 at four years and
+     over, then 300,000, 225,000, 150,000, and 90,000 part time - and every
+     seat short of forty carries a 200,000 deficit. Run rrbSettlementSetup()
+     on the server with your agent counts and this panel shows the build.
+
+     Tap a month to re-rank the league for that month alone. Tap API or APPS
+     to change what it ranks on. The year totals never move. */
+  var STL = { mode:'api', month:0, data:null, busy:false };
+
+  function stlMoney(n){
+    n = Math.round(Number(n)||0);
+    if(Math.abs(n) >= 1000000) return 'TT$' + (n/1000000).toFixed(2) + 'M';
+    if(Math.abs(n) >= 1000)    return 'TT$' + Math.round(n/1000) + 'k';
+    return 'TT$' + n;
+  }
+  function stlFull(n){ return 'TT$' + Math.round(Number(n)||0).toLocaleString('en-US'); }
+
+  function settleFor(who){
+    var box = document.getElementById('stlBoard');
+    if(!box) return;
+    if(!who || !who.token){
+      box.innerHTML = '<div class="stlCard"><div class="stlCap">Settlement</div>' +
+        '<div style="color:var(--ink-3)">Sign in to see the settlement board.</div></div>';
+      return;
+    }
+    if(STL.busy) return;
+    STL.busy = true;
+    var url = ENDPOINT + '?action=settlement&token=' + encodeURIComponent(who.token) +
+              '&year=' + (new Date().getFullYear()) +
+              (STL.month ? '&month=' + STL.month : '') + '&_=' + Date.now();
+    fetch(url, {cache:'no-store', redirect:'follow'})
+      .then(function(r){ return r.text(); })
+      .then(function(t){
+        var j = null; try{ j = JSON.parse(t); }catch(e){}
+        STL.busy = false;
+        if(!j || !j.success){
+          box.innerHTML = '<div class="stlCard"><div class="stlCap">Settlement</div>' +
+            '<div style="color:var(--ink-3)">' +
+            ((j && (j.error||j.message)) || 'The branch server did not answer.') + '</div></div>';
+          return;
+        }
+        STL.data = j; stlPaint();
+      })
+      .catch(function(){ STL.busy = false; });
+  }
+
+  function stlPaint(){
+    var box = document.getElementById('stlBoard'), j = STL.data;
+    if(!box || !j) return;
+
+    var tgt = (j.target && j.target.value) || 0;
+    var api = (j.ytd && j.ytd.api) || 0;
+    var apps = (j.ytd && j.ytd.apps) || 0;
+    var pct  = tgt ? (api / tgt * 100) : 0;
+    var goalPct = (j.goal && j.goal.pct) || 85;
+    var toGo = (j.goal && j.goal.toGo) || 0;
+
+    var h = '<div class="stlHero">' +
+      '<div class="stlBig"><b>' + stlFull(api) + '</b>' +
+      '<span class="stlOf">settled of ' + stlMoney(tgt) + ' branch quota</span>' +
+      '<span class="stlPct">' + pct.toFixed(1) + '%</span></div>' +
+      '<div class="stlBar"><div class="stlFill" style="width:' + Math.min(100,pct).toFixed(2) + '%"></div>' +
+      '<div class="stlGoal" style="left:' + goalPct + '%"><span>goal ' + goalPct + '% · ' +
+      stlMoney(tgt * goalPct / 100) + '</span></div></div>' +
+      '<div class="stlSub">' +
+      '<span><b>' + apps + '</b> applications</span>' +
+      '<span><b>' + (j.agents ? j.agents.length : 0) + '</b> agents settling</span>' +
+      '<span><b>' + stlMoney(toGo) + '</b> to the goal</span>' +
+      (apps ? '<span><b>' + stlFull(api/apps) + '</b> per application</span>' : '') +
+      '</div></div>';
+
+    /* Months. The tallest bar is the month to beat. */
+    var mons = j.months || [], top = 0;
+    mons.forEach(function(m){ if(m.api > top) top = m.api; });
+    var names = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+    var mh = '<div class="stlCard"><div class="stlCap">By month' +
+      '<div class="stlPills">' +
+      '<button type="button" class="stlPill' + (STL.month?'':' on') + '" data-mon="0">Year</button>' +
+      '</div></div><div class="stlMons">';
+    mons.forEach(function(m, i){
+      var pctH = top ? Math.max(2, m.api / top * 100) : 2;
+      var cls = 'stlMon' + (m.api > 0 ? ' has' : '') + (STL.month === m.m ? ' on' : '') +
+                (m.api === top && top > 0 ? ' best' : '');
+      mh += '<button type="button" class="' + cls + '" data-mon="' + m.m + '" ' +
+            'title="' + names[i] + ' — ' + stlFull(m.api) + ' · ' + m.apps + ' apps">' +
+            '<div class="stlMonBar" style="height:' + pctH.toFixed(1) + '%"></div>' +
+            '<div class="stlMonL">' + names[i] + '</div></button>';
+    });
+    mh += '</div>';
+    if(j.target && j.target.source === 'mix' && j.target.mix){
+      var lbl = {core:'core', y3:'yr 3', y2:'yr 2', y1:'yr 1', pt:'part time', short:'seats short'};
+      mh += '<div class="stlQuota" style="margin-top:.55em">Quota: ' +
+        j.target.mix.map(function(x){
+          return '<b>' + x.n + '</b> ' + (lbl[x.k]||x.k) + ' × ' +
+                 Math.round(x.each).toLocaleString('en-US');
+        }).join(' + ') + '</div>';
+    }
+    mh += '</div>';
+
+    /* The league. */
+    var ags = (j.agents || []).slice();
+    ags.sort(function(a,b){ return STL.mode === 'apps' ? (b.apps - a.apps) : (b.api - a.api); });
+    var lh = '<div class="stlCard"><div class="stlCap">' +
+      (STL.month ? names[STL.month-1] + ' leaders' : 'Top settlers, year') +
+      '<div class="stlPills">' +
+      '<button type="button" class="stlPill' + (STL.mode==='api'?' on':'') + '" data-mode="api">API</button>' +
+      '<button type="button" class="stlPill' + (STL.mode==='apps'?' on':'') + '" data-mode="apps">APPS</button>' +
+      '</div></div><div class="stlLeague">';
+    if(!ags.length){
+      lh += '<div style="color:var(--ink-3);font-size:.86em">Nothing settled in that period.</div>';
+    }
+    ags.slice(0,9).forEach(function(a,i){
+      lh += '<div class="stlRow' + (i===0?' top1':'') + '">' +
+        '<div class="stlPos">' + (i+1) + '</div>' +
+        '<div class="stlNm">' + (a.name || a.code) + '</div>' +
+        '<div class="stlVal">' + (STL.mode==='apps'
+            ? (a.apps + '<i>' + stlMoney(a.api) + '</i>')
+            : (stlFull(a.api) + '<i>' + a.apps + ' app' + (a.apps===1?'':'s') + '</i>')) +
+        '</div></div>';
+    });
+    lh += '</div></div>';
+
+    box.innerHTML = h + '<div class="stlGrid">' + mh + lh + '</div>';
+
+    var t = document.getElementById('t_p14');
+    if(t) t.textContent = 'Settlement ' + j.year;
+    var note = document.getElementById('stlNote');
+    if(note) note.textContent = 'Net of reversals and riders. ' +
+      (j.diag ? j.diag.used + ' rows read from ' + j.diag.tab + '.' : '');
+
+    box.querySelectorAll('[data-mode]').forEach(function(b){
+      b.onclick = function(){ STL.mode = b.dataset.mode; stlPaint(); };
+    });
+    box.querySelectorAll('[data-mon]').forEach(function(b){
+      b.onclick = function(){
+        var m = parseInt(b.dataset.mon, 10) || 0;
+        STL.month = (STL.month === m ? 0 : m);
+        settleFor(WHO);
+      };
+    });
+  }
+
   function openWall(who){
     WHO = who || null;
     document.getElementById('wgate').classList.add('gone');
@@ -4622,6 +4832,10 @@ var PROD = {
     xlsFor(WHO);
     submittedFor(WHO);
     if(window.rrbPxRoster) window.rrbPxRoster(WHO);
+    settleFor(WHO);
+    /* Settlement moves when head office posts, not when the wall polls, so it
+       re-reads every ten minutes rather than on the forty-second cycle. */
+    if(!window.__stlTimer) window.__stlTimer = setInterval(function(){ settleFor(WHO); }, 600000);
   }
 
   (function gateWall(){
