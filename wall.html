@@ -4740,18 +4740,32 @@ var PROD = {
     var goalPct = (j.goal && j.goal.pct) || 85;
     var toGo = (j.goal && j.goal.toGo) || 0;
 
+    /* The headline is progress to the TARGET, not to the gross quota. The
+       target is what the branch works to — 80% of the 13.0M agent build is
+       10.4M — and 56% of that reads very differently from 44.8% of a number
+       nobody is asked to reach. The bar still runs the full quota so the gold
+       line shows where the target sits and how far the fill is from it. */
+    var pctGoal = (j.goal && j.goal.pctOfGoal) || 0;
+    var perMonth = (j.goal && j.goal.perMonth) || 0;
+    var monLeft  = (j.goal && j.goal.monthsLeft) || 0;
+    var times    = (j.goal && j.goal.times) || 0;
+
     var h = '<div class="stlHero">' +
       '<div class="stlBig"><b>' + stlFull(api) + '</b>' +
-      '<span class="stlOf">settled of ' + stlMoney(tgt) + ' branch quota</span>' +
-      '<span class="stlPct">' + pct.toFixed(1) + '%</span></div>' +
+      '<span class="stlOf">settled of ' + stlMoney(j.goal ? j.goal.value : 0) +
+      ' target &middot; ' + goalPct + '% of the ' + stlMoney(tgt) + ' quota</span>' +
+      '<span class="stlPct">' + pctGoal.toFixed(1) + '%</span></div>' +
       '<div class="stlBar"><div class="stlFill" style="width:' + Math.min(100,pct).toFixed(2) + '%"></div>' +
-      '<div class="stlGoal" style="left:' + goalPct + '%"><span>goal ' + goalPct + '% · ' +
+      '<div class="stlGoal" style="left:' + goalPct + '%"><span>target ' +
       stlMoney(tgt * goalPct / 100) + '</span></div></div>' +
       '<div class="stlSub">' +
       '<span><b>' + apps + '</b> applications</span>' +
       '<span><b>' + (j.agents ? j.agents.length : 0) + '</b> agents settling</span>' +
-      '<span><b>' + stlMoney(toGo) + '</b> to the goal</span>' +
+      '<span><b>' + stlMoney(toGo) + '</b> to the target</span>' +
       (apps ? '<span><b>' + stlFull(api/apps) + '</b> per application</span>' : '') +
+      (perMonth ? '<span style="color:var(--gold)"><b style="color:var(--gold)">' +
+        stlMoney(perMonth) + '</b> a month for the last ' + monLeft +
+        (times ? ' &middot; ' + times.toFixed(1) + '\u00d7 your average' : '') + '</span>' : '') +
       '</div></div>';
 
     /* Months. The tallest bar is the month to beat. */
