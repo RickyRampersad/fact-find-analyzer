@@ -28,7 +28,7 @@ Netlify builds a **deploy preview** on its own URL. That is a full working copy
 of the site with your change on it, and it touches nothing live. Open a real
 case on the preview before merging. Merging publishes it.
 
-## Two things that will bite
+## Three things that will bite
 
 **The filename is lowercase.** `ffproject.html`, not `FFPROJECT.html`. The
 address in circulation is factfind360.com/ffproject. Renaming the file moves
@@ -40,6 +40,22 @@ site — anything missing from the folder is deleted. It is what removed
 `walkthrough.html`, `insights.html`, `wall.html` and the video on 23 August,
 and what truncated the video on the deploy after it. Now that the site is
 connected to this repository, git is the way in.
+
+**One host, and that host is Netlify.** A Vercel project was also connected to
+this repository and its builds failed on every push. The failures were doing
+no harm — they were preventing one.
+
+`netlify.toml` is the only thing standing between this repository and a public
+copy of the branch with nothing guarded. It 404s `/apps-script/*` (18 files of
+Apps Script source and install notes) and `/wall-audio/*` (50 MP3s that read
+advisor names and production figures aloud), and it puts `no-store` and
+`no-referrer` on `ffproject.html`, `insights.html`, `wall.html` and
+`confirm.html`. **Vercel reads none of it.** A Vercel build that succeeded
+would have published all of that, unguarded, on a second public URL.
+
+So: do not connect a second host to this repository. If one ever has to be
+connected, reproduce all six of those rules in that host's own config and test
+the live headers before anything points at it — the settings do not travel.
 
 ## If a deploy goes wrong
 
