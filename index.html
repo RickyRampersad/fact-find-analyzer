@@ -1684,6 +1684,21 @@ function baseRows(){
     return true;
   });
 }
+/* Rows for WHO you are looking at, ignoring WHEN.
+   The queue and the branch-activity cards read ALL for a good reason: a case
+   waiting on a decision must not disappear because a 7-day window hid it.
+   But "which agent" is not a date. Picking an agent on the filter bar is a
+   statement about who you want to see, and a queue that answered with
+   everybody's cases is what a branch manager reported. So date and status stay
+   out of this, and unit, agent and the search box come in. */
+function scopeRows(){
+  return ALL.filter(function(r){
+    if(FILTERS.unit!=='all' && r.unitKey!==FILTERS.unit) return false;
+    if(FILTERS.agent!=='all' && r.agentCode!==FILTERS.agent) return false;
+    if(FILTERS.search){ var q=FILTERS.search.toLowerCase(); if((r.advisorName+' '+r.clientName+' '+r.agentCode).toLowerCase().indexOf(q)<0) return false; }
+    return true;
+  });
+}
 function periodDays(){ return {'7':7,'30':30,'90':90}[FILTERS.range]||30; }
 function windowRows(base,startAgo,endAgo){ return base.filter(function(r){ var d=(NOW-new Date(r.submittedAt))/86400000; return d>=endAgo && d<startAgo; }); }
 function metricSet(rows){
@@ -1810,7 +1825,17 @@ function renderKPIs(rows,cur,prev){
 function quietAgents(days){
   var last={}; ALL.forEach(function(r){ var t=new Date(r.submittedAt).getTime(); if(!last[r.agentCode]||t>last[r.agentCode].t) last[r.agentCode]={t:t,name:r.advisorName}; });
   // roster in scope
-  var scopeAgents=ROSTER.filter(function(a){ var sc=SESSION.scope; if(sc.kind==='agent')return a.code===sc.code; return scHasUnit(sc,a.unitKey); });
+  /* Narrow WHO we report on, never the history above. `last` has to stay
+     built from ALL: filter that instead and every other agent would show no
+     submissions at all and be reported as 999 days quiet. */
+  var scopeAgents=ROSTER.filter(function(a){
+    var sc=SESSION.scope;
+    if(sc.kind==='agent') return a.code===sc.code;
+    if(!scHasUnit(sc,a.unitKey)) return false;
+    if(FILTERS.unit!=='all' && a.unitKey!==FILTERS.unit) return false;
+    if(FILTERS.agent!=='all' && a.code!==FILTERS.agent) return false;
+    return true;
+  });
   var out=[];
   scopeAgents.forEach(function(a){ if(!/agent/i.test(a.role))return; var l=last[a.code]; var d=l?(NOW-l.t)/86400000:999; if(d>days) out.push({name:a.name,code:a.code,days:Math.round(d)}); });
   return out.sort(function(x,y){return y.days-x.days;});
@@ -2059,10 +2084,12 @@ function qApiMult(mode){
   if(/quarter/.test(m)) return 4;
   return 12;
 }
-// Built from ALL, not the date/unit/agent-filtered rows — a case waiting on a
-// decision must never disappear because a filter hid it.
+// Ignores the DATE and STATUS filters — a case waiting on a decision must
+// never disappear because a 7-day window hid it. It does honour unit, agent
+// and search, because those say who you are looking at, and the queue used to
+// answer "show me this agent" with the whole branch's cases.
 function qPending(){
-  return ALL.filter(function(r){ var g=statusGroup(r.status); return g==='pending'||g==='review'; })
+  return scopeRows().filter(function(r){ var g=statusGroup(r.status); return g==='pending'||g==='review'; })
             .sort(function(a,b){ return new Date(a.submittedAt)-new Date(b.submittedAt); });
 }
 // Mirrors rrbCameBackFixed_ on the server — if one changes, change both.
@@ -3180,7 +3207,9 @@ function dailyMsgOn(k){
    Volume first, premium breaks a tie. */
 function topAdvisor30(){
   const by = {};
-  ALL.forEach(function(r){
+  /* scopeRows, not ALL: filtered to one agent, this card was naming somebody
+     else as the busiest advisor, which is the same complaint as the queue. */
+  scopeRows().forEach(function(r){
     if (daysBetween(NOW, new Date(r.submittedAt)) > 30) return;
     const k = r.agentCode || r.advisorName;
     if (!k) return;
