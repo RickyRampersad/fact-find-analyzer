@@ -4446,16 +4446,31 @@ var PROD = {
     }
     var pkWa = peak(function(r){ return (r.w||[])[0]||0; }),
         pkWi = peak(function(r){ return (r.w||[])[1]||0; }),
+        pkMa = peak(function(r){ return (r.m||[])[0]||0; }),
+        pkMi = peak(function(r){ return (r.m||[])[1]||0; }),
         pkYa = peak(function(r){ return (r.y||[])[0]||0; }),
         pkYi = peak(function(r){ return (r.y||[])[1]||0; });
 
+    /* Month to date, between the week and the year. The row already has six
+       numeric columns in its grid and was only filling four, so this needed
+       no layout change — but it does need the figures to exist. The feed sent
+       week and year and nothing between until sfBoardData_ was given the two
+       month queries, so the columns appear only when a month figure is
+       actually there. Two columns of blanks headed MTD would read as a month
+       in which the branch wrote nothing. */
+    var hasM = !!((S.total && S.total.m) || S.rows.some(function(r){ return r.m; }));
+
     function cells(r, hi){
-      var w = r.w||[], y = r.y||[];
-      function c(txt, isHi){ return '<div class="sc' + (isHi?' hi':'') + '">' + txt + '</div>'; }
-      return c(n0(w[0]),    hi && w[0] && w[0] === pkWa)
-           + c(money(w[1]), hi && w[1] && w[1] === pkWi)
-           + c(n0(y[0]),    hi && y[0] && y[0] === pkYa)
-           + c(money(y[1]), hi && y[1] && y[1] === pkYi);
+      var w = r.w||[], mo = r.m||[], y = r.y||[];
+      function c(txt, isHi, cls){
+        return '<div class="sc' + (cls||'') + (isHi?' hi':'') + '">' + txt + '</div>';
+      }
+      var out = c(n0(w[0]),    hi && w[0] && w[0] === pkWa)
+              + c(money(w[1]), hi && w[1] && w[1] === pkWi);
+      if(hasM) out += c(n0(mo[0]),    hi && mo[0] && mo[0] === pkMa, ' m')
+                    + c(money(mo[1]), hi && mo[1] && mo[1] === pkMi, ' m');
+      return out + c(n0(y[0]),    hi && y[0] && y[0] === pkYa)
+                 + c(money(y[1]), hi && y[1] && y[1] === pkYi);
     }
 
     /* The feed sends the hierarchy in its own order, and that order is not
@@ -4507,6 +4522,7 @@ var PROD = {
     function hd(first){
       return '<div class="subrow hd"><div class="sl">' + first + '</div>'
            + '<div class="sc">Apps -W</div><div class="sc">API - W</div>'
+           + (hasM ? '<div class="sc m">Apps -MTD</div><div class="sc m">API - MTD</div>' : '')
            + '<div class="sc">Apps -Y</div><div class="sc">API</div></div>';
     }
     function pills(){
@@ -4554,6 +4570,8 @@ var PROD = {
         html += '<div class="subrow tt"><div class="sl">' + wk.length +
                 ' advisor' + (wk.length===1?'':'s') + ' this week</div>' +
                 cells({ w:[sum(wApps), sum(wApi)],
+                        m:[sum(function(r){ return ((r.m)||[])[0]||0; }),
+                           sum(function(r){ return ((r.m)||[])[1]||0; })],
                         y:[sum(function(r){ return ((r.y)||[])[0]||0; }),
                            sum(function(r){ return ((r.y)||[])[1]||0; })] }, false) + '</div>';
       }
