@@ -1406,14 +1406,26 @@
   .sbUnits{display:grid; grid-template-columns:1fr 1fr; gap:0 1.1em; min-height:0;
     overflow:hidden; flex:1}
   .sbUnit{display:flex; flex-direction:column; min-height:0}
-  .sbUhd{background:linear-gradient(90deg,rgba(245,185,53,.20),rgba(245,185,53,.04));
-    border:1px solid rgba(245,185,53,.34); border-radius:.55em; padding:.28em .6em;
-    margin-bottom:.18em; display:flex; align-items:baseline; gap:.55em}
-  .sbUhd b{font-size:1em; font-weight:800; color:#fff}
-  .sbUhd i{font-style:normal; font-size:.68em; color:var(--gold)}
-  .sbUfig{margin-left:auto; display:flex; gap:.75em}
-  .sbUfig span{font-size:.62em; font-weight:750; color:#fff; font-variant-numeric:tabular-nums}
-  .sbUfig .yy{color:var(--ink-2)}
+  /* The unit row rides the same grid as its advisors, so its figures sit in
+     the columns they belong to instead of floating off to the right. */
+  .sbR.uhd{background:linear-gradient(90deg,rgba(245,185,53,.20),rgba(245,185,53,.04));
+    border:1px solid rgba(245,185,53,.34); border-radius:.5em; padding:.24em .45em;
+    margin-bottom:.1em}
+  .sbR.uhd .l{display:flex; align-items:baseline; gap:.45em; overflow:visible}
+  .sbR.uhd .l b{font-size:1.18em; font-weight:800; color:#fff; letter-spacing:-.01em}
+  .sbR.uhd .l i{font-style:normal; font-size:.82em; color:var(--gold); font-weight:700}
+  .sbR.uhd .c{color:#fff; font-weight:800; font-size:.72em}
+  .sbR.uhd .c.m{color:var(--teal)}
+  /* The grouped header. One label over each pair, rather than the period
+     repeated on all six columns and still not saying which pair is which. */
+  /* Same seven-column grid as every row beneath it — each label simply spans
+     the pair it belongs to. Giving this row a grid of its own looked aligned
+     at one width and drifted at every other. */
+  .sbR.hdg{border-bottom:none; padding-bottom:0; margin-top:.12em}
+  .sbR.hdg .grp{grid-column:span 2; text-align:center; font-size:.5em; font-weight:800; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--ink-3); padding-bottom:.18em;
+    border-bottom:1px solid var(--line-2)}
+  .sbR.hdg .grp.m{color:var(--teal-deep); border-bottom-color:rgba(13,148,136,.5)}
   .sbR{display:grid; grid-template-columns:minmax(0,1fr) repeat(6,minmax(1.6em,2.7em));
     gap:.2em; align-items:center; padding:.02em .3em;
     border-bottom:1px solid rgba(255,255,255,.045)}
@@ -1425,7 +1437,7 @@
   .sbR.hd{border-bottom:1px solid var(--line-2); padding-bottom:.24em; margin-bottom:.12em}
   .sbR.hd .l,.sbR.hd .c{font-size:.5em; font-weight:800; letter-spacing:.06em;
     text-transform:uppercase; color:var(--ink-3)}
-  .sbR.g{background:rgba(255,255,255,.055); border-radius:.35em; margin-top:.16em}
+  .sbR.g{background:rgba(255,255,255,.055); border-radius:.35em; margin-top:.1em}
   .sbR.g .l{font-weight:800; color:#fff; font-size:.78em}
   .sbR.g .c{color:#fff; font-weight:750}
   .sbR.a .l{padding-left:.9em}
@@ -4595,10 +4607,14 @@ var PROD = {
       return out + c(n0(yy(r,0)), hi && yy(r,0)===pkYa) + c(money(yy(r,1)), hi && yy(r,1)===pkYi);
     }
     function head(){
-      return '<div class="sbR hd"><div class="l">Advisor</div>'
-        + '<div class="c">Apps W</div><div class="c">API W</div>'
-        + (hasM ? '<div class="c m">Apps MTD</div><div class="c m">API MTD</div>' : '')
-        + '<div class="c">Apps Y</div><div class="c">API Y</div></div>';
+      return '<div class="sbR hdg"><div class="l"></div>'
+        + '<div class="grp">This week</div>'
+        + (hasM ? '<div class="grp m">Month to date</div>' : '')
+        + '<div class="grp">Year to date</div></div>'
+        + '<div class="sbR hd"><div class="l">Advisor</div>'
+        + '<div class="c">Apps</div><div class="c">API</div>'
+        + (hasM ? '<div class="c m">Apps</div><div class="c m">API</div>' : '')
+        + '<div class="c">Apps</div><div class="c">API</div></div>';
     }
 
     /* Rebuilt into a tree before sorting. Sorting the flat rows in place would
@@ -4626,11 +4642,8 @@ var PROD = {
       var ur = x.row, n = x.mgrs.reduce(function(a,m2){ return a+m2.ags.length; }, 0) + x.loose.length;
       var h = '<div class="sbUnit">';
       if(ur){
-        h += '<div class="sbUhd"><b>' + esc(subUnitName(ur.label)) + '</b><i>' + n + ' advisors</i>'
-           + '<div class="sbUfig"><span>' + (w(ur,0)||'&middot;') + ' apps W</span>'
-           + '<span>' + money(w(ur,1)) + ' API W</span>'
-           + '<span class="yy">' + n0(yy(ur,0)) + ' apps Y</span>'
-           + '<span class="yy">' + money(yy(ur,1)) + ' API Y</span></div></div>';
+        h += '<div class="sbR uhd"><div class="l"><b>' + esc(subUnitName(ur.label))
+           + '</b><i>' + n + ' advisors</i></div>' + cells(ur,false) + '</div>';
       }
       h += head();
       x.mgrs.forEach(function(m2){
