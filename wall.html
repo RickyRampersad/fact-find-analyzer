@@ -1481,6 +1481,11 @@
     border:1px dashed var(--line-2)}
   .sbMb>span{font-size:.66em; color:var(--ink-2); font-weight:800; text-align:center;
     letter-spacing:.04em}
+  /* The case count under each month — submitted apps / settled apps. A month
+     is worth reading two ways: what it was worth, and how many cases it took. */
+  .sbMb>span u{display:block; text-decoration:none; font-size:.82em; font-weight:700;
+    color:var(--ink-3); letter-spacing:0; margin-top:.1em}
+  .sbTot span b.sbApps{color:var(--ink-2); font-weight:800}
   @media (max-width:900px){
     .sbGrid{grid-template-columns:1fr}
     .sbUnits{grid-template-columns:1fr}
@@ -4752,12 +4757,22 @@ var PROD = {
       return Math.round(v).toLocaleString('en-US');
     }
     var MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var sub = {};
-    (S.series||[]).forEach(function(x){ sub[x.m] = (x.nb||0) + (x.inc||0); });
+    var sub = {}, subA = {};
+    (S.series||[]).forEach(function(x){
+      sub[x.m]  = (x.nb||0) + (x.inc||0);
+      /* Apps only travel once sfBoardData_ has the app count on its month
+         queries. Until then the money is drawn and the case count is not
+         claimed — an app column of noughts would say the branch wrote money
+         without writing anything. */
+      if(x.apps !== undefined) subA[x.m] = x.apps||0;
+    });
 
     var stl = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
-    var setBy = {};
-    if(stl && stl.months) stl.months.forEach(function(x){ setBy[MN[x.m-1]] = x.api||0; });
+    var setBy = {}, setA = {};
+    if(stl && stl.months) stl.months.forEach(function(x){
+      setBy[MN[x.m-1]] = x.api||0;
+      setA[MN[x.m-1]]  = x.apps||0;
+    });
     if(!stl && typeof settleFor === 'function' && typeof WHO !== 'undefined' && WHO){
       try { settleFor(WHO); } catch(e){}
     }
@@ -4772,25 +4787,38 @@ var PROD = {
 
     bars.innerHTML = names.map(function(n){
       var sv = sub[n]||0, has = setBy.hasOwnProperty(n), tv = setBy[n]||0;
+      var sa = subA[n], ta = setA[n];
+      var apps = (sa !== undefined || ta !== undefined)
+        ? '<u>' + (sa !== undefined ? sa : '&middot;') + ' / '
+          + (ta !== undefined ? ta : '&middot;') + '</u>' : '';
       return '<div class="sbMb"><div class="sbPair">'
         + '<div class="sbCol"><em>' + (sv?k(sv):'') + '</em>'
         + '<div class="sbBar sub" style="height:' + (sv/max*100).toFixed(1) + '%"></div></div>'
         + '<div class="sbCol"><em class="' + (has?'set':'wait') + '">' + (has?k(tv):'') + '</em>'
         + '<div class="sbBar ' + (has?'set':'wait') + '" style="height:'
         + (has ? (tv/max*100).toFixed(1) : '100') + '%"></div></div>'
-        + '</div><span>' + n + '</span></div>';
+        + '</div><span>' + n + apps + '</span></div>';
     }).join('');
 
     if(tots){
-      var subT = ((S.total||{}).y||[])[1] || 0;
+      var subT = ((S.total||{}).y||[])[1] || 0, subN = ((S.total||{}).y||[])[0] || 0;
       var setT = stl && stl.ytd ? (stl.ytd.api||0) : 0;
+      var setN = stl && stl.ytd ? (stl.ytd.apps||0) : 0;
+      function n(v){ return Math.round(v).toLocaleString('en-US'); }
       tots.innerHTML =
-        '<div class="sbTot"><i class="sbSw sub"></i><b>TT$' + Math.round(subT).toLocaleString('en-US')
-          + '</b><span>submitted, year to date</span></div>'
-        + (setT ? '<div class="sbTot"><i class="sbSw set"></i><b>TT$'
-            + Math.round(setT).toLocaleString('en-US') + '</b><span>settled, year to date</span></div>'
-          + '<div class="sbTot gap"><b>TT$' + Math.round(subT-setT).toLocaleString('en-US')
-            + '</b><span>written but not yet settled</span></div>'
+        '<div class="sbTot"><i class="sbSw sub"></i><b>TT$' + n(subT) + '</b>'
+          + '<span>submitted &middot; <b class="sbApps">' + n(subN) + '</b> apps</span></div>'
+        + (setT ? '<div class="sbTot"><i class="sbSw set"></i><b>TT$' + n(setT) + '</b>'
+            + '<span>settled &middot; <b class="sbApps">' + n(setN) + '</b> apps</span></div>'
+          /* Called this "written but not yet settled" at first, and that is not
+             what it is. The two figures count different populations: this
+             year's submissions against this year's settlements, and a case
+             settling in March may well have been written in November. The
+             settled app count already runs ahead of the submitted one — 742
+             against 688 — which could not happen if one were a subset of the
+             other. So the line says what it is and claims nothing more. */
+          + '<div class="sbTot gap"><b>TT$' + n(subT-setT) + '</b>'
+            + '<span>submitted less settled &middot; not a pipeline figure</span></div>'
           : '<div class="sbTot"><span>settled fills in from the settlement board</span></div>');
     }
   }
