@@ -1418,7 +1418,7 @@
   /* The manager row — the heading a branch actually reads. */
   .sbR.mhd{background:linear-gradient(90deg,rgba(245,185,53,.22),rgba(245,185,53,.04));
     border:1px solid rgba(245,185,53,.36); border-radius:.5em; padding:.26em .45em;
-    margin-top:.34em; border-bottom:none}
+    margin-top:.26em; border-bottom:none}
   .sbR.mhd .l{display:flex; align-items:baseline; gap:.45em; overflow:visible}
   .sbR.mhd .l b{font-size:1.1em; font-weight:800; color:#fff; letter-spacing:-.01em}
   .sbR.mhd .l i{font-style:normal; font-size:.78em; color:var(--gold); font-weight:800;
@@ -1427,7 +1427,7 @@
   .sbR.mhd .c.m{color:var(--teal)}
   /* How much of the branch a team carries, said as a bar rather than a sum
      somebody has to do in their head. */
-  .sbShare{position:relative; height:.72em; margin:.08em .1em .1em; border-radius:.42em;
+  .sbShare{position:relative; height:.6em; margin:.06em .1em .08em; border-radius:.42em;
     background:var(--panel-2); overflow:hidden}
   .sbShareFill{height:100%; border-radius:.42em;
     background:linear-gradient(90deg,rgba(245,185,53,.55),rgba(245,185,53,.9));
@@ -1455,8 +1455,8 @@
     text-transform:uppercase; color:var(--ink-3); padding-bottom:.18em;
     border-bottom:1px solid var(--line-2)}
   .sbR.hdg .grp.m{color:var(--teal-deep); border-bottom-color:rgba(13,148,136,.5)}
-  .sbR{display:grid; grid-template-columns:minmax(0,1fr) repeat(6,minmax(1.6em,2.7em));
-    gap:.2em; align-items:center; padding:.02em .3em;
+  .sbR{display:grid; grid-template-columns:minmax(0,1fr) repeat(6,minmax(1.5em,2.5em)) minmax(3.1em,3.6em);
+    gap:.2em; align-items:center; padding:0 .3em;
     border-bottom:1px solid rgba(255,255,255,.045)}
   .sbR .l{font-size:.655em; font-weight:600; white-space:nowrap; overflow:hidden;
     text-overflow:ellipsis; color:var(--ink-2)}
@@ -1466,6 +1466,18 @@
   .sbR.hd{border-bottom:1px solid var(--line-2); padding-bottom:.24em; margin-bottom:.12em}
   .sbR.hd .l,.sbR.hd .c{font-size:.5em; font-weight:800; letter-spacing:.06em;
     text-transform:uppercase; color:var(--ink-3)}
+
+  /* Per cent of quota. A triangle so it reads from across a room before the
+     number does — solid up for at or over, hollow up for closing, down for
+     behind. */
+  .sbR .c.q{font-weight:800; min-width:3.1em}
+  .sbR .c.q i{font-style:normal; margin-right:.22em; font-size:.9em}
+  .sbR .c.q.over{color:#34D399}
+  .sbR .c.q.near{color:var(--gold)}
+  .sbR .c.q.mid{color:var(--amber)}
+  .sbR .c.q.under{color:var(--ink-3)}
+  .sbR.mhd .c.q.over,.sbR.br .c.q.over{color:#6EE7B7}
+  .sbR.hdg .grp.q{grid-column:span 1; color:var(--ink-3)}
   .sbR.g{background:rgba(255,255,255,.055); border-radius:.35em; margin-top:.1em}
   .sbR.g .l{font-weight:800; color:#fff; font-size:.78em}
   .sbR.g .c{color:#fff; font-weight:750}
@@ -1521,7 +1533,7 @@
   .sbSw.sub{background:linear-gradient(180deg,#A78BFA,#7C5CE0)}
   .sbSw.set{background:linear-gradient(180deg,var(--teal),var(--teal-deep))}
   .sbTot.gap b{color:var(--gold)}
-  .sbBars{display:flex; gap:.8em; align-items:flex-end; height:3.3em; margin-top:.06em}
+  .sbBars{display:flex; gap:.8em; align-items:flex-end; height:2.6em; margin-top:.04em}
   .sbMb{flex:1; display:flex; flex-direction:column; justify-content:flex-end; gap:.2em; height:100%}
   .sbPair{display:flex; gap:.22em; align-items:flex-end; height:100%}
   .sbCol{flex:1; display:flex; flex-direction:column; justify-content:flex-end;
@@ -4668,6 +4680,25 @@ var PROD = {
     var pkWa=peak(function(r){return w(r,0);}), pkWi=peak(function(r){return w(r,1);}),
         pkYa=peak(function(r){return yy(r,0);}), pkYi=peak(function(r){return yy(r,1);});
 
+    /* WHAT SOMEBODY HAS WRITTEN AGAINST WHAT THEY ARE ASKED TO WRITE.
+       268k means nothing on its own: it is 89% of a year-three quota and 65%
+       of a core one, and those are two different conversations to have with
+       the same person. The quota comes from the year band the settled report
+       has always carried; rrbAgentQuotas turns it into a figure per advisor. */
+    var QUOTA = (typeof STL !== 'undefined' && STL.data && STL.data.quotas) || {};
+    function quotaFor(label){
+      var m2 = String(label||'').toUpperCase().replace(/[^A-Z0-9]/g,'').match(/^[AU]?0*(\d+)/);
+      if(!m2) return 0;
+      return QUOTA['A' + ('00000' + m2[1]).slice(-5)] || 0;
+    }
+    function pctCell(api, quota){
+      if(!quota) return '<div class="c q"></div>';
+      var pct = api / quota * 100;
+      var cls = pct >= 100 ? ' over' : pct >= 75 ? ' near' : pct >= 50 ? ' mid' : ' under';
+      var mark = pct >= 100 ? '\u25B2' : pct >= 75 ? '\u25B3' : '\u25BC';
+      return '<div class="c q' + cls + '"><i>' + mark + '</i>' + Math.round(pct) + '%</div>';
+    }
+
     function cells(r, hi){
       function c(txt, on, cls){
         return '<div class="c'+(cls||'')+(on?' hi':'')+'">'+txt+'</div>';
@@ -4675,17 +4706,19 @@ var PROD = {
       var out = c(w(r,0)||'&middot;', hi && w(r,0) && w(r,0)===pkWa)
               + c(w(r,1)?money(w(r,1)):'&middot;', hi && w(r,1) && w(r,1)===pkWi);
       if(hasM) out += c(mo(r,0)||'&middot;', false, ' m') + c(mo(r,1)?money(mo(r,1)):'&middot;', false, ' m');
-      return out + c(n0(yy(r,0)), hi && yy(r,0)===pkYa) + c(money(yy(r,1)), hi && yy(r,1)===pkYi);
+      out += c(n0(yy(r,0)), hi && yy(r,0)===pkYa) + c(money(yy(r,1)), hi && yy(r,1)===pkYi);
+      return out + pctCell(yy(r,1), r._quota || 0);
     }
     function head(){
       return '<div class="sbR hdg"><div class="l"></div>'
         + '<div class="grp">This week</div>'
         + (hasM ? '<div class="grp m">Month to date</div>' : '')
-        + '<div class="grp">Year to date</div></div>'
+        + '<div class="grp">Year to date</div><div class="grp q">Quota</div></div>'
         + '<div class="sbR hd"><div class="l">Advisor</div>'
         + '<div class="c">Apps</div><div class="c">API</div>'
         + (hasM ? '<div class="c m">Apps</div><div class="c m">API</div>' : '')
-        + '<div class="c">Apps</div><div class="c">API</div></div>';
+        + '<div class="c">Apps</div><div class="c">API</div>'
+        + '<div class="c q">% quota</div></div>';
     }
 
     /* Rebuilt into a tree before sorting. Sorting the flat rows in place would
@@ -4741,6 +4774,9 @@ var PROD = {
         var share = Math.max(1, api/branchApi*100);
         var h = '';
         if(mr){
+          /* A team's quota is the sum of its people's — the manager is measured
+             on what the team is asked to write, not on a figure of their own. */
+          mr._quota = tm.ags.reduce(function(a2,c2){ return a2 + quotaFor(c2.label); }, 0);
           h += '<div class="sbR mhd"><div class="l"><b>' + esc(mr.label) + '</b>'
              + '<i>' + n + '</i></div>' + cells(mr,false) + '</div>'
              + '<div class="sbShare"><div class="sbShareFill" style="width:' + share.toFixed(1) + '%"></div>'
@@ -4748,6 +4784,7 @@ var PROD = {
         }
         tm.ags.forEach(function(a){
           var hot = (w(a,0)||w(a,1)) ? ' hot' : '';
+          a._quota = quotaFor(a.label);
           h += '<div class="sbR a' + hot + '"><div class="l">' + esc(subShort(a.label)) + '</div>'
              + cells(a,true) + '</div>';
         });
@@ -4757,7 +4794,10 @@ var PROD = {
 
     var t = S.total || {};
     var bt = q('sbBranch');
-    if(bt) bt.innerHTML = '<div class="sbR br"><div class="l">Branch total</div>' + cells(t,false) + '</div>';
+    if(bt){
+      t._quota = Object.keys(QUOTA).reduce(function(a2,k2){ return a2 + (QUOTA[k2]||0); }, 0);
+      bt.innerHTML = '<div class="sbR br"><div class="l">Branch total</div>' + cells(t,false) + '</div>';
+    }
 
     /* This week, biggest first. An advisor with no new application but an
        increase still submitted something, so the test is either figure. */
