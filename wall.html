@@ -587,6 +587,18 @@
   .pdrow:hover .nm{color:var(--teal)}
   .pdnote{font-size:.66em; color:var(--ink-3); font-weight:650; letter-spacing:.03em;
           padding-top:.5em; text-align:center}
+  /* The confidentiality marking is a marking, not a headline, and a whole
+     row of the panel to carry it is a row the roster does not get. It stays
+     on the slide and stays readable — it just stops taking space from the
+     thing people came to look at. */
+  #p12{position:relative}
+  /* The marking rides in the title row, right of the headline and left of
+     the tag. It is a marking, not a message: it has to be on the screen and
+     it does not have to be a line of its own — that line was the roster's
+     last two advisors. */
+  .pdmark{margin-left:auto; margin-right:.7em; text-align:right;
+    font-size:.5em; font-weight:700; letter-spacing:.02em; color:var(--ink-3);
+    line-height:1.25; max-width:34em}
   @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -1403,7 +1415,7 @@
      their manager, because the break happens on the unit and not on a count
      of rows. Everything is em-based so it holds from a phone to the wall. */
   #p12{display:flex; flex-direction:column; gap:.7em; overflow:hidden}
-  .sbGrid{flex:1 1 auto; display:grid; grid-template-columns:1fr 21em; gap:.7em;
+  .sbGrid{flex:1 1 auto; display:grid; grid-template-columns:1fr 19em; gap:.7em;
     min-height:0; overflow:hidden}
   .sbCard{background:var(--panel); border:1px solid var(--line); border-radius:.85em;
     padding:.55em .7em; display:flex; flex-direction:column; min-height:0; overflow:hidden}
@@ -1414,6 +1426,10 @@
   .sbUnits{display:grid; grid-template-columns:1fr 1fr; gap:0 1.1em; min-height:0;
     overflow-y:auto; overflow-x:hidden; flex:1; scrollbar-width:thin}
   .sbUnit{display:flex; flex-direction:column; min-height:0}
+  /* The last row in a column has nothing under it to be divided from, and
+     that one pixel was the difference between the whole roster fitting on a
+     1280 laptop and the last advisor falling off the bottom. */
+  .sbUnit .sbR:last-child{border-bottom:none}
 
   /* The manager row — the heading a branch actually reads. */
   .sbR.mhd{background:linear-gradient(90deg,rgba(245,185,53,.22),rgba(245,185,53,.04));
@@ -1455,7 +1471,11 @@
     text-transform:uppercase; color:var(--ink-3); padding-bottom:.18em;
     border-bottom:1px solid var(--line-2)}
   .sbR.hdg .grp.m{color:var(--teal-deep); border-bottom-color:rgba(13,148,136,.5)}
-  .sbR{display:grid; grid-template-columns:minmax(0,1fr) repeat(6,minmax(1.5em,2.5em)) minmax(3.1em,3.6em);
+  /* The name column has a floor. Without one the seven numeric columns took
+     the whole row between them and left it 23px wide, so on a 1280 laptop
+     every advisor on the board read as three letters and an ellipsis. The
+     numbers give way to the name now, not the other way round. */
+  .sbR{display:grid; grid-template-columns:minmax(6.5em,1fr) repeat(2,minmax(1.4em,2.15em)) repeat(2,minmax(1.4em,2.15em)) minmax(2em,2.7em) repeat(3,minmax(1.6em,1.95em));
     gap:.2em; align-items:center; padding:0 .3em;
     border-bottom:1px solid rgba(255,255,255,.045)}
   .sbR .l{font-size:.655em; font-weight:600; white-space:nowrap; overflow:hidden;
@@ -1470,6 +1490,107 @@
   /* Per cent of quota. A triangle so it reads from across a room before the
      number does — solid up for at or over, hollow up for closing, down for
      behind. */
+
+
+  /* Which quota an advisor is measured against. 40% of a Core 412,500 and
+     40% of a Year 1 150,000 are not the same performance, and without the
+     band on the row the percentage invites the wrong comparison. */
+  .sbR.a .l{display:flex; align-items:baseline; gap:.38em; min-width:0}
+  .sbR.a .l>span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+  /* The team row carries a headcount after the name, and it was inside the
+     same box doing the measuring, so the name lost the characters the count
+     needed. The count is fixed width; the name takes what is left. */
+  .sbR.mhd .l{display:flex; align-items:baseline; gap:.4em; min-width:0}
+  .sbR.mhd .l b{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
+  .sbR.mhd .l i{flex:none}
+  .sbR.a .l u{flex:none; padding:0 .3em; border-radius:.28em;
+    background:rgba(148,163,184,.16); color:var(--ink-3); font-size:.56em;
+    font-weight:800; letter-spacing:.02em; text-decoration:none;
+    white-space:nowrap}
+  /* Below a laptop the band is the first thing to go: the name is what
+     somebody is looking for, and a truncated name to make room for a tag
+     is the wrong trade. */
+  @media (max-width:1500px){ .sbR.a .l u{display:none} }
+  /* Under a full wall the panel has to give the roster about two rows back,
+     or the last of Akaash's advisors falls off the bottom — which is the one
+     thing this panel must not do. It comes out of padding and the share bar,
+     not out of anybody's name. */
+  @media (max-height:1000px){
+    .sbR .l{font-size:.6em}
+    .sbR .c{font-size:.54em}
+    .sbR.mhd{padding:.12em .4em}
+    .sbR.mhd .l{font-size:.56em}
+    .sbShare{height:.44em; margin:.02em .1em .04em}
+    .sbShare span{font-size:.5em}
+    .sbChart{padding:.26em .9em .2em}
+    .sbCard{padding:.4em .58em}
+    .sbCap{margin-bottom:.3em}
+    .sbP{padding:.2em .45em}
+    /* The block's meta line wraps to two rows once it carries settled,
+       persistency and cover, and two rows times five names is the roster's
+       last team. Below a full wall it stays on one line and clips. */
+    .sbP .pmeta{flex-wrap:nowrap; overflow:hidden; white-space:nowrap}
+    .sbBars{height:2em}
+    .sbTots{margin-bottom:.1em}
+    #p12{gap:.55em}
+  }
+  /* A 1280 x 800 laptop is the tightest screen anybody runs this on at a
+     desk, and it is 32px — two rows — short. The chart and the board give
+     them up; the roster keeps every name. */
+  /* Under 1500px the quota amount steps out and the percentage carries the
+     meaning on its own — it is the same figure said twice, and the name is
+     worth more than the repetition. Settled stays, because that is what the
+     percentage is computed on and somebody will want to see it. */
+  @media (max-width:900px){ .sbR.hd .c{font-size:.46em; letter-spacing:0} }
+  /* Under 1500px the five-year column steps out. Two and three year say
+     what a branch acts on this quarter; five year is the one to lose when
+     the alternative is squeezing the names again. */
+  @media (max-width:1500px){
+    .sbR .c.pc5, .sbR .pc5{display:none}
+    .sbR{grid-template-columns:minmax(6.5em,1fr) repeat(2,minmax(1.4em,2.15em)) repeat(2,minmax(1.4em,2.15em)) minmax(2em,2.7em) repeat(2,minmax(1.85em,2.1em))}
+    .sbR.hdg .grp.pc{grid-column:span 2}
+  }
+  @media (max-height:860px){
+    .sbR .l{font-size:.57em}
+    .sbR .c{font-size:.52em}
+    .sbR.mhd{padding:.09em .35em}
+    .sbShare{height:.36em; margin:.01em .1em .03em}
+    .sbR.mhd{padding:.06em .35em}
+    .sbBars{height:1.6em}
+    .sbTots{margin-bottom:.06em; gap:1.1em}
+    .sbP{padding:.14em .4em}
+    .sbP .pbar{height:.22em; margin:.12em 0 .1em}
+    .sbCard{padding:.32em .48em}
+    .sbGrid{gap:.45em}
+    #p12{gap:.42em}
+    .sbSec{margin-top:.45em; padding-top:.4em}
+    #p12 .tkr{height:1.5em}
+    .sbR .l{font-size:.54em}
+    .sbR .c{font-size:.47em}
+    .sbR .c.pc{font-size:.43em}
+    .sbR.mhd .l{font-size:.52em}
+    .sbCap{margin-bottom:.24em; font-size:.54em}
+    .sbMixRow{margin-top:.2em}
+    .sbMixBar{height:.5em}
+    .sbP .pmeta{font-size:.5em; gap:.45em}
+    .sbP .pw i{font-size:.55em}
+  }
+  .sbR .c.s{color:var(--teal)}
+  .sbR .c.pc{position:static; width:auto; height:auto; border-radius:0;
+    animation:none; font-variant-numeric:tabular-nums; font-weight:800}
+  .sbR .c.pc.pOk{color:#34D399}
+  .sbR .c.pc.pMid{color:var(--amber)}
+  .sbR .c.pc.pLow{color:var(--red)}
+  .sbR.hd .c.pc{color:var(--ink-3); font-weight:700}
+  .sbR.hdg .grp.pc{grid-column:span 3; color:#8FD8C4;
+    border-bottom-color:rgba(52,211,153,.45)}
+  .sbR.hdg .grp.s1{grid-column:span 1; color:var(--teal-deep);
+    border-bottom-color:rgba(13,148,136,.5)}
+  .sbR.mhd .c.s,.sbR.br .c.s{color:#6EE7B7}
+  .sbR.hdg .grp.s{grid-column:span 3; color:var(--teal-deep);
+    border-bottom-color:rgba(13,148,136,.5)}
+  #t_p12 .qUp{color:#34D399} #t_p12 .qDn{color:var(--red)}
+  #t_p12 .tSub{font-size:.62em; color:var(--ink-3); font-weight:700}
   .sbR .c.q{font-weight:800; min-width:3.1em}
   .sbR .c.q i{font-style:normal; margin-right:.22em; font-size:.9em}
   .sbR .c.q.over{color:#34D399}
@@ -1515,7 +1636,35 @@
   .sbP .pmeta .cov{color:var(--teal)}
   .sbP.win{box-shadow:0 0 0 1px rgba(245,185,53,.25), 0 .5em 1.6em rgba(245,185,53,.13)}
   .sbP.win .pfill{background:linear-gradient(90deg,var(--gold),#FFE9A8)}
+  /* The recognition board and the branch line each give a little back, so
+     that every one of Akaash's advisors fits in the column beside them
+     instead of scrolling out of sight. Nothing is removed — the top five
+     still read as the top five, they just stop being the tallest thing on
+     the slide. */
+  .sbP{padding:.26em .5em}
+  .sbP .med{font-size:1.05em}
+  .sbP .pw b{font-size:.76em}
+  .sbP .pw i{font-size:.6em}
+  .sbP .pf b{font-size:.86em}
+  .sbP.win .pw b{font-size:.86em} .sbP.win .pf b{font-size:.98em}
+  .sbP .pbar{height:.26em; margin:.16em 0 .14em}
+  .sbP .pmeta{font-size:.54em; gap:.55em; flex-wrap:wrap; row-gap:.1em}
+  .sbP .pmeta .set{color:var(--teal)}
+  .sbP .pmeta .pOk{color:#34D399}
+  .sbP .pmeta .pMid{color:var(--amber)}
+  .sbP .pmeta .pLow{color:var(--red)}
+  .sbP.win{margin-bottom:.18em}
+  .sbR.br{margin-top:.3em; padding:.26em .3em}
+  .sbR.br .l{font-size:.74em}
+  .sbR.br .c{font-size:.76em}
+
   .sbSec{margin-top:.7em; padding-top:.6em; border-top:1px solid var(--line)}
+  /* The board took its natural height and the product mix underneath it fell
+     off the bottom of the card — the heading showed and the bars did not,
+     which reads as a branch that sold nothing. The board yields first now,
+     and the mix keeps the space it needs. */
+  #sbWeek{flex:0 1 auto; min-height:0; overflow:hidden}
+  .sbGrid .sbCard .sbSec{flex:none}
   .sbMixRow{display:grid; grid-template-columns:7em 1fr auto; gap:.5em; align-items:center;
     margin-top:.3em}
   .sbMixRow span{font-size:.72em; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis;
@@ -1561,6 +1710,10 @@
   .sbBar.wait>b{color:var(--ink-3); text-shadow:none}
   .sbKey{display:flex; gap:1em; align-items:center; margin-left:auto; font-size:.6em;
     color:var(--ink-3); font-weight:700}
+  /* One line, always. The key gains a word when a series is missing from the
+     feed, and on the wall that wrapped it onto a second row — which came
+     straight out of the roster's height and pushed the last advisor off. */
+  .sbKey{flex-wrap:nowrap; overflow:hidden; white-space:nowrap; min-width:0}
   .sbKey span{display:flex; align-items:center; gap:.35em}
   .sbKey i{width:.62em; height:.62em; border-radius:.16em; display:inline-block}
   .sbKey i.nb{background:linear-gradient(180deg,#8B6BE8,#6D48D7)}
@@ -1876,14 +2029,16 @@
 
   <!-- 13 · PRODUCTION SUBMITTED — head office's own report, live -->
   <section class="panel" id="p12">
-    <div class="ptitle"><h1 id="t_p12"></h1><span class="tag">Submitted</span></div>
+    <div class="ptitle"><h1 id="t_p12"></h1>
+      <span class="pdmark" id="pdRosterNote"></span>
+      <span class="tag">Submitted</span></div>
     <!-- One column per unit, this week's board beside it, and the month chart
          across the foot. The split used to be by row count, which ran a
          manager's advisors past the halfway mark and stranded them under the
          next unit's heading — they read as that unit's people. -->
     <div class="sbGrid">
       <div class="sbCard">
-        <div class="sbCap">By unit &mdash; every manager and advisor under their own unit<em>largest first</em></div>
+        <div class="sbCap">By unit &mdash; API in TT$<em id="sbRosterCap">gold marks the branch's best in each column</em></div>
         <div class="sbUnits" id="pdRoster"></div>
         <div id="sbBranch"></div>
       </div>
@@ -1908,7 +2063,6 @@
          back rather than anything new. One rail, not the two there were: the
          board underneath already says everything twice. -->
     <div class="tkr" id="tkrApi"><div class="tkrun"></div></div>
-    <div class="pdnote" id="pdRosterNote"></div>
   </section>
 
   <!-- 14 · THE ADVISORS — what each one writes, and when -->
@@ -2674,9 +2828,13 @@ function showPanel(i){
   var nm=$('slideNo');
   if(nm){
     var lbl=panelName(panel);
-    nm.innerHTML='<b style="color:var(--gold)">'+('0'+(panel+1)).slice(-2)+'</b>'+
-                 '<span style="color:var(--ink-3)"> / '+PANELS+'</span>'+
-                 (lbl?'<span style="margin-left:.5em;color:#fff">'+lbl+'</span>':'');
+    /* "13 / 15 Submitted" led with a fraction nobody needs and buried the
+       one word that says what is on the screen. The panel and its name, in
+       that order; the count of panels is what the dots are for. */
+    nm.innerHTML='<b style="color:var(--gold)">'+(panel+1)+'</b>'+
+                 (lbl?'<span style="margin-left:.4em;color:#fff">&middot; '+lbl+'</span>':'')+
+                 '<span style="margin-left:.45em;color:var(--ink-3);font-weight:700;'+
+                 'font-size:.82em">of '+PANELS+'</span>';
     }
     var dd=document.getElementById('pDots');
     if(dd){
@@ -2736,9 +2894,9 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
      The label and the dots answer the same question - which panel is this,
      and how do I get to another - so they belong together and in the one
      place the eye already goes. */
-  no.style.cssText='padding:.34em .8em;border-radius:.5em;'+
+  no.style.cssText='padding:.3em .6em;border-radius:.5em;margin-right:.15em;'+
     'background:rgba(6,14,20,.94);border:1px solid var(--line-2);'+
-    'font-size:13px;font-weight:800;white-space:nowrap;text-align:center';
+    'font-size:12px;font-weight:800;white-space:nowrap;text-align:center';
 
   /* DOTS, NOT ARROWS.
      An arrow tells you there is a previous panel. Sixteen dots tell you
@@ -2767,12 +2925,16 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
   /* One centred rail: the slide label above, the dots under it. */
   var rail=document.createElement('div');
   rail.id='pRail';
-  rail.style.cssText='position:fixed;left:50%;bottom:9px;transform:translateX(-50%);'
+  rail.style.cssText='position:fixed;left:50%;bottom:8px;transform:translateX(-50%);'
     +'z-index:61;display:flex;flex-direction:column;align-items:center;gap:.3em;'
     +'opacity:.55;transition:opacity .2s;pointer-events:auto';
   rail.onmouseenter=function(){ rail.style.opacity='1'; };
   rail.onmouseleave=function(){ rail.style.opacity='.55'; };
-  rail.appendChild(no);
+  /* The slide label goes over beside Hold rather than sitting on its own
+     row above the dots. Stacked, the rail cost the panel two rows of the
+     screen to say one thing; on the button row it costs none, and it is
+     next to the other controls anybody reaches for. */
+  bar.insertBefore(no, bar.firstChild);
   rail.appendChild(dots);
   document.body.appendChild(rail);
 
@@ -4657,13 +4819,22 @@ var PROD = {
   function paintSubmitted(S){
     var box = q('pdRoster'); if(!box) return false;
     function n0(v){ return (v===null||v===undefined||v==='') ? '' : Math.round(v).toLocaleString('en-US'); }
+    /* One decimal on the millions, not two. 2.77M against 2.8M is four
+       thousand dollars of precision nobody reads from across a room, and it
+       was the difference between a team's year fitting its column and being
+       cut to "2.7". The exact figure is in the spreadsheet. */
     function k(v){
       v = Number(v)||0;
-      if(Math.abs(v) >= 1e6) return (v/1e6).toFixed(2) + 'M';
+      if(Math.abs(v) >= 1e6) return (v/1e6).toFixed(1) + 'M';
       if(Math.abs(v) >= 1000) return Math.round(v/1000).toLocaleString('en-US') + 'k';
       return Math.round(v).toLocaleString('en-US');
     }
     function money(v){ return (v===null||v===undefined||v==='') ? '' : 'TT$' + k(v); }
+    /* In the columns the currency is repeated forty times and clips the very
+       figures it prefixes — TT$2.77M wanted 74px in a 54px column, so the
+       biggest producers on the board were the ones showing "TT$2.7". The
+       headline says TT$ once; the grid just carries the number. */
+    function col(v){ return (v===null||v===undefined||v==='') ? '' : k(v); }
     function full(v){ return 'TT$' + Math.round(Number(v)||0).toLocaleString('en-US'); }
     function w(r,i){ return ((r&&r.w)||[])[i]||0; }
     function mo(r,i){ return ((r&&r.m)||[])[i]||0; }
@@ -4675,56 +4846,180 @@ var PROD = {
        as a month in which the branch wrote nothing. */
     var hasM = !!((S.total && S.total.m) || S.rows.some(function(r){ return r.m; }));
 
+    /* ONE GOLD CELL PER COLUMN, and the same rule in every unit.
+       This used to gild every cell that equalled the column's highest, which
+       reads fine on year-to-date API where nobody ties, and falls apart on
+       week apps where the top is 1 or 2 and six people are on it. Half the
+       board lit up, and a person on one application looked like the week's
+       leader next to somebody on eleven thousand of API.
+
+       So the winner is a row, not a value: the single best in the column,
+       ties broken on that advisor's year API and then on their name so the
+       answer is the same on every screen and does not move between paints.
+       Four winners on the panel — most apps this week, most API this week,
+       most apps this year, most API this year. Nothing else is gold. */
     var ag = S.rows.filter(function(r){ return r.lvl === 2; });
-    function peak(pick){ var x=0; ag.forEach(function(r){ var v=pick(r); if(v>x) x=v; }); return x; }
-    var pkWa=peak(function(r){return w(r,0);}), pkWi=peak(function(r){return w(r,1);}),
-        pkYa=peak(function(r){return yy(r,0);}), pkYi=peak(function(r){return yy(r,1);});
+    function best(pick){
+      var top = null, tv = 0;
+      ag.forEach(function(r){
+        var v = pick(r);
+        if(!v || v <= 0) return;
+        if(v > tv) { tv = v; top = r; return; }
+        if(v === tv && top){
+          var a2 = yy(r,1), b2 = yy(top,1);
+          if(a2 > b2 || (a2 === b2 && String(r.label) < String(top.label))) top = r;
+        }
+      });
+      return top;
+    }
+    var bWa=best(function(r){return w(r,0);}),  bWi=best(function(r){return w(r,1);}),
+        bYa=best(function(r){return yy(r,0);}), bYi=best(function(r){return yy(r,1);});
 
     /* WHAT SOMEBODY HAS WRITTEN AGAINST WHAT THEY ARE ASKED TO WRITE.
        268k means nothing on its own: it is 89% of a year-three quota and 65%
        of a core one, and those are two different conversations to have with
        the same person. The quota comes from the year band the settled report
        has always carried; rrbAgentQuotas turns it into a figure per advisor. */
+    /* Quota and settled both come from the company's own Agent Level Details
+       report, so an advisor reads the same percentage here as on the report
+       they get sent. That is also why the settled figure in this column is
+       about 8% under the settlement tab beside it: the quota is measured
+       without annuity and without health, and the tab counts everything.
+
+       THE QUOTA IS MEASURED ON WHAT SETTLED, not on what was submitted. A
+       case written in August and still in underwriting has not been achieved
+       yet, and putting it against quota tells an advisor they are further
+       along than they are. */
     var QUOTA = (typeof STL !== 'undefined' && STL.data && STL.data.quotas) || {};
-    function quotaFor(label){
+    var STLM = {};
+    if(typeof STL !== 'undefined' && STL.data && STL.data.matrix)
+      STL.data.matrix.forEach(function(x){ STLM[x.code] = x.api||0; });
+    function codeOf(label){
       var m2 = String(label||'').toUpperCase().replace(/[^A-Z0-9]/g,'').match(/^[AU]?0*(\d+)/);
-      if(!m2) return 0;
-      return QUOTA['A' + ('00000' + m2[1]).slice(-5)] || 0;
+      return m2 ? ('A' + ('00000' + m2[1]).slice(-5)) : '';
     }
-    function pctCell(api, quota){
+    /* Match on the agent number, and fall back to the name. The quota export
+       carries names, and the agent number for it had to be joined in from a
+       second report — the branch manager's own row came back blank on the
+       first pass because that join had nothing for him. A name match costs
+       nothing and stops the next missing number from quietly emptying a row
+       instead of saying so. */
+    var QBYNAME = {};
+    Object.keys(QUOTA).forEach(function(c2){
+      var nm = String(QUOTA[c2].name||'').toUpperCase().replace(/[^A-Z]/g,'');
+      if(nm) QBYNAME[nm] = QUOTA[c2];
+    });
+    function qrow(label){
+      var byCode = QUOTA[codeOf(label)];
+      if(byCode) return byCode;
+      var nm = String(label||'').replace(/^[A-Z]?\d+\s*-\s*/i,'')
+                 .toUpperCase().replace(/[^A-Z]/g,'');
+      return (nm && QBYNAME[nm]) || null;
+    }
+    function quotaFor(label){ var x = qrow(label); return x ? (x.quota||0) : 0; }
+    /* No row in the report means no quota was assigned — somebody who left,
+       or joined after it was drawn. Show what they settled and leave the
+       quota blank; a red triangle against a person with no quota is a lie. */
+    function settledFor(label){
+      var x = qrow(label);
+      return x ? (x.settled||0) : (STLM[codeOf(label)]||0);
+    }
+    function typeFor(label){ var x = qrow(label); return x ? (x.type||'') : ''; }
+    /* "Part time" spelled out cost eight characters of somebody's name, and a
+       name cut to "Joy Barbara …" is worse than a band written short. The
+       full wording is on the tag's title for anyone who hovers. */
+    function bandShort(t){
+      var m2 = String(t||'').match(/(\d)/);
+      if(m2) return 'Y' + m2[1];
+      if(/part/i.test(t)) return 'PT';
+      return t;
+    }
+    /* THE QUOTA COLUMNS ARE OFF THE PANEL FOR NOW, at the branch manager's
+       word, because they read blank on the wall — the quota table ships in
+       the settlement build and that build is not deployed yet, so the feed
+       still answers with the old empty shape. quotaFor and the table behind
+       it stay exactly where they are; putting the two columns back is
+       uncommenting pctCell into cells(). Persistency has the space in the
+       meantime, and it is the better use of it: it says whether what was
+       written stayed on the books. */
+    function quotaPct(api, quota){
       if(!quota) return '<div class="c q"></div>';
       var pct = api / quota * 100;
       var cls = pct >= 100 ? ' over' : pct >= 75 ? ' near' : pct >= 50 ? ' mid' : ' under';
       var mark = pct >= 100 ? '\u25B2' : pct >= 75 ? '\u25B3' : '\u25BC';
       return '<div class="c q' + cls + '"><i>' + mark + '</i>' + Math.round(pct) + '%</div>';
     }
+    /* Life business is only sold once it stays sold. Under 80% is where a
+       branch starts losing what it wrote, so the colours break there and
+       again at 90 rather than at round numbers that mean nothing. */
+    /* The class is pc, not p. The wall already has a .p — the drifting
+       particles behind the panels — at position:absolute and .7em square,
+       and every persistency cell picked it up and collapsed to eight pixels
+       wide inside a fifty pixel column. One letter, and the numbers vanish. */
+    function persCell(v, cls2){
+      if(v === null || v === undefined || v === '') return '<div class="c pc"></div>';
+      var n2 = Number(v);
+      var c2 = n2 >= 90 ? ' pOk' : n2 >= 80 ? ' pMid' : ' pLow';
+      return '<div class="c pc' + c2 + (cls2||'') + '">' + Math.round(n2) + '</div>';
+    }
+    /* A team's persistency is its people's, weighted by what each settled —
+       an advisor on 700k of business moves the branch's book, one on 10k
+       does not, and a plain average would let the small book hide the big. */
+    function persOf(rows2, key){
+      var num = 0, den = 0;
+      rows2.forEach(function(r2){
+        var x = qrow(r2.label); if(!x || x[key] === undefined || x[key] === null) return;
+        var wgt = (x.settled || 0) || 1;
+        num += x[key] * wgt; den += wgt;
+      });
+      return den ? num / den : null;
+    }
 
     function cells(r, hi){
       function c(txt, on, cls){
         return '<div class="c'+(cls||'')+(on?' hi':'')+'">'+txt+'</div>';
       }
-      var out = c(w(r,0)||'&middot;', hi && w(r,0) && w(r,0)===pkWa)
-              + c(w(r,1)?money(w(r,1)):'&middot;', hi && w(r,1) && w(r,1)===pkWi);
-      if(hasM) out += c(mo(r,0)||'&middot;', false, ' m') + c(mo(r,1)?money(mo(r,1)):'&middot;', false, ' m');
-      out += c(n0(yy(r,0)), hi && yy(r,0)===pkYa) + c(money(yy(r,1)), hi && yy(r,1)===pkYi);
-      return out + pctCell(yy(r,1), r._quota || 0);
+      /* Month to date came off the panel and stayed in the spreadsheet. Nine
+         numeric columns across two tables squeezed the names to initials, and
+         between MTD and the quota it is the quota a branch acts on. */
+      var out = c(w(r,0)||'&middot;', hi && r===bWa)
+              + c(w(r,1)?col(w(r,1)):'&middot;', hi && r===bWi)
+              + c(n0(yy(r,0)), hi && r===bYa)
+              + c(col(yy(r,1)), hi && r===bYi);
+      var set = r._settled || 0;
+      out += c(set ? col(set) : '&middot;', false, ' s');
+      return out + persCell(r._p2) + persCell(r._p3) + persCell(r._p5, ' pc5');
     }
     function head(){
       return '<div class="sbR hdg"><div class="l"></div>'
-        + '<div class="grp">This week</div>'
-        + (hasM ? '<div class="grp m">Month to date</div>' : '')
-        + '<div class="grp">Year to date</div><div class="grp q">Quota</div></div>'
+        + '<div class="grp">Submitted &mdash; week</div>'
+        + '<div class="grp">Submitted &mdash; year</div>'
+        + '<div class="grp s1">Settled</div>'
+        + '<div class="grp pc">Persistency %</div></div>'
         + '<div class="sbR hd"><div class="l">Advisor</div>'
         + '<div class="c">Apps</div><div class="c">API</div>'
-        + (hasM ? '<div class="c m">Apps</div><div class="c m">API</div>' : '')
         + '<div class="c">Apps</div><div class="c">API</div>'
-        + '<div class="c q">% quota</div></div>';
+        + '<div class="c s">API</div>'
+        + '<div class="c pc">2y</div><div class="c pc">3y</div>'
+        + '<div class="c pc pc5">5y</div></div>';
     }
 
     /* Rebuilt into a tree before sorting. Sorting the flat rows in place would
        scatter advisors away from the manager they belong to. */
+    /* WITH ANOTHER BRANCH, BUT THE PRODUCTION IS STILL OURS.
+       These two write under another branch now and the branch keeps their
+       production, so their figures belong in the branch total and their
+       names do not belong on a roster of who is here. They come out of the
+       rows and out of the recognition board; the total is the feed's own and
+       is not touched, so nothing goes missing from it. */
+    var SUB_ELSEWHERE = { A04020: 1, A04028: 1 };
+    function elsewhere(label){
+      var c2 = String(label||'').toUpperCase().match(/[AU](\d{5})/);
+      return !!(c2 && SUB_ELSEWHERE['A' + c2[1]]);
+    }
     var units=[], u=null, mg=null;
     S.rows.forEach(function(r){
+      if(r.lvl === 2 && elsewhere(r.label)) return;
       if(r.lvl===0){ u={row:r,mgrs:[],loose:[]}; units.push(u); mg=null; }
       else if(r.lvl===1){ if(!u){ u={row:null,mgrs:[],loose:[]}; units.push(u); }
                           mg={row:r,ags:[]}; u.mgrs.push(mg); }
@@ -4759,8 +5054,12 @@ var PROD = {
     /* Two columns, filled so they end up the same height rather than one
        running off the bottom while the other sits half empty. */
     var colH = [0,0], colOf = [[],[]];
+    /* A heading is not one row: it carries the team name, the count and the
+       share bar under it, so counting it as one left the first column half a
+       screen taller than the second. Weighted, the two columns come out level
+       and the roster stops needing to scroll to reach the last team. */
     teams.forEach(function(tm){
-      var h = tm.ags.length + 1;
+      var h = tm.ags.length + (tm.row ? 2.4 : 0.2);
       var i = colH[0] <= colH[1] ? 0 : 1;
       colOf[i].push(tm); colH[i] += h;
     });
@@ -4776,7 +5075,9 @@ var PROD = {
         if(mr){
           /* A team's quota is the sum of its people's — the manager is measured
              on what the team is asked to write, not on a figure of their own. */
-          mr._quota = tm.ags.reduce(function(a2,c2){ return a2 + quotaFor(c2.label); }, 0);
+          mr._quota   = tm.ags.reduce(function(a2,c2){ return a2 + quotaFor(c2.label); }, 0);
+          mr._settled = tm.ags.reduce(function(a2,c2){ return a2 + settledFor(c2.label); }, 0);
+          mr._p2 = persOf(tm.ags,'p2'); mr._p3 = persOf(tm.ags,'p3'); mr._p5 = persOf(tm.ags,'p5');
           h += '<div class="sbR mhd"><div class="l"><b>' + esc(mr.label) + '</b>'
              + '<i>' + n + '</i></div>' + cells(mr,false) + '</div>'
              + '<div class="sbShare"><div class="sbShareFill" style="width:' + share.toFixed(1) + '%"></div>'
@@ -4785,8 +5086,14 @@ var PROD = {
         tm.ags.forEach(function(a){
           var hot = (w(a,0)||w(a,1)) ? ' hot' : '';
           a._quota = quotaFor(a.label);
-          h += '<div class="sbR a' + hot + '"><div class="l">' + esc(subShort(a.label)) + '</div>'
-             + cells(a,true) + '</div>';
+          a._settled = settledFor(a.label);
+          var ax = qrow(a.label);
+          a._p2 = ax ? ax.p2 : null; a._p3 = ax ? ax.p3 : null; a._p5 = ax ? ax.p5 : null;
+          h += '<div class="sbR a' + hot + '"><div class="l"><span>'
+             + esc(subShort(a.label)) + '</span>'
+             + (typeFor(a.label) ? '<u title="' + esc(typeFor(a.label)) + '">'
+                                   + esc(bandShort(typeFor(a.label))) + '</u>' : '')
+             + '</div>' + cells(a,true) + '</div>';
         });
         return h;
       }).join('') + '</div>';
@@ -4795,7 +5102,13 @@ var PROD = {
     var t = S.total || {};
     var bt = q('sbBranch');
     if(bt){
-      t._quota = Object.keys(QUOTA).reduce(function(a2,k2){ return a2 + (QUOTA[k2]||0); }, 0);
+      /* The branch line uses the report's own total, which includes the
+         manager's own production — that carries a quota but is not a row on
+         the roster, so summing the rows would leave it out. */
+      var qb = (typeof STL !== 'undefined' && STL.data && STL.data.quotaBranch) || null;
+      t._quota   = qb ? qb.quota   : 0;
+      t._settled = qb ? qb.settled : 0;
+      t._p2 = persOf(ag,'p2'); t._p3 = persOf(ag,'p3'); t._p5 = persOf(ag,'p5');
       bt.innerHTML = '<div class="sbR br"><div class="l">Branch total</div>' + cells(t,false) + '</div>';
     }
 
@@ -4814,7 +5127,16 @@ var PROD = {
        name and a figure is a list, not recognition. Each carries the share of
        the week they wrote, what they have done for the year, and the cover
        they have actually placed, which comes from the settlement board. */
+    /* Only advisors the company still carries as active go on the board.
+       Two names on the roster have no row in the agent report — they are on
+       the branch's submitted figures and belong there, but a recognition
+       board is a thing you put a serving advisor on, and the branch manager
+       asked for them off it by name. They keep their line in the roster. */
+    wk = wk.filter(function(z){ return !!qrow(z.r.label) && !elsewhere(z.r.label); });
     var MED = ['\u{1F947}','\u{1F948}','\u{1F949}'];
+    /* Scaled after the filter, not before: with the removed name still in
+       the list the bars were measured against somebody who is not on the
+       board, so the leader's bar came out short of full. */
     var weekTop = wk.length ? w(wk[0].r,1) : 0;
     function coverFor(label){
       var stl2 = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
@@ -4831,19 +5153,45 @@ var PROD = {
         var api = w(z.r,1), apps = w(z.r,0);
         var share = weekTop ? Math.max(3, api/weekTop*100) : 3;
         var cov = coverFor(z.r.label);
+        /* The block was a name, a bar and one figure, and it read as a list
+           with a lot of air in it. Everything under the bar is something the
+           person on it earned: what they have written for the year, what has
+           actually settled, how much of it stayed on the books, and the cover
+           they placed. The name comes down a size to make room — it was the
+           largest thing on the panel and it did not need to be. */
+        var zx = qrow(z.r.label);
+        var zSet = zx ? (zx.settled||0) : 0;
+        var zP2  = zx && zx.p2 !== undefined && zx.p2 !== null ? Math.round(zx.p2) : null;
+        var meta = '<span>' + money(yy(z.r,1)) + ' year</span>';
+        if(zSet) meta += '<span class="set">' + money(zSet) + ' settled</span>';
+        if(zP2 !== null) meta += '<span class="' + (zP2>=90?'pOk':zP2>=80?'pMid':'pLow')
+                               + '">' + zP2 + '% kept</span>';
+        if(cov) meta += '<span class="cov">' + money(cov) + ' cover</span>';
         return '<div class="sbP' + (i===0?' win':'') + '">'
           + '<div class="med">' + (MED[i] || '<u>' + (i+1) + '</u>') + '</div>'
+          /* Not the unit number's name: unit 26001 carries both Kerwyn's and
+             Gary's teams, so it read "Gary Sookdeo · Kerwyn Ramroach" against
+             Gary's own name. The team the person is actually under, and the
+             band they are measured in — which is what somebody looking at a
+             recognition board wants to know about a name they do not know. */
           + '<div class="pw"><b>' + esc(subShort(z.r.label)) + '</b><i>'
-          + esc([z.mgr, z.unit].filter(Boolean).join(' · ')) + '</i>'
+          + esc([(z.mgr && z.mgr !== subShort(z.r.label)) ? z.mgr : '',
+                 typeFor(z.r.label)].filter(Boolean).join(' \u00b7 ')) + '</i>'
           + '<div class="pbar"><div class="pfill" style="width:' + share.toFixed(1) + '%"></div></div>'
-          + '<div class="pmeta"><span>' + money(yy(z.r,1)) + ' year</span>'
-          + (cov ? '<span class="cov">' + money(cov) + ' cover placed</span>' : '') + '</div></div>'
+          + '<div class="pmeta">' + meta + '</div></div>'
           + '<div class="pf"><b>' + full(api) + '</b><span>' + apps
           + ' app' + (apps===1?'':'s') + '</span></div></div>';
       }).join('')
       : '<div style="padding:1.4em .3em;color:var(--ink-3);font-size:.8em">'
         + 'Nobody has submitted yet this week. The board is open.</div>';
     }
+    /* Persistency does not come from the same place as everything else on
+       this panel and it does not move with it, so the panel says so rather
+       than letting a figure from last month sit next to this week's and look
+       like it was taken at the same time. */
+    var rc = q('sbRosterCap');
+    if(rc) rc.innerHTML = 'gold marks the branch\u2019s best &middot; persistency as at 31 August'
+      + ' &middot; the total includes production written under another branch';
     var wc = q('sbWeekCap');
     if(wc) wc.innerHTML = 'This week &mdash; who is on the board<em>week ' + esc(String(S.week||'')) + '</em>';
 
@@ -4851,16 +5199,30 @@ var PROD = {
     subChart(S);
     try { tickerFrom(S); } catch(e){}
 
-    set('t_p12', 'Week ' + (S.week || '') + ' &middot; <b>' + n0(w(t,0)) + '</b> apps '
-               + full(w(t,1)) + ' &middot; year to date <b>' + n0(yy(t,0)) + '</b> apps '
-               + full(yy(t,1)));
+    var stlD = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
+    /* The quota is off the headline as well as out of the columns, at the
+       branch manager's word — it read blank on the wall and a blank quota
+       teaches people to distrust the rest of the panel. Settled leads
+       instead, which is what he asked to see at the top. */
+    var bs = t._settled || 0;
+    set('t_p12',
+      (bs ? '<b>' + full(bs) + '</b> settled &middot; <b>'
+            + n0(stlD && stlD.ytd ? stlD.ytd.apps : 0) + '</b> apps'
+            + ' &nbsp;&nbsp;<span class="tSub">' + full(yy(t,1)) + ' submitted &middot; week '
+            + (S.week||'') + '</span>'
+        : 'Week ' + (S.week || '') + ' &middot; <b>' + n0(w(t,0)) + '</b> apps '
+          + full(w(t,1)) + ' &middot; year to date <b>' + n0(yy(t,0)) + '</b> apps '
+          + full(yy(t,1))));
     var note = q('pdRosterNote');
-    if(note) note.innerHTML = S.snapshot
+    var miss = SUB_MISSING ? ' &middot; <span style="color:var(--gold)">'
+                             + esc(SUB_MISSING) + '</span>' : '';
+    if(note) note.innerHTML = (S.snapshot
       ? 'Salesforce snapshot, ' + esc(S.asAt||'') + ' &middot; '
         + '<span style="color:var(--gold)">not live &mdash; this does not move on its own</span>'
         + ' &middot; confidential, branch management only'
       : 'As at ' + esc(S.asAt||'') + ' &middot; '
-        + '<span style="color:var(--gold)">confidential &mdash; branch management only</span>';
+        + '<span style="color:var(--gold)">confidential &mdash; branch management only</span>')
+      + miss;
     return true;
   }
 
@@ -4872,7 +5234,12 @@ var PROD = {
     return i > -1 ? s2.slice(i+3) : s2;
   }
   /* Units arrive as bare numbers. Say who they are where we know. */
-  var SUB_UNIT_NAMES = {};
+  var SUB_UNIT_NAMES = {
+    '26000': 'Branch Direct',
+    '26001': 'Kerwyn Ramroach',
+    '26002': 'Akaash Kalladeen',
+    '26003': 'Gary Sookdeo'
+  };
   function subUnitName(code){
     var c = String(code||'').trim();
     return SUB_UNIT_NAMES[c] || c;
@@ -4911,6 +5278,7 @@ var PROD = {
      never disagree. If slide 15 has not been read yet this asks for it once;
      it is cached for five minutes, so the second pass is free. */
   var SUB_LAST = null;
+  var SUB_MISSING = '';
   function subChart(S){
     SUB_LAST = S || SUB_LAST;
     if(!S) S = SUB_LAST;
@@ -4986,6 +5354,20 @@ var PROD = {
       var setT = stl && stl.ytd ? (stl.ytd.api||0) : 0;
       var setN = stl && stl.ytd ? (stl.ytd.apps||0) : 0;
       function n(v){ return Math.round(v).toLocaleString('en-US'); }
+      /* A BAR OF ZERO AND A MISSING SERIES LOOK IDENTICAL, and the branch
+         manager read the empty half of this chart as months in which the
+         branch wrote nothing. It had not — the feed was not carrying a
+         monthly submitted series yet. The panel says which of the two it is,
+         on the marking line at the foot, where it costs no height: putting
+         it in the key wrapped that row and the wrap came straight out of the
+         roster, pushing the last advisor off the bottom. */
+      var gone = [];
+      if(!Object.keys(sub).length) gone.push('monthly submitted');
+      if(!setT) gone.push('settled');
+      SUB_MISSING = gone.length
+        ? gone.join(' and ') + ' is not in the feed yet \u2014 the chart is '
+          + 'drawing what it has'
+        : '';
       tots.innerHTML =
         '<div class="sbTot"><i class="sbSw sub"></i><b>TT$' + n(subT) + '</b>'
           + '<span>submitted &middot; <b class="sbApps">' + n(subN) + '</b> apps</span></div>'
@@ -5004,6 +5386,13 @@ var PROD = {
         + '<div class="sbKey"><span><i class="nb"></i>New business</span>'
         + '<span><i class="inc"></i>Increases</span>'
         + '<span><i class="set"></i>Settled</span>'
+        /* A BAR OF ZERO AND A MISSING SERIES LOOK IDENTICAL, and the branch
+           manager read the empty half of this chart as the branch having
+           written nothing in those months. It had not — the feed simply was
+           not carrying a monthly submitted series yet. Say which of the two
+           it is, by name, so the fix is obvious from the wall instead of
+           having to be asked about. */
+
         + '<span class="n">the number in each bar is the app count</span></div>';
     }
   }
