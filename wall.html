@@ -1358,6 +1358,23 @@
   .stlTab tr.tot td.nm{color:var(--ink-3); font-weight:800; font-size:.72em;
     letter-spacing:.06em; text-transform:uppercase}
   .stlZero{color:var(--ink-3); opacity:.35}
+
+  /* settlement: countdown + products */
+  .stlClock{display:flex; align-items:baseline; gap:.45em; margin-left:auto; text-align:right}
+  .stlClock b{font-size:1.9em; font-weight:800; letter-spacing:-.02em; color:var(--gold);
+    font-variant-numeric:tabular-nums; line-height:1}
+  .stlClock span{font-size:.66em; color:var(--ink-3); text-transform:uppercase;
+    letter-spacing:.08em; font-weight:800}
+  .stlClockSub{font-size:.6em; color:var(--ink-3); text-align:right; margin-top:.1em}
+  .stlPr{display:flex; flex-direction:column; gap:.4em; flex:1; min-height:0; overflow:auto}
+  .stlPrRow{display:grid; grid-template-columns:11em 1fr auto; gap:.6em; align-items:center}
+  .stlPrNm{font-size:.82em; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .stlPrBar{height:1.05em; border-radius:.5em; background:var(--panel-2); overflow:hidden}
+  .stlPrFill{height:100%; border-radius:.5em;
+    background:linear-gradient(90deg,var(--teal-deep),var(--teal));
+    transition:width .8s cubic-bezier(.22,1,.36,1)}
+  .stlPrVal{font-size:.78em; font-weight:800; font-variant-numeric:tabular-nums; min-width:6.5em; text-align:right}
+  .stlPrVal i{font-style:normal; color:var(--ink-3); font-size:.82em; margin-left:.4em}
 </style>
 </head>
 <body>
@@ -4782,7 +4799,7 @@ var PROD = {
        so it sends nine, and three empty columns never reach the wall. */
     var nm = ['J','F','M','A','M','J','J','A','S','O','N','D']
                .slice(0, (j.months || []).length || 12);
-    var key = (STL.mode === 'apps') ? 'apps' : 'api';
+    var key = stlKey();
     var rows = (j.matrix || []).slice(0, 12);
     var max = 0;
     rows.forEach(function(a){ a.m.forEach(function(c){ if(c[key] > max) max = c[key]; }); });
@@ -4791,22 +4808,20 @@ var PROD = {
       if(!v) return '<td class="stlZero">·</td>';
       var t = max ? Math.min(1, v / max) : 0;
       var bg = 'rgba(45,212,191,' + (0.10 + t * 0.55).toFixed(3) + ')';
-      var txt = (key === 'apps') ? v : stlMoney(v).replace('TT$','');
+      var txt = (key === 'apps') ? String(v) : stlMoney(v).replace('TT$','');
       return '<td style="background:' + bg + ';color:' + (t > .55 ? '#04121A' : 'var(--ink)') + '">' + txt + '</td>';
     };
 
     var h = '<div class="stlCard"><div class="stlCap">Every advisor, month by month' +
-      '<div class="stlPills">' +
-      '<button type="button" class="stlPill' + (STL.mode==='api'?' on':'') + '" data-mode="api">API</button>' +
-      '<button type="button" class="stlPill' + (STL.mode==='apps'?' on':'') + '" data-mode="apps">APPS</button>' +
-      '</div></div><div style="overflow:auto;flex:1;min-height:0"><table class="stlTab"><tr>' +
+      stlPills() +
+      '</div><div style="overflow:auto;flex:1;min-height:0"><table class="stlTab"><tr>' +
       '<th class="nmH">Advisor</th>' + nm.map(function(x){ return '<th>' + x + '</th>'; }).join('') +
       '<th class="ytdH">YTD</th></tr>';
 
     rows.forEach(function(a){
       h += '<tr><td class="nm" title="' + (a.name||a.code) + '">' + (a.name || a.code) + '</td>' +
            a.m.map(function(c){ return cell(c[key]); }).join('') +
-           '<td class="ytd">' + (key === 'apps' ? a.apps : stlMoney(a.api).replace('TT$','')) + '</td></tr>';
+           '<td class="ytd">' + (key === 'apps' ? a.apps : stlMoney(a[key]).replace('TT$','')) + '</td></tr>';
     });
 
     var mons = j.months || [];
@@ -4815,7 +4830,7 @@ var PROD = {
            var v = m[key];
            return '<td>' + (v ? (key === 'apps' ? v : stlMoney(v).replace('TT$','')) : '·') + '</td>';
          }).join('') +
-         '<td class="ytd">' + (key === 'apps' ? j.ytd.apps : stlMoney(j.ytd.api).replace('TT$','')) + '</td></tr>';
+         '<td class="ytd">' + (key === 'apps' ? j.ytd.apps : stlMoney(j.ytd[key]).replace('TT$','')) + '</td></tr>';
 
     h += '</table></div>';
     if((j.matrix || []).length > rows.length){
@@ -4824,6 +4839,65 @@ var PROD = {
     }
     return h + '</div>';
   }
+
+
+  /* The clock. The branch year ends 30 September and the board should say so
+     without anyone doing the sum — a number of days left changes how a month
+     is worked. Ticks on its own so the whole panel is not repainted. */
+  function stlCountdown(j){
+    if(!j.fyEndsOn) return '';
+    var end = new Date(j.fyEndsOn + 'T23:59:59');
+    var ms = end - new Date();
+    if(ms <= 0) return '<div class="stlClock"><b>0</b><span>days left</span></div>';
+    var d = Math.floor(ms / 86400000), h = Math.floor(ms % 86400000 / 3600000);
+    return '<div><div class="stlClock" id="stlClk"><b>' + d + '</b><span>day' + (d===1?'':'s') +
+           ' left</span></div><div class="stlClockSub">year ends ' +
+           end.toLocaleDateString('en-GB',{day:'numeric',month:'long'}) +
+           ' &middot; ' + h + 'h</div></div>';
+  }
+
+  function stlProducts(j){
+    var key = stlKey();
+    var ps = (j.products || []).slice();
+    ps.sort(function(a,b){ return b[key] - a[key]; });
+    var max = ps.length ? ps[0][key] : 0;
+    var tot = ps.reduce(function(s,x){ return s + x[key]; }, 0);
+
+    var h = '<div class="stlCard"><div class="stlCap">' +
+      (j.productCol ? 'What the branch settled &mdash; by ' + j.productCol.name.toLowerCase() : 'Products settled') +
+      stlPills() +
+      '</div><div class="stlPr">';
+
+    if(!ps.length){
+      h += '<div style="color:var(--ink-3);font-size:.86em">' +
+           'No product column was found in the settlement tab, so there is nothing to break down here. ' +
+           'Everything else on this slide is unaffected.</div>';
+    }
+    ps.slice(0, 10).forEach(function(x){
+      var v = x[key], pct = max ? (v / max * 100) : 0;
+      var share = tot ? (v / tot * 100) : 0;
+      h += '<div class="stlPrRow">' +
+        '<div class="stlPrNm" title="' + x.name + '">' + x.name + '</div>' +
+        '<div class="stlPrBar"><div class="stlPrFill" style="width:' + Math.max(1,pct).toFixed(1) + '%"></div></div>' +
+        '<div class="stlPrVal">' + (key==='apps' ? String(v) : stlFull(v)) +
+        '<i>' + share.toFixed(0) + '%</i></div></div>';
+    });
+    h += '</div>';
+    if(ps.length > 10) h += '<div class="stlQuota" style="margin-top:.4em">Top 10 of ' + ps.length + '.</div>';
+    return h + '</div>';
+  }
+
+  /* Three measures now: what it earns, how many cases, and how much cover the
+     branch actually put in place. Cover is the one a client would care about. */
+  function stlPills(){
+    return '<div class="stlPills">' +
+      [['api','API'],['apps','APPS'],['cover','COVER']].map(function(x){
+        return '<button type="button" class="stlPill' + (STL.mode===x[0]?' on':'') +
+               '" data-mode="' + x[0] + '">' + x[1] + '</button>';
+      }).join('') + '</div>';
+  }
+  function stlKey(){ return (STL.mode === 'apps' || STL.mode === 'cover') ? STL.mode : 'api'; }
+  function stlShow(v){ return STL.mode === 'apps' ? String(v) : stlFull(v); }
 
   function stlPaint(){
     var box = document.getElementById('stlBoard'), j = STL.data;
@@ -4850,7 +4924,8 @@ var PROD = {
       '<div class="stlBig"><b>' + stlFull(api) + '</b>' +
       '<span class="stlOf">settled of ' + stlMoney(j.goal ? j.goal.value : 0) +
       ' target &middot; ' + goalPct + '% of the ' + stlMoney(tgt) + ' quota</span>' +
-      '<span class="stlPct">' + pctGoal.toFixed(1) + '%</span></div>' +
+      '<span class="stlPct">' + pctGoal.toFixed(1) + '%</span>' +
+      stlCountdown(j) + '</div>' +
       '<div class="stlBar"><div class="stlFill" style="width:' + Math.min(100,pct).toFixed(2) + '%"></div>' +
       '<div class="stlGoal" style="left:' + goalPct + '%"><span>target ' +
       stlMoney(tgt * goalPct / 100) + '</span></div></div>' +
@@ -4859,6 +4934,7 @@ var PROD = {
       '<span><b>' + (j.agents ? j.agents.length : 0) + '</b> agents settling</span>' +
       '<span><b>' + stlMoney(toGo) + '</b> to the target</span>' +
       (apps ? '<span><b>' + stlFull(api/apps) + '</b> per application</span>' : '') +
+      ((j.ytd && j.ytd.cover) ? '<span><b>' + stlMoney(j.ytd.cover) + '</b> of cover placed</span>' : '') +
       (perMonth ? '<span style="color:var(--gold)"><b style="color:var(--gold)">' +
         stlMoney(perMonth) + '</b> ' + (monLeft === 1 ? 'in September' : 'a month for the last ' + monLeft) +
         (times ? ' &middot; ' + times.toFixed(1) + '\u00d7 your average' : '') + '</span>' : '') +
@@ -4866,18 +4942,20 @@ var PROD = {
 
     /* Months. The tallest bar is the month to beat. */
     var mons = j.months || [], top = 0;
-    mons.forEach(function(m){ if(m.api > top) top = m.api; });
+    var bk = stlKey();
+    mons.forEach(function(m){ if((m[bk]||0) > top) top = m[bk]||0; });
     var names = ['J','F','M','A','M','J','J','A','S','O','N','D'].slice(0, mons.length || 12);
     var mh = '<div class="stlCard"><div class="stlCap">By month' +
       '<div class="stlPills">' +
       '<button type="button" class="stlPill' + (STL.month?'':' on') + '" data-mon="0">Year</button>' +
       '</div></div><div class="stlMons">';
     mons.forEach(function(m, i){
-      var pctH = top ? Math.max(2, m.api / top * 100) : 2;
-      var cls = 'stlMon' + (m.api > 0 ? ' has' : '') + (STL.month === m.m ? ' on' : '') +
-                (m.api === top && top > 0 ? ' best' : '');
+      var mv = m[bk] || 0;
+      var pctH = top ? Math.max(2, mv / top * 100) : 2;
+      var cls = 'stlMon' + (mv > 0 ? ' has' : '') + (STL.month === m.m ? ' on' : '') +
+                (mv === top && top > 0 ? ' best' : '');
       mh += '<button type="button" class="' + cls + '" data-mon="' + m.m + '" ' +
-            'title="' + names[i] + ' — ' + stlFull(m.api) + ' · ' + m.apps + ' apps">' +
+            'title="' + names[i] + ' — ' + stlFull(m.api) + ' · ' + m.apps + ' apps · ' + stlMoney(m.cover||0) + ' cover">' +
             '<div class="stlMonBar" style="height:' + pctH.toFixed(1) + '%"></div>' +
             '<div class="stlMonL">' + names[i] + '</div></button>';
     });
@@ -4894,13 +4972,12 @@ var PROD = {
 
     /* The league. */
     var ags = (j.agents || []).slice();
-    ags.sort(function(a,b){ return STL.mode === 'apps' ? (b.apps - a.apps) : (b.api - a.api); });
+    var lk = stlKey();
+    ags.sort(function(a,b){ return (b[lk]||0) - (a[lk]||0); });
     var lh = '<div class="stlCard"><div class="stlCap">' +
       (STL.month ? names[STL.month-1] + ' leaders' : 'Top settlers, year') +
-      '<div class="stlPills">' +
-      '<button type="button" class="stlPill' + (STL.mode==='api'?' on':'') + '" data-mode="api">API</button>' +
-      '<button type="button" class="stlPill' + (STL.mode==='apps'?' on':'') + '" data-mode="apps">APPS</button>' +
-      '</div></div><div class="stlLeague">';
+      stlPills() +
+      '</div><div class="stlLeague">';
     if(!ags.length){
       lh += '<div style="color:var(--ink-3);font-size:.86em">Nothing settled in that period.</div>';
     }
@@ -4908,9 +4985,9 @@ var PROD = {
       lh += '<div class="stlRow' + (i===0?' top1':'') + '">' +
         '<div class="stlPos">' + (i+1) + '</div>' +
         '<div class="stlNm">' + (a.name || a.code) + '</div>' +
-        '<div class="stlVal">' + (STL.mode==='apps'
+        '<div class="stlVal">' + (lk==='apps'
             ? (a.apps + '<i>' + stlMoney(a.api) + '</i>')
-            : (stlFull(a.api) + '<i>' + a.apps + ' app' + (a.apps===1?'':'s') + '</i>')) +
+            : (stlFull(a[lk]) + '<i>' + a.apps + ' app' + (a.apps===1?'':'s') + '</i>')) +
         '</div></div>';
     });
     lh += '</div></div>';
@@ -4921,11 +4998,25 @@ var PROD = {
     h += '<div style="display:flex;gap:.35em;justify-content:center;margin:-.25em 0 .1em">' +
       '<button type="button" class="stlPill' + (STL.view==='board'?' on':'') + '" data-view="board">Board</button>' +
       '<button type="button" class="stlPill' + (STL.view==='grid'?' on':'') + '" data-view="grid">Every advisor</button>' +
+      '<button type="button" class="stlPill' + (STL.view==='prod'?' on':'') + '" data-view="prod">Products</button>' +
       '</div>';
 
     box.innerHTML = h + (STL.view === 'grid'
         ? '<div class="stlGrid" style="grid-template-columns:1fr">' + stlAgentGrid(j) + '</div>'
+        : STL.view === 'prod'
+        ? '<div class="stlGrid" style="grid-template-columns:1fr">' + stlProducts(j) + '</div>'
         : '<div class="stlGrid">' + mh + lh + '</div>');
+
+    /* Retick the clock every minute without repainting the board under it. */
+    if(window.__stlClock) clearInterval(window.__stlClock);
+    window.__stlClock = setInterval(function(){
+      var el = document.getElementById('stlClk');
+      if(!el || !STL.data) return;
+      var w = document.createElement('div');
+      w.innerHTML = stlCountdown(STL.data);
+      var fresh = w.querySelector('#stlClk');
+      if(fresh) el.innerHTML = fresh.innerHTML;
+    }, 60000);
 
     box.querySelectorAll('[data-view]').forEach(function(b){
       b.onclick = function(){ STL.view = b.dataset.view; stlPaint(); };
