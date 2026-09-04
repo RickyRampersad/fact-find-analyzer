@@ -1628,13 +1628,15 @@
   .sbR.a.hot .l{color:#fff; font-weight:700}
   .sbR.a.hot .c{color:var(--gold)}
   .sbStrip{display:grid; grid-template-columns:repeat(4,1fr); gap:.5em; margin-top:.4em; flex:none}
-  .sbTile{display:flex; align-items:baseline; gap:.35em; padding:.3em .6em; border-radius:.55em;
+  .sbTile{display:flex; flex-direction:column; gap:.1em; padding:.28em .7em; border-radius:.55em;
     background:rgba(255,255,255,.045); border:1px solid var(--line); min-width:0; overflow:hidden;
     white-space:nowrap}
   .sbTile span{font-size:.5em; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--ink-3); margin-right:auto; overflow:hidden; text-overflow:ellipsis}
-  .sbTile b{font-size:.78em; font-weight:800; color:#fff; font-variant-numeric:tabular-nums}
-  .sbTile i{font-style:normal; font-size:.5em; color:var(--ink-3); font-weight:700; margin-right:.3em}
+    color:var(--ink-3); overflow:hidden; text-overflow:ellipsis}
+  .sbTile .tv{display:flex; align-items:baseline; gap:.5em; min-width:0}
+  .sbTile b{font-size:.82em; font-weight:800; color:#fff; font-variant-numeric:tabular-nums}
+  .sbTile i{font-style:normal; font-size:.52em; color:var(--ink-3); font-weight:700;
+    margin-left:auto; overflow:hidden; text-overflow:ellipsis}
   .sbTile.wk{background:linear-gradient(90deg,rgba(245,185,53,.24),rgba(245,185,53,.06));
     border-color:rgba(245,185,53,.5)}
   .sbTile.wk span{color:var(--gold)} .sbTile.wk b{color:var(--gold)}
@@ -5243,18 +5245,22 @@ var PROD = {
          tiles, the week lit, the settled tile carrying its app count, which
          the old row had no column for. */
       var setApps = (stlD2 && stlD2.ytd) ? (stlD2.ytd.apps||0) : 0;
+      /* The caption sits above the figures rather than beside them. On one
+         row the numbers won and the captions were cut to "YEAR T…" and
+         "SETTLE…", which is the one place on the panel a word cannot be
+         guessed from context. */
       function tile(cls, cap, apps, api){
         return '<div class="sbTile' + cls + '"><span>' + cap + '</span>'
-          + '<b>' + (apps === null ? '&middot;' : n0(apps)) + '</b><i>apps</i>'
-          + '<b>' + (api === null ? '&middot;' : full(api)) + '</b></div>';
+          + '<div class="tv"><b>' + (api === null ? '&middot;' : full(api)) + '</b>'
+          + '<i>' + (apps === null ? '' : n0(apps) + ' app' + (apps===1?'':'s')) + '</i></div></div>';
       }
       var hasMo = !!(t.m && (t.m[0] || t.m[1]));
       bt.innerHTML = '<div class="sbStrip">'
         + tile(' wk', 'This week', w(t,0), w(t,1))
-        + tile('', S.monthLabel ? esc(String(S.monthLabel).slice(0,3)) + ' to date' : 'Month to date',
+        + tile('', S.monthLabel ? esc(S.monthLabel) + ' to date' : 'Month to date',
                hasMo ? mo(t,0) : null, hasMo ? mo(t,1) : null)
         + tile('', 'Year to date', yy(t,0), yy(t,1))
-        + tile(' set', 'Settled YTD', setApps || null, t._settled || null)
+        + tile(' set', 'Settled &middot; year to date', setApps || null, t._settled || null)
         + '</div>';
     }
 
@@ -5334,8 +5340,8 @@ var PROD = {
                  typeFor(z.r.label)].filter(Boolean).join(' \u00b7 ')) + '</i>'
           + '<div class="pbar"><div class="pfill" style="width:' + share.toFixed(1) + '%"></div></div>'
           + '<div class="pmeta">' + meta + '</div></div>'
-          + '<div class="pf"><b>' + full(api) + '</b><span>' + apps
-          + ' app' + (apps===1?'':'s') + '</span></div></div>';
+          + '<div class="pf"><b>' + full(api) + '</b><span>'
+          + (apps ? apps + ' app' + (apps===1?'':'s') : 'increase') + '</span></div></div>';
       }).join('')
       : '<div style="padding:1.4em .3em;color:var(--ink-3);font-size:.8em">'
         + 'Nobody has submitted yet this week. The board is open.</div>';
@@ -5465,7 +5471,10 @@ var PROD = {
   function subShort(label){
     var s2 = String(label||'');
     var i = s2.indexOf(' - ');
-    return i > -1 ? s2.slice(i+3) : s2;
+    s2 = i > -1 ? s2.slice(i+3) : s2;
+    /* "Narissa (Agent) Mohammed" — the bracketed word is Salesforce's, not
+       part of anybody's name, and it cost the surname its last letters. */
+    return s2.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
   }
   /* Units arrive as bare numbers. Say who they are where we know. */
   /* The hierarchies, not the teams. 26000 is the branch manager's own and
