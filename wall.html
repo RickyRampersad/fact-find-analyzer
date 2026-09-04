@@ -4751,6 +4751,23 @@ var PROD = {
       return;
     }
     if(STL.busy) return;
+
+    /* The settlement tab is big, and the server takes the better part of ten
+       seconds to open Branch Portfolio and read it. The panel used to sit
+       empty for that whole time — on a wall that cycles, the slide could come
+       and go before a single figure arrived, and it read as broken.
+
+       So: paint what was read last if it is still recent, and otherwise say
+       out loud that it is reading. Never show an empty panel. */
+    var fresh = STL.data && STL.at && (Date.now() - STL.at < 300000);
+    if(fresh){ stlPaint(); if(Date.now() - STL.at < 60000) return; }
+    else {
+      box.innerHTML = '<div class="stlCard" style="align-items:center;justify-content:center;text-align:center">' +
+        '<div class="stlCap" style="justify-content:center">Settlement</div>' +
+        '<div style="font-size:1.05em;font-weight:700;color:var(--ink-2)">Reading the settlement board&hellip;</div>' +
+        '<div style="font-size:.84em;color:var(--ink-3);margin-top:.4em">' +
+        'The year to date, every advisor, month by month.</div></div>';
+    }
     STL.busy = true;
     var url = ENDPOINT + '?action=settlement&token=' + encodeURIComponent(who.token) +
               '&year=' + (new Date().getFullYear()) +
@@ -4760,6 +4777,7 @@ var PROD = {
       .then(function(t){
         var j = null; try{ j = JSON.parse(t); }catch(e){}
         STL.busy = false;
+        if(j && j.success) STL.at = Date.now();
         if(!j || !j.success){
           /* Say what it means, not what the router said. A wall in an office
              should never show "Unknown action. GET: pop7 | production | ..." —
