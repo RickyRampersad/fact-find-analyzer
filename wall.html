@@ -3920,9 +3920,28 @@ var PROD = {
     if(!S || !S.rows || !S.rows.length) return null;
     var IND = ['', '   ', '      '];
     var out = [];
-    out.push([{v:'SUBMITTED', s:1}, '', '', '', '']);
-    out.push([{v:'Hierachy', s:2}, {v:'Apps -W', s:2}, {v:'API - W', s:2},
-              {v:'Apps -Y', s:2}, {v:'API', s:2}]);
+
+    /* Month to date sits between the week and the year, which is the order
+       anybody reads production in. The columns appear only when the figures
+       are actually there: the feed sent week and year and nothing between
+       until sfBoardData_ was given the two month queries, and a pair of
+       columns headed MTD with nothing under them is worse than no columns —
+       it reads as a month where nobody wrote anything. */
+    var t = S.total || {};
+    var hasM = !!(t.m || S.rows.some(function(r){ return r.m; }));
+    /* Headed MTD, not "Sep" — that is the word the branch uses and the one
+       anybody opening this file will look for. Which month it is goes in the
+       line at the bottom, where it cannot be mistaken for a column of one
+       month's figures sitting beside a year. */
+    var mLbl = 'MTD';
+
+    var wide = hasM ? 7 : 5;
+    out.push([{v:'SUBMITTED', s:1}].concat(new Array(wide-1).join(',').split(',')));
+    var head = [{v:'Hierachy', s:2}, {v:'Apps -W', s:2}, {v:'API - W', s:2}];
+    if(hasM) head.push({v:'Apps -' + mLbl, s:2}, {v:'API - ' + mLbl, s:2});
+    head.push({v:'Apps -Y', s:2}, {v:'API', s:2});
+    out.push(head);
+
     function num(p, i, style){
       var v = (p && p[i] !== null && p[i] !== undefined) ? p[i] : '';
       return {v:v, s:style};
@@ -3931,24 +3950,26 @@ var PROD = {
       var lab = r.lvl === 0 ? 3 : r.lvl === 1 ? 4 : 5;
       var ni  = r.lvl === 2 ? 7 : 9;
       var mi  = r.lvl === 2 ? 8 : 10;
-      out.push([{v: IND[r.lvl] + r.label, s: lab},
-                num(r.w,0,ni), num(r.w,1,mi),
-                num(r.y,0,ni), num(r.y,1,mi)]);
+      var line = [{v: IND[r.lvl] + r.label, s: lab}, num(r.w,0,ni), num(r.w,1,mi)];
+      if(hasM) line.push(num(r.m,0,ni), num(r.m,1,mi));
+      line.push(num(r.y,0,ni), num(r.y,1,mi));
+      out.push(line);
     });
-    var t = S.total || {};
-    out.push([{v:'Total', s:6},
-              num(t.w,0,6), num(t.w,1,6),
-              num(t.y,0,6), num(t.y,1,6)]);
+    var tot = [{v:'Total', s:6}, num(t.w,0,6), num(t.w,1,6)];
+    if(hasM) tot.push(num(t.m,0,6), num(t.m,1,6));
+    tot.push(num(t.y,0,6), num(t.y,1,6));
+    out.push(tot);
     /* Who pulled it and when. The sheet is marked branch management only and
        leaves this building in email; a copy with no name on it is a copy
        nobody is accountable for. */
     var who = (typeof WHO !== 'undefined' && WHO && WHO.name) ? WHO.name : 'a branch screen';
     out.push([]);
     out.push([{v:'Downloaded ' + (S.asAt||'') + ' by ' + who
+               + (hasM ? ' — MTD is ' + (S.monthLabel || 'this month') + ' to date' : '')
                + ' — CONFIDENTIAL, branch management only', s:0}]);
     return { name:'Submitted', rows:out,
-             cols:[36, 10, 16, 10, 17],
-             merges:['A1:E1'] };
+             cols: hasM ? [36, 10, 16, 10, 16, 10, 17] : [36, 10, 16, 10, 17],
+             merges: [hasM ? 'A1:G1' : 'A1:E1'] };
   }
 
   function buildXlsx(sheets){
