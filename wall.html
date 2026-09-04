@@ -1389,6 +1389,102 @@
   .subrow .rk{display:inline-block; min-width:1.6em; color:var(--ink-3); font-weight:800}
   .subrow .sub2{color:var(--ink-3); font-weight:600}
   .subNone{padding:1.6em .4em; color:var(--ink-3); font-size:.8em}
+
+  /* ═══ SLIDE 13 · PRODUCTION SUBMITTED ══════════════════════════════════════
+     One column per unit. A manager's advisors can never be separated from
+     their manager, because the break happens on the unit and not on a count
+     of rows. Everything is em-based so it holds from a phone to the wall. */
+  #p12{display:flex; flex-direction:column; gap:.7em; overflow:hidden}
+  .sbGrid{flex:1 1 auto; display:grid; grid-template-columns:1fr 21em; gap:.7em;
+    min-height:0; overflow:hidden}
+  .sbCard{background:var(--panel); border:1px solid var(--line); border-radius:.85em;
+    padding:.55em .7em; display:flex; flex-direction:column; min-height:0; overflow:hidden}
+  .sbCap{font-size:.58em; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ink-3); margin-bottom:.5em; display:flex; align-items:center; gap:.8em}
+  .sbCap em{margin-left:auto; font-style:normal; font-size:.95em; letter-spacing:.03em;
+    text-transform:none}
+  .sbUnits{display:grid; grid-template-columns:1fr 1fr; gap:0 1.1em; min-height:0;
+    overflow:hidden; flex:1}
+  .sbUnit{display:flex; flex-direction:column; min-height:0}
+  .sbUhd{background:linear-gradient(90deg,rgba(245,185,53,.20),rgba(245,185,53,.04));
+    border:1px solid rgba(245,185,53,.34); border-radius:.55em; padding:.28em .6em;
+    margin-bottom:.18em; display:flex; align-items:baseline; gap:.55em}
+  .sbUhd b{font-size:1em; font-weight:800; color:#fff}
+  .sbUhd i{font-style:normal; font-size:.68em; color:var(--gold)}
+  .sbUfig{margin-left:auto; display:flex; gap:.75em}
+  .sbUfig span{font-size:.62em; font-weight:750; color:#fff; font-variant-numeric:tabular-nums}
+  .sbUfig .yy{color:var(--ink-2)}
+  .sbR{display:grid; grid-template-columns:minmax(0,1fr) repeat(6,minmax(1.6em,2.7em));
+    gap:.2em; align-items:center; padding:.02em .3em;
+    border-bottom:1px solid rgba(255,255,255,.045)}
+  .sbR .l{font-size:.7em; font-weight:600; white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis; color:var(--ink-2)}
+  .sbR .c{text-align:right; font-variant-numeric:tabular-nums; font-size:.62em;
+    font-weight:650; color:var(--ink-3)}
+  .sbR .c.m{color:var(--teal-deep)}
+  .sbR.hd{border-bottom:1px solid var(--line-2); padding-bottom:.24em; margin-bottom:.12em}
+  .sbR.hd .l,.sbR.hd .c{font-size:.5em; font-weight:800; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--ink-3)}
+  .sbR.g{background:rgba(255,255,255,.055); border-radius:.35em; margin-top:.16em}
+  .sbR.g .l{font-weight:800; color:#fff; font-size:.78em}
+  .sbR.g .c{color:#fff; font-weight:750}
+  .sbR.a .l{padding-left:.9em}
+  .sbR.a.hot .l{color:#fff; font-weight:700}
+  .sbR.a.hot .c{color:var(--gold)}
+  .sbR.br{background:rgba(45,212,191,.13); border-radius:.55em; border:none;
+    margin-top:.45em; padding:.35em .3em}
+  .sbR.br .l{font-weight:800; letter-spacing:.1em; font-size:.8em; color:var(--teal)}
+  .sbR.br .c{color:#fff; font-size:.82em; font-weight:800}
+  .sbP{display:grid; grid-template-columns:2em 1fr auto; gap:.55em; align-items:center;
+    padding:.4em .5em; border-bottom:1px solid rgba(255,255,255,.05)}
+  .sbP.win{background:linear-gradient(90deg,rgba(245,185,53,.20),rgba(245,185,53,.03));
+    border-radius:.6em; border:1px solid rgba(245,185,53,.42); margin-bottom:.25em}
+  .sbP .med{font-size:1.3em; text-align:center}
+  .sbP .pw b{display:block; font-size:.95em; font-weight:800}
+  .sbP .pw i{font-style:normal; font-size:.66em; color:var(--ink-3)}
+  .sbP .pf{text-align:right}
+  .sbP .pf b{display:block; font-size:1em; font-weight:800; color:var(--gold);
+    font-variant-numeric:tabular-nums}
+  .sbP .pf span{font-size:.62em; color:var(--ink-3)}
+  .sbP.win .pw b{font-size:1.08em} .sbP.win .pf b{font-size:1.2em}
+  .sbSec{margin-top:.7em; padding-top:.6em; border-top:1px solid var(--line)}
+  .sbMixRow{display:grid; grid-template-columns:7em 1fr auto; gap:.5em; align-items:center;
+    margin-top:.3em}
+  .sbMixRow span{font-size:.72em; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap}
+  .sbMixBar{height:.62em; border-radius:.31em; background:var(--panel-2); overflow:hidden}
+  .sbMixFill{height:100%; border-radius:.31em;
+    background:linear-gradient(90deg,var(--teal-deep),var(--teal))}
+  .sbMixRow b{font-size:.7em; font-variant-numeric:tabular-nums; color:var(--ink-2)}
+  .sbChart{flex:0 0 auto; padding:.6em .9em .45em}
+  .sbTots{display:flex; gap:1.8em; align-items:baseline; margin-bottom:.3em; flex-wrap:wrap}
+  .sbTot{display:flex; align-items:baseline; gap:.45em}
+  .sbTot b{font-size:1.12em; font-weight:800; font-variant-numeric:tabular-nums}
+  .sbTot span{font-size:.66em; color:var(--ink-3)}
+  .sbSw{width:.7em; height:.7em; border-radius:.18em; display:inline-block}
+  .sbSw.sub{background:linear-gradient(180deg,#A78BFA,#7C5CE0)}
+  .sbSw.set{background:linear-gradient(180deg,var(--teal),var(--teal-deep))}
+  .sbTot.gap b{color:var(--gold)}
+  .sbBars{display:flex; gap:.8em; align-items:flex-end; height:4.9em; margin-top:.1em}
+  .sbMb{flex:1; display:flex; flex-direction:column; justify-content:flex-end; gap:.2em; height:100%}
+  .sbPair{display:flex; gap:.22em; align-items:flex-end; height:100%}
+  .sbCol{flex:1; display:flex; flex-direction:column; justify-content:flex-end;
+    align-items:center; gap:.15em; height:100%}
+  .sbCol em{font-style:normal; font-size:.55em; font-weight:800; color:var(--ink-3)}
+  .sbCol em.set{color:var(--teal)} .sbCol em.wait{color:var(--line-2)}
+  .sbBar{width:100%; border-radius:.22em .22em 0 0; min-height:2px;
+    transition:height .8s cubic-bezier(.22,1,.36,1)}
+  .sbBar.sub{background:linear-gradient(180deg,#A78BFA,#7C5CE0)}
+  .sbBar.set{background:linear-gradient(180deg,var(--teal),var(--teal-deep))}
+  .sbBar.wait{background:repeating-linear-gradient(45deg,rgba(255,255,255,.045),
+    rgba(255,255,255,.045) 4px,transparent 4px,transparent 8px);
+    border:1px dashed var(--line-2)}
+  .sbMb>span{font-size:.66em; color:var(--ink-2); font-weight:800; text-align:center;
+    letter-spacing:.04em}
+  @media (max-width:900px){
+    .sbGrid{grid-template-columns:1fr}
+    .sbUnits{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
@@ -1688,16 +1784,29 @@
   <!-- 13 · PRODUCTION SUBMITTED — head office's own report, live -->
   <section class="panel" id="p12">
     <div class="ptitle"><h1 id="t_p12"></h1><span class="tag">Submitted</span></div>
-    <div class="tkr" id="tkrApi"><div class="tkrun"></div></div>
-    <div class="tkr apps" id="tkrApp"><div class="tkrun"></div></div>
-    <div class="aow" id="aowStrip"></div>
-    <div class="subwrap">
-      <div class="subt" id="pdRoster"></div>
-      <div class="card subgraph">
-        <h2><span>Increases against new business</span><em>API by month</em></h2>
-        <div id="incChart" class="incchart"></div>
-        <div class="inckey"><span><i class="nb"></i>New business</span><span><i class="inc"></i>Increases</span></div>
+    <!-- One column per unit, this week's board beside it, and the month chart
+         across the foot. The split used to be by row count, which ran a
+         manager's advisors past the halfway mark and stranded them under the
+         next unit's heading — they read as that unit's people. -->
+    <div class="sbGrid">
+      <div class="sbCard">
+        <div class="sbCap">By unit &mdash; every manager and advisor under their own unit<em>largest first</em></div>
+        <div class="sbUnits" id="pdRoster"></div>
+        <div id="sbBranch"></div>
       </div>
+      <div class="sbCard">
+        <div class="sbCap" id="sbWeekCap">This week &mdash; who is on the board</div>
+        <div id="sbWeek"></div>
+        <div class="sbSec" style="margin-top:auto">
+          <div class="sbCap" style="margin:0">Product mix<em>share of API</em></div>
+          <div id="sbMix"></div>
+        </div>
+      </div>
+    </div>
+    <div class="sbCard sbChart">
+      <div class="sbCap">New business and increases against what actually settled<em>month by month</em></div>
+      <div class="sbTots" id="sbTots"></div>
+      <div class="sbBars" id="incChart"></div>
     </div>
     <div class="pdnote" id="pdRosterNote"></div>
   </section>
@@ -4432,186 +4541,258 @@ var PROD = {
      repaint on the wall's own cycle does not throw the reader back. */
   var SUB = { view: 'unit' };
 
+  /* Slide 13. Rebuilt 4 September 2026.
+
+     The feed sends the hierarchy in its own order and that order is not rank,
+     so the board sorts itself: units by API, managers within a unit, advisors
+     within a manager. Each unit gets a COLUMN OF ITS OWN — the first cut split
+     the list down the middle by row count, which ran Akaash's advisors past
+     the halfway mark and left Darryl, Rajiv and Stephanie sitting under
+     26001's heading. They read as Gary's people. A break on the unit cannot
+     do that.
+
+     Beside it, this week's board — permanently, not behind a button. Anyone
+     with something this week is picked out in gold in the main table too, so
+     the week can be seen in the shape of the year. */
   function paintSubmitted(S){
     var box = q('pdRoster'); if(!box) return false;
     function n0(v){ return (v===null||v===undefined||v==='') ? '' : Math.round(v).toLocaleString('en-US'); }
-    function money(v){ return (v===null||v===undefined||v==='') ? ''
-      : '$' + Number(v).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2}); }
-
-    var ag = S.rows.filter(function(r){ return r.lvl === 2; });
-    function peak(pick){
-      var m = 0;
-      ag.forEach(function(r){ var v = pick(r); if(v > m) m = v; });
-      return m;
+    function k(v){
+      v = Number(v)||0;
+      if(Math.abs(v) >= 1e6) return (v/1e6).toFixed(2) + 'M';
+      if(Math.abs(v) >= 1000) return Math.round(v/1000).toLocaleString('en-US') + 'k';
+      return Math.round(v).toLocaleString('en-US');
     }
-    var pkWa = peak(function(r){ return (r.w||[])[0]||0; }),
-        pkWi = peak(function(r){ return (r.w||[])[1]||0; }),
-        pkMa = peak(function(r){ return (r.m||[])[0]||0; }),
-        pkMi = peak(function(r){ return (r.m||[])[1]||0; }),
-        pkYa = peak(function(r){ return (r.y||[])[0]||0; }),
-        pkYi = peak(function(r){ return (r.y||[])[1]||0; });
+    function money(v){ return (v===null||v===undefined||v==='') ? '' : 'TT$' + k(v); }
+    function full(v){ return 'TT$' + Math.round(Number(v)||0).toLocaleString('en-US'); }
+    function w(r,i){ return ((r&&r.w)||[])[i]||0; }
+    function mo(r,i){ return ((r&&r.m)||[])[i]||0; }
+    function yy(r,i){ return ((r&&r.y)||[])[i]||0; }
 
-    /* Month to date, between the week and the year. The row already has six
-       numeric columns in its grid and was only filling four, so this needed
-       no layout change — but it does need the figures to exist. The feed sent
-       week and year and nothing between until sfBoardData_ was given the two
-       month queries, so the columns appear only when a month figure is
-       actually there. Two columns of blanks headed MTD would read as a month
-       in which the branch wrote nothing. */
+    /* Month to date shows only when the figure is there. The feed carried the
+       week and the year and nothing between until sfBoardData_ was given the
+       two month queries, and columns headed MTD with nothing under them read
+       as a month in which the branch wrote nothing. */
     var hasM = !!((S.total && S.total.m) || S.rows.some(function(r){ return r.m; }));
 
+    var ag = S.rows.filter(function(r){ return r.lvl === 2; });
+    function peak(pick){ var x=0; ag.forEach(function(r){ var v=pick(r); if(v>x) x=v; }); return x; }
+    var pkWa=peak(function(r){return w(r,0);}), pkWi=peak(function(r){return w(r,1);}),
+        pkYa=peak(function(r){return yy(r,0);}), pkYi=peak(function(r){return yy(r,1);});
+
     function cells(r, hi){
-      var w = r.w||[], mo = r.m||[], y = r.y||[];
-      function c(txt, isHi, cls){
-        return '<div class="sc' + (cls||'') + (isHi?' hi':'') + '">' + txt + '</div>';
+      function c(txt, on, cls){
+        return '<div class="c'+(cls||'')+(on?' hi':'')+'">'+txt+'</div>';
       }
-      var out = c(n0(w[0]),    hi && w[0] && w[0] === pkWa)
-              + c(money(w[1]), hi && w[1] && w[1] === pkWi);
-      if(hasM) out += c(n0(mo[0]),    hi && mo[0] && mo[0] === pkMa, ' m')
-                    + c(money(mo[1]), hi && mo[1] && mo[1] === pkMi, ' m');
-      return out + c(n0(y[0]),    hi && y[0] && y[0] === pkYa)
-                 + c(money(y[1]), hi && y[1] && y[1] === pkYi);
+      var out = c(w(r,0)||'&middot;', hi && w(r,0) && w(r,0)===pkWa)
+              + c(w(r,1)?money(w(r,1)):'&middot;', hi && w(r,1) && w(r,1)===pkWi);
+      if(hasM) out += c(mo(r,0)||'&middot;', false, ' m') + c(mo(r,1)?money(mo(r,1)):'&middot;', false, ' m');
+      return out + c(n0(yy(r,0)), hi && yy(r,0)===pkYa) + c(money(yy(r,1)), hi && yy(r,1)===pkYi);
+    }
+    function head(){
+      return '<div class="sbR hd"><div class="l">Advisor</div>'
+        + '<div class="c">Apps W</div><div class="c">API W</div>'
+        + (hasM ? '<div class="c m">Apps MTD</div><div class="c m">API MTD</div>' : '')
+        + '<div class="c">Apps Y</div><div class="c">API Y</div></div>';
     }
 
-    /* The feed sends the hierarchy in its own order, and that order is not
-       rank: unit 26001 arrived first on 2.4M with 26000 under it on 3.8M. On
-       a wall the top row reads as the leader whether it is or not, so the
-       board has to sort itself rather than trust the order it was given.
-
-       Rebuilt into a tree first, because sorting a flat list of unit,
-       manager, agent rows in place would scatter people out from under the
-       manager they belong to. */
-    function tree(rows){
-      var units = [], u = null, m = null;
-      rows.forEach(function(r){
-        if(r.lvl === 0){ u = { row:r, mgrs:[], loose:[] }; units.push(u); m = null; }
-        else if(r.lvl === 1){
-          if(!u){ u = { row:null, mgrs:[], loose:[] }; units.push(u); }
-          m = { row:r, ags:[] }; u.mgrs.push(m);
-        } else if(r.lvl === 2){
-          if(m) m.ags.push(r);
-          else if(u) u.loose.push(r);
-        }
-      });
-      return units;
-    }
-    function api(r){ return ((r && r.y) || [])[1] || 0; }
-    function wApi(r){ return ((r && r.w) || [])[1] || 0; }
-    function wApps(r){ return ((r && r.w) || [])[0] || 0; }
-    function down(f){ return function(a,b){ return f(b) - f(a); }; }
-
-    var units = tree(S.rows);
-    units.forEach(function(u){
-      u.mgrs.forEach(function(m){ m.ags.sort(down(api)); });
-      u.mgrs.sort(down(function(m){ return api(m.row); }));
-      u.loose.sort(down(api));
+    /* Rebuilt into a tree before sorting. Sorting the flat rows in place would
+       scatter advisors away from the manager they belong to. */
+    var units=[], u=null, mg=null;
+    S.rows.forEach(function(r){
+      if(r.lvl===0){ u={row:r,mgrs:[],loose:[]}; units.push(u); mg=null; }
+      else if(r.lvl===1){ if(!u){ u={row:null,mgrs:[],loose:[]}; units.push(u); }
+                          mg={row:r,ags:[]}; u.mgrs.push(mg); }
+      else if(r.lvl===2){ if(mg) mg.ags.push(r); else if(u) u.loose.push(r); }
     });
-    /* A unit's own row carries its total, but not every feed fills it in, so
-       fall back to the sum of its people rather than sorting a unit to the
-       bottom for a blank cell. */
-    units.sort(down(function(u){
-      return api(u.row) || u.mgrs.reduce(function(s2,m){
-        return s2 + (api(m.row) || m.ags.reduce(function(s3,a){ return s3 + api(a); }, 0));
-      }, 0) + u.loose.reduce(function(s4,a){ return s4 + api(a); }, 0);
+    function down(f){ return function(a,b){ return f(b)-f(a); }; }
+    units.forEach(function(x){
+      x.mgrs.forEach(function(m2){ m2.ags.sort(down(function(r){ return yy(r,1); })); });
+      x.mgrs.sort(down(function(m2){ return yy(m2.row,1); }));
+      x.loose.sort(down(function(r){ return yy(r,1); }));
+    });
+    units.sort(down(function(x){
+      return yy(x.row,1) || x.mgrs.reduce(function(a,m2){
+        return a + (yy(m2.row,1) || m2.ags.reduce(function(b,c){ return b+yy(c,1); },0)); },0);
     }));
 
-    function row(r, cls, label, hi){
-      return '<div class="subrow ' + cls + '"><div class="sl">' + label + '</div>'
-           + cells(r, hi) + '</div>';
-    }
-    function hd(first){
-      return '<div class="subrow hd"><div class="sl">' + first + '</div>'
-           + '<div class="sc">Apps -W</div><div class="sc">API - W</div>'
-           + (hasM ? '<div class="sc m">Apps -MTD</div><div class="sc m">API - MTD</div>' : '')
-           + '<div class="sc">Apps -Y</div><div class="sc">API</div></div>';
-    }
-    function pills(){
-      return '<div class="subHead"><span>' +
-        (SUB.view === 'week'
-          ? 'Everyone who submitted in week ' + esc(String(S.week || ''))
-          : 'Units, managers and advisors &mdash; largest first') +
-        '</span><div class="subPills">' +
-        [['unit','By unit'],['week','This week']].map(function(x){
-          return '<button type="button" class="subPill' + (SUB.view===x[0]?' on':'') +
-                 '" data-sub="' + x[0] + '">' + x[1] + '</button>';
-        }).join('') + '</div></div>';
-    }
+    box.style.gridTemplateColumns = units.length > 1 ? '' : 'minmax(0,1fr)';
+    box.innerHTML = units.map(function(x){
+      var ur = x.row, n = x.mgrs.reduce(function(a,m2){ return a+m2.ags.length; }, 0) + x.loose.length;
+      var h = '<div class="sbUnit">';
+      if(ur){
+        h += '<div class="sbUhd"><b>' + esc(subUnitName(ur.label)) + '</b><i>' + n + ' advisors</i>'
+           + '<div class="sbUfig"><span>' + (w(ur,0)||'&middot;') + ' apps W</span>'
+           + '<span>' + money(w(ur,1)) + ' API W</span>'
+           + '<span class="yy">' + n0(yy(ur,0)) + ' apps Y</span>'
+           + '<span class="yy">' + money(yy(ur,1)) + ' API Y</span></div></div>';
+      }
+      h += head();
+      x.mgrs.forEach(function(m2){
+        h += '<div class="sbR g"><div class="l">' + esc(m2.row.label) + '</div>' + cells(m2.row,false) + '</div>';
+        m2.ags.forEach(function(a){
+          var hot = (w(a,0)||w(a,1)) ? ' hot' : '';
+          h += '<div class="sbR a' + hot + '"><div class="l">' + esc(subShort(a.label)) + '</div>'
+             + cells(a,true) + '</div>';
+        });
+      });
+      x.loose.forEach(function(a){
+        var hot = (w(a,0)||w(a,1)) ? ' hot' : '';
+        h += '<div class="sbR a' + hot + '"><div class="l">' + esc(subShort(a.label)) + '</div>'
+           + cells(a,true) + '</div>';
+      });
+      return h + '</div>';
+    }).join('');
 
     var t = S.total || {};
-    var html;
+    var bt = q('sbBranch');
+    if(bt) bt.innerHTML = '<div class="sbR br"><div class="l">Branch total</div>' + cells(t,false) + '</div>';
 
-    if(SUB.view === 'week'){
-      /* Everyone who put something up this week, in one list, biggest first.
-         An advisor with no new application but an increase still submitted
-         something, so the test is either figure rather than the app count. */
-      var wk = [];
-      units.forEach(function(u){
-        var un = u.row ? esc(u.row.label) : '';
-        function take(a, mgr){
-          if(wApps(a) || wApi(a)) wk.push({ r:a, unit:un, mgr:mgr });
-        }
-        u.mgrs.forEach(function(m){ m.ags.forEach(function(a){ take(a, esc(m.row.label)); }); });
-        u.loose.forEach(function(a){ take(a, ''); });
-      });
-      wk.sort(down(function(x){ return wApi(x.r); }));
-
-      html = pills() + hd('Advisor');
-      if(!wk.length){
-        html += '<div class="subNone">Nobody has submitted yet this week.</div>';
-      } else {
-        html += wk.map(function(x, i){
-          var who = esc(x.r.label);
-          var sub = [x.mgr, x.unit].filter(Boolean).join(' &middot; ');
-          return row(x.r, 'ag',
-            '<span class="rk">' + (i+1) + '</span>' + who +
-            (sub ? ' <span class="sub2">&middot; ' + sub + '</span>' : ''), true);
-        }).join('');
-        function sum(f){ return wk.reduce(function(s2,x){ return s2 + f(x.r); }, 0); }
-        html += '<div class="subrow tt"><div class="sl">' + wk.length +
-                ' advisor' + (wk.length===1?'':'s') + ' this week</div>' +
-                cells({ w:[sum(wApps), sum(wApi)],
-                        m:[sum(function(r){ return ((r.m)||[])[0]||0; }),
-                           sum(function(r){ return ((r.m)||[])[1]||0; })],
-                        y:[sum(function(r){ return ((r.y)||[])[0]||0; }),
-                           sum(function(r){ return ((r.y)||[])[1]||0; })] }, false) + '</div>';
-      }
-    } else {
-      html = pills() + hd('Hierachy');
-      units.forEach(function(u){
-        if(u.row) html += row(u.row, 'u', esc(u.row.label), false);
-        u.mgrs.forEach(function(m){
-          html += row(m.row, 'mg', esc(m.row.label), false);
-          m.ags.forEach(function(a){ html += row(a, 'ag', esc(a.label), true); });
-        });
-        u.loose.forEach(function(a){ html += row(a, 'ag', esc(a.label), true); });
-      });
-      html += '<div class="subrow tt"><div class="sl">Total</div>' + cells(t, false) + '</div>';
-    }
-    box.innerHTML = html;
-
-    box.querySelectorAll('[data-sub]').forEach(function(b){
-      b.onclick = function(){ SUB.view = b.dataset.sub; paintSubmitted(S); };
+    /* This week, biggest first. An advisor with no new application but an
+       increase still submitted something, so the test is either figure. */
+    var wk = [];
+    units.forEach(function(x){
+      var un = x.row ? subUnitName(x.row.label) : '';
+      function take(a, mg2){ if(w(a,0)||w(a,1)) wk.push({r:a, mgr:mg2, unit:un}); }
+      x.mgrs.forEach(function(m2){ m2.ags.forEach(function(a){ take(a, m2.row.label); }); });
+      x.loose.forEach(function(a){ take(a, ''); });
     });
+    wk.sort(down(function(z){ return w(z.r,1); }));
 
-    var tw = (t.w||[]), ty = (t.y||[]);
-    set('t_p12', 'Week ' + (S.week || '') + ' &middot; <b>' + n0(tw[0]) + '</b> apps '
-               + money(tw[1]) + ' &middot; year to date <b>' + n0(ty[0]) + '</b> apps '
-               + money(ty[1]));
-    /* A snapshot has to keep saying it is one. The first cut set this once
-       from the fetch and the next repaint overwrote it, so a board that does
-       not move looked exactly like a board that does - which is the worst of
-       the two states to be wrong about. It travels in the payload now. */
+    var MED = ['\u{1F947}','\u{1F948}','\u{1F949}'];
+    var wb = q('sbWeek');
+    if(wb){
+      wb.innerHTML = wk.length ? wk.slice(0,6).map(function(z,i){
+        return '<div class="sbP' + (i===0?' win':'') + '">'
+          + '<div class="med">' + (MED[i]||'') + '</div>'
+          + '<div class="pw"><b>' + esc(subShort(z.r.label)) + '</b><i>'
+          + esc([z.mgr, z.unit].filter(Boolean).join(' · ')) + '</i></div>'
+          + '<div class="pf"><b>' + full(w(z.r,1)) + '</b><span>' + w(z.r,0)
+          + ' app' + (w(z.r,0)===1?'':'s') + '</span></div></div>';
+      }).join('')
+      : '<div style="padding:1.4em .3em;color:var(--ink-3);font-size:.8em">'
+        + 'Nobody has submitted yet this week.</div>';
+    }
+    var wc = q('sbWeekCap');
+    if(wc) wc.innerHTML = 'This week &mdash; who is on the board<em>week ' + esc(String(S.week||'')) + '</em>';
+
+    subMix();
+    subChart(S);
+
+    set('t_p12', 'Week ' + (S.week || '') + ' &middot; <b>' + n0(w(t,0)) + '</b> apps '
+               + full(w(t,1)) + ' &middot; year to date <b>' + n0(yy(t,0)) + '</b> apps '
+               + full(yy(t,1)));
     var note = q('pdRosterNote');
     if(note) note.innerHTML = S.snapshot
       ? 'Salesforce snapshot, ' + esc(S.asAt||'') + ' &middot; '
-        + '<span style="color:var(--gold)">not live — this does not move on its own</span>'
+        + '<span style="color:var(--gold)">not live &mdash; this does not move on its own</span>'
         + ' &middot; confidential, branch management only'
       : 'As at ' + esc(S.asAt||'') + ' &middot; '
-        + '<span style="color:var(--gold)">confidential — branch management only</span>';
-    tickerFrom(S);
-    incChart(S);
-    agentOfWeek(S);
+        + '<span style="color:var(--gold)">confidential &mdash; branch management only</span>';
     return true;
+  }
+
+  /* A00427 - Ricky Rampersad is a code and a name in one string. The wall has
+     room for the name. */
+  function subShort(label){
+    var s2 = String(label||'');
+    var i = s2.indexOf(' - ');
+    return i > -1 ? s2.slice(i+3) : s2;
+  }
+  /* Units arrive as bare numbers. Say who they are where we know. */
+  var SUB_UNIT_NAMES = {};
+  function subUnitName(code){
+    var c = String(code||'').trim();
+    return SUB_UNIT_NAMES[c] || c;
+  }
+
+  /* Product mix — already in the feed, displayed nowhere until now. */
+  function subMix(){
+    var el = q('sbMix'); if(!el) return;
+    var ags = (typeof PROD !== 'undefined' && PROD.agents) || [];
+    var by = {}, tot = 0;
+    ags.forEach(function(a){
+      (a.mix||[]).forEach(function(x){
+        var key = String(x.k||'').trim() || 'Other';
+        by[key] = (by[key]||0) + (x.api||0);
+        tot += (x.api||0);
+      });
+    });
+    var rows = Object.keys(by).map(function(kk){ return {k:kk, v:by[kk]}; })
+                     .sort(function(a,b){ return b.v-a.v; });
+    if(!rows.length || !tot){
+      el.innerHTML = '<div style="font-size:.72em;color:var(--ink-3);line-height:1.6;margin-top:.4em">'
+        + 'The feed is not sending a product breakdown on this pull.</div>';
+      return;
+    }
+    var top = rows[0].v;
+    el.innerHTML = rows.slice(0,6).map(function(r){
+      return '<div class="sbMixRow"><span>' + esc(r.k) + '</span>'
+        + '<div class="sbMixBar"><div class="sbMixFill" style="width:'
+        + Math.max(2, r.v/top*100).toFixed(1) + '%"></div></div>'
+        + '<b>' + (r.v/tot*100).toFixed(0) + '%</b></div>';
+    }).join('');
+  }
+
+  /* Submitted against settled, month by month. The settled side comes from the
+     settlement tab — the same figures slide 15 reads — so the two boards can
+     never disagree. If slide 15 has not been read yet this asks for it once;
+     it is cached for five minutes, so the second pass is free. */
+  var SUB_LAST = null;
+  function subChart(S){
+    SUB_LAST = S || SUB_LAST;
+    if(!S) S = SUB_LAST;
+    if(!S) return;
+    var bars = q('incChart'), tots = q('sbTots');
+    if(!bars) return;
+    function k(v){
+      v = Number(v)||0;
+      if(Math.abs(v) >= 1e6) return (v/1e6).toFixed(2) + 'M';
+      if(Math.abs(v) >= 1000) return Math.round(v/1000).toLocaleString('en-US') + 'k';
+      return Math.round(v).toLocaleString('en-US');
+    }
+    var MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var sub = {};
+    (S.series||[]).forEach(function(x){ sub[x.m] = (x.nb||0) + (x.inc||0); });
+
+    var stl = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
+    var setBy = {};
+    if(stl && stl.months) stl.months.forEach(function(x){ setBy[MN[x.m-1]] = x.api||0; });
+    if(!stl && typeof settleFor === 'function' && typeof WHO !== 'undefined' && WHO){
+      try { settleFor(WHO); } catch(e){}
+    }
+
+    var names = MN.slice(0, stl && stl.months ? stl.months.length : ((S.series||[]).length || 9));
+    var max = 0;
+    names.forEach(function(n){
+      if((sub[n]||0) > max) max = sub[n]||0;
+      if((setBy[n]||0) > max) max = setBy[n]||0;
+    });
+    max = max || 1;
+
+    bars.innerHTML = names.map(function(n){
+      var sv = sub[n]||0, has = setBy.hasOwnProperty(n), tv = setBy[n]||0;
+      return '<div class="sbMb"><div class="sbPair">'
+        + '<div class="sbCol"><em>' + (sv?k(sv):'') + '</em>'
+        + '<div class="sbBar sub" style="height:' + (sv/max*100).toFixed(1) + '%"></div></div>'
+        + '<div class="sbCol"><em class="' + (has?'set':'wait') + '">' + (has?k(tv):'') + '</em>'
+        + '<div class="sbBar ' + (has?'set':'wait') + '" style="height:'
+        + (has ? (tv/max*100).toFixed(1) : '100') + '%"></div></div>'
+        + '</div><span>' + n + '</span></div>';
+    }).join('');
+
+    if(tots){
+      var subT = ((S.total||{}).y||[])[1] || 0;
+      var setT = stl && stl.ytd ? (stl.ytd.api||0) : 0;
+      tots.innerHTML =
+        '<div class="sbTot"><i class="sbSw sub"></i><b>TT$' + Math.round(subT).toLocaleString('en-US')
+          + '</b><span>submitted, year to date</span></div>'
+        + (setT ? '<div class="sbTot"><i class="sbSw set"></i><b>TT$'
+            + Math.round(setT).toLocaleString('en-US') + '</b><span>settled, year to date</span></div>'
+          + '<div class="sbTot gap"><b>TT$' + Math.round(subT-setT).toLocaleString('en-US')
+            + '</b><span>written but not yet settled</span></div>'
+          : '<div class="sbTot"><span>settled fills in from the settlement board</span></div>');
+    }
   }
 
   function paintRoster(P){
@@ -4939,7 +5120,12 @@ var PROD = {
       .then(function(t){
         var j = null; try{ j = JSON.parse(t); }catch(e){}
         STL.busy = false;
-        if(j && j.success) STL.at = Date.now();
+        if(j && j.success){
+          STL.at = Date.now();
+          /* Slide 13 draws the settled bars from this same payload, so the two
+             boards can never disagree. Redraw it now that the figures exist. */
+          try { if(typeof subChart === 'function') subChart(null); } catch(e){}
+        }
         if(!j || !j.success){
           /* Say what it means, not what the router said. A wall in an office
              should never show "Unknown action. GET: pop7 | production | ..." —
