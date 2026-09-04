@@ -4730,9 +4730,15 @@ var PROD = {
             '<div style="font-size:1.15em;font-weight:800;color:var(--ink-2);margin-bottom:.35em">' +
             (notOn ? 'Not switched on yet' : 'The board could not be read') + '</div>' +
             '<div style="font-size:.86em;color:var(--ink-3);max-width:34em;line-height:1.6">' +
+            /* Only the ROUTER's "Unknown action" dump gets swallowed — it is
+               unreadable and names endpoints. Everything else here is our own
+               message, written for a person: which tab is missing, or that the
+               view needs a branch sign-in. Hiding those left the wall saying
+               "there is simply nothing to show" when the server had just said
+               exactly what was wrong. */
             (notOn
               ? 'The branch server does not have the settlement action yet. Everything else on the wall is unaffected.'
-              : 'The branch server answered, but not with settlement figures. Nothing here is out of date \u2014 there is simply nothing to show.') +
+              : (raw || 'The branch server answered, but not with settlement figures.')) +
             '</div></div>';
           return;
         }
