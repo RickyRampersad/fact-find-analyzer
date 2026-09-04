@@ -597,8 +597,8 @@
      it does not have to be a line of its own — that line was the roster's
      last two advisors. */
   .pdmark{margin-left:auto; margin-right:.7em; text-align:right;
-    font-size:.5em; font-weight:700; letter-spacing:.02em; color:var(--ink-3);
-    line-height:1.25; max-width:34em}
+    font-size:.5em; font-weight:700; letter-spacing:.03em; color:var(--ink-3);
+    white-space:nowrap; cursor:help}
   @media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -1644,12 +1644,12 @@
      instead of scrolling out of sight. Nothing is removed — the top five
      still read as the top five, they just stop being the tallest thing on
      the slide. */
-  .sbP{padding:.26em .5em}
-  .sbP .med{font-size:1.05em}
-  .sbP .pw b{font-size:.76em}
+  .sbP{padding:.34em .55em}
+  .sbP .med{font-size:1.15em}
+  .sbP .pw b{font-size:.82em}
   .sbP .pw i{font-size:.6em}
-  .sbP .pf b{font-size:.86em}
-  .sbP.win .pw b{font-size:.86em} .sbP.win .pf b{font-size:.98em}
+  .sbP .pf b{font-size:.92em}
+  .sbP.win .pw b{font-size:.94em} .sbP.win .pf b{font-size:1.06em}
   .sbP .pbar{height:.26em; margin:.16em 0 .14em}
   .sbP .pmeta{font-size:.54em; gap:.55em; flex-wrap:wrap; row-gap:.1em}
   .sbP .pmeta .set{color:var(--teal)}
@@ -2046,7 +2046,7 @@
         <div id="sbBranch"></div>
       </div>
       <div class="sbCard">
-        <div class="sbCap" id="sbWeekCap">This week &mdash; who is on the board</div>
+        <div class="sbCap" id="sbWeekCap">This week &mdash; top three</div>
         <div id="sbWeek"></div>
         <div class="sbSec" style="margin-top:auto">
           <div class="sbCap" style="margin:0">Product mix<em>share of API</em></div>
@@ -5184,7 +5184,10 @@ var PROD = {
     }
     var wb = q('sbWeek');
     if(wb){
-      wb.innerHTML = wk.length ? wk.slice(0,5).map(function(z,i){
+      /* Three, not five. The branch manager asked for the top three, and five
+         blocks with the product mix beneath them ran the fifth off the card
+         on a full wall. Three medals, three names, nothing cut in half. */
+      wb.innerHTML = wk.length ? wk.slice(0,3).map(function(z,i){
         var api = w(z.r,1), apps = w(z.r,0);
         var share = weekTop ? Math.max(3, api/weekTop*100) : 3;
         var cov = coverFor(z.r.label);
@@ -5228,7 +5231,7 @@ var PROD = {
     if(rc) rc.innerHTML = 'gold marks the branch\u2019s best &middot; persistency as at 31 August'
       + ' &middot; the total includes production written under another branch';
     var wc = q('sbWeekCap');
-    if(wc) wc.innerHTML = 'This week &mdash; who is on the board<em>week ' + esc(String(S.week||'')) + '</em>';
+    if(wc) wc.innerHTML = 'This week &mdash; top three<em>week ' + esc(String(S.week||'')) + '</em>';
 
     subMix();
     subChart(S);
@@ -5249,15 +5252,17 @@ var PROD = {
           + full(w(t,1)) + ' &middot; year to date <b>' + n0(yy(t,0)) + '</b> apps '
           + full(yy(t,1))));
     var note = q('pdRosterNote');
-    var miss = SUB_MISSING ? ' &middot; <span style="color:var(--gold)">'
-                             + esc(SUB_MISSING) + '</span>' : '';
-    if(note) note.innerHTML = (S.snapshot
-      ? 'Salesforce snapshot, ' + esc(S.asAt||'') + ' &middot; '
-        + '<span style="color:var(--gold)">not live &mdash; this does not move on its own</span>'
-        + ' &middot; confidential, branch management only'
-      : 'As at ' + esc(S.asAt||'') + ' &middot; '
-        + '<span style="color:var(--gold)">confidential &mdash; branch management only</span>')
-      + miss;
+    /* One short line. The as-at date and the marking; anything else about
+       the feed goes on the tooltip, where it is there for whoever wants it
+       and costs the panel nothing. Three lines of small print in the title
+       row was the jumble the branch manager was pointing at. */
+    if(note){
+      note.innerHTML = 'As at ' + esc(S.asAt||'')
+        + (S.snapshot ? ' <span style="color:var(--gold)">snapshot</span>' : '')
+        + ' &middot; confidential';
+      note.title = (S.snapshot ? 'Salesforce snapshot — this does not move on its own. ' : '')
+        + 'Branch management only.' + (SUB_MISSING ? ' ' + SUB_MISSING + '.' : '');
+    }
     return true;
   }
 
