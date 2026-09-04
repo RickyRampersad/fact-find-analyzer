@@ -1341,6 +1341,23 @@
     .stlBig b{font-size:2em}
   }
 
+
+  /* agent x month grid (slide 15, second view) */
+  .stlTab{width:100%; border-collapse:collapse; table-layout:fixed; font-variant-numeric:tabular-nums}
+  .stlTab th{font-size:.62em; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-3); padding:.2em .1em; text-align:center}
+  .stlTab th.nmH{text-align:left; width:30%}
+  .stlTab th.ytdH{color:var(--gold)}
+  .stlTab td{padding:.16em .1em; text-align:center; font-size:.72em; font-weight:700;
+    border-radius:.25em; color:var(--ink-2)}
+  .stlTab td.nm{text-align:left; font-size:.8em; font-weight:700; color:var(--ink);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-left:.2em}
+  .stlTab td.ytd{color:var(--gold); font-weight:800; font-size:.78em}
+  .stlTab tr.tot td{border-top:1px solid var(--line-2); color:var(--ink); font-weight:800;
+    padding-top:.3em}
+  .stlTab tr.tot td.nm{color:var(--ink-3); font-weight:800; font-size:.72em;
+    letter-spacing:.06em; text-transform:uppercase}
+  .stlZero{color:var(--ink-3); opacity:.35}
 </style>
 </head>
 <body>
@@ -4690,7 +4707,7 @@ var PROD = {
 
      Tap a month to re-rank the league for that month alone. Tap API or APPS
      to change what it ranks on. The year totals never move. */
-  var STL = { mode:'api', month:0, data:null, busy:false };
+  var STL = { mode:'api', month:0, data:null, busy:false, view:'board' };
 
   function stlMoney(n){
     n = Math.round(Number(n)||0);
@@ -4745,6 +4762,56 @@ var PROD = {
         STL.data = j; stlPaint();
       })
       .catch(function(){ STL.busy = false; });
+  }
+
+
+  /* The agent grid. Every advisor down the side, the twelve months across,
+     and the year at the end — which is the shape a manager already reads on
+     paper. Cells are shaded against the busiest cell on the board, so a strong
+     month is visible from across the room without reading a number. */
+  function stlAgentGrid(j){
+    var nm = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+    var key = (STL.mode === 'apps') ? 'apps' : 'api';
+    var rows = (j.matrix || []).slice(0, 12);
+    var max = 0;
+    rows.forEach(function(a){ a.m.forEach(function(c){ if(c[key] > max) max = c[key]; }); });
+
+    var cell = function(v){
+      if(!v) return '<td class="stlZero">·</td>';
+      var t = max ? Math.min(1, v / max) : 0;
+      var bg = 'rgba(45,212,191,' + (0.10 + t * 0.55).toFixed(3) + ')';
+      var txt = (key === 'apps') ? v : stlMoney(v).replace('TT$','');
+      return '<td style="background:' + bg + ';color:' + (t > .55 ? '#04121A' : 'var(--ink)') + '">' + txt + '</td>';
+    };
+
+    var h = '<div class="stlCard"><div class="stlCap">Every advisor, month by month' +
+      '<div class="stlPills">' +
+      '<button type="button" class="stlPill' + (STL.mode==='api'?' on':'') + '" data-mode="api">API</button>' +
+      '<button type="button" class="stlPill' + (STL.mode==='apps'?' on':'') + '" data-mode="apps">APPS</button>' +
+      '</div></div><div style="overflow:auto;flex:1;min-height:0"><table class="stlTab"><tr>' +
+      '<th class="nmH">Advisor</th>' + nm.map(function(x){ return '<th>' + x + '</th>'; }).join('') +
+      '<th class="ytdH">YTD</th></tr>';
+
+    rows.forEach(function(a){
+      h += '<tr><td class="nm" title="' + (a.name||a.code) + '">' + (a.name || a.code) + '</td>' +
+           a.m.map(function(c){ return cell(c[key]); }).join('') +
+           '<td class="ytd">' + (key === 'apps' ? a.apps : stlMoney(a.api).replace('TT$','')) + '</td></tr>';
+    });
+
+    var mons = j.months || [];
+    h += '<tr class="tot"><td class="nm">Branch</td>' +
+         mons.map(function(m){
+           var v = m[key];
+           return '<td>' + (v ? (key === 'apps' ? v : stlMoney(v).replace('TT$','')) : '·') + '</td>';
+         }).join('') +
+         '<td class="ytd">' + (key === 'apps' ? j.ytd.apps : stlMoney(j.ytd.api).replace('TT$','')) + '</td></tr>';
+
+    h += '</table></div>';
+    if((j.matrix || []).length > rows.length){
+      h += '<div class="stlQuota" style="margin-top:.4em">Showing the top ' + rows.length +
+           ' of ' + j.matrix.length + ' by API. Figures are net of reversals.</div>';
+    }
+    return h + '</div>';
   }
 
   function stlPaint(){
@@ -4837,7 +4904,21 @@ var PROD = {
     });
     lh += '</div></div>';
 
-    box.innerHTML = h + '<div class="stlGrid">' + mh + lh + '</div>';
+    /* Two views: the board a room reads at a glance, and the grid a manager
+       reads properly. The switch sits under the hero so it is thumb-reachable
+       on the wall's own screen. */
+    h += '<div style="display:flex;gap:.35em;justify-content:center;margin:-.25em 0 .1em">' +
+      '<button type="button" class="stlPill' + (STL.view==='board'?' on':'') + '" data-view="board">Board</button>' +
+      '<button type="button" class="stlPill' + (STL.view==='grid'?' on':'') + '" data-view="grid">Every advisor</button>' +
+      '</div>';
+
+    box.innerHTML = h + (STL.view === 'grid'
+        ? '<div class="stlGrid" style="grid-template-columns:1fr">' + stlAgentGrid(j) + '</div>'
+        : '<div class="stlGrid">' + mh + lh + '</div>');
+
+    box.querySelectorAll('[data-view]').forEach(function(b){
+      b.onclick = function(){ STL.view = b.dataset.view; stlPaint(); };
+    });
 
     var t = document.getElementById('t_p14');
     if(t) t.textContent = 'Settlement ' + j.year;
