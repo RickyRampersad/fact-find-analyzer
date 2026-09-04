@@ -1503,6 +1503,9 @@
   .sbR.mhd .l{display:flex; align-items:baseline; gap:.4em; min-width:0}
   .sbR.mhd .l b{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
   .sbR.mhd .l i{flex:none}
+  .sbR.mhd .l u{flex:none; text-decoration:none; font-size:.56em; font-weight:700;
+    color:var(--ink-3); letter-spacing:.01em; white-space:nowrap}
+  @media (max-width:1600px){ .sbR.mhd .l u{display:none} }
   .sbR.a .l u{flex:none; padding:0 .3em; border-radius:.28em;
     background:rgba(148,163,184,.16); color:var(--ink-3); font-size:.56em;
     font-weight:800; letter-spacing:.02em; text-decoration:none;
@@ -5041,27 +5044,57 @@ var PROD = {
        standing in front of the board — worse, each holds two managers, so
        Akaash's team sat inside a heading with Ricky's name nowhere near it.
        Four teams, four names, everybody under the person they report to. */
-    var teams = [];
+    /* THE HIERARCHY HOLDS, AND THE ORDER INSIDE IT IS EARNED.
+       The first manager in a hierarchy is its head and stays at the top of
+       it; everyone under them is ordered by what they have written, and the
+       hierarchies themselves by their own totals. Sorting every team flat
+       put Akaash above the branch manager he reports to, which reads as four
+       teams of equal standing rather than two hierarchies. */
+    function teamApi(tm){
+      return yy(tm.row,1) || tm.ags.reduce(function(a,c){ return a+yy(c,1); },0);
+    }
+    var groups = [];
     units.forEach(function(x){
-      x.mgrs.forEach(function(m2){
-        teams.push({ row:m2.row, ags:m2.ags, unit:x.row ? x.row.label : '' });
+      /* The head of a hierarchy is the person it is named after, not
+         whichever manager the feed happened to list first — that put Kerwyn
+         under Gary, which is the wrong way round. The unit number carries
+         the name. */
+      var head = x.row ? subUnitName(x.row.label) : '';
+      var mine = x.mgrs.map(function(m2){
+        var isHead = String(m2.row.label).trim() === String(head).trim();
+        return { row:m2.row, ags:m2.ags, unit:x.row ? x.row.label : '',
+                 under: isHead ? '' : head, head: isHead };
       });
-      if(x.loose.length) teams.push({ row:null, ags:x.loose, unit:x.row ? x.row.label : '' });
+      if(x.loose.length) mine.push({ row:null, ags:x.loose,
+        unit:x.row ? x.row.label : '', under:head, head:false });
+      var rest = mine.filter(function(tm){ return !tm.head; }).sort(down(teamApi));
+      groups.push({ teams: mine.filter(function(tm){ return tm.head; }).concat(rest),
+                    api: mine.reduce(function(a,tm){ return a + teamApi(tm); }, 0) });
     });
-    teams.sort(down(function(tm){ return yy(tm.row,1) ||
-      tm.ags.reduce(function(a,c){ return a+yy(c,1); },0); }));
+    groups.sort(down(function(g){ return g.api; }));
+    var teams = [];
+    groups.forEach(function(g){ g.teams.forEach(function(tm){ teams.push(tm); }); });
 
     /* Two columns, filled so they end up the same height rather than one
        running off the bottom while the other sits half empty. */
     var colH = [0,0], colOf = [[],[]];
-    /* A heading is not one row: it carries the team name, the count and the
-       share bar under it, so counting it as one left the first column half a
-       screen taller than the second. Weighted, the two columns come out level
-       and the roster stops needing to scroll to reach the last team. */
-    teams.forEach(function(tm){
-      var h = tm.ags.length + (tm.row ? 2.4 : 0.2);
+    /* A WHOLE HIERARCHY GOES IN ONE COLUMN. Packing team by team put Gary in
+       the left column and Kerwyn, who he reports into, in the right — the
+       same stranding the unit break was meant to stop, one level up. The
+       hierarchy is the thing that cannot be split.
+
+       A heading is not one row either: it carries the name, the count and the
+       share bar under it, so counting it as one left one column half a screen
+       taller than the other. */
+    function groupH(g){
+      return g.teams.reduce(function(a, tm){
+        return a + tm.ags.length + (tm.row ? 2.4 : 0.2);
+      }, 0);
+    }
+    groups.forEach(function(g){
       var i = colH[0] <= colH[1] ? 0 : 1;
-      colOf[i].push(tm); colH[i] += h;
+      g.teams.forEach(function(tm){ colOf[i].push(tm); });
+      colH[i] += groupH(g);
     });
 
     var branchApi = yy(S.total||{},1) || 1;
@@ -5079,6 +5112,8 @@ var PROD = {
           mr._settled = tm.ags.reduce(function(a2,c2){ return a2 + settledFor(c2.label); }, 0);
           mr._p2 = persOf(tm.ags,'p2'); mr._p3 = persOf(tm.ags,'p3'); mr._p5 = persOf(tm.ags,'p5');
           h += '<div class="sbR mhd"><div class="l"><b>' + esc(mr.label) + '</b>'
+             + (tm.under ? '<u title="reports to ' + esc(tm.under) + '">\u21B3 '
+                           + esc(String(tm.under).split(' ')[0]) + '</u>' : '')
              + '<i>' + n + '</i></div>' + cells(mr,false) + '</div>'
              + '<div class="sbShare"><div class="sbShareFill" style="width:' + share.toFixed(1) + '%"></div>'
              + '<span>' + share.toFixed(0) + '% of the branch</span></div>';
@@ -5234,8 +5269,12 @@ var PROD = {
     return i > -1 ? s2.slice(i+3) : s2;
   }
   /* Units arrive as bare numbers. Say who they are where we know. */
+  /* The hierarchies, not the teams. 26000 is the branch manager's own and
+     carries Akaash's team inside it; 26001 is Kerwyn's and carries Gary's.
+     The feed has always nested them correctly — the panel was showing four
+     teams flat and saying nothing about who reports into whom. */
   var SUB_UNIT_NAMES = {
-    '26000': 'Branch Direct',
+    '26000': 'Ricky Rampersad',
     '26001': 'Kerwyn Ramroach',
     '26002': 'Akaash Kalladeen',
     '26003': 'Gary Sookdeo'
