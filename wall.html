@@ -36,7 +36,7 @@
      Every element here still earns its place; each simply takes less. */
   header{
     display:flex; align-items:center; gap:.9em;
-    padding:.42em 1.2em; border-bottom:1px solid var(--line);
+    padding:.18em 1.2em; border-bottom:1px solid var(--line);
     background:linear-gradient(180deg,rgba(20,32,54,.9),rgba(10,17,32,.75));
   }
   .howto{
@@ -69,6 +69,18 @@
   }
   .brand{font-size:1.06em; font-weight:750; letter-spacing:-.012em; line-height:1.1;
          white-space:nowrap}
+  .brand.slim{font-size:.62em; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+  .clock.slim{font-size:.8em}
+  /* The rail brand: the shield and the name, small, left of the dots. */
+  .railBrand{display:flex; align-items:center; gap:.5em; margin-right:.9em; white-space:nowrap}
+  .railBrand .shield{height:1.5em; filter:drop-shadow(0 0 .5em var(--teal-glow))}
+  .railBrand b{font-size:.62em; font-weight:800; letter-spacing:.02em; color:#fff}
+  .railBrand small{font-size:.44em; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-3);
+    font-weight:700; margin-left:.6em}
+  @media (max-width:820px){ .railBrand small{display:none} }
+  /* On a phone the rail is the shield and the dots; the name is in the
+     header already and the row was wrapping to two. */
+  @media (max-width:600px){ .railBrand b{display:none} .railBrand{margin-right:.4em} }
   /* "Guardian Life of the Caribbean" sat on a line of its own under the
      branch name and cost a full row of screen for six words that never
      change. It reads alongside instead. */
@@ -89,7 +101,7 @@
   .ptitle h1 i{font-style:normal; color:var(--gold)}
   .ptitle .tag{font-size:.62em; letter-spacing:.2em; text-transform:uppercase; font-weight:800;
                color:var(--ink-4); padding:.25em .6em; border:1px solid var(--line-2); border-radius:.35em}
-  main{position:relative; height:calc(100vh - 5.1em)}
+  main{position:relative; height:calc(100vh - var(--hdrH, 5.1em))}
   .panel{position:absolute; inset:0; padding:1.25em 1.5em; display:flex; flex-direction:column; gap:.95em;
          opacity:0; transform:translateY(.7em) scale(.995); pointer-events:none;
          transition:opacity .6s ease, transform .6s cubic-bezier(.2,.7,.3,1)}
@@ -1533,7 +1545,6 @@
        persistency and cover, and two rows times five names is the roster's
        last team. Below a full wall it stays on one line and clips. */
     .sbP .pmeta{flex-wrap:nowrap; overflow:hidden; white-space:nowrap}
-    .sbBars{height:2em}
     .sbTots{margin-bottom:.1em}
     #p12{gap:.55em}
   }
@@ -1545,13 +1556,10 @@
      worth more than the repetition. Settled stays, because that is what the
      percentage is computed on and somebody will want to see it. */
   @media (max-width:900px){ .sbR.hd .c{font-size:.46em; letter-spacing:0} }
-  /* Under 1500px the five-year column steps out. Two and three year say
-     what a branch acts on this quarter; five year is the one to lose when
-     the alternative is squeezing the names again. */
+  /* Under 1500px the columns tighten rather than lose the five-year — the
+     branch manager wants all three on a laptop as well as the wall. */
   @media (max-width:1500px){
-    .sbR .c.pc5, .sbR .pc5{display:none}
-    .sbR{grid-template-columns:minmax(6.5em,1fr) repeat(2,minmax(1.4em,2.15em)) repeat(2,minmax(1.4em,2.15em)) minmax(2em,2.7em) repeat(2,minmax(1.85em,2.1em))}
-    .sbR.hdg .grp.pc{grid-column:span 2}
+    .sbR{grid-template-columns:minmax(6em,1fr) repeat(2,minmax(1.3em,1.95em)) repeat(2,minmax(1.3em,1.95em)) minmax(1.8em,2.4em) repeat(3,minmax(1.45em,1.72em))}
   }
   @media (max-height:860px){
     .sbR .l{font-size:.57em}
@@ -1559,7 +1567,6 @@
     .sbR.mhd{padding:.09em .35em}
     .sbShare{height:.36em; margin:.01em .1em .03em}
     .sbR.mhd{padding:.06em .35em}
-    .sbBars{height:1.6em}
     .sbTots{margin-bottom:.06em; gap:1.1em}
     .sbP{padding:.14em .4em}
     .sbP .pbar{height:.22em; margin:.12em 0 .1em}
@@ -1608,6 +1615,20 @@
   .sbR.a .l{padding-left:.9em}
   .sbR.a.hot .l{color:#fff; font-weight:700}
   .sbR.a.hot .c{color:var(--gold)}
+  .sbStrip{display:grid; grid-template-columns:repeat(4,1fr); gap:.5em; margin-top:.4em; flex:none}
+  .sbTile{display:flex; align-items:baseline; gap:.35em; padding:.3em .6em; border-radius:.55em;
+    background:rgba(255,255,255,.045); border:1px solid var(--line); min-width:0; overflow:hidden;
+    white-space:nowrap}
+  .sbTile span{font-size:.5em; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-3); margin-right:auto; overflow:hidden; text-overflow:ellipsis}
+  .sbTile b{font-size:.78em; font-weight:800; color:#fff; font-variant-numeric:tabular-nums}
+  .sbTile i{font-style:normal; font-size:.5em; color:var(--ink-3); font-weight:700; margin-right:.3em}
+  .sbTile.wk{background:linear-gradient(90deg,rgba(245,185,53,.24),rgba(245,185,53,.06));
+    border-color:rgba(245,185,53,.5)}
+  .sbTile.wk span{color:var(--gold)} .sbTile.wk b{color:var(--gold)}
+  .sbTile.set{background:rgba(45,212,191,.12); border-color:rgba(45,212,191,.35)}
+  .sbTile.set span{color:var(--teal)} .sbTile.set b{color:#6EE7B7}
+  @media (max-width:1100px){ .sbStrip{grid-template-columns:1fr 1fr} }
   .sbR.br{background:rgba(45,212,191,.13); border-radius:.55em; border:none;
     margin-top:.45em; padding:.35em .3em}
   .sbR.br .l{font-weight:800; letter-spacing:.1em; font-size:.8em; color:var(--teal)}
@@ -1668,6 +1689,23 @@
      and the mix keeps the space it needs. */
   #sbWeek{flex:0 1 auto; min-height:0; overflow:hidden}
   .sbGrid .sbCard .sbSec{flex:none}
+  .sbPie{display:flex; align-items:center; gap:.8em; margin-top:.35em}
+  .sbRing{width:4.6em; height:4.6em; border-radius:50%; flex:none; position:relative;
+    box-shadow:0 0 0 1px rgba(255,255,255,.08), 0 .4em 1.2em rgba(0,0,0,.35)}
+  .sbHole{position:absolute; inset:1.05em; border-radius:50%; background:var(--panel);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1}
+  .sbHole b{font-size:.95em; font-weight:800; color:#fff}
+  .sbHole span{font-size:.46em; color:var(--ink-3); font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; margin-top:.2em}
+  .sbLeg{flex:1; min-width:0; display:flex; flex-direction:column; gap:.12em}
+  .sbLeg div{display:flex; align-items:center; gap:.4em; min-width:0}
+  .sbLeg i{width:.55em; height:.55em; border-radius:.14em; flex:none}
+  .sbLeg span{font-size:.6em; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; flex:1; min-width:0}
+  .sbLeg b{font-size:.6em; font-variant-numeric:tabular-nums; color:#fff; flex:none}
+  .sbPieNone{font-size:.66em; color:var(--ink-3); line-height:1.5; margin-top:.35em}
+  .sbPieNone b{color:var(--gold)}
+  .sbP .pmeta .sold{color:#C4B5FD}
   .sbMixRow{display:grid; grid-template-columns:7em 1fr auto; gap:.5em; align-items:center;
     margin-top:.3em}
   .sbMixRow span{font-size:.72em; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis;
@@ -1677,7 +1715,11 @@
     background:linear-gradient(90deg,var(--teal-deep),var(--teal))}
   .sbMixRow b{font-size:.7em; font-variant-numeric:tabular-nums; color:var(--ink-2)}
   .sbChart{flex:0 0 auto; padding:.38em .9em .28em}
-  .sbTots{display:flex; gap:1.5em; align-items:baseline; margin-bottom:.18em; flex-wrap:wrap}
+  .sbTots{display:grid; grid-template-columns:auto auto 1fr; grid-auto-rows:auto; column-gap:1.4em;
+    row-gap:.04em; align-items:baseline; margin-bottom:.14em}
+  .sbTot.sub b{color:#C4B5FD} .sbTot.set b{color:#6EE7B7}
+  .sbTot.gap{grid-column:2; grid-row:2}
+  .sbTots .sbKey{grid-column:3; grid-row:1 / span 2; justify-self:end; align-self:center}
   .sbTot{display:flex; align-items:baseline; gap:.45em}
   .sbTot b{font-size:.92em; font-weight:800; font-variant-numeric:tabular-nums}
   .sbTot span{font-size:.66em; color:var(--ink-3)}
@@ -1685,11 +1727,12 @@
   .sbSw.sub{background:linear-gradient(180deg,#A78BFA,#7C5CE0)}
   .sbSw.set{background:linear-gradient(180deg,var(--teal),var(--teal-deep))}
   .sbTot.gap b{color:var(--gold)}
-  .sbBars{display:flex; gap:.8em; align-items:flex-end; height:2.6em; margin-top:.04em}
-  .sbMb{flex:1; display:flex; flex-direction:column; justify-content:flex-end; gap:.2em; height:100%}
-  .sbPair{display:flex; gap:.22em; align-items:flex-end; height:100%}
+  .sbBars{display:flex; gap:.8em; align-items:flex-end; height:auto; margin-top:.02em}
+  .sbMb{flex:1; display:flex; flex-direction:column; justify-content:flex-end; gap:.12em}
+  .sbMb>span{font-size:.55em}
+  .sbPair{display:flex; gap:.22em; align-items:flex-end}
   .sbCol{flex:1; display:flex; flex-direction:column; justify-content:flex-end;
-    align-items:center; gap:.15em; height:100%}
+    align-items:center; gap:.1em}
   .sbCol em{font-style:normal; font-size:.55em; font-weight:800; color:var(--ink-3)}
   .sbCol em.set{color:var(--teal)} .sbCol em.wait{color:var(--line-2)}
   .sbBar{width:100%; border-radius:.22em .22em 0 0; min-height:2px;
@@ -1768,20 +1811,18 @@
 </div>
 
 
+<!-- The shield and the branch name live on the rail at the foot of the
+     screen now, beside the dots. The header is the controls and the clock,
+     one thin line, so the panels get the rows the brand was sitting on. -->
 <header>
-  <svg class="shield" viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg" aria-label="Ricky Rampersad Branch">
-    <path d="M30 2 L56 10 L56 36 C56 52 44 64 30 68 C16 64 4 52 4 36 L4 10 Z" fill="#fff" stroke="#0D9488" stroke-width="2.5"/>
-    <path d="M30 6 L52 13 L52 36 C52 50 41 60 30 64 C19 60 8 50 8 36 L8 13 Z" fill="#1E293B"/>
-    <path d="M16 36 L26 46 L46 22" fill="none" stroke="#14B8A6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-  <div class="brand">Ricky Rampersad Branch<small>Guardian Life of the Caribbean</small></div>
+  <div class="brand slim" id="brandTop">Ricky Rampersad Branch</div>
   <div class="spacer"></div>
   <a class='howto' href='/walkthrough' title='Watch the walkthrough'>
     <span class="tri"></span>How it works</a>
   <button class="hbtn" id="pdXls" type="button" hidden title="Download production as a spreadsheet">&#8681; Spreadsheet</button>
   <button class="hbtn" id="pdSnd" type="button" title="Narration and music">&#9834;</button>
   <div class="live"><span class="dot" id="dot"></span><span id="liveTxt">Live</span></div>
-  <div class="clock num" id="clock">—<span id="date"></span></div>
+  <div class="clock num slim" id="clock">—<span id="date"></span></div>
 </header>
 
 <main>
@@ -2049,8 +2090,8 @@
         <div class="sbCap" id="sbWeekCap">This week &mdash; top three</div>
         <div id="sbWeek"></div>
         <div class="sbSec" style="margin-top:auto">
-          <div class="sbCap" style="margin:0">Product mix<em>share of API</em></div>
-          <div id="sbMix"></div>
+          <div class="sbCap" style="margin:0">Products this week<em id="sbPieCap">everybody</em></div>
+          <div class="sbPie" id="sbPie"></div>
         </div>
       </div>
     </div>
@@ -2938,7 +2979,30 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
      screen to say one thing; on the button row it costs none, and it is
      next to the other controls anybody reaches for. */
   bar.insertBefore(no, bar.firstChild);
+  var rb=document.createElement('div');
+  rb.className='railBrand';
+  rb.innerHTML='<svg class="shield" viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg" aria-label="Ricky Rampersad Branch">'
+    +'<path d="M30 2 L56 10 L56 36 C56 52 44 64 30 68 C16 64 4 52 4 36 L4 10 Z" fill="#fff" stroke="#0D9488" stroke-width="2.5"/>'
+    +'<path d="M30 6 L52 13 L52 36 C52 50 41 60 30 64 C19 60 8 50 8 36 L8 13 Z" fill="#1E293B"/>'
+    +'<path d="M16 36 L26 46 L46 22" fill="none" stroke="#14B8A6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +'<b>Ricky Rampersad Branch</b><small>Guardian Life of the Caribbean</small>';
+  rail.style.flexDirection='row';
+  rail.appendChild(rb);
   rail.appendChild(dots);
+  /* main is sized from the header's real height, so a change to the header
+     never has to be matched by hand in a stylesheet again. */
+  function fitMain(){
+    var h=document.querySelector('header');
+    if(h) document.documentElement.style.setProperty('--hdrH', (h.offsetHeight + 1) + 'px');
+  }
+  /* Measured again after the fonts land and the header has wrapped, if it
+     is going to: on a phone the first measurement was six pixels short of
+     the header it ended up with, and main ran under the bottom of the
+     screen by exactly that much. */
+  fitMain();
+  window.addEventListener('load', function(){ fitMain(); setTimeout(fitMain, 400); });
+  window.addEventListener('resize', fitMain);
+  window.addEventListener('orientationchange', function(){ setTimeout(fitMain, 300); });
   document.body.appendChild(rail);
 
 
@@ -4861,7 +4925,18 @@ var PROD = {
        answer is the same on every screen and does not move between paints.
        Four winners on the panel — most apps this week, most API this week,
        most apps this year, most API this year. Nothing else is gold. */
-    var ag = S.rows.filter(function(r){ return r.lvl === 2; });
+    /* WITH ANOTHER BRANCH, BUT THE PRODUCTION IS STILL OURS.
+       Javid and Aleema write under another branch now and the branch keeps
+       their production, so their figures stay in every total and in their
+       team's headcount — Ricky's team is twelve, not ten — and their names
+       come off the rows and off the recognition board. They are skipped
+       only at the point of drawing. Declared here, above the first use. */
+    var SUB_ELSEWHERE = { A04020: 1, A04028: 1 };
+    function elsewhere(label){
+      var c2 = String(label||'').toUpperCase().match(/[AU](\d{5})/);
+      return !!(c2 && SUB_ELSEWHERE['A' + c2[1]]);
+    }
+    var ag = S.rows.filter(function(r){ return r.lvl === 2 && !elsewhere(r.label); });
     function best(pick){
       var top = null, tv = 0;
       ag.forEach(function(r){
@@ -4992,6 +5067,10 @@ var PROD = {
               + c(col(yy(r,1)), hi && r===bYi);
       var set = r._settled || 0;
       out += c(set ? col(set) : '&middot;', false, ' s');
+      /* Persistency is an advisor's own book. A team's is not a figure the
+         branch acts on — the branch manager asked for no tally — so the team
+         and branch rows leave those three cells empty. */
+      if(r.lvl !== 2) return out + '<div class="c pc"></div><div class="c pc"></div><div class="c pc pc5"></div>';
       return out + persCell(r._p2) + persCell(r._p3) + persCell(r._p5, ' pc5');
     }
     function head(){
@@ -5010,20 +5089,8 @@ var PROD = {
 
     /* Rebuilt into a tree before sorting. Sorting the flat rows in place would
        scatter advisors away from the manager they belong to. */
-    /* WITH ANOTHER BRANCH, BUT THE PRODUCTION IS STILL OURS.
-       These two write under another branch now and the branch keeps their
-       production, so their figures belong in the branch total and their
-       names do not belong on a roster of who is here. They come out of the
-       rows and out of the recognition board; the total is the feed's own and
-       is not touched, so nothing goes missing from it. */
-    var SUB_ELSEWHERE = { A04020: 1, A04028: 1 };
-    function elsewhere(label){
-      var c2 = String(label||'').toUpperCase().match(/[AU](\d{5})/);
-      return !!(c2 && SUB_ELSEWHERE['A' + c2[1]]);
-    }
     var units=[], u=null, mg=null;
     S.rows.forEach(function(r){
-      if(r.lvl === 2 && elsewhere(r.label)) return;
       if(r.lvl===0){ u={row:r,mgrs:[],loose:[]}; units.push(u); mg=null; }
       else if(r.lvl===1){ if(!u){ u={row:null,mgrs:[],loose:[]}; units.push(u); }
                           mg={row:r,ags:[]}; u.mgrs.push(mg); }
@@ -5089,7 +5156,8 @@ var PROD = {
        taller than the other. */
     function groupH(g){
       return g.teams.reduce(function(a, tm){
-        return a + tm.ags.length + (tm.row ? 2.4 : 0.2);
+        return a + tm.ags.filter(function(x){ return !elsewhere(x.label); }).length
+                 + (tm.row ? 1.6 : 0.2);
       }, 0);
     }
     groups.forEach(function(g){
@@ -5111,15 +5179,13 @@ var PROD = {
              on what the team is asked to write, not on a figure of their own. */
           mr._quota   = tm.ags.reduce(function(a2,c2){ return a2 + quotaFor(c2.label); }, 0);
           mr._settled = tm.ags.reduce(function(a2,c2){ return a2 + settledFor(c2.label); }, 0);
-          mr._p2 = persOf(tm.ags,'p2'); mr._p3 = persOf(tm.ags,'p3'); mr._p5 = persOf(tm.ags,'p5');
           h += '<div class="sbR mhd"><div class="l"><b>' + esc(mr.label) + '</b>'
              + (tm.under ? '<u title="reports to ' + esc(tm.under) + '">\u21B3 '
                            + esc(String(tm.under).split(' ')[0]) + '</u>' : '')
-             + '<i>' + n + '</i></div>' + cells(mr,false) + '</div>'
-             + '<div class="sbShare"><div class="sbShareFill" style="width:' + share.toFixed(1) + '%"></div>'
-             + '<span>' + share.toFixed(0) + '% of the branch</span></div>';
+             + '<i>' + n + '</i></div>' + cells(mr,false) + '</div>';
         }
         tm.ags.forEach(function(a){
+          if(elsewhere(a.label)) return;
           var hot = (w(a,0)||w(a,1)) ? ' hot' : '';
           a._quota = quotaFor(a.label);
           a._settled = settledFor(a.label);
@@ -5136,6 +5202,7 @@ var PROD = {
     }).join('');
 
     var t = S.total || {};
+    var stlD2 = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
     var bt = q('sbBranch');
     if(bt){
       /* The branch line uses the report's own total, which includes the
@@ -5145,8 +5212,26 @@ var PROD = {
                || SUB_QUOTA_BRANCH_FALLBACK;
       t._quota   = qb ? qb.quota   : 0;
       t._settled = qb ? qb.settled : 0;
-      t._p2 = persOf(ag,'p2'); t._p3 = persOf(ag,'p3'); t._p5 = persOf(ag,'p5');
-      bt.innerHTML = '<div class="sbR br"><div class="l">Branch total</div>' + cells(t,false) + '</div>';
+      /* THE BRANCH LINE IS A STRIP, NOT A ROW. A total under each column
+         answered "what do the columns add up to"; the branch manager reads
+         this line for one thing first — what the branch wrote this week —
+         and then the month, the year, and what has actually settled. Four
+         tiles, the week lit, the settled tile carrying its app count, which
+         the old row had no column for. */
+      var setApps = (stlD2 && stlD2.ytd) ? (stlD2.ytd.apps||0) : 0;
+      function tile(cls, cap, apps, api){
+        return '<div class="sbTile' + cls + '"><span>' + cap + '</span>'
+          + '<b>' + (apps === null ? '&middot;' : n0(apps)) + '</b><i>apps</i>'
+          + '<b>' + (api === null ? '&middot;' : full(api)) + '</b></div>';
+      }
+      var hasMo = !!(t.m && (t.m[0] || t.m[1]));
+      bt.innerHTML = '<div class="sbStrip">'
+        + tile(' wk', 'This week', w(t,0), w(t,1))
+        + tile('', S.monthLabel ? esc(String(S.monthLabel).slice(0,3)) + ' to date' : 'Month to date',
+               hasMo ? mo(t,0) : null, hasMo ? mo(t,1) : null)
+        + tile('', 'Year to date', yy(t,0), yy(t,1))
+        + tile(' set', 'Settled YTD', setApps || null, t._settled || null)
+        + '</div>';
     }
 
     /* This week, biggest first. An advisor with no new application but an
@@ -5207,6 +5292,12 @@ var PROD = {
         if(zP2 !== null) meta += '<span class="' + (zP2>=90?'pOk':zP2>=80?'pMid':'pLow')
                                + '">' + zP2 + '% kept</span>';
         if(cov) meta += '<span class="cov">' + money(cov) + ' cover</span>';
+        /* What they sold this week, by product, from the feed's weekly mix.
+           A name and a figure says who; the products say what the branch's
+           week was made of. */
+        var sold = (z.r.p || []).slice().sort(function(a2,b2){ return (b2.api||0)-(a2.api||0); });
+        if(sold.length) meta += '<span class="sold">' + sold.map(function(x){
+          return esc(subProd(x.k)) + (x.apps > 1 ? ' \u00d7' + x.apps : ''); }).join(' \u00b7 ') + '</span>';
         return '<div class="sbP' + (i===0?' win':'') + '">'
           + '<div class="med">' + (MED[i] || '<u>' + (i+1) + '</u>') + '</div>'
           /* Not the unit number's name: unit 26001 carries both Kerwyn's and
@@ -5235,7 +5326,7 @@ var PROD = {
     var wc = q('sbWeekCap');
     if(wc) wc.innerHTML = 'This week &mdash; top three<em>week ' + esc(String(S.week||'')) + '</em>';
 
-    subMix();
+    subPie(S);
     subChart(S);
     try { tickerFrom(S); } catch(e){}
 
@@ -5332,7 +5423,51 @@ var PROD = {
     return SUB_UNIT_NAMES[c] || c;
   }
 
-  /* Product mix — already in the feed, displayed nowhere until now. */
+  /* Salesforce record types are long. On a wall they need to be short. */
+  function subProd(k){
+    var t = String(k||'').replace(/\s*\(.*?\)\s*/g,' ').replace(/\s+/g,' ').trim();
+    t = t.replace(/^Client Portfolio\s*[-:]?\s*/i,'').replace(/\bInsurance\b/i,'').trim();
+    return t || 'Other';
+  }
+
+  /* THIS WEEK'S PRODUCTS, AS A PIE. From the feed's weekly mix across every
+     advisor: a slice per record type, share of the week's API, the legend
+     beside it. When the feed is not carrying the weekly mix yet the card
+     says so rather than drawing an empty ring. */
+  function subPie(S){
+    var el = q('sbPie'); if(!el) return;
+    var mix = (S && S.mixW) || [];
+    var tot = mix.reduce(function(a,x){ return a + (x.api||0); }, 0);
+    var cap = q('sbPieCap');
+    if(!mix.length || !tot){
+      el.innerHTML = '<div class="sbPieNone">The weekly product mix arrives with the next '
+        + '<b>pbSalesforce</b> paste. Until then this card has nothing to draw.</div>';
+      if(cap) cap.textContent = 'everybody';
+      return;
+    }
+    var COL = ['#A78BFA','#2DD4BF','#F5B935','#F87171','#60A5FA','#34D399','#F472B6','#94A3B8'];
+    var rows = mix.slice().sort(function(a,b){ return (b.api||0)-(a.api||0); });
+    var top = rows.slice(0,6), rest = rows.slice(6);
+    if(rest.length) top.push({ k:'Other', apps: rest.reduce(function(a,x){ return a+(x.apps||0); },0),
+                               api: rest.reduce(function(a,x){ return a+(x.api||0); },0) });
+    var stops = [], at = 0;
+    top.forEach(function(x,i){
+      var pct = x.api / tot * 100;
+      stops.push(COL[i%COL.length] + ' ' + at.toFixed(2) + '% ' + (at+pct).toFixed(2) + '%');
+      at += pct;
+    });
+    var apps = mix.reduce(function(a,x){ return a + (x.apps||0); }, 0);
+    el.innerHTML = '<div class="sbRing" style="background:conic-gradient(' + stops.join(',') + ')">'
+      + '<div class="sbHole"><b>' + apps + '</b><span>app' + (apps===1?'':'s') + '</span></div></div>'
+      + '<div class="sbLeg">' + top.map(function(x,i){
+          return '<div><i style="background:' + COL[i%COL.length] + '"></i>'
+            + '<span>' + esc(subProd(x.k)) + '</span><b>' + Math.round(x.api/tot*100) + '%</b></div>';
+        }).join('') + '</div>';
+    if(cap) cap.innerHTML = 'TT$' + Math.round(tot).toLocaleString('en-US') + ' &middot; everybody';
+  }
+
+  /* Product mix — year to date, kept for the spreadsheet; the panel shows
+     the week's pie instead. */
   function subMix(){
     var el = q('sbMix'); if(!el) return;
     var ags = (typeof PROD !== 'undefined' && PROD.agents) || [];
@@ -5424,17 +5559,25 @@ var PROD = {
          has always known the difference — nothing has ever shown it. */
       var nb = subNb[n]||0, ic = subInc[n]||0;
       var nbH = sv ? (nb/sv*100) : 0, icH = sv ? (ic/sv*100) : 0;
+      /* Bar heights in em, not per cent. A percentage height three flex
+         boxes deep never resolved — every bar in every month drew at its
+         two-pixel minimum, and the chart read as a row of stubs under a row
+         of numbers. The tallest month is BAR_EM tall; the rest scale to it. */
+      var BAR_EM = 2.2;
+      function emH(v){ return (Math.max(0, v) / max * BAR_EM).toFixed(2) + 'em'; }
       return '<div class="sbMb"><div class="sbPair">'
         + '<div class="sbCol"><em>' + (sv?k(sv):'') + '</em>'
-        + '<div class="sbBar sub" style="height:' + (sv/max*100).toFixed(1) + '%">'
+        + '<div class="sbBar sub" style="height:' + emH(sv) + '">'
         + (ic ? '<i class="sbSeg inc" style="height:' + icH.toFixed(1) + '%" title="increases"></i>' : '')
         + '<i class="sbSeg nb" style="height:' + nbH.toFixed(1) + '%"></i>'
         + inside(sa) + '</div></div>'
         + '<div class="sbCol"><em class="' + (has?'set':'wait') + '">' + (has?k(tv):'') + '</em>'
         + '<div class="sbBar ' + (has?'set':'wait') + '" style="height:'
-        + (has ? (tv/max*100).toFixed(1) : '100') + '%">' + inside(ta) + '</div></div>'
+        + (has ? emH(tv) : BAR_EM + 'em') + '">' + inside(ta) + '</div></div>'
         + '</div><span>' + n + '</span></div>';
     }).join('');
+    /* The chart gives the strip and the second totals line their height
+       back, so the roster above keeps every advisor on the screen. */
 
     if(tots){
       var subT = ((S.total||{}).y||[])[1] || 0, subN = ((S.total||{}).y||[])[0] || 0;
@@ -5455,10 +5598,14 @@ var PROD = {
         ? gone.join(' and ') + ' is not in the feed yet \u2014 the chart is '
           + 'drawing what it has'
         : '';
+      /* Submitted on the top line, settled on the line beneath it, each in
+         its own colour — the two totals sat side by side in the same weight
+         and read as one figure and a footnote. The bars follow the same
+         order left to right in every month. */
       tots.innerHTML =
-        '<div class="sbTot"><i class="sbSw sub"></i><b>TT$' + n(subT) + '</b>'
+        '<div class="sbTot sub"><i class="sbSw sub"></i><b>TT$' + n(subT) + '</b>'
           + '<span>submitted &middot; <b class="sbApps">' + n(subN) + '</b> apps</span></div>'
-        + (setT ? '<div class="sbTot"><i class="sbSw set"></i><b>TT$' + n(setT) + '</b>'
+        + (setT ? '<div class="sbTot set"><i class="sbSw set"></i><b>TT$' + n(setT) + '</b>'
             + '<span>settled &middot; <b class="sbApps">' + n(setN) + '</b> apps</span></div>'
           /* Called this "written but not yet settled" at first, and that is not
              what it is. The two figures count different populations: this
