@@ -1406,6 +1406,27 @@
   .sbUnits{display:grid; grid-template-columns:1fr 1fr; gap:0 1.1em; min-height:0;
     overflow:hidden; flex:1}
   .sbUnit{display:flex; flex-direction:column; min-height:0}
+
+  /* The manager row — the heading a branch actually reads. */
+  .sbR.mhd{background:linear-gradient(90deg,rgba(245,185,53,.22),rgba(245,185,53,.04));
+    border:1px solid rgba(245,185,53,.36); border-radius:.5em; padding:.26em .45em;
+    margin-top:.34em; border-bottom:none}
+  .sbR.mhd .l{display:flex; align-items:baseline; gap:.45em; overflow:visible}
+  .sbR.mhd .l b{font-size:1.1em; font-weight:800; color:#fff; letter-spacing:-.01em}
+  .sbR.mhd .l i{font-style:normal; font-size:.78em; color:var(--gold); font-weight:800;
+    background:rgba(245,185,53,.18); border-radius:.5em; padding:0 .45em}
+  .sbR.mhd .c{color:#fff; font-weight:800; font-size:.72em}
+  .sbR.mhd .c.m{color:var(--teal)}
+  /* How much of the branch a team carries, said as a bar rather than a sum
+     somebody has to do in their head. */
+  .sbShare{position:relative; height:.72em; margin:.08em .1em .1em; border-radius:.42em;
+    background:var(--panel-2); overflow:hidden}
+  .sbShareFill{height:100%; border-radius:.42em;
+    background:linear-gradient(90deg,rgba(245,185,53,.55),rgba(245,185,53,.9));
+    transition:width 1s cubic-bezier(.22,1,.36,1)}
+  .sbShare span{position:absolute; inset:0; display:flex; align-items:center;
+    justify-content:flex-end; padding-right:.5em; font-size:.5em; font-weight:800;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--ink-2)}
   /* The unit row rides the same grid as its advisors, so its figures sit in
      the columns they belong to instead of floating off to the right. */
   .sbR.uhd{background:linear-gradient(90deg,rgba(245,185,53,.20),rgba(245,185,53,.04));
@@ -1459,6 +1480,21 @@
     font-variant-numeric:tabular-nums}
   .sbP .pf span{font-size:.62em; color:var(--ink-3)}
   .sbP.win .pw b{font-size:1.08em} .sbP.win .pf b{font-size:1.2em}
+
+  /* The recognition board. Bigger than a list, because being on it should be
+     worth wanting. */
+  .sbP .med u{display:inline-block; text-decoration:none; font-size:.62em; font-weight:800;
+    color:var(--ink-3); border:1.5px solid var(--line-2); border-radius:50%;
+    width:1.7em; height:1.7em; line-height:1.55em; text-align:center}
+  .sbP .pbar{height:.3em; border-radius:.15em; background:var(--panel-2); overflow:hidden;
+    margin:.28em 0 .22em}
+  .sbP .pfill{height:100%; border-radius:.15em;
+    background:linear-gradient(90deg,var(--gold-deep),var(--gold));
+    transition:width .9s cubic-bezier(.22,1,.36,1)}
+  .sbP .pmeta{display:flex; gap:.7em; font-size:.58em; color:var(--ink-3); font-weight:700}
+  .sbP .pmeta .cov{color:var(--teal)}
+  .sbP.win{box-shadow:0 0 0 1px rgba(245,185,53,.25), 0 .5em 1.6em rgba(245,185,53,.13)}
+  .sbP.win .pfill{background:linear-gradient(90deg,var(--gold),#FFE9A8)}
   .sbSec{margin-top:.7em; padding-top:.6em; border-top:1px solid var(--line)}
   .sbMixRow{display:grid; grid-template-columns:7em 1fr auto; gap:.5em; align-items:center;
     margin-top:.3em}
@@ -1491,6 +1527,26 @@
   .sbBar.wait{background:repeating-linear-gradient(45deg,rgba(255,255,255,.045),
     rgba(255,255,255,.045) 4px,transparent 4px,transparent 8px);
     border:1px dashed var(--line-2)}
+
+  /* Bars that carry their own case count, and a submitted bar split into the
+     two things it is actually made of. */
+  .sbBar{position:relative; display:flex; flex-direction:column; justify-content:flex-start;
+    overflow:hidden}
+  .sbSeg{display:block; width:100%}
+  .sbSeg.inc{background:linear-gradient(180deg,#C4B5FD,#A78BFA)}
+  .sbSeg.nb{background:linear-gradient(180deg,#8B6BE8,#6D48D7)}
+  .sbBar>b{position:absolute; left:0; right:0; bottom:.12em; text-align:center;
+    font-size:.52em; font-weight:800; color:#fff; letter-spacing:.02em;
+    text-shadow:0 1px 2px rgba(0,0,0,.55); pointer-events:none}
+  .sbBar.wait>b{color:var(--ink-3); text-shadow:none}
+  .sbKey{display:flex; gap:1em; align-items:center; margin-left:auto; font-size:.6em;
+    color:var(--ink-3); font-weight:700}
+  .sbKey span{display:flex; align-items:center; gap:.35em}
+  .sbKey i{width:.62em; height:.62em; border-radius:.16em; display:inline-block}
+  .sbKey i.nb{background:linear-gradient(180deg,#8B6BE8,#6D48D7)}
+  .sbKey i.inc{background:linear-gradient(180deg,#C4B5FD,#A78BFA)}
+  .sbKey i.set{background:linear-gradient(180deg,var(--teal),var(--teal-deep))}
+  .sbKey .n{color:var(--line-2); font-weight:600}
   .sbMb>span{font-size:.66em; color:var(--ink-2); font-weight:800; text-align:center;
     letter-spacing:.04em}
   /* The case count under each month — submitted apps / settled apps. A month
@@ -4637,29 +4693,51 @@ var PROD = {
         return a + (yy(m2.row,1) || m2.ags.reduce(function(b,c){ return b+yy(c,1); },0)); },0);
     }));
 
-    box.style.gridTemplateColumns = units.length > 1 ? '' : 'minmax(0,1fr)';
-    box.innerHTML = units.map(function(x){
-      var ur = x.row, n = x.mgrs.reduce(function(a,m2){ return a+m2.ags.length; }, 0) + x.loose.length;
-      var h = '<div class="sbUnit">';
-      if(ur){
-        h += '<div class="sbR uhd"><div class="l"><b>' + esc(subUnitName(ur.label))
-           + '</b><i>' + n + ' advisors</i></div>' + cells(ur,false) + '</div>';
-      }
-      h += head();
+    /* THE TEAMS ARE THE HEADINGS, not the unit numbers. 26000 and 26001 are
+       what the export calls its branches and they mean nothing to anybody
+       standing in front of the board — worse, each holds two managers, so
+       Akaash's team sat inside a heading with Ricky's name nowhere near it.
+       Four teams, four names, everybody under the person they report to. */
+    var teams = [];
+    units.forEach(function(x){
       x.mgrs.forEach(function(m2){
-        h += '<div class="sbR g"><div class="l">' + esc(m2.row.label) + '</div>' + cells(m2.row,false) + '</div>';
-        m2.ags.forEach(function(a){
+        teams.push({ row:m2.row, ags:m2.ags, unit:x.row ? x.row.label : '' });
+      });
+      if(x.loose.length) teams.push({ row:null, ags:x.loose, unit:x.row ? x.row.label : '' });
+    });
+    teams.sort(down(function(tm){ return yy(tm.row,1) ||
+      tm.ags.reduce(function(a,c){ return a+yy(c,1); },0); }));
+
+    /* Two columns, filled so they end up the same height rather than one
+       running off the bottom while the other sits half empty. */
+    var colH = [0,0], colOf = [[],[]];
+    teams.forEach(function(tm){
+      var h = tm.ags.length + 1;
+      var i = colH[0] <= colH[1] ? 0 : 1;
+      colOf[i].push(tm); colH[i] += h;
+    });
+
+    var branchApi = yy(S.total||{},1) || 1;
+    box.style.gridTemplateColumns = '';
+    box.innerHTML = colOf.map(function(col){
+      return '<div class="sbUnit">' + head() + col.map(function(tm){
+        var mr = tm.row, n = tm.ags.length;
+        var api = yy(mr,1) || tm.ags.reduce(function(a,c){ return a+yy(c,1); },0);
+        var share = Math.max(1, api/branchApi*100);
+        var h = '';
+        if(mr){
+          h += '<div class="sbR mhd"><div class="l"><b>' + esc(mr.label) + '</b>'
+             + '<i>' + n + '</i></div>' + cells(mr,false) + '</div>'
+             + '<div class="sbShare"><div class="sbShareFill" style="width:' + share.toFixed(1) + '%"></div>'
+             + '<span>' + share.toFixed(0) + '% of the branch</span></div>';
+        }
+        tm.ags.forEach(function(a){
           var hot = (w(a,0)||w(a,1)) ? ' hot' : '';
           h += '<div class="sbR a' + hot + '"><div class="l">' + esc(subShort(a.label)) + '</div>'
              + cells(a,true) + '</div>';
         });
-      });
-      x.loose.forEach(function(a){
-        var hot = (w(a,0)||w(a,1)) ? ' hot' : '';
-        h += '<div class="sbR a' + hot + '"><div class="l">' + esc(subShort(a.label)) + '</div>'
-           + cells(a,true) + '</div>';
-      });
-      return h + '</div>';
+        return h;
+      }).join('') + '</div>';
     }).join('');
 
     var t = S.total || {};
@@ -4677,19 +4755,39 @@ var PROD = {
     });
     wk.sort(down(function(z){ return w(z.r,1); }));
 
+    /* THE RECOGNITION BOARD. Top five, and it has to be worth being on — a
+       name and a figure is a list, not recognition. Each carries the share of
+       the week they wrote, what they have done for the year, and the cover
+       they have actually placed, which comes from the settlement board. */
     var MED = ['\u{1F947}','\u{1F948}','\u{1F949}'];
+    var weekTop = wk.length ? w(wk[0].r,1) : 0;
+    function coverFor(label){
+      var stl2 = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
+      if(!stl2 || !stl2.matrix) return 0;
+      var code = String(label||'').toUpperCase().replace(/[^A-Z0-9]/g,'').match(/^[AU]?0*(\d+)/);
+      if(!code) return 0;
+      var want = 'A' + ('00000' + code[1]).slice(-5);
+      for(var i2=0;i2<stl2.matrix.length;i2++) if(stl2.matrix[i2].code === want) return stl2.matrix[i2].cover||0;
+      return 0;
+    }
     var wb = q('sbWeek');
     if(wb){
-      wb.innerHTML = wk.length ? wk.slice(0,6).map(function(z,i){
+      wb.innerHTML = wk.length ? wk.slice(0,5).map(function(z,i){
+        var api = w(z.r,1), apps = w(z.r,0);
+        var share = weekTop ? Math.max(3, api/weekTop*100) : 3;
+        var cov = coverFor(z.r.label);
         return '<div class="sbP' + (i===0?' win':'') + '">'
-          + '<div class="med">' + (MED[i]||'') + '</div>'
+          + '<div class="med">' + (MED[i] || '<u>' + (i+1) + '</u>') + '</div>'
           + '<div class="pw"><b>' + esc(subShort(z.r.label)) + '</b><i>'
-          + esc([z.mgr, z.unit].filter(Boolean).join(' · ')) + '</i></div>'
-          + '<div class="pf"><b>' + full(w(z.r,1)) + '</b><span>' + w(z.r,0)
-          + ' app' + (w(z.r,0)===1?'':'s') + '</span></div></div>';
+          + esc([z.mgr, z.unit].filter(Boolean).join(' · ')) + '</i>'
+          + '<div class="pbar"><div class="pfill" style="width:' + share.toFixed(1) + '%"></div></div>'
+          + '<div class="pmeta"><span>' + money(yy(z.r,1)) + ' year</span>'
+          + (cov ? '<span class="cov">' + money(cov) + ' cover placed</span>' : '') + '</div></div>'
+          + '<div class="pf"><b>' + full(api) + '</b><span>' + apps
+          + ' app' + (apps===1?'':'s') + '</span></div></div>';
       }).join('')
       : '<div style="padding:1.4em .3em;color:var(--ink-3);font-size:.8em">'
-        + 'Nobody has submitted yet this week.</div>';
+        + 'Nobody has submitted yet this week. The board is open.</div>';
     }
     var wc = q('sbWeekCap');
     if(wc) wc.innerHTML = 'This week &mdash; who is on the board<em>week ' + esc(String(S.week||'')) + '</em>';
@@ -4770,9 +4868,11 @@ var PROD = {
       return Math.round(v).toLocaleString('en-US');
     }
     var MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var sub = {}, subA = {};
+    var sub = {}, subA = {}, subNb = {}, subInc = {};
     (S.series||[]).forEach(function(x){
       sub[x.m]  = (x.nb||0) + (x.inc||0);
+      subNb[x.m] = x.nb||0;
+      subInc[x.m] = x.inc||0;
       /* Apps only travel once sfBoardData_ has the app count on its month
          queries. Until then the money is drawn and the case count is not
          claimed — an app column of noughts would say the branch wrote money
@@ -4801,16 +4901,28 @@ var PROD = {
     bars.innerHTML = names.map(function(n){
       var sv = sub[n]||0, has = setBy.hasOwnProperty(n), tv = setBy[n]||0;
       var sa = subA[n], ta = setA[n];
-      var apps = (sa !== undefined || ta !== undefined)
-        ? '<u>' + (sa !== undefined ? sa : '&middot;') + ' / '
-          + (ta !== undefined ? ta : '&middot;') + '</u>' : '';
+      /* The case count lives INSIDE the bar. Under the month label it read as
+         a footnote; on the bar it is the second thing the eye lands on, which
+         is where it belongs — a month is worth reading twice, once for what it
+         was worth and once for how many cases carried it. */
+      function inside(v){
+        return (v === undefined) ? '' : '<b>' + v + '</b>';
+      }
+      /* The submitted bar is split: new business at the foot, increases
+         stacked on top. They are two different acts of selling and the feed
+         has always known the difference — nothing has ever shown it. */
+      var nb = subNb[n]||0, ic = subInc[n]||0;
+      var nbH = sv ? (nb/sv*100) : 0, icH = sv ? (ic/sv*100) : 0;
       return '<div class="sbMb"><div class="sbPair">'
         + '<div class="sbCol"><em>' + (sv?k(sv):'') + '</em>'
-        + '<div class="sbBar sub" style="height:' + (sv/max*100).toFixed(1) + '%"></div></div>'
+        + '<div class="sbBar sub" style="height:' + (sv/max*100).toFixed(1) + '%">'
+        + (ic ? '<i class="sbSeg inc" style="height:' + icH.toFixed(1) + '%" title="increases"></i>' : '')
+        + '<i class="sbSeg nb" style="height:' + nbH.toFixed(1) + '%"></i>'
+        + inside(sa) + '</div></div>'
         + '<div class="sbCol"><em class="' + (has?'set':'wait') + '">' + (has?k(tv):'') + '</em>'
         + '<div class="sbBar ' + (has?'set':'wait') + '" style="height:'
-        + (has ? (tv/max*100).toFixed(1) : '100') + '%"></div></div>'
-        + '</div><span>' + n + apps + '</span></div>';
+        + (has ? (tv/max*100).toFixed(1) : '100') + '%">' + inside(ta) + '</div></div>'
+        + '</div><span>' + n + '</span></div>';
     }).join('');
 
     if(tots){
@@ -4832,7 +4944,11 @@ var PROD = {
              other. So the line says what it is and claims nothing more. */
           + '<div class="sbTot gap"><b>TT$' + n(subT-setT) + '</b>'
             + '<span>submitted less settled &middot; not a pipeline figure</span></div>'
-          : '<div class="sbTot"><span>settled fills in from the settlement board</span></div>');
+          : '<div class="sbTot"><span>settled fills in from the settlement board</span></div>')
+        + '<div class="sbKey"><span><i class="nb"></i>New business</span>'
+        + '<span><i class="inc"></i>Increases</span>'
+        + '<span><i class="set"></i>Settled</span>'
+        + '<span class="n">the number in each bar is the app count</span></div>';
     }
   }
 
