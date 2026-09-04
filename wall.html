@@ -1375,6 +1375,20 @@
     transition:width .8s cubic-bezier(.22,1,.36,1)}
   .stlPrVal{font-size:.78em; font-weight:800; font-variant-numeric:tabular-nums; min-width:6.5em; text-align:right}
   .stlPrVal i{font-style:normal; color:var(--ink-3); font-size:.82em; margin-left:.4em}
+
+  /* slide 13: the view switch, and the rank column on the week list */
+  .subPills{display:flex; gap:.3em; margin-left:auto}
+  .subPill{font:inherit; font-size:.62em; font-weight:800; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--ink-3); background:var(--panel-2);
+    border:1px solid transparent; border-radius:.5em; padding:.4em .85em;
+    cursor:pointer; transition:.18s}
+  .subPill:hover{color:var(--ink-2)}
+  .subPill.on{background:var(--gold); color:#10141c; border-color:var(--gold)}
+  .subHead{display:flex; align-items:center; gap:.7em; padding:.1em .2em .55em;
+    font-size:.68em; color:var(--ink-3); font-weight:700}
+  .subrow .rk{display:inline-block; min-width:1.6em; color:var(--ink-3); font-weight:800}
+  .subrow .sub2{color:var(--ink-3); font-weight:600}
+  .subNone{padding:1.6em .4em; color:var(--ink-3); font-size:.8em}
 </style>
 </head>
 <body>
@@ -4393,6 +4407,10 @@ var PROD = {
       + card('Most API this year',  '▲',       best('y',1,0), 'y', 1, false);
   }
 
+  /* Which of slide 13's two views is up. Kept outside the painter so a
+     repaint on the wall's own cycle does not throw the reader back. */
+  var SUB = { view: 'unit' };
+
   function paintSubmitted(S){
     var box = q('pdRoster'); if(!box) return false;
     function n0(v){ return (v===null||v===undefined||v==='') ? '' : Math.round(v).toLocaleString('en-US'); }
@@ -4419,17 +4437,122 @@ var PROD = {
            + c(money(y[1]), hi && y[1] && y[1] === pkYi);
     }
 
-    var html = '<div class="subrow hd"><div class="sl">Hierachy</div>'
-             + '<div class="sc">Apps -W</div><div class="sc">API - W</div>'
-             + '<div class="sc">Apps -Y</div><div class="sc">API</div></div>';
-    html += S.rows.map(function(r){
-      var cls = r.lvl === 0 ? 'u' : r.lvl === 1 ? 'mg' : 'ag';
-      return '<div class="subrow ' + cls + '"><div class="sl">' + esc(r.label) + '</div>'
-           + cells(r, r.lvl === 2) + '</div>';
-    }).join('');
+    /* The feed sends the hierarchy in its own order, and that order is not
+       rank: unit 26001 arrived first on 2.4M with 26000 under it on 3.8M. On
+       a wall the top row reads as the leader whether it is or not, so the
+       board has to sort itself rather than trust the order it was given.
+
+       Rebuilt into a tree first, because sorting a flat list of unit,
+       manager, agent rows in place would scatter people out from under the
+       manager they belong to. */
+    function tree(rows){
+      var units = [], u = null, m = null;
+      rows.forEach(function(r){
+        if(r.lvl === 0){ u = { row:r, mgrs:[], loose:[] }; units.push(u); m = null; }
+        else if(r.lvl === 1){
+          if(!u){ u = { row:null, mgrs:[], loose:[] }; units.push(u); }
+          m = { row:r, ags:[] }; u.mgrs.push(m);
+        } else if(r.lvl === 2){
+          if(m) m.ags.push(r);
+          else if(u) u.loose.push(r);
+        }
+      });
+      return units;
+    }
+    function api(r){ return ((r && r.y) || [])[1] || 0; }
+    function wApi(r){ return ((r && r.w) || [])[1] || 0; }
+    function wApps(r){ return ((r && r.w) || [])[0] || 0; }
+    function down(f){ return function(a,b){ return f(b) - f(a); }; }
+
+    var units = tree(S.rows);
+    units.forEach(function(u){
+      u.mgrs.forEach(function(m){ m.ags.sort(down(api)); });
+      u.mgrs.sort(down(function(m){ return api(m.row); }));
+      u.loose.sort(down(api));
+    });
+    /* A unit's own row carries its total, but not every feed fills it in, so
+       fall back to the sum of its people rather than sorting a unit to the
+       bottom for a blank cell. */
+    units.sort(down(function(u){
+      return api(u.row) || u.mgrs.reduce(function(s2,m){
+        return s2 + (api(m.row) || m.ags.reduce(function(s3,a){ return s3 + api(a); }, 0));
+      }, 0) + u.loose.reduce(function(s4,a){ return s4 + api(a); }, 0);
+    }));
+
+    function row(r, cls, label, hi){
+      return '<div class="subrow ' + cls + '"><div class="sl">' + label + '</div>'
+           + cells(r, hi) + '</div>';
+    }
+    function hd(first){
+      return '<div class="subrow hd"><div class="sl">' + first + '</div>'
+           + '<div class="sc">Apps -W</div><div class="sc">API - W</div>'
+           + '<div class="sc">Apps -Y</div><div class="sc">API</div></div>';
+    }
+    function pills(){
+      return '<div class="subHead"><span>' +
+        (SUB.view === 'week'
+          ? 'Everyone who submitted in week ' + esc(String(S.week || ''))
+          : 'Units, managers and advisors &mdash; largest first') +
+        '</span><div class="subPills">' +
+        [['unit','By unit'],['week','This week']].map(function(x){
+          return '<button type="button" class="subPill' + (SUB.view===x[0]?' on':'') +
+                 '" data-sub="' + x[0] + '">' + x[1] + '</button>';
+        }).join('') + '</div></div>';
+    }
+
     var t = S.total || {};
-    html += '<div class="subrow tt"><div class="sl">Total</div>' + cells(t, false) + '</div>';
+    var html;
+
+    if(SUB.view === 'week'){
+      /* Everyone who put something up this week, in one list, biggest first.
+         An advisor with no new application but an increase still submitted
+         something, so the test is either figure rather than the app count. */
+      var wk = [];
+      units.forEach(function(u){
+        var un = u.row ? esc(u.row.label) : '';
+        function take(a, mgr){
+          if(wApps(a) || wApi(a)) wk.push({ r:a, unit:un, mgr:mgr });
+        }
+        u.mgrs.forEach(function(m){ m.ags.forEach(function(a){ take(a, esc(m.row.label)); }); });
+        u.loose.forEach(function(a){ take(a, ''); });
+      });
+      wk.sort(down(function(x){ return wApi(x.r); }));
+
+      html = pills() + hd('Advisor');
+      if(!wk.length){
+        html += '<div class="subNone">Nobody has submitted yet this week.</div>';
+      } else {
+        html += wk.map(function(x, i){
+          var who = esc(x.r.label);
+          var sub = [x.mgr, x.unit].filter(Boolean).join(' &middot; ');
+          return row(x.r, 'ag',
+            '<span class="rk">' + (i+1) + '</span>' + who +
+            (sub ? ' <span class="sub2">&middot; ' + sub + '</span>' : ''), true);
+        }).join('');
+        function sum(f){ return wk.reduce(function(s2,x){ return s2 + f(x.r); }, 0); }
+        html += '<div class="subrow tt"><div class="sl">' + wk.length +
+                ' advisor' + (wk.length===1?'':'s') + ' this week</div>' +
+                cells({ w:[sum(wApps), sum(wApi)],
+                        y:[sum(function(r){ return ((r.y)||[])[0]||0; }),
+                           sum(function(r){ return ((r.y)||[])[1]||0; })] }, false) + '</div>';
+      }
+    } else {
+      html = pills() + hd('Hierachy');
+      units.forEach(function(u){
+        if(u.row) html += row(u.row, 'u', esc(u.row.label), false);
+        u.mgrs.forEach(function(m){
+          html += row(m.row, 'mg', esc(m.row.label), false);
+          m.ags.forEach(function(a){ html += row(a, 'ag', esc(a.label), true); });
+        });
+        u.loose.forEach(function(a){ html += row(a, 'ag', esc(a.label), true); });
+      });
+      html += '<div class="subrow tt"><div class="sl">Total</div>' + cells(t, false) + '</div>';
+    }
     box.innerHTML = html;
+
+    box.querySelectorAll('[data-sub]').forEach(function(b){
+      b.onclick = function(){ SUB.view = b.dataset.sub; paintSubmitted(S); };
+    });
 
     var tw = (t.w||[]), ty = (t.y||[]);
     set('t_p12', 'Week ' + (S.week || '') + ' &middot; <b>' + n0(tw[0]) + '</b> apps '
