@@ -4719,9 +4719,21 @@ var PROD = {
         var j = null; try{ j = JSON.parse(t); }catch(e){}
         STL.busy = false;
         if(!j || !j.success){
-          box.innerHTML = '<div class="stlCard"><div class="stlCap">Settlement</div>' +
-            '<div style="color:var(--ink-3)">' +
-            ((j && (j.error||j.message)) || 'The branch server did not answer.') + '</div></div>';
+          /* Say what it means, not what the router said. A wall in an office
+             should never show "Unknown action. GET: pop7 | production | ..." —
+             it is unreadable across a room, it names endpoints to whoever is
+             standing there, and it tells the branch nothing it can act on. */
+          var raw = (j && (j.error || j.message)) || '';
+          var notOn = /unknown action/i.test(raw);
+          box.innerHTML = '<div class="stlCard" style="align-items:center;justify-content:center;text-align:center">' +
+            '<div class="stlCap" style="justify-content:center">Settlement</div>' +
+            '<div style="font-size:1.15em;font-weight:800;color:var(--ink-2);margin-bottom:.35em">' +
+            (notOn ? 'Not switched on yet' : 'The board could not be read') + '</div>' +
+            '<div style="font-size:.86em;color:var(--ink-3);max-width:34em;line-height:1.6">' +
+            (notOn
+              ? 'The branch server does not have the settlement action yet. Everything else on the wall is unaffected.'
+              : 'The branch server answered, but not with settlement figures. Nothing here is out of date \u2014 there is simply nothing to show.') +
+            '</div></div>';
           return;
         }
         STL.data = j; stlPaint();
