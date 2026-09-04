@@ -31,9 +31,12 @@
   }
   .num{font-variant-numeric:tabular-nums; letter-spacing:-.025em}
 
+  /* Slimmed 4 September 2026. The chrome was taking a strip of the screen
+     the panels needed — slide 13 lost its last advisors to it on a laptop.
+     Every element here still earns its place; each simply takes less. */
   header{
-    display:flex; align-items:center; gap:1.1em;
-    padding:.95em 1.5em; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:.9em;
+    padding:.42em 1.2em; border-bottom:1px solid var(--line);
     background:linear-gradient(180deg,rgba(20,32,54,.9),rgba(10,17,32,.75));
   }
   .howto{
@@ -61,19 +64,24 @@
     border-bottom:.26em solid transparent;
   }
   .shield{
-    height:2.9em; width:auto; flex:none; display:block;
+    height:2.05em; width:auto; flex:none; display:block;
     filter:drop-shadow(0 0 .9em var(--teal-glow));
   }
-  .brand{font-size:1.25em; font-weight:750; letter-spacing:-.012em; line-height:1.15}
-  .brand small{display:block; font-size:.5em; letter-spacing:.22em; text-transform:uppercase;
-               color:var(--ink-3); font-weight:700; margin-top:.28em}
+  .brand{font-size:1.06em; font-weight:750; letter-spacing:-.012em; line-height:1.1;
+         white-space:nowrap}
+  /* "Guardian Life of the Caribbean" sat on a line of its own under the
+     branch name and cost a full row of screen for six words that never
+     change. It reads alongside instead. */
+  .brand small{display:inline; font-size:.52em; letter-spacing:.2em; text-transform:uppercase;
+               color:var(--ink-3); font-weight:700; margin-left:.9em}
+  .brand small::before{content:'\00B7'; margin-right:.9em; color:var(--line-2)}
   .spacer{flex:1}
-  .live{display:flex; align-items:center; gap:.5em; font-size:.7em; letter-spacing:.17em;
+  .live{display:flex; align-items:center; gap:.45em; font-size:.62em; letter-spacing:.15em;
         text-transform:uppercase; color:var(--ink-2); font-weight:700}
   .dot{width:.6em; height:.6em; border-radius:50%; background:var(--teal); animation:pulse 2.4s infinite}
   .dot.stale{background:var(--amber); animation:none} .dot.dead{background:var(--red); animation:none}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(45,212,191,.65)}70%{box-shadow:0 0 0 .8em rgba(45,212,191,0)}100%{box-shadow:0 0 0 0 rgba(45,212,191,0)}}
-  .clock{font-size:1.42em; font-weight:750} .clock span{color:var(--ink-3); font-size:.6em; margin-left:.45em}
+  .clock{font-size:1.02em; font-weight:750} .clock span{color:var(--ink-3); font-size:.68em; margin-left:.45em}
 
   .ptitle{display:flex; align-items:baseline; gap:.7em; margin-bottom:.15em}
   .ptitle h1{font-size:1.55em; font-weight:800; letter-spacing:-.02em; line-height:1.15}
@@ -1102,7 +1110,7 @@
    where the first one started. Paused with the board, because a rail sliding
    under a held panel is the thing you held the panel to stop. */
 .tkr{position:relative; overflow:hidden; border:1px solid var(--line);
-  border-radius:.4em; background:rgba(8,19,26,.55); height:2.1em; flex:none}
+  border-radius:.4em; background:rgba(8,19,26,.55); height:1.75em; flex:none}
 .tkr.apps{margin-top:.3em; height:1.85em; background:rgba(8,19,26,.38)}
 .tkr .tkrun{display:flex; align-items:center; height:100%; width:max-content;
   will-change:transform; animation:tkrslide 90s linear infinite}
@@ -1404,7 +1412,7 @@
   .sbCap em{margin-left:auto; font-style:normal; font-size:.95em; letter-spacing:.03em;
     text-transform:none}
   .sbUnits{display:grid; grid-template-columns:1fr 1fr; gap:0 1.1em; min-height:0;
-    overflow:hidden; flex:1}
+    overflow-y:auto; overflow-x:hidden; flex:1; scrollbar-width:thin}
   .sbUnit{display:flex; flex-direction:column; min-height:0}
 
   /* The manager row — the heading a branch actually reads. */
@@ -1450,9 +1458,9 @@
   .sbR{display:grid; grid-template-columns:minmax(0,1fr) repeat(6,minmax(1.6em,2.7em));
     gap:.2em; align-items:center; padding:.02em .3em;
     border-bottom:1px solid rgba(255,255,255,.045)}
-  .sbR .l{font-size:.7em; font-weight:600; white-space:nowrap; overflow:hidden;
+  .sbR .l{font-size:.655em; font-weight:600; white-space:nowrap; overflow:hidden;
     text-overflow:ellipsis; color:var(--ink-2)}
-  .sbR .c{text-align:right; font-variant-numeric:tabular-nums; font-size:.62em;
+  .sbR .c{text-align:right; font-variant-numeric:tabular-nums; font-size:.58em;
     font-weight:650; color:var(--ink-3)}
   .sbR .c.m{color:var(--teal-deep)}
   .sbR.hd{border-bottom:1px solid var(--line-2); padding-bottom:.24em; margin-bottom:.12em}
@@ -1504,16 +1512,16 @@
   .sbMixFill{height:100%; border-radius:.31em;
     background:linear-gradient(90deg,var(--teal-deep),var(--teal))}
   .sbMixRow b{font-size:.7em; font-variant-numeric:tabular-nums; color:var(--ink-2)}
-  .sbChart{flex:0 0 auto; padding:.6em .9em .45em}
-  .sbTots{display:flex; gap:1.8em; align-items:baseline; margin-bottom:.3em; flex-wrap:wrap}
+  .sbChart{flex:0 0 auto; padding:.38em .9em .28em}
+  .sbTots{display:flex; gap:1.5em; align-items:baseline; margin-bottom:.18em; flex-wrap:wrap}
   .sbTot{display:flex; align-items:baseline; gap:.45em}
-  .sbTot b{font-size:1.12em; font-weight:800; font-variant-numeric:tabular-nums}
+  .sbTot b{font-size:.92em; font-weight:800; font-variant-numeric:tabular-nums}
   .sbTot span{font-size:.66em; color:var(--ink-3)}
   .sbSw{width:.7em; height:.7em; border-radius:.18em; display:inline-block}
   .sbSw.sub{background:linear-gradient(180deg,#A78BFA,#7C5CE0)}
   .sbSw.set{background:linear-gradient(180deg,var(--teal),var(--teal-deep))}
   .sbTot.gap b{color:var(--gold)}
-  .sbBars{display:flex; gap:.8em; align-items:flex-end; height:4.9em; margin-top:.1em}
+  .sbBars{display:flex; gap:.8em; align-items:flex-end; height:3.3em; margin-top:.06em}
   .sbMb{flex:1; display:flex; flex-direction:column; justify-content:flex-end; gap:.2em; height:100%}
   .sbPair{display:flex; gap:.22em; align-items:flex-end; height:100%}
   .sbCol{flex:1; display:flex; flex-direction:column; justify-content:flex-end;
@@ -1881,6 +1889,13 @@
       <div class="sbTots" id="sbTots"></div>
       <div class="sbBars" id="incChart"></div>
     </div>
+    <!-- The rail. Every advisor, year to date, with the week's movement beside
+         it — the branch going past like a market. It was here before the panel
+         was rebuilt and went out with the old markup; its CSS, its animation
+         and its builder all survived untouched, so this is the strip coming
+         back rather than anything new. One rail, not the two there were: the
+         board underneath already says everything twice. -->
+    <div class="tkr" id="tkrApi"><div class="tkrun"></div></div>
     <div class="pdnote" id="pdRosterNote"></div>
   </section>
 
@@ -4794,6 +4809,7 @@ var PROD = {
 
     subMix();
     subChart(S);
+    try { tickerFrom(S); } catch(e){}
 
     set('t_p12', 'Week ' + (S.week || '') + ' &middot; <b>' + n0(w(t,0)) + '</b> apps '
                + full(w(t,1)) + ' &middot; year to date <b>' + n0(yy(t,0)) + '</b> apps '
