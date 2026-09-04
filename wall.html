@@ -4893,7 +4893,8 @@ var PROD = {
        case written in August and still in underwriting has not been achieved
        yet, and putting it against quota tells an advisor they are further
        along than they are. */
-    var QUOTA = (typeof STL !== 'undefined' && STL.data && STL.data.quotas) || {};
+    var QUOTA = (typeof STL !== 'undefined' && STL.data && STL.data.quotas
+                 && Object.keys(STL.data.quotas).length) ? STL.data.quotas : SUB_QUOTA_FALLBACK;
     var STLM = {};
     if(typeof STL !== 'undefined' && STL.data && STL.data.matrix)
       STL.data.matrix.forEach(function(x){ STLM[x.code] = x.api||0; });
@@ -5140,7 +5141,8 @@ var PROD = {
       /* The branch line uses the report's own total, which includes the
          manager's own production — that carries a quota but is not a row on
          the roster, so summing the rows would leave it out. */
-      var qb = (typeof STL !== 'undefined' && STL.data && STL.data.quotaBranch) || null;
+      var qb = (typeof STL !== 'undefined' && STL.data && STL.data.quotaBranch)
+               || SUB_QUOTA_BRANCH_FALLBACK;
       t._quota   = qb ? qb.quota   : 0;
       t._settled = qb ? qb.settled : 0;
       t._p2 = persOf(ag,'p2'); t._p3 = persOf(ag,'p3'); t._p5 = persOf(ag,'p5');
@@ -5244,8 +5246,9 @@ var PROD = {
        instead, which is what he asked to see at the top. */
     var bs = t._settled || 0;
     set('t_p12',
-      (bs ? '<b>' + full(bs) + '</b> settled &middot; <b>'
-            + n0(stlD && stlD.ytd ? stlD.ytd.apps : 0) + '</b> apps'
+      (bs ? '<b>' + full(bs) + '</b> settled'
+            + ((stlD && stlD.ytd && stlD.ytd.apps)
+                ? ' &middot; <b>' + n0(stlD.ytd.apps) + '</b> apps' : '')
             + ' &nbsp;&nbsp;<span class="tSub">' + full(yy(t,1)) + ' submitted &middot; week '
             + (S.week||'') + '</span>'
         : 'Week ' + (S.week || '') + ' &middot; <b>' + n0(w(t,0)) + '</b> apps '
@@ -5265,6 +5268,46 @@ var PROD = {
     }
     return true;
   }
+
+  /* THE QUOTA AND PERSISTENCY TABLE, CARRIED BY THE WALL ITSELF.
+     The settlement feed sends the same table once the settle8 build is
+     deployed, and the feed wins when it does. Until then the wall has
+     its own copy, because these columns are a dated report — the agent
+     export as at 31 August — and a report does not need a deployment to
+     be read. Every figure here is the company's own; the 25% is already
+     in the quotas. Do not discount twice. */
+  var SUB_QUOTA_FALLBACK = {
+    A00427: {quota:412500, settled:140479.66, type:"Core", name:"Ricky Rampersad", p2:99.4, p3:98.8, p5:98.5},
+    A01066: {quota:412500, settled:147536.12, type:"Core", name:"Narissa Mohammed", p2:100.0, p3:100.0, p5:98.8},
+    A01363: {quota:412500, settled:92054.86, type:"Core", name:"Kerwyn Ramroach", p2:99.4, p3:98.1, p5:97.5},
+    A03522: {quota:412500, settled:137486.28, type:"Core", name:"Premchand Dookran", p2:91.4, p3:87.5, p5:91.8},
+    A06869: {quota:412500, settled:152767.01, type:"Core", name:"Akaash Kalladeen", p2:100.0, p3:98.8, p5:99.2},
+    A07347: {quota:90000, settled:133620.65, type:"Part time", name:"Joy Sammah", p2:96.3, p3:93.2, p5:96.0},
+    A07350: {quota:90000, settled:130666.67, type:"Part time", name:"Faizal Mohammed", p2:95.6, p3:92.3, p5:95.8},
+    A08413: {quota:412500, settled:153570.25, type:"Core", name:"Meera Persad-Khan", p2:98.5, p3:99.0, p5:94.5},
+    A09088: {quota:412500, settled:0.00, type:"Core", name:"Steven Blanc & Petra Chadee", p2:100.0, p3:100.0, p5:100.0},
+    A09281: {quota:412500, settled:440476.51, type:"Core", name:"Gary Sookdeo", p2:98.6, p3:95.4, p5:92.2},
+    A09311: {quota:412500, settled:357789.28, type:"Core", name:"Randolph Gonzales", p2:99.0, p3:92.6, p5:88.6},
+    A10024: {quota:412500, settled:252724.92, type:"Core", name:"Neil Ramnanan", p2:97.9, p3:94.6, p5:88.9},
+    A10338: {quota:412500, settled:147352.57, type:"Core", name:"Dhalina Heeraman", p2:98.4, p3:94.6, p5:89.6},
+    A10428: {quota:412500, settled:711014.67, type:"Core", name:"Varun Seegolam", p2:91.6, p3:93.5, p5:98.8},
+    A10934: {quota:412500, settled:462862.25, type:"Core", name:"Anthony Simmons", p2:95.1, p3:88.1, p5:83.7},
+    A11238: {quota:412500, settled:141368.02, type:"Core", name:"Darryl Manick", p2:96.9, p3:86.8, p5:83.3},
+    A11801: {quota:412500, settled:155904.60, type:"Core", name:"Tricia Baksh", p2:95.3, p3:87.9, p5:83.1},
+    A12001: {quota:90000, settled:96188.04, type:"Part time", name:"Malcolm Sooknanan", p2:96.2, p3:97.2, p5:98.7},
+    A12173: {quota:412500, settled:87521.42, type:"Core", name:"Chris Badaloo", p2:93.6, p3:90.0, p5:83.1},
+    A12397: {quota:300000, settled:194794.65, type:"Year 3", name:"Fawwaz Mohamed", p2:94.7, p3:91.5, p5:91.8},
+    A12408: {quota:300000, settled:69774.48, type:"Year 3", name:"Stephanie Rajkumar", p2:57.2, p3:64.3, p5:62.9},
+    A12530: {quota:300000, settled:217088.84, type:"Year 3", name:"John Boodhoo", p2:86.0, p3:82.7, p5:82.0},
+    A12663: {quota:300000, settled:102692.89, type:"Year 3", name:"Jamil Khan", p2:99.1, p3:99.3, p5:99.3},
+    A12749: {quota:300000, settled:291195.92, type:"Year 3", name:"Aidan Eugene", p2:89.5, p3:89.2, p5:89.2},
+    A13088: {quota:225000, settled:63990.48, type:"Year 2", name:"Alyssa Joseph", p2:82.3, p3:76.0, p5:76.0},
+    A13617: {quota:150000, settled:209712.60, type:"Year 1", name:"Naila Samuel", p2:92.9, p3:92.9, p5:92.9},
+    A13682: {quota:150000, settled:128422.32, type:"Year 1", name:"Daniel Bhagwandas", p2:100.0, p3:100.0, p5:100.0},
+    A13710: {quota:150000, settled:124169.04, type:"Year 1", name:"Felicia Rampersad", p2:95.6, p3:95.6, p5:95.6},
+    A14158: {quota:50000, settled:10155.12, type:"Year 1", name:"Rajiv Soodoo", p2:100.0, p3:100.0, p5:100.0}
+  };
+  var SUB_QUOTA_BRANCH_FALLBACK = {quota:9095000, settled:5353380.13, agents:29};
 
   /* A00427 - Ricky Rampersad is a code and a name in one string. The wall has
      room for the name. */
