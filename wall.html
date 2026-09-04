@@ -1487,7 +1487,7 @@
      the whole row between them and left it 23px wide, so on a 1280 laptop
      every advisor on the board read as three letters and an ellipsis. The
      numbers give way to the name now, not the other way round. */
-  .sbR{display:grid; grid-template-columns:minmax(6.5em,1fr) repeat(2,minmax(1.4em,2.15em)) repeat(2,minmax(1.4em,2.15em)) minmax(2em,2.7em) repeat(3,minmax(1.6em,1.95em));
+  .sbR{display:grid; grid-template-columns:minmax(6.5em,1fr) minmax(1.3em,1.8em) minmax(1.4em,2.1em) minmax(1.3em,1.8em) minmax(1.4em,2.1em) minmax(1.3em,1.8em) minmax(2em,2.5em) repeat(3,minmax(1.5em,1.75em));
     gap:.2em; align-items:center; padding:0 .3em;
     border-bottom:1px solid rgba(255,255,255,.045)}
   .sbR .l{font-size:.655em; font-weight:600; white-space:nowrap; overflow:hidden;
@@ -1525,7 +1525,7 @@
   /* Below a laptop the band is the first thing to go: the name is what
      somebody is looking for, and a truncated name to make room for a tag
      is the wrong trade. */
-  @media (max-width:1500px){ .sbR.a .l u{display:none} }
+  @media (max-width:1700px){ .sbR.a .l u{display:none} }
   /* Under a full wall the panel has to give the roster about two rows back,
      or the last of Akaash's advisors falls off the bottom — which is the one
      thing this panel must not do. It comes out of padding and the share bar,
@@ -1555,11 +1555,19 @@
      meaning on its own — it is the same figure said twice, and the name is
      worth more than the repetition. Settled stays, because that is what the
      percentage is computed on and somebody will want to see it. */
-  @media (max-width:900px){ .sbR.hd .c{font-size:.46em; letter-spacing:0} }
+  /* A phone's em is a third of the wall's, so the columns are set again in
+     its own terms: the roster is one column wide there and has the room. */
+  @media (max-width:900px){
+    .sbR.hd .c{font-size:.42em; letter-spacing:0}
+    /* .sbUnits .sbR, not .sbR: the 1500px rule sits later in the sheet and
+       would win on equal footing. */
+    .sbUnits .sbR{grid-template-columns:minmax(6em,1fr) repeat(2,minmax(1.6em,2em)) repeat(2,minmax(1.6em,2.1em))
+      minmax(2.4em,2.5em) minmax(2.2em,2.6em) repeat(3,minmax(1.6em,1.85em))}
+  }
   /* Under 1500px the columns tighten rather than lose the five-year — the
      branch manager wants all three on a laptop as well as the wall. */
   @media (max-width:1500px){
-    .sbR{grid-template-columns:minmax(6em,1fr) repeat(2,minmax(1.3em,1.95em)) repeat(2,minmax(1.3em,1.95em)) minmax(1.8em,2.4em) repeat(3,minmax(1.45em,1.72em))}
+    .sbR{grid-template-columns:minmax(6em,1fr) minmax(1.35em,1.55em) minmax(1.35em,1.75em) minmax(1.35em,1.55em) minmax(1.35em,1.75em) minmax(1.6em,1.6em) minmax(1.8em,2.15em) repeat(3,minmax(1.4em,1.5em))}
   }
   @media (max-height:860px){
     .sbR .l{font-size:.57em}
@@ -1579,6 +1587,8 @@
     .sbR .c{font-size:.47em}
     .sbR .c.pc{font-size:.43em}
     .sbR.mhd .l{font-size:.52em}
+    .sbR.mhd .c{font-size:.5em}
+    .sbR.hd .c{font-size:.42em; letter-spacing:.02em}
     .sbCap{margin-bottom:.24em; font-size:.54em}
     .sbMixRow{margin-top:.2em}
     .sbMixBar{height:.5em}
@@ -1586,6 +1596,8 @@
     .sbP .pw i{font-size:.55em}
   }
   .sbR .c.s{color:var(--teal)}
+  .sbR .c.ap{text-align:center}
+  .sbUnits .sbR{padding-top:var(--rowPad,0px); padding-bottom:var(--rowPad,0px)}
   .sbR .c.pc{position:static; width:auto; height:auto; border-radius:0;
     animation:none; font-variant-numeric:tabular-nums; font-weight:800}
   .sbR .c.pc.pOk{color:#34D399}
@@ -1594,7 +1606,7 @@
   .sbR.hd .c.pc{color:var(--ink-3); font-weight:700}
   .sbR.hdg .grp.pc{grid-column:span 3; color:#8FD8C4;
     border-bottom-color:rgba(52,211,153,.45)}
-  .sbR.hdg .grp.s1{grid-column:span 1; color:var(--teal-deep);
+  .sbR.hdg .grp.s1{grid-column:span 2; color:var(--teal-deep);
     border-bottom-color:rgba(13,148,136,.5)}
   .sbR.mhd .c.s,.sbR.br .c.s{color:#6EE7B7}
   .sbR.hdg .grp.s{grid-column:span 3; color:var(--teal-deep);
@@ -1687,7 +1699,10 @@
      off the bottom of the card — the heading showed and the bars did not,
      which reads as a branch that sold nothing. The board yields first now,
      and the mix keeps the space it needs. */
-  #sbWeek{flex:0 1 auto; min-height:0; overflow:hidden}
+  /* The three blocks share the card's height evenly with the pie beneath
+     them, instead of huddling at the top over a gap. */
+  #sbWeek{flex:1 1 auto; min-height:0; overflow:hidden; display:flex; flex-direction:column;
+    justify-content:space-evenly}
   .sbGrid .sbCard .sbSec{flex:none}
   .sbPie{display:flex; align-items:center; gap:.8em; margin-top:.35em}
   .sbRing{width:4.6em; height:4.6em; border-radius:50%; flex:none; position:relative;
@@ -4970,9 +4985,12 @@ var PROD = {
        along than they are. */
     var QUOTA = (typeof STL !== 'undefined' && STL.data && STL.data.quotas
                  && Object.keys(STL.data.quotas).length) ? STL.data.quotas : SUB_QUOTA_FALLBACK;
-    var STLM = {};
+    var STLM = {}, STLA = {};
     if(typeof STL !== 'undefined' && STL.data && STL.data.matrix)
-      STL.data.matrix.forEach(function(x){ STLM[x.code] = x.api||0; });
+      STL.data.matrix.forEach(function(x){ STLM[x.code] = x.api||0; STLA[x.code] = x.apps||0; });
+    /* Settled app counts come from the settlement feed alone — the agent
+       export carries API, not cases. Blank until that feed has answered. */
+    function settledAppsFor(label){ var v = STLA[codeOf(label)]; return v || 0; }
     function codeOf(label){
       var m2 = String(label||'').toUpperCase().replace(/[^A-Z0-9]/g,'').match(/^[AU]?0*(\d+)/);
       return m2 ? ('A' + ('00000' + m2[1]).slice(-5)) : '';
@@ -5061,11 +5079,15 @@ var PROD = {
       /* Month to date came off the panel and stayed in the spreadsheet. Nine
          numeric columns across two tables squeezed the names to initials, and
          between MTD and the quota it is the quota a branch acts on. */
-      var out = c(w(r,0)||'&middot;', hi && r===bWa)
+      /* Apps are centred, money is right-aligned: a count of one or two
+         sitting hard against the right edge of its column read as part of
+         the API figure beside it. */
+      var out = c(w(r,0)||'&middot;', hi && r===bWa, ' ap')
               + c(w(r,1)?col(w(r,1)):'&middot;', hi && r===bWi)
-              + c(n0(yy(r,0)), hi && r===bYa)
+              + c(n0(yy(r,0)), hi && r===bYa, ' ap')
               + c(col(yy(r,1)), hi && r===bYi);
-      var set = r._settled || 0;
+      var set = r._settled || 0, setA = r._settledApps || 0;
+      out += c(setA ? n0(setA) : '&middot;', false, ' s ap');
       out += c(set ? col(set) : '&middot;', false, ' s');
       /* Persistency is an advisor's own book. A team's is not a figure the
          branch acts on — the branch manager asked for no tally — so the team
@@ -5077,12 +5099,12 @@ var PROD = {
       return '<div class="sbR hdg"><div class="l"></div>'
         + '<div class="grp">Submitted &mdash; week</div>'
         + '<div class="grp">Submitted &mdash; year</div>'
-        + '<div class="grp s1">Settled</div>'
+        + '<div class="grp s1">Settled &mdash; year</div>'
         + '<div class="grp pc">Persistency %</div></div>'
         + '<div class="sbR hd"><div class="l">Advisor</div>'
-        + '<div class="c">Apps</div><div class="c">API</div>'
-        + '<div class="c">Apps</div><div class="c">API</div>'
-        + '<div class="c s">API</div>'
+        + '<div class="c ap">Apps</div><div class="c">API</div>'
+        + '<div class="c ap">Apps</div><div class="c">API</div>'
+        + '<div class="c s ap">Apps</div><div class="c s">API</div>'
         + '<div class="c pc">2y</div><div class="c pc">3y</div>'
         + '<div class="c pc pc5">5y</div></div>';
     }
@@ -5179,6 +5201,7 @@ var PROD = {
              on what the team is asked to write, not on a figure of their own. */
           mr._quota   = tm.ags.reduce(function(a2,c2){ return a2 + quotaFor(c2.label); }, 0);
           mr._settled = tm.ags.reduce(function(a2,c2){ return a2 + settledFor(c2.label); }, 0);
+          mr._settledApps = tm.ags.reduce(function(a2,c2){ return a2 + settledAppsFor(c2.label); }, 0);
           h += '<div class="sbR mhd"><div class="l"><b>' + esc(mr.label) + '</b>'
              + (tm.under ? '<u title="reports to ' + esc(tm.under) + '">\u21B3 '
                            + esc(String(tm.under).split(' ')[0]) + '</u>' : '')
@@ -5189,6 +5212,7 @@ var PROD = {
           var hot = (w(a,0)||w(a,1)) ? ' hot' : '';
           a._quota = quotaFor(a.label);
           a._settled = settledFor(a.label);
+          a._settledApps = settledAppsFor(a.label);
           var ax = qrow(a.label);
           a._p2 = ax ? ax.p2 : null; a._p3 = ax ? ax.p3 : null; a._p5 = ax ? ax.p5 : null;
           h += '<div class="sbR a' + hot + '"><div class="l"><span>'
@@ -5321,14 +5345,16 @@ var PROD = {
        than letting a figure from last month sit next to this week's and look
        like it was taken at the same time. */
     var rc = q('sbRosterCap');
-    if(rc) rc.innerHTML = 'gold marks the branch\u2019s best &middot; persistency as at 31 August'
-      + ' &middot; the total includes production written under another branch';
+    if(rc) rc.innerHTML = 'gold marks the branch\u2019s best &middot; persistency as at 31 August';
     var wc = q('sbWeekCap');
     if(wc) wc.innerHTML = 'This week &mdash; top three<em>week ' + esc(String(S.week||'')) + '</em>';
 
     subPie(S);
     subChart(S);
     try { tickerFrom(S); } catch(e){}
+
+
+
 
     var stlD = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
     /* The quota is off the headline as well as out of the columns, at the
@@ -5357,6 +5383,40 @@ var PROD = {
       note.title = (S.snapshot ? 'Salesforce snapshot — this does not move on its own. ' : '')
         + 'Branch management only.' + (SUB_MISSING ? ' ' + SUB_MISSING + '.' : '');
     }
+
+    /* FILL THE CARD — measured last, once the strip, the board and the chart
+       have taken their height; measured earlier it padded the rows against a
+       box that then shrank, and the roster scrolled by exactly the padding.
+       On a wall the roster ended a hundred pixels above the
+       strip and the space read as a mistake; on a laptop there is none to
+       give. The spare height, measured after the paint, goes back into the
+       rows as padding, evenly, capped so a wall never looks double-spaced —
+       and if the padding tips a column into scrolling it is taken back. */
+    (function breathe(){
+      box.style.setProperty('--rowPad', '0px');
+      /* A scrolling box reports scrollHeight equal to its own height when
+         the content is shorter, so the spare is measured against where the
+         last row actually ends in the tallest column. */
+      function extent(){
+        var most = 0;
+        box.querySelectorAll('.sbUnit').forEach(function(col){
+          var last = col.lastElementChild;
+          if(last) most = Math.max(most, last.getBoundingClientRect().bottom - col.getBoundingClientRect().top);
+        });
+        return most;
+      }
+      var spare = box.clientHeight - extent();
+      if(spare <= 4) return;
+      var rows = 0;
+      box.querySelectorAll('.sbUnit').forEach(function(col){
+        rows = Math.max(rows, col.querySelectorAll('.sbR').length);
+      });
+      if(!rows) return;
+      var pad = Math.min(5, Math.floor(spare / (rows * 2)));
+      if(pad <= 0) return;
+      box.style.setProperty('--rowPad', pad + 'px');
+      while(pad > 0 && extent() > box.clientHeight){ pad--; box.style.setProperty('--rowPad', pad + 'px'); }
+    })();
     return true;
   }
 
@@ -5958,9 +6018,16 @@ var PROD = {
         STL.busy = false;
         if(j && j.success){
           STL.at = Date.now();
-          /* Slide 13 draws the settled bars from this same payload, so the two
-             boards can never disagree. Redraw it now that the figures exist. */
-          try { if(typeof subChart === 'function') subChart(null); } catch(e){}
+          /* Slide 13 draws its settled figures from this same payload, so the
+             two boards can never disagree. The feed takes ten seconds and lands
+             after the roster has painted; redrawing only the chart left the
+             settled tile reading "apps" with nothing before it. The whole panel
+             repaints on arrival. */
+          try {
+            if(typeof paintSubmitted === 'function' && typeof SUB_LAST !== 'undefined' && SUB_LAST)
+              paintSubmitted(SUB_LAST);
+            else if(typeof subChart === 'function') subChart(null);
+          } catch(e){}
         }
         if(!j || !j.success){
           /* Say what it means, not what the router said. A wall in an office
