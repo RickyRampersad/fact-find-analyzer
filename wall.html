@@ -5532,8 +5532,11 @@ var PROD = {
        and its gate a few lines below is deliberately untouched. (Who is
        looking used to be gated here too; it was removed on the branch
        manager's instruction, 2 September 2026.) */
+    /* Staff read the board too, from 4 September 2026, on the branch
+       manager's instruction. The spreadsheet download is NOT opened with it —
+       its gate is xlsFor below and stays branch-only. */
     var kind = (who.scope && who.scope.kind) || '';
-    var branch = (kind === 'branch' || kind === 'guest');
+    var branch = (kind === 'branch' || kind === 'guest' || kind === 'staff');
     SUBDIAG.push({action:'(scope)', note:'signed in as ' + (who.name || '?') +
                   ', scope ' + (kind || 'none')});
     if(!branch){
