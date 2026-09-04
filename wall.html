@@ -4158,7 +4158,15 @@ var PROD = {
       }
     }
 
-    set('t_p14','<b>'+money(P.held.api)+'</b> written and waiting on requirements');
+    /* This wrote "written and waiting on requirements" into t_p14. There was
+       no p14 until the settlement panel was added, so for months it wrote into
+       nothing and nobody noticed. The moment p14 existed it began stamping a
+       pipeline figure onto the settlement slide's title — a number the branch
+       has not written, on a wall, under the wrong heading.
+       The rest of this block (pdHeldSub, pdBands, pdBooks) has no elements
+       either; set() and rows() both return quietly on a missing target, so it
+       is inert. Left in place rather than removed blind, but nothing here may
+       write to a panel that exists. */
     set('pdHeldSub', P.held.n+' &middot; '+P.held.avgDays+'d avg');
     rows(P.held.bands.map(function(b){ return {a:b.k, n:b.n+' apps', api:b.api}; }),
          q('pdBands'), {tone:'warm', rank:false, big:true, nar:true});
@@ -4770,7 +4778,10 @@ var PROD = {
      paper. Cells are shaded against the busiest cell on the board, so a strong
      month is visible from across the room without reading a number. */
   function stlAgentGrid(j){
-    var nm = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+    /* However many months the server sends — the branch year ends 30 September,
+       so it sends nine, and three empty columns never reach the wall. */
+    var nm = ['J','F','M','A','M','J','J','A','S','O','N','D']
+               .slice(0, (j.months || []).length || 12);
     var key = (STL.mode === 'apps') ? 'apps' : 'api';
     var rows = (j.matrix || []).slice(0, 12);
     var max = 0;
@@ -4849,14 +4860,14 @@ var PROD = {
       '<span><b>' + stlMoney(toGo) + '</b> to the target</span>' +
       (apps ? '<span><b>' + stlFull(api/apps) + '</b> per application</span>' : '') +
       (perMonth ? '<span style="color:var(--gold)"><b style="color:var(--gold)">' +
-        stlMoney(perMonth) + '</b> a month for the last ' + monLeft +
+        stlMoney(perMonth) + '</b> ' + (monLeft === 1 ? 'in September' : 'a month for the last ' + monLeft) +
         (times ? ' &middot; ' + times.toFixed(1) + '\u00d7 your average' : '') + '</span>' : '') +
       '</div></div>';
 
     /* Months. The tallest bar is the month to beat. */
     var mons = j.months || [], top = 0;
     mons.forEach(function(m){ if(m.api > top) top = m.api; });
-    var names = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+    var names = ['J','F','M','A','M','J','J','A','S','O','N','D'].slice(0, mons.length || 12);
     var mh = '<div class="stlCard"><div class="stlCap">By month' +
       '<div class="stlPills">' +
       '<button type="button" class="stlPill' + (STL.month?'':' on') + '" data-mon="0">Year</button>' +
