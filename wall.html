@@ -1487,7 +1487,7 @@
      the whole row between them and left it 23px wide, so on a 1280 laptop
      every advisor on the board read as three letters and an ellipsis. The
      numbers give way to the name now, not the other way round. */
-  .sbR{display:grid; grid-template-columns:minmax(6.5em,1fr) minmax(1.3em,1.8em) minmax(1.4em,2.1em) minmax(1.3em,1.8em) minmax(1.4em,2.1em) minmax(1.3em,1.8em) minmax(2em,2.5em) repeat(3,minmax(1.5em,1.75em));
+  .sbR{display:grid; grid-template-columns:minmax(7em,1fr) minmax(1.3em,1.6em) minmax(1.35em,1.9em) minmax(1.3em,1.6em) minmax(1.35em,1.9em) minmax(1.3em,1.6em) minmax(1.95em,2.3em) repeat(3,minmax(1.35em,1.55em)) minmax(1.55em,1.8em);
     gap:.2em; align-items:center; padding:0 .3em;
     border-bottom:1px solid rgba(255,255,255,.045)}
   .sbR .l{font-size:.655em; font-weight:600; white-space:nowrap; overflow:hidden;
@@ -1515,8 +1515,11 @@
   .sbR.mhd .l{display:flex; align-items:baseline; gap:.4em; min-width:0}
   .sbR.mhd .l b{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0}
   .sbR.mhd .l i{flex:none}
-  .sbR.mhd .l u{flex:none; text-decoration:none; font-size:.56em; font-weight:700;
-    color:var(--ink-3); letter-spacing:.01em; white-space:nowrap}
+  /* The heading's reporting-line tag gives way before the manager's own name
+     does — the tree already shows who reports into whom. */
+  .sbR.mhd .l u{flex:0 1 auto; min-width:0; overflow:hidden; text-decoration:none;
+    font-size:.56em; font-weight:700; color:var(--ink-3); letter-spacing:.01em;
+    white-space:nowrap}
   @media (max-width:1600px){ .sbR.mhd .l u{display:none} }
   .sbR.a .l u{flex:none; padding:0 .3em; border-radius:.28em;
     background:rgba(148,163,184,.16); color:var(--ink-3); font-size:.56em;
@@ -1558,16 +1561,20 @@
   /* A phone's em is a third of the wall's, so the columns are set again in
      its own terms: the roster is one column wide there and has the room. */
   @media (max-width:900px){
-    .sbR.hd .c{font-size:.42em; letter-spacing:0}
+    .sbR.hd .c{font-size:.39em; letter-spacing:0}
     /* .sbUnits .sbR, not .sbR: the 1500px rule sits later in the sheet and
        would win on equal footing. */
-    .sbUnits .sbR{grid-template-columns:minmax(6em,1fr) repeat(2,minmax(1.6em,2em)) repeat(2,minmax(1.6em,2.1em))
-      minmax(2.4em,2.5em) minmax(2.2em,2.6em) repeat(3,minmax(1.6em,1.85em))}
+    .sbUnits .sbR{grid-template-columns:minmax(6.6em,1fr) repeat(2,minmax(1.5em,1.85em)) repeat(2,minmax(1.5em,1.9em))
+      minmax(2.45em,2.55em) minmax(2em,2.35em) repeat(3,minmax(1.45em,1.6em)) minmax(1.95em,2.2em)}
   }
-  /* Under 1500px the columns tighten rather than lose the five-year — the
-     branch manager wants all three on a laptop as well as the wall. */
+  /* Under 1500px the five-year column steps out so the stars can come in
+     without cutting anybody's name to initials. Two and three year are what
+     a branch acts on this quarter, and the wall itself shows all four. */
   @media (max-width:1500px){
-    .sbR{grid-template-columns:minmax(6em,1fr) minmax(1.35em,1.55em) minmax(1.35em,1.75em) minmax(1.35em,1.55em) minmax(1.35em,1.75em) minmax(1.6em,1.6em) minmax(1.8em,2.15em) repeat(3,minmax(1.4em,1.5em))}
+    .sbR .c.pc5, .sbR .pc5{display:none}
+    .sbR.hdg .grp.pc{grid-column:span 2}
+    .sbR.mhd .c{font-size:.52em}
+    .sbR{grid-template-columns:minmax(6em,1fr) minmax(1.25em,1.5em) minmax(1.3em,1.8em) minmax(1.25em,1.5em) minmax(1.3em,1.8em) minmax(1.25em,1.5em) minmax(1.8em,2.15em) repeat(2,minmax(1.35em,1.55em)) minmax(1.55em,1.8em)}
   }
   @media (max-height:860px){
     .sbR .l{font-size:.57em}
@@ -1597,6 +1604,18 @@
   }
   .sbR .c.s{color:var(--teal)}
   .sbR .c.ap{text-align:center}
+  /* The stars sit at the far right, past persistency: the two together read
+     as whether the business stayed and whether the client was glad of it. */
+  .sbR .c.st{text-align:center; font-weight:800; font-variant-numeric:tabular-nums;
+    white-space:nowrap}
+  .sbR .c.st i{font-style:normal; font-size:.78em; margin-left:.1em; opacity:.85}
+  .sbR .c.st.sHi{color:var(--gold)}
+  .sbR .c.st.sOk{color:#34D399}
+  .sbR .c.st.sMid{color:var(--ink-2)}
+  .sbR.hd .c.st{color:var(--ink-3); font-weight:700}
+  .sbR.hdg .grp.st{grid-column:span 1; color:var(--gold);
+    border-bottom-color:rgba(245,185,53,.45)}
+  #sbRosterCap .capStar{color:var(--gold)}
   .sbUnits .sbR{padding-top:var(--rowPad,0px); padding-bottom:var(--rowPad,0px)}
   .sbR .c.pc{position:static; width:auto; height:auto; border-radius:0;
     animation:none; font-variant-numeric:tabular-nums; font-weight:800}
@@ -5024,6 +5043,26 @@ var PROD = {
       return x ? (x.settled||0) : (STLM[codeOf(label)]||0);
     }
     function typeFor(label){ var x = qrow(label); return x ? (x.type||'') : ''; }
+    /* WHAT CLIENTS SAID, BESIDE WHAT THE ADVISOR WROTE. An average is shown
+       only once a client has rated an advisor at least twice — one five and
+       one two is not a 3.5 service record, it is two clients — and a low
+       score is never put against a name in front of the branch. The server
+       decides that; the wall only draws what it is given. */
+    var RATED = (RATE.data && RATE.data.byCode) || {};
+    function rateFor(label){
+      var x = RATED[codeOf(label)];
+      return (x && x.show) ? x : null;
+    }
+    function starCell(r){
+      var x = (r.lvl === 2) ? rateFor(r.label) : null;
+      if(!x) return '<div class="c st"></div>';
+      var cls = x.avg >= 4.5 ? ' sHi' : x.avg >= 4 ? ' sOk' : ' sMid';
+      /* The glyph is in the column heading, not in forty cells under it —
+         repeated down the roster it cost the names two characters each. */
+      return '<div class="c st' + cls + '" title="' + x.n + ' client'
+        + (x.n === 1 ? '' : 's') + ' rated ' + esc(subShort(r.label)) + '">'
+        + x.avg.toFixed(1) + '</div>';
+    }
     /* "Part time" spelled out cost eight characters of somebody's name, and a
        name cut to "Joy Barbara …" is worse than a band written short. The
        full wording is on the tag's title for anyone who hovers. */
@@ -5094,21 +5133,24 @@ var PROD = {
       /* Persistency is an advisor's own book. A team's is not a figure the
          branch acts on — the branch manager asked for no tally — so the team
          and branch rows leave those three cells empty. */
-      if(r.lvl !== 2) return out + '<div class="c pc"></div><div class="c pc"></div><div class="c pc pc5"></div>';
-      return out + persCell(r._p2) + persCell(r._p3) + persCell(r._p5, ' pc5');
+      if(r.lvl !== 2) return out + '<div class="c pc"></div><div class="c pc"></div>'
+                                 + '<div class="c pc pc5"></div><div class="c st"></div>';
+      return out + persCell(r._p2) + persCell(r._p3) + persCell(r._p5, ' pc5') + starCell(r);
     }
     function head(){
       return '<div class="sbR hdg"><div class="l"></div>'
         + '<div class="grp">Submitted &mdash; week</div>'
         + '<div class="grp">Submitted &mdash; year</div>'
         + '<div class="grp s1">Settled &mdash; year</div>'
-        + '<div class="grp pc">Persistency %</div></div>'
+        + '<div class="grp pc">Persistency %</div>'
+        + '<div class="grp st">Client</div></div>'
         + '<div class="sbR hd"><div class="l">Advisor</div>'
         + '<div class="c ap">Apps</div><div class="c">API</div>'
         + '<div class="c ap">Apps</div><div class="c">API</div>'
         + '<div class="c s ap">Apps</div><div class="c s">API</div>'
         + '<div class="c pc">2y</div><div class="c pc">3y</div>'
-        + '<div class="c pc pc5">5y</div></div>';
+        + '<div class="c pc pc5">5y</div>'
+        + '<div class="c st">\u2605</div></div>';
     }
 
     /* Rebuilt into a tree before sorting. Sorting the flat rows in place would
@@ -5257,10 +5299,12 @@ var PROD = {
       var hasMo = !!(t.m && (t.m[0] || t.m[1]));
       bt.innerHTML = '<div class="sbStrip">'
         + tile(' wk', 'This week', w(t,0), w(t,1))
-        + tile('', S.monthLabel ? esc(S.monthLabel) + ' to date' : 'Month to date',
+        + tile('', S.monthLabel ? esc(String(S.monthLabel).slice(0,3)) + ' to date' : 'Month to date',
                hasMo ? mo(t,0) : null, hasMo ? mo(t,1) : null)
         + tile('', 'Year to date', yy(t,0), yy(t,1))
-        + tile(' set', 'Settled &middot; year to date', setApps || null, t._settled || null)
+        /* Short enough to survive a laptop: at 1440 the long captions were
+           cut to "YEAR T…" and "SETTLE…", which is worse than saying less. */
+        + tile(' set', 'Settled &middot; year', setApps || null, t._settled || null)
         + '</div>';
     }
 
@@ -5351,7 +5395,12 @@ var PROD = {
        than letting a figure from last month sit next to this week's and look
        like it was taken at the same time. */
     var rc = q('sbRosterCap');
-    if(rc) rc.innerHTML = 'gold marks the branch\u2019s best &middot; persistency as at 31 August';
+    var rb = (RATE.data && RATE.data.branch) || null;
+    if(rc) rc.innerHTML = 'gold marks the branch\u2019s best &middot; persistency as at 31 August'
+      + (rb && rb.n
+          ? ' &middot; <b class="capStar">' + rb.avg.toFixed(1) + '\u2605</b> from '
+            + rb.n + ' client' + (rb.n === 1 ? '' : 's')
+          : '');
     var wc = q('sbWeekCap');
     if(wc) wc.innerHTML = 'This week &mdash; top three<em>week ' + esc(String(S.week||'')) + '</em>';
 
@@ -5570,6 +5619,9 @@ var PROD = {
      it is cached for five minutes, so the second pass is free. */
   var SUB_LAST = null;
   var SUB_MISSING = '';
+  /* Client ratings, kept beside the settlement payload rather than inside it,
+     so a branch on an older build still gets everything else. */
+  var RATE = { data: null, at: 0 };
   function subChart(S){
     SUB_LAST = S || SUB_LAST;
     if(!S) S = SUB_LAST;
@@ -6017,6 +6069,25 @@ var PROD = {
         'The year to date, every advisor, month by month.</div></div>';
     }
     STL.busy = true;
+    /* WHAT THE CLIENT THOUGHT. Ratings are small, fast and on the same
+       deployment, so they are asked for beside the settlement rather than on
+       a timer of their own; whichever lands first repaints, and slide 13 is
+       correct either way. A branch that fails to answer this one still gets
+       its board — the roster simply shows no stars. */
+    fetch(ENDPOINT + '?action=ratings&token=' + encodeURIComponent(who.token) +
+          '&_=' + Date.now(), {cache:'no-store', redirect:'follow'})
+      .then(function(r){ return r.text(); })
+      .then(function(t){
+        var j = null; try{ j = JSON.parse(t); }catch(e){}
+        if(j && j.success){
+          RATE.data = j; RATE.at = Date.now();
+          try {
+            if(typeof paintSubmitted === 'function' && typeof SUB_LAST !== 'undefined' && SUB_LAST)
+              paintSubmitted(SUB_LAST);
+          } catch(e){}
+        }
+      })
+      .catch(function(){});
     var url = ENDPOINT + '?action=settlement&token=' + encodeURIComponent(who.token) +
               '&year=' + (new Date().getFullYear()) +
               (STL.month ? '&month=' + STL.month : '') + '&_=' + Date.now();
