@@ -1032,6 +1032,82 @@ function escapeHtml(s){
 }
 
 // fetch JSON with a timeout so a slow/missing endpoint never hangs the UI
+/* ── CAN THIS DEVICE REACH THE BRANCH SERVER AT ALL? ───────────────────────
+   One request, no sign-in, no password: ?action=ping answers {"alive"} on a
+   healthy connection. What comes back separates the causes that look
+   identical from the sign-in box:
+
+     answered            the connection is fine — it was the details, or a
+                         moment of bad signal; press Sign in again
+     nothing came back   something between this device and Google is blocking
+                         script.google.com. On a work laptop that is usually
+                         the office network — the same page over the phone's
+                         own data will prove it in ten seconds
+     too slow            the server was asleep; it wakes on the first call
+
+   It never sends the access code, so it is safe to press at any time and
+   safe to talk somebody through over the phone. */
+var LI_LAST_KIND = '';
+function liClearTest(){
+  var b = document.getElementById('liTestWrap');
+  if(b) b.remove();
+}
+function liOfferTest(){
+  if(!/^(network|timeout|status|notjson)$/.test(LI_LAST_KIND)) return;
+  liClearTest();
+  var err = document.getElementById('liErr');
+  if(!err) return;
+  var wrap = document.createElement('div');
+  wrap.id = 'liTestWrap';
+  wrap.style.cssText = 'margin-top:.7em';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.id = 'liTestBtn';
+  btn.textContent = 'Test the connection';
+  btn.style.cssText = 'font:inherit;font-size:.86em;font-weight:700;cursor:pointer;' +
+    'padding:.5em .9em;border-radius:.5em;border:1px solid rgba(13,148,136,.5);' +
+    'background:rgba(13,148,136,.10);color:#0D9488';
+  var out = document.createElement('div');
+  out.id = 'liTestOut';
+  out.style.cssText = 'margin-top:.55em;font-size:.86em;line-height:1.55';
+  btn.onclick = function(){ liRunTest(btn, out); };
+  wrap.appendChild(btn); wrap.appendChild(out);
+  err.parentNode.insertBefore(wrap, err.nextSibling);
+}
+async function liRunTest(btn, out){
+  btn.disabled = true; btn.textContent = 'Testing…';
+  out.innerHTML = '';
+  var url = getEndpoint();
+  if(!url){
+    out.innerHTML = '<b style="color:#B91C1C">No branch server is configured on this page.</b>' +
+      '<br>Tell the branch office — this is not something you can fix from here.';
+    btn.disabled = false; btn.textContent = 'Test the connection'; return;
+  }
+  var t0 = Date.now(), j = null, e = null;
+  try { j = await fetchJson(url + '?action=ping&_=' + t0, 25000); }
+  catch (err2) { e = err2; }
+  var secs = ((Date.now() - t0) / 1000).toFixed(1);
+  if(j && j.success){
+    out.innerHTML = '<b style="color:#0D9488">The branch server answered in ' + secs + ' seconds.</b>' +
+      '<br>Your connection is fine. Press <b>Sign in</b> again &mdash; and if it still ' +
+      'refuses, it is the agent number or the access code, not the network.';
+  } else if(e && e.kind === 'network'){
+    out.innerHTML = '<b style="color:#B91C1C">Nothing came back at all.</b>' +
+      '<br>Something between this device and Google is blocking the branch server. ' +
+      'Try the same page on your phone using its own mobile data, <b>not</b> the office wifi. ' +
+      'If it works there, the office network is the block and the branch office needs to know.';
+  } else if(e && e.kind === 'timeout'){
+    out.innerHTML = '<b style="color:#B45309">The server did not answer within 25 seconds.</b>' +
+      '<br>It sleeps when it is not used and can take a moment to wake. Press this once more; ' +
+      'if it times out twice, tell the branch office.';
+  } else {
+    out.innerHTML = '<b style="color:#B45309">The server answered, but not with data.</b>' +
+      '<br>' + ((e && e.message) || 'Unexpected reply.') +
+      '<br>Send the branch office this whole message &mdash; it names the fault.';
+  }
+  btn.disabled = false; btn.textContent = 'Test again';
+}
+
 async function fetchJson(url,ms){
   // 20s, not 7. An Apps Script web app answers on script.google.com with a 302
   // to googleusercontent.com, and a cold container has to spin up before it
@@ -1344,6 +1420,7 @@ async function doLogin(ev){
   var name='';   // the server returns the real name; nothing is known before that
   var pass=document.getElementById('liPass').value;
   var err=document.getElementById('liErr'); err.textContent='';
+  liClearTest();
   var btn=document.getElementById('liBtn'); btn.disabled=true; btn.textContent='Signing in…';
 
   var ep=getEndpoint(); var who=null;
@@ -1409,6 +1486,14 @@ async function doLogin(ev){
     // rethrows a plain Error, so e.name is never 'AbortError'. A timed-out
     // cold start printed the connection message too.
     var kind = e && e.kind;
+    /* WHOEVER IS STANDING AT THE SCREEN CAN SETTLE THIS THEMSELVES.
+       An advisor reporting "could not reach the branch server" has told us
+       the fetch failed and nothing else, and from a WhatsApp photograph the
+       branch office cannot tell a blocked corporate network from a dropped
+       connection from a browser extension. It costs a round trip and an
+       evening every time. The button under the message asks the server for
+       nothing but a heartbeat and says exactly what came back. */
+    LI_LAST_KIND = kind || '';
     err.textContent =
         (e && e.message === 'no-endpoint')
           ? 'No data endpoint is configured, so sign-in is unavailable.'
@@ -1421,6 +1506,7 @@ async function doLogin(ev){
       : (kind === 'notjson')
           ? (e.message + ' Tell the branch office what this says.')
       : ((e && e.message) || 'Sign-in could not be completed.');
+    liOfferTest();
   }
 
   btn.disabled=false; btn.textContent='Sign in';
