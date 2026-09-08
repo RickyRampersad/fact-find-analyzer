@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 72" width="60" height="72">
+  <defs>
+    <linearGradient id="slate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34435C"/>
+      <stop offset="1" stop-color="#1B2536"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2DD4BF"/>
+      <stop offset="0.55" stop-color="#0D9488"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+  </defs>
+  <!-- teal rim -->
+  <path d="M30 2.5 L55.5 11 V35 C55.5 51.5 44 63.5 30 69.5 C16 63.5 4.5 51.5 4.5 35 V11 Z" fill="url(#teal)"/>
+  <!-- slate body -->
+  <path d="M30 6.2 L52 13.6 V35 C52 49.8 42 60.3 30 65.6 C18 60.3 8 49.8 8 35 V13.6 Z" fill="url(#slate)"/>
+  <!-- a fine inner line -->
+  <path d="M30 9.4 L49 15.9 V35 C49 48.2 40.5 57.4 30 62.2 C19.5 57.4 11 48.2 11 35 V15.9 Z" fill="none" stroke="#2DD4BF" stroke-opacity="0.45" stroke-width="0.9"/>
+  <!-- the check -->
+  <path d="M19.5 36.5 L27 44 L41.5 26.5" fill="none" stroke="#0B1220" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.35"/>
+  <path d="M19.5 36.5 L27 44 L41.5 26.5" fill="none" stroke="#2DD4BF" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
