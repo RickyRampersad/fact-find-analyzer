@@ -5048,7 +5048,16 @@ var PROD = {
        one two is not a 3.5 service record, it is two clients — and a low
        score is never put against a name in front of the branch. The server
        decides that; the wall only draws what it is given. */
-    var RATED = (RATE.data && RATE.data.byCode) || {};
+    /* DARK UNTIL THE DATA IS CLEAN. On 7 September the ratings feed carried
+       thirteen one-star scores that no client gave: the approval letter's
+       star links are cc'd to the direct manager and the advisor at Guardian,
+       whose mail security opens every link, and the first link is the one
+       star. The sheet is being scrubbed and the links made scanner-proof.
+       Until both are done the wall shows no stars at all — a false one-star
+       beside somebody's name is worse than no column. Flip RATE_LIVE when the
+       server sends clean: true. */
+    var RATE_LIVE = !!(RATE.data && RATE.data.clean);
+    var RATED = RATE_LIVE ? ((RATE.data && RATE.data.byCode) || {}) : {};
     function rateFor(label){
       var x = RATED[codeOf(label)];
       return (x && x.show) ? x : null;
@@ -5395,7 +5404,7 @@ var PROD = {
        than letting a figure from last month sit next to this week's and look
        like it was taken at the same time. */
     var rc = q('sbRosterCap');
-    var rb = (RATE.data && RATE.data.branch) || null;
+    var rb = RATE_LIVE ? ((RATE.data && RATE.data.branch) || null) : null;
     if(rc) rc.innerHTML = 'gold marks the branch\u2019s best &middot; persistency as at 31 August'
       + (rb && rb.n
           ? ' &middot; <b class="capStar">' + rb.avg.toFixed(1) + '\u2605</b> from '
