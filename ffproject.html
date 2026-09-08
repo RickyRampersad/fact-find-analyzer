@@ -4021,6 +4021,16 @@ const RAI_MASCOT = `<svg class="rai-avatar" viewBox="0 0 64 64" xmlns="http://ww
             <label class="radio"><input type="radio" name="mgrAgree" value="disagree" onchange="calc()"><span>Do not agree</span></label>
           </div>
         </div>
+        <!-- The client's Yes comes first. Until the client has confirmed and signed
+             the draft online, Agree is held; the server refuses it too. Only the
+             Branch Manager's link can go past the wait, and it is recorded. -->
+        <div id="clientYesHold" style="display:none;background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:10px;padding:11px 14px;margin:-6px 0 14px;font-size:13px;color:#78350F;line-height:1.6">
+          <div id="clientYesHoldText"></div>
+          <div id="clientYesOverrideBox" style="display:none;margin-top:8px;padding-top:8px;border-top:1px dashed #F59E0B">
+            <label style="display:flex;gap:8px;align-items:flex-start;font-weight:700;cursor:pointer"><input type="checkbox" id="overrideClientWait" onchange="applyClientYesHold()" style="margin-top:3px"> <span>Branch Manager: approve before the client confirms (recorded on the case)</span></label>
+            <textarea id="overrideClientWaitReason" rows="2" placeholder="Why &mdash; e.g. the client confirmed by phone on &hellip;" style="width:100%;box-sizing:border-box;margin-top:6px;font:inherit;font-size:13px" oninput="calc()"></textarea>
+          </div>
+        </div>
 
         <div class="field" id="mgrCommentsBlock" style="display:none">
           <label>Direct Manager&rsquo;s Feedback</label>
@@ -4170,10 +4180,10 @@ const RAI_MASCOT = `<svg class="rai-avatar" viewBox="0 0 64 64" xmlns="http://ww
           <div style="font-size:13.5px; font-weight:800; color:#0F766E; margin-bottom:9px">What happens when you send this</div>
           <ol style="margin:0; padding-left:19px; font-size:13px; color:#134E4A; line-height:1.85">
             <li><strong>Your manager gets it straight away</strong> &mdash; with a link that opens this fact find on their phone.</li>
-            <li><strong>Your client gets a draft copy</strong> &mdash; saying plainly that it is awaiting approval and that nothing is final yet.</li>
+            <li><strong>Your client gets a draft copy</strong> &mdash; with one question, <em>is this right?</em> They confirm, rate the advice and sign online; the signature goes into the client&rsquo;s box on this fact find.</li>
             <li><strong>You get a copy</strong>, and a timeline showing the date it is due back. Normally one working day.</li>
-            <li><strong>It comes back to you</strong> with your manager&rsquo;s comments and signature.</li>
-            <li><strong>You print it</strong> and take it to the client for their wet signature.</li>
+            <li><strong>Your manager approves</strong> once the client has confirmed &mdash; not before. The client gets the approved plan; you get the comments and signature.</li>
+            <li><strong>You take the application</strong> at the meeting. The fact find is already signed.</li>
           </ol>
           <div style="font-size:11.5px; color:#0F766E; margin-top:10px; padding-top:9px; border-top:1px dashed #99F6E4">
             You do not need to chase anyone. If your manager has not responded, the system reminds them at 3pm each day.
@@ -5209,7 +5219,7 @@ function applyMode() {
       ? ' Signed in as <strong>' + escapeHtml(REVIEW_GRANT.name) + '</strong>.' : '';
     banner.innerHTML = (MODE === 'manager')
       ? '<strong>Manager Review.</strong> RAI has flagged what to scrutinise on this Fact Find. Acknowledge each insight, then record your verdict in Section 11.' + who
-      : '<strong>View-Only Mode.</strong> This Fact Find has been reviewed. Click Print to produce the hard copy for client wet-signature.';
+      : '<strong>View-Only Mode.</strong> This Fact Find has been reviewed. The client confirmed and signed it online; Print produces a copy for the file.';
   }
 
   // The reviewer's name is whoever the token names — not whoever types into the
@@ -5413,9 +5423,12 @@ function buildReviewChecklist() {
           (typeof clientCommentsOf === 'function' && clientCommentsOf()
             ? 'In their words: \u201c' + clientCommentsOf() + '\u201d — '
             : '') + 'Their request arrived before your sign-off. Address it with the agent before this case moves.');
-    else if (cr === 'looks_right')
-      add('info', 'Client confirmed the draft on their portal',
-          'They reviewed the recommendations in plain language and said it looks right so far.');
+    else if (clientYesOf())
+      add('info', 'Client confirmed and signed the draft online',
+          'They read the draft, confirmed it is right, rated the advice and signed. The signature sits in the client\u2019s box on this fact find.');
+    else
+      add('info', 'The client has not confirmed the draft yet',
+          'Agree is held until they tap \u201cYes, that\u2019s correct\u201d and sign. Reminders go on day 3 and day 8, and the advisor is asked to call.');
   })();
 
   // Always at least one item — the core suitability question
@@ -5542,6 +5555,12 @@ function rrbMgrRequired() {
     missing.push('Your guidance to the agent');
   if (!state.mgrAgree)
     missing.push('Your recommendation (Agree / Do not agree)');
+  if (state.mgrAgree === 'agree' && !clientYesOf()) {
+    if (!bmClientWaitOverride())
+      missing.push('The client has not confirmed the draft yet — Agree waits for their Yes (the Branch Manager can approve past it, with a reason)');
+    else if (!clientWaitReason())
+      missing.push('Reason for approving before the client confirmed');
+  }
   if (!(state.mgrVerData === true))
     missing.push('Tick the verification line to confirm you checked this case');
   if (!signatures.manager)
@@ -5613,6 +5632,44 @@ function clientResponseOf() {
 function clientCommentsOf() {
   return state.clientComments || state['Client Comments'] || '';
 }
+// Has the client confirmed their draft? Signed online (Client Confirmed = Yes),
+// or "looks right" on the older portal path.
+function clientYesOf() {
+  var c = String(state.clientConfirmed || state['Client Confirmed'] || '').trim().toLowerCase();
+  return c === 'yes' || clientResponseOf() === 'looks_right';
+}
+function bmClientWaitOverride() {
+  var el = document.getElementById('overrideClientWait');
+  return !!(window.BM_ROLE && el && el.checked);
+}
+function clientWaitReason() {
+  var el = document.getElementById('overrideClientWaitReason');
+  return el && el.value ? String(el.value).trim() : '';
+}
+// Holds Agree until the client's Yes is on the record. Runs after the case is
+// loaded and whenever the Branch Manager's override box changes.
+function applyClientYesHold() {
+  if (MODE !== 'manager') return;
+  var hold = document.getElementById('clientYesHold');
+  var agree = document.querySelector('input[name="mgrAgree"][value="agree"]');
+  if (!hold || !agree) return;
+  var box = document.getElementById('clientYesOverrideBox');
+  if (box) box.style.display = window.BM_ROLE ? 'block' : 'none';
+  if (clientYesOf()) { hold.style.display = 'none'; agree.disabled = false; return; }
+  hold.style.display = 'block';
+  var client = state.clientName || state.fullName || 'The client';
+  var sent = state.clientDraftSentAt ? new Date(state.clientDraftSentAt) : null;
+  var days = (sent && !isNaN(sent.getTime())) ? Math.floor((Date.now() - sent.getTime()) / 864e5) : -1;
+  var el = document.getElementById('clientYesHoldText');
+  if (el) el.innerHTML = '<strong>Waiting on the client.</strong> ' + escapeHtml(client) +
+    ' has not yet confirmed and signed the draft' +
+    (days >= 0 ? ' (sent ' + (days === 0 ? 'today' : days === 1 ? 'yesterday' : days + ' days ago') + ')' : '') +
+    '. <strong>Agree</strong> is held until they do; <strong>Do not agree</strong> is open. They are reminded on day 3 and day 8, and the advisor is asked to call.';
+  var ov = bmClientWaitOverride();
+  agree.disabled = !ov;
+  if (!ov && agree.checked) { agree.checked = false; state.mgrAgree = ''; }
+  try { calc(); } catch (e) {}
+}
 
 function managerFocusSections() {
   document.querySelectorAll('.section').forEach(function (sec) {
@@ -5679,9 +5736,12 @@ function buildManagerCockpit() {
          '<div style="font-size:12.5px;font-weight:800;color:#92400E">&#9998; THE CLIENT HAS ASKED FOR CHANGES — read before you sign anything</div>' +
          (clientCommentsOf() ? '<div style="font-size:13px;color:#78350F;margin-top:4px">&ldquo;' + escapeHtml(clientCommentsOf()) + '&rdquo;</div>' : '') +
          '</div>';
-  } else if (cr === 'looks_right') {
+  } else if (clientYesOf()) {
     h += '<div style="background:#F0FDFA;border:1px solid #99F6E4;border-radius:10px;padding:9px 14px;margin-top:10px;' +
-         'font-size:12.5px;color:#0F766E;font-weight:700">&#10003; The client reviewed the draft on their portal and confirmed it looks right.</div>';
+         'font-size:12.5px;color:#0F766E;font-weight:700">&#10003; The client confirmed and signed the draft online. You can approve.</div>';
+  } else {
+    h += '<div style="background:#FFFBEB;border:1px solid #F59E0B;border-radius:10px;padding:9px 14px;margin-top:10px;' +
+         'font-size:12.5px;color:#92400E;font-weight:700">&#9203; Waiting on the client \u2014 they have not confirmed the draft yet. Agree is held until they do.</div>';
   }
 
   h += '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">';
@@ -5831,7 +5891,7 @@ function buildAgentReviewNoticeHtml() {
         '<li>Read the manager’s comments above and in the attached document.</li>' +
         (disagreed ? '<li><strong>Address the points your manager disagreed with before going back to the client.</strong></li>' : '') +
         '<li>Contact the client to walk through the reviewed recommendation.</li>' +
-        '<li><strong>Print the finalised fact find and obtain the client’s physical wet signature.</strong> Digital alone is not enough.</li>' +
+        '<li><strong>The client has already confirmed and signed the fact find online</strong> &mdash; the signature is in the client’s box. Take their signature on Guardian’s application form at the meeting.</li>' +
         '<li>Upload the signed document to M-Files.</li>' +
       '</ol></div>',
     '<p style="font-size:12px;color:#94a3b8;margin-top:14px">The client has also been told the review is complete and that you will be in touch.</p>',
@@ -5918,6 +5978,7 @@ async function loadFromUrl() {
     // NOW re-derive the mode from the server's grant — after hydration, so the
     // reviewer's name survives into state rather than being cleared behind it.
     if (REVIEW_GRANT) applyMode();
+    try { applyClientYesHold(); } catch (e) { console.warn('client-yes hold', e); }
 
     calc();
     updateProgress();
@@ -6039,9 +6100,12 @@ function gatherSubmission() {
     // anything depended entirely on the Apps Script.
     payload.notifyAgentReviewed  = payload.advisorEmail ? 'YES' : 'NO';
     payload.agentReviewSubject   = 'Reviewed — ' + (state.clientName || state.fullName || 'your client') +
-                                   ' — print and obtain wet signature';
+                                   ' — ready for the client';
     payload.agentReviewNoticeHtml = buildAgentReviewNoticeHtml();
     payload.mgrVerdict           = state.mgrAgree || '';
+    // The client's Yes comes first; only the Branch Manager's link may go past it.
+    payload.overrideClientWait       = bmClientWaitOverride() ? 'YES' : 'NO';
+    payload.overrideClientWaitReason = clientWaitReason();
 
     payload.notifyClientReviewed = payload.clientEmail ? 'YES' : 'NO';
     payload.clientReviewSubject  = 'Your fact find has been reviewed — next steps';
@@ -6336,7 +6400,19 @@ async function submitForm() {
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const out = await res.json();
-    if (!out.ok) throw new Error(out.error || 'Server returned not-ok');
+    if (!out.ok) {
+      if (out.waitingOnClient) {
+        btn.disabled = false;
+        btn.textContent = origLabel;
+        result.innerHTML = '<div style="background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:10px;padding:12px 14px;color:#78350F;font-size:13.5px;line-height:1.6">' +
+          '<strong>Waiting on the client.</strong> ' + escapeHtml(out.error || '') +
+          (out.canOverride ? '<br><span style="font-size:12.5px">As Branch Manager you can tick “approve before the client confirms” under the recommendation, give a reason, and submit again. It is recorded on the case.</span>' : '') +
+          '</div>';
+        showStatus('Waiting on the client', false);
+        return;
+      }
+      throw new Error(out.error || 'Server returned not-ok');
+    }
 
     btn.textContent = '✓ Submitted';
     btn.style.background = 'var(--ok)';
@@ -6368,7 +6444,7 @@ async function submitForm() {
         clientLine = `<br><span style="color:#B45309;font-size:12px">⚠ No client email on file — no summary was sent.</span>`;
       }
       result.innerHTML = `<span style="color:var(--ok)"><strong>Submission received.</strong><br>` +
-        `Routed to <strong>${out.nextReviewerName || 'your manager'}</strong> for review and sign-off — your copy has been emailed to you. Once your manager signs off, it comes back to you to <strong>print and obtain the client's wet signature.</strong>` + clientLine + `<br>` +
+        `Routed to <strong>${out.nextReviewerName || 'your manager'}</strong> for review and sign-off — your copy has been emailed to you. Your manager can approve once the client has confirmed and signed the draft online; the approved plan then goes to the client, and the case comes back to you to <strong>take the application.</strong>` + clientLine + `<br>` +
         `<span style="color:var(--muted);font-size:12px">Row ${out.row} · ID: ${out.submissionId}</span></span>` +
         ffJourneyHtml('agent_submit', 'agent', { submittedAt: new Date(),
           managerName: out.nextReviewerName, clientName: state.clientName || state.fullName }) + pdfNote + pdfDiag +
@@ -6399,12 +6475,12 @@ async function submitForm() {
       if (out.agentReviewSent) {
         agentLine = `<br><span style="color:var(--ok);font-size:12px">✓ ${escapeHtml(advisor)} has been emailed your verdict and comments${aEmail ? ' (' + escapeHtml(aEmail) + ')' : ''}.</span>`;
       } else if (aEmail) {
-        agentLine = `<br><span style="color:#B45309;font-size:12px">⚠ The hand-back to ${escapeHtml(advisor)} was requested for ${escapeHtml(aEmail)} but the server did not confirm it was sent. <strong>Tell them directly — nothing moves until they print and get the wet signature.</strong></span>`;
+        agentLine = `<br><span style="color:#B45309;font-size:12px">⚠ The hand-back to ${escapeHtml(advisor)} was requested for ${escapeHtml(aEmail)} but the server did not confirm it was sent. <strong>Tell them directly — the client is waiting to hear from them.</strong></span>`;
       } else {
         agentLine = `<br><span style="color:#B45309;font-size:12px">⚠ No advisor email on file — ${escapeHtml(advisor)} has NOT been notified. Contact them directly.</span>`;
       }
       result.innerHTML = `<span style="color:var(--ok)"><strong>Review recorded &amp; signed.</strong><br>` +
-        `Routed <strong>back to ${escapeHtml(advisor)}</strong> with your guidance and verdict — they will now <strong>print the fact find and obtain the client's wet signature.</strong>` + agentLine + clientLine2 + `<br>` +
+        `Routed <strong>back to ${escapeHtml(advisor)}</strong> with your guidance and verdict — they will now <strong>take the client's application.</strong>` + agentLine + clientLine2 + `<br>` +
         `<span style="color:var(--muted);font-size:12px">Status: ${out.status}</span></span>` +
         ffJourneyHtml('manager_review', 'manager', { agentName: advisor,
           clientName: state.clientName || state.fullName }) +
@@ -13714,7 +13790,7 @@ const FF_STAGE_COPY = {
     submitted:    { t: 'Fact find submitted',        d: 'You completed and submitted the fact find.' },
     with_manager: { t: 'With your manager',          d: 'Sent for review and sign-off.' },
     reviewed:     { t: 'Reviewed and signed',        d: 'Your manager has commented and signed.' },
-    with_agent:   { t: 'Back with you',              d: 'Read the comments, then print for the client’s wet signature.' },
+    with_agent:   { t: 'Back with you',              d: 'Read the comments, then take the client’s application.' },
     delivered:    { t: 'Signed and filed',           d: 'Client has signed; upload to M-Files.' }
   },
   client: {
@@ -13850,7 +13926,7 @@ function ffJourneyHtml(stage, audience, meta) {
   } else if (stage === 'manager_review') {
     if (audience === 'agent') {
       headline = 'Reviewed by ' + ffEsc(mgr) + ' — back with you';
-      sub = 'Read the comments, then print and obtain the client’s wet signature.';
+      sub = 'Read the comments, then take the client’s application.';
     } else if (audience === 'client') {
       headline = 'Review complete';
       sub = 'Your adviser will contact you shortly to walk through everything.';
