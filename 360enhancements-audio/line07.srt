@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:03,956
+Two days after delivery, the client is asked how it went.
+
+2
+00:00:03,956 --> 00:00:07,499
+A score of three or under comes to the branch manager alone.
+
+3
+00:00:07,499 --> 00:00:13,518
+Thirty days before their birthday, every year, they are asked whether anything has changed.
+

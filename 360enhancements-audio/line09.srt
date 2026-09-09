@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:04,329
+A step with no date is a step the client is never told about.
+
+2
+00:00:04,329 --> 00:00:05,528
+Not sent late.
+
+3
+00:00:05,528 --> 00:00:06,520
+Never sent.
+

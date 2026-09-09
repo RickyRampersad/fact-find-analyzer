@@ -83,3 +83,30 @@
   to = "/index.html"
   status = 404
   force = true
+
+# The September enhancements film. Same treatment as the pages above: it names
+# the branch's own audit figures — how many policies carry a dispatch date, how
+# many fact finds went back and never returned — which is for the team, not for
+# a shared browser's cache.
+[[headers]]
+  for = "/360enhancements.html"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/360enhancements-film.html"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+# 360enhancements-audio/ IS NOT PART OF THE SITE, for the same reason
+# wall-audio/ is not: the narration is embedded in the film as data URIs, so
+# the loose MP3s are build output. They read those same figures aloud.
+[[redirects]]
+  from = "/360enhancements-audio/*"
+  to = "/index.html"
+  status = 404
+  force = true

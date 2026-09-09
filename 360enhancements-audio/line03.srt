@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:02,126
+Now the client answers first.
+
+2
+00:00:02,126 --> 00:00:07,190
+They read the plan, confirm it is right, rate the advice, and sign online.
+
+3
+00:00:07,190 --> 00:00:10,283
+No manager can approve until that yes is in.
+

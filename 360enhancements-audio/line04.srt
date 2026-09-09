@@ -1,0 +1,20 @@
+1
+00:00:00,050 --> 00:00:03,556
+Every email a client gets goes out in their advisor's name.
+
+2
+00:00:03,556 --> 00:00:05,734
+Replies come back to the advisor.
+
+3
+00:00:05,734 --> 00:00:07,860
+The direct manager is copied.
+
+4
+00:00:07,860 --> 00:00:09,742
+The branch manager, blind.
+
+5
+00:00:09,742 --> 00:00:11,301
+Sales support, never.
+

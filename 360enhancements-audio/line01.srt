@@ -1,0 +1,8 @@
+1
+00:00:00,050 --> 00:00:02,268
+The fact find has not changed.
+
+2
+00:00:02,268 --> 00:00:04,085
+What happens after it, has.
+
