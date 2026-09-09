@@ -1,12 +1,8 @@
 1
-00:00:00,050 --> 00:00:04,329
-A step with no date is a step the client is never told about.
+00:00:00,050 --> 00:00:01,868
+None of this came from a system.
 
 2
-00:00:04,329 --> 00:00:05,528
-Not sent late.
-
-3
-00:00:05,528 --> 00:00:06,520
-Never sent.
+00:00:01,868 --> 00:00:08,234
+It came from advisors saying the same thing often enough that it became impossible to ignore.
 

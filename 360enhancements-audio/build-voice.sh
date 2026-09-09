@@ -32,27 +32,27 @@ say () {  # say <index> <text>
 
 echo "Narration — $VOICE at $RATE"
 
-say 1 "The fact find has not changed. What happens after it, has."
+say 1 "This one is for the advisors. Every change in it came from something one of you said."
 
-say 2 "A client used to sign, and then hear nothing until their policy arrived. Nobody forgot. Nobody owned the silence."
+say 2 "You said the review was a black hole. The fact find went up, and then you waited, with nothing to tell the client."
 
-say 3 "Now the client answers first. They read the plan, confirm it is right, rate the advice, and sign online. No manager can approve until that yes is in."
+say 3 "So the review has a clock on it now. One business day. And a fact find sent back for correction can no longer go quiet. It is chased every day until it comes home."
 
-say 4 "Every email a client gets goes out in their advisor's name. Replies come back to the advisor. The direct manager is copied. The branch manager, blind. Sales support, never."
+say 4 "You said the letter is the part a client actually keeps. So the letter got the branch letterhead. The Act, quoted in full. And your name at the top, with replies coming back to you."
 
-say 5 "Four taps carry the rest. Signed and submitted. At the branch. Delivered and paid. Not proceeding. The client hears within the minute."
+say 5 "You said approvals were moving before the client had even seen the plan. So now nothing moves until the client says yes. They read it, they confirm it, they rate the advice, and they sign. Only then can a manager approve."
 
-say 6 "And the timers chase us, not the client. Nothing keyed seven days after approval. A policy sitting at the branch after ten. After fifteen, the branch manager."
+say 6 "You said clients always ask where the policy is, and you never had an answer. Now four taps answer for you. Signed and submitted. At the branch. Delivered and paid. Not proceeding."
 
-say 7 "Two days after delivery, the client is asked how it went. A score of three or under comes to the branch manager alone. Thirty days before their birthday, every year, they are asked whether anything has changed."
+say 7 "And the timers chase us, not the client. Nothing keyed after seven days. A policy sitting at the branch after ten. After fifteen, it reaches the branch manager."
 
-say 8 "Then we asked Salesforce what it already knew. Twenty seven policies matched. Thirteen were already delivered. A dispatch date was filled in on none of them."
+say 8 "Eleven fact finds were sent back and never came back. The oldest, forty days. Nobody could see them. Now nothing can hide."
 
-say 9 "A step with no date is a step the client is never told about. Not sent late. Never sent."
+say 9 "None of this came from a system. It came from advisors saying the same thing often enough that it became impossible to ignore."
 
-say 10 "Eleven fact finds were sent back for correction and never came back. The oldest, forty days. Nothing was chasing them. Now something is."
+say 10 "So thank you. Genuinely. Keep telling us what is not working."
 
-say 11 "Fact find three sixty. Built at the branch. Running from today."
+say 11 "Ricky Rampersad Branch. Built on what you told us."
 
 echo
 echo "Cues — the last subtitle end is the line's length:"

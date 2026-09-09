@@ -1,16 +1,24 @@
 1
-00:00:00,050 --> 00:00:02,938
-And the timers chase us, not the client.
+00:00:00,050 --> 00:00:04,420
+You said clients always ask where the policy is, and you never had an answer.
 
 2
-00:00:02,938 --> 00:00:06,507
-Nothing keyed seven days after approval.
+00:00:04,420 --> 00:00:06,185
+Now four taps answer for you.
 
 3
-00:00:06,507 --> 00:00:09,497
-A policy sitting at the branch after ten.
+00:00:06,185 --> 00:00:07,667
+Signed and submitted.
 
 4
-00:00:09,497 --> 00:00:12,036
-After fifteen, the branch manager.
+00:00:07,667 --> 00:00:08,788
+At the branch.
+
+5
+00:00:08,788 --> 00:00:10,115
+Delivered and paid.
+
+6
+00:00:10,115 --> 00:00:11,353
+Not proceeding.
 

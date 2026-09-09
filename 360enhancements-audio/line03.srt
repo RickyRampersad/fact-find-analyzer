@@ -1,12 +1,16 @@
 1
-00:00:00,050 --> 00:00:02,126
-Now the client answers first.
+00:00:00,050 --> 00:00:02,087
+So the review has a clock on it now.
 
 2
-00:00:02,126 --> 00:00:07,190
-They read the plan, confirm it is right, rate the advice, and sign online.
+00:00:02,087 --> 00:00:03,337
+One business day.
 
 3
-00:00:07,190 --> 00:00:10,283
-No manager can approve until that yes is in.
+00:00:03,337 --> 00:00:07,667
+And a fact find sent back for correction can no longer go quiet.
+
+4
+00:00:07,667 --> 00:00:10,708
+It is chased every day until it comes home.
 

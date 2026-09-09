@@ -1,12 +1,8 @@
 1
-00:00:00,050 --> 00:00:02,384
-Fact find three sixty.
+00:00:00,050 --> 00:00:01,894
+Ricky Rampersad Branch.
 
 2
-00:00:02,384 --> 00:00:03,724
-Built at the branch.
-
-3
-00:00:03,724 --> 00:00:04,922
-Running from today.
+00:00:01,894 --> 00:00:03,427
+Built on what you told us.
 

@@ -1,20 +1,16 @@
 1
-00:00:00,050 --> 00:00:03,556
-Every email a client gets goes out in their advisor's name.
+00:00:00,050 --> 00:00:03,659
+You said the letter is the part a client actually keeps.
 
 2
-00:00:03,556 --> 00:00:05,734
-Replies come back to the advisor.
+00:00:03,659 --> 00:00:05,940
+So the letter got the branch letterhead.
 
 3
-00:00:05,734 --> 00:00:07,860
-The direct manager is copied.
+00:00:05,940 --> 00:00:07,628
+The Act, quoted in full.
 
 4
-00:00:07,860 --> 00:00:09,742
-The branch manager, blind.
-
-5
-00:00:09,742 --> 00:00:11,301
-Sales support, never.
+00:00:07,628 --> 00:00:10,760
+And your name at the top, with replies coming back to you.
 

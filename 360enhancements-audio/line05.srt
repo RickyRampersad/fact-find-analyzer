@@ -1,24 +1,16 @@
 1
-00:00:00,050 --> 00:00:01,932
-Four taps carry the rest.
+00:00:00,050 --> 00:00:04,136
+You said approvals were moving before the client had even seen the plan.
 
 2
-00:00:01,932 --> 00:00:03,376
-Signed and submitted.
+00:00:04,136 --> 00:00:07,590
+So now nothing moves until the client says yes.
 
 3
-00:00:03,376 --> 00:00:04,471
-At the branch.
+00:00:07,590 --> 00:00:11,920
+They read it, they confirm it, they rate the advice, and they sign.
 
 4
-00:00:04,471 --> 00:00:05,798
-Delivered and paid.
-
-5
-00:00:05,798 --> 00:00:07,023
-Not proceeding.
-
-6
-00:00:07,023 --> 00:00:09,226
-The client hears within the minute.
+00:00:11,920 --> 00:00:14,342
+Only then can a manager approve.
 
