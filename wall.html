@@ -1318,6 +1318,27 @@
 
   /* ── SETTLEMENT (panel 15) ────────────────────────────────────────────── */
   .stl{display:grid; grid-template-rows:auto 1fr; gap:.8em; height:100%; min-height:0}
+  /* The two client panels. Big figures with a plain sentence under each —
+     read from across a room, so nothing here is smaller than the roster. */
+  .jrny{display:grid; gap:.9em; height:100%; min-height:0; align-content:start}
+  .jrRow{display:grid; grid-template-columns:repeat(auto-fit,minmax(9em,1fr)); gap:.9em}
+  .jrC{background:var(--card,rgba(255,255,255,.045)); border:1px solid rgba(255,255,255,.09);
+       border-radius:.8em; padding:.85em 1em}
+  .jrC b{display:block; font-size:2.6em; line-height:1.02; font-weight:800; color:#fff;
+         font-variant-numeric:tabular-nums}
+  .jrC .lbl{font-size:.82em; color:var(--ink-3); font-weight:700; letter-spacing:.03em;
+            text-transform:uppercase; margin-top:.28em}
+  .jrC .sub{font-size:.82em; color:var(--ink-2,#9FB0D0); margin-top:.2em; line-height:1.35}
+  .jrC.good b{color:#34D399} .jrC.warn b{color:var(--amber,#F1CB5E)} .jrC.bad b{color:var(--red,#F87171)}
+  .jrBar{display:flex; height:.62em; border-radius:.4em; overflow:hidden; margin-top:.5em;
+         background:rgba(255,255,255,.08)}
+  .jrBar i{display:block; height:100%}
+  .jrQ{background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.09);
+       border-left:3px solid var(--gold,#F1CB5E); border-radius:.15em .8em .8em .15em;
+       padding:.8em 1.05em}
+  .jrQ q{display:block; font-size:1.15em; line-height:1.4; color:#fff; quotes:none}
+  .jrQ .by{font-size:.82em; color:var(--ink-3); font-weight:700; margin-top:.4em}
+  .jrEmpty{color:var(--ink-3); font-size:1.05em; line-height:1.5; padding:.6em .2em}
   .stlHero{background:linear-gradient(180deg,rgba(45,212,191,.10),rgba(13,21,36,.6));
     border:1px solid var(--line); border-radius:1em; padding:.85em 1.1em}
   .stlBig{display:flex; align-items:baseline; gap:.55em; flex-wrap:wrap}
@@ -2156,9 +2177,25 @@
     <div class="stl" id="stlBoard"></div>
     <div class="pdnote" id="stlNote"></div>
   </section>
+  <!-- THE CLIENT'S SIDE OF THE BOARD. Fourteen panels counted what the branch
+       sold. These two count what the client actually got: where every policy
+       is tonight, how long delivery is taking against the branch's own
+       twenty-day standard, and what clients said afterwards. Both read
+       action=experience, which is sign-in gated like the settlement. Both are
+       written to say something sensible before there is any data. -->
+  <section class="panel" id="p15">
+    <div class="ptitle"><h1 id="t_p15"></h1><span class="tag">The journey</span></div>
+    <div class="jrny" id="jrnyBoard"></div>
+    <div class="pdnote" id="jrnyNote"></div>
+  </section>
+  <section class="panel" id="p16">
+    <div class="ptitle"><h1 id="t_p16"></h1><span class="tag">What clients said</span></div>
+    <div class="jrny" id="saidBoard"></div>
+    <div class="pdnote" id="saidNote"></div>
+  </section>
 </main>
 
-<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span><span class="tk" id="k13"></span><span class="tk" id="k14"></span></div>
+<div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span><span class="tk" id="k13"></span><span class="tk" id="k14"></span><span class="tk" id="k15"></span><span class="tk" id="k16"></span></div>
 <div id="burst"></div>
 
 <script>
@@ -2189,7 +2226,7 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec';
 var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
 
-var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 15;
+var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 17;
 var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 /* Calendar volume: one hue, dark to light. Validated as an ordinal ramp against
    this surface — monotone lightness, every step clear of the card behind it. */
@@ -5631,6 +5668,116 @@ var PROD = {
   /* Client ratings, kept beside the settlement payload rather than inside it,
      so a branch on an older build still gets everything else. */
   var RATE = { data: null, at: 0 };
+  /* The client journey and the delivery survey — panels 16 and 17. Same
+     deployment, same sign-in, asked for beside the ratings. A branch on an
+     older build simply gets two panels that say the figures start once cases
+     move, rather than an error. */
+  var EXP = { data: null, at: 0 };
+  /* PANELS 16 AND 17 — the client's side. Everything here degrades: with no
+     feed, or a feed with nothing in it yet, each panel says what it is waiting
+     for rather than showing zeros as though they were results. */
+  function paintJourney(){
+    var X = EXP.data, R = RATE.data;
+    var esc2 = function(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+    var pct = function(a,b){ return b ? Math.round(a/b*100) : 0; };
+    var card = function(v,lbl,sub,cls){ return '<div class="jrC'+(cls?' '+cls:'')+'"><b>'+v+'</b>'+
+      '<div class="lbl">'+lbl+'</div>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>'; };
+
+    /* 16 · where every policy is */
+    var jb = document.getElementById('jrnyBoard'), jt = document.getElementById('t_p15'),
+        jn = document.getElementById('jrnyNote');
+    if(jb){
+      if(!X){
+        jb.innerHTML = '<div class="jrEmpty">The client journey starts with the next case. '+
+          'Once an application is keyed, this panel shows where every policy in the branch is tonight.</div>';
+        if(jt) jt.innerHTML = 'Every client, kept informed';
+      } else {
+        var f = X.inFlight||{}, dl = X.delivered||{}, cf = X.confirmed||{};
+        var std = pct(dl.inStandard||0, dl.ofStandard||0);
+        var h = '<div class="jrRow">' +
+          card(f.total||0, 'in flight now',
+               (f.keyed||0)+' with underwriting &middot; '+(f.dispatched||0)+' issued &middot; '+(f.received||0)+' at the branch') +
+          card(dl.month||0, 'delivered this month', (dl.total||0)+' since the journey began') +
+          card((dl.days||0) ? dl.days : '&mdash;', 'days on average',
+               'from the application going in to the policy in their hands') +
+          card(dl.ofStandard ? std+'%' : '&mdash;', 'inside 20 days',
+               'the branch standard, from the policy reaching the branch',
+               !dl.ofStandard ? '' : std >= 90 ? 'good' : std >= 70 ? 'warn' : 'bad') +
+          '</div>';
+        var waiting = cf.waiting||0, yes = cf.yes||0, chg = cf.changes||0, tot = yes+waiting+chg;
+        h += '<div class="jrRow">' +
+          card(yes, 'clients said Yes',
+               'they read the draft, confirmed it and signed' +
+               ((cf.hours||0) ? ' &mdash; ' + cf.hours + ' hours on average' : '')) +
+          card(waiting, 'still to answer', 'reminded on day 3 and day 8, then their advisor is asked to call',
+               waiting > 0 ? 'warn' : '') +
+          card(chg, 'asked for a change', 'nothing goes ahead until it is right') +
+          card((X.noEmail||0), 'with no email', (X.noEmail||0) ? 'these clients cannot be reached at all &mdash; get the address' : 'every open case can reach its client',
+               (X.noEmail||0) ? 'bad' : 'good') +
+          '</div>';
+        if(tot){
+          h += '<div class="jrBar">' +
+            '<i style="width:'+pct(yes,tot)+'%;background:#34D399"></i>' +
+            '<i style="width:'+pct(waiting,tot)+'%;background:var(--amber,#F1CB5E)"></i>' +
+            '<i style="width:'+pct(chg,tot)+'%;background:var(--red,#F87171)"></i></div>';
+        }
+        jb.innerHTML = h;
+        if(jt) jt.innerHTML = (f.total||0)
+          ? '<b>'+(f.total)+'</b> polic'+((f.total)===1?'y is':'ies are')+' on the way to a client right now'
+          : 'Every client, kept informed';
+      }
+      if(jn) jn.textContent = X && X.asAt ? 'Last delivery recorded ' + X.asAt + '.'
+        : 'Updated with every delivery.';
+    }
+
+    /* 17 · what clients said */
+    var sb = document.getElementById('saidBoard'), st2 = document.getElementById('t_p16'),
+        sn = document.getElementById('saidNote');
+    if(sb){
+      var live = !!(R && R.clean), sv = (X && X.survey) || null;
+      var h2 = '';
+      if(live && R.branch && R.branch.n){
+        h2 += '<div class="jrRow">' +
+          card(R.branch.avg.toFixed(1)+'<span style="font-size:.42em;color:var(--gold,#F1CB5E)">\u2605</span>',
+               'for the advice', R.branch.n+' client'+(R.branch.n===1?'':'s')+' rated it', 'good') +
+          card(R.branch.five||0, 'gave five stars', 'out of '+R.branch.n+' who rated') +
+          (sv && sv.n ? card(sv.avg.toFixed(1)+'<span style="font-size:.42em;color:var(--gold,#F1CB5E)">\u2605</span>',
+               'for the delivery', sv.n+' answered the survey', sv.avg>=4.5?'good':sv.avg>=4?'':'warn') : '') +
+          (sv && sv.n ? card(pct(sv.premium,sv.n)+'%', 'know how they pay',
+               'the question clients get wrong most often', pct(sv.premium,sv.n)>=90?'good':'warn') : '') +
+          '</div>';
+      }
+      if(sv && sv.n){
+        h2 += '<div class="jrRow">' +
+          card(pct(sv.explained,sv.n)+'%','cover explained clearly','in the client\u2019s own words, after delivery',
+               pct(sv.explained,sv.n)>=90?'good':'warn') +
+          card(pct(sv.documents,sv.n)+'%','got every document','nothing missing from the pack',
+               pct(sv.documents,sv.n)>=95?'good':'warn') +
+          '</div>';
+      }
+      var qs = (live && R && R.quotes) ? R.quotes.slice(0,2) : [];
+      qs.forEach(function(q){
+        h2 += '<div class="jrQ"><q>' + esc2(q.words) + '</q><div class="by">' +
+          esc2(q.client || 'a client') + (q.advisor ? ' &middot; on ' + esc2(q.advisor) : '') +
+          (q.at ? ' &middot; ' + esc2(q.at) : '') + '</div></div>';
+      });
+      if(!h2){
+        h2 = '<div class="jrEmpty">' + (R && R.branch && R.branch.n
+          ? 'There are ' + R.branch.n + ' ratings on file. They stay off the wall until the branch manager has read them and switched the stars back on.'
+          : 'Clients rate the advice on their draft and again when they sign. The first figures appear here as soon as they do.') +
+          '</div>';
+      }
+      sb.innerHTML = h2;
+      if(st2) st2.innerHTML = (live && R.branch && R.branch.n)
+        ? '<b>' + R.branch.avg.toFixed(1) + ' out of 5</b> from ' + R.branch.n + ' client' + (R.branch.n===1?'':'s')
+        : 'What clients said';
+      if(sn) sn.textContent = live
+        ? 'An advisor\u2019s own average shows only after ' + (R.min||2) + ' ratings. A low score is never shown against a name; it goes to the branch manager alone.'
+        : 'Ratings are collected on every draft and every signature. A low score goes to the branch manager alone, never on this wall.';
+    }
+  }
+
   function subChart(S){
     SUB_LAST = S || SUB_LAST;
     if(!S) S = SUB_LAST;
@@ -6090,6 +6237,7 @@ var PROD = {
         var j = null; try{ j = JSON.parse(t); }catch(e){}
         if(j && j.success){
           RATE.data = j; RATE.at = Date.now();
+          try{ paintJourney(); }catch(e){}
           try {
             if(typeof paintSubmitted === 'function' && typeof SUB_LAST !== 'undefined' && SUB_LAST)
               paintSubmitted(SUB_LAST);
@@ -6097,6 +6245,15 @@ var PROD = {
         }
       })
       .catch(function(){});
+    fetch(ENDPOINT + '?action=experience&token=' + encodeURIComponent(who.token) +
+          '&_=' + Date.now(), {cache:'no-store', redirect:'follow'})
+      .then(function(r){ return r.text(); })
+      .then(function(t){
+        var j = null; try{ j = JSON.parse(t); }catch(e){}
+        if(j && j.success){ EXP.data = j; EXP.at = Date.now(); }
+        try{ paintJourney(); }catch(e){}
+      })
+      .catch(function(){ try{ paintJourney(); }catch(e){} });
     var url = ENDPOINT + '?action=settlement&token=' + encodeURIComponent(who.token) +
               '&year=' + (new Date().getFullYear()) +
               (STL.month ? '&month=' + STL.month : '') + '&_=' + Date.now();
