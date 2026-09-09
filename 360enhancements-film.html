@@ -55,13 +55,23 @@
   .cueR{opacity:0;transform:translateX(52px)}.cueR.in{opacity:1;transform:none;transition:all .6s cubic-bezier(.2,.8,.3,1.15)}
 
   /* ── the branch shield ── */
-  .mark{filter:drop-shadow(0 22px 60px rgba(0,0,0,.55))}
-  .on .mark{animation:markIn 1.15s cubic-bezier(.17,.89,.32,1.28) both}
+  .mark{filter:drop-shadow(0 0 20px rgba(45,212,191,.5)) drop-shadow(0 22px 60px rgba(0,0,0,.55))}
+  .on .mark{animation:markIn 1.15s cubic-bezier(.17,.89,.32,1.28) both,
+                      breathe 3.4s 1.2s ease-in-out infinite}
+  @keyframes breathe{
+    0%,100%{filter:drop-shadow(0 0 16px rgba(45,212,191,.40)) drop-shadow(0 22px 60px rgba(0,0,0,.55))}
+    50%    {filter:drop-shadow(0 0 52px rgba(45,212,191,.95)) drop-shadow(0 0 96px rgba(45,212,191,.35)) drop-shadow(0 22px 60px rgba(0,0,0,.55))}}
+  /* a halo behind it, breathing against the pulse so the shield never sits flat */
+  .halo{position:absolute;width:520px;height:520px;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,rgba(45,212,191,.34),rgba(45,212,191,.08) 42%,transparent 68%)}
+  .on .halo{animation:halo 3.4s 1.2s ease-in-out infinite}
+  @keyframes halo{0%,100%{transform:scale(.86);opacity:.55}50%{transform:scale(1.12);opacity:1}}
   @keyframes markIn{0%{opacity:0;transform:scale(.45) rotate(-14deg)}100%{opacity:1;transform:none}}
-  .tickpath{stroke-dasharray:120;stroke-dashoffset:120}
+  .tickpath{stroke-dasharray:34;stroke-dashoffset:34}
   .on .tickpath{animation:draw .85s .55s ease-out forwards}
   @keyframes draw{to{stroke-dashoffset:0}}
-  .ring{position:absolute;border:3px solid rgba(240,196,72,.55);border-radius:50%;opacity:0}
+  .ring{position:absolute;border:3px solid rgba(45,212,191,.55);border-radius:50%;opacity:0;
+    box-shadow:0 0 26px rgba(45,212,191,.35),inset 0 0 26px rgba(45,212,191,.25)}
   .on .ring{animation:ripple 2.6s ease-out infinite}
   .on .ring.r2{animation-delay:.85s}.on .ring.r3{animation-delay:1.7s}
   @keyframes ripple{0%{width:210px;height:210px;opacity:.75}100%{width:760px;height:760px;opacity:0}}
@@ -240,19 +250,28 @@
   <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
 
   <svg width="0" height="0" style="position:absolute"><defs>
-    <linearGradient id="gh" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#f0c448"/><stop offset="60%" stop-color="#c9942c"/><stop offset="100%" stop-color="#7a5810"/>
+    <linearGradient id="slate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34435C"/><stop offset="1" stop-color="#1B2536"/>
     </linearGradient>
+    <linearGradient id="tealg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2DD4BF"/><stop offset="0.55" stop-color="#0D9488"/><stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+    <filter id="softglow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs></svg>
 
   <!-- S1 — for the advisors -->
   <div class="scene" id="s1">
     <div class="relc">
-      <div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
-      <svg class="mark" width="230" height="230" viewBox="0 0 88 88">
-        <path d="M44 5L77 19V41C77 63 63 76 44 83C25 76 11 63 11 41V19Z" fill="url(#gh)"/>
-        <path class="tickpath" d="M28 44L39 55L60 31" stroke="#07131f" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        <path class="tickpath" d="M28 44L39 55L60 31" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <div class="halo"></div><div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
+      <svg class="mark" width="200" height="240" viewBox="0 0 60 72">
+        <path d="M30 2.5 L55.5 11 V35 C55.5 51.5 44 63.5 30 69.5 C16 63.5 4.5 51.5 4.5 35 V11 Z" fill="url(#tealg)"/>
+        <path d="M30 6.2 L52 13.6 V35 C52 49.8 42 60.3 30 65.6 C18 60.3 8 49.8 8 35 V13.6 Z" fill="url(#slate)"/>
+        <path d="M30 9.4 L49 15.9 V35 C49 48.2 40.5 57.4 30 62.2 C19.5 57.4 11 48.2 11 35 V15.9 Z" fill="none" stroke="#2DD4BF" stroke-opacity="0.45" stroke-width="0.9"/>
+        <path class="tickpath" d="M19.5 36.5 L27 44 L41.5 26.5" fill="none" stroke="#0B1220" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.35"/>
+        <path class="tickpath" d="M19.5 36.5 L27 44 L41.5 26.5" fill="none" stroke="#2DD4BF" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round" filter="url(#softglow)"/>
       </svg>
     </div>
     <div class="kicker rise d2" style="margin-top:36px">Ricky Rampersad Branch</div>
@@ -305,11 +324,13 @@
     <div style="display:flex;gap:70px;align-items:center;margin-top:30px">
       <div class="letter cue" id="r4a">
         <div class="lh">
-          <svg class="stamp" width="40" height="40" viewBox="0 0 88 88">
-            <path d="M44 5L77 19V41C77 63 63 76 44 83C25 76 11 63 11 41V19Z" fill="url(#gh)"/>
-            <path d="M28 44L39 55L60 31" stroke="#07131f" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M28 44L39 55L60 31" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg class="stamp" width="34" height="41" viewBox="0 0 60 72">
+        <path d="M30 2.5 L55.5 11 V35 C55.5 51.5 44 63.5 30 69.5 C16 63.5 4.5 51.5 4.5 35 V11 Z" fill="url(#tealg)"/>
+        <path d="M30 6.2 L52 13.6 V35 C52 49.8 42 60.3 30 65.6 C18 60.3 8 49.8 8 35 V13.6 Z" fill="url(#slate)"/>
+        <path d="M30 9.4 L49 15.9 V35 C49 48.2 40.5 57.4 30 62.2 C19.5 57.4 11 48.2 11 35 V15.9 Z" fill="none" stroke="#2DD4BF" stroke-opacity="0.45" stroke-width="0.9"/>
+        <path d="M19.5 36.5 L27 44 L41.5 26.5" fill="none" stroke="#0B1220" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.35"/>
+        <path d="M19.5 36.5 L27 44 L41.5 26.5" fill="none" stroke="#2DD4BF" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round" filter="url(#softglow)"/>
+      </svg>
           <div><b>Ricky Rampersad Branch</b><span>Guardian Life of the Caribbean</span></div>
         </div>
         <div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div>
@@ -421,11 +442,13 @@
   <!-- S11 — close -->
   <div class="scene" id="s11">
     <div class="relc">
-      <div class="ring"></div><div class="ring r2"></div>
-      <svg class="mark" width="176" height="176" viewBox="0 0 88 88">
-        <path d="M44 5L77 19V41C77 63 63 76 44 83C25 76 11 63 11 41V19Z" fill="url(#gh)"/>
-        <path class="tickpath" d="M28 44L39 55L60 31" stroke="#07131f" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        <path class="tickpath" d="M28 44L39 55L60 31" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <div class="halo"></div><div class="ring"></div><div class="ring r2"></div>
+      <svg class="mark" width="155" height="186" viewBox="0 0 60 72">
+        <path d="M30 2.5 L55.5 11 V35 C55.5 51.5 44 63.5 30 69.5 C16 63.5 4.5 51.5 4.5 35 V11 Z" fill="url(#tealg)"/>
+        <path d="M30 6.2 L52 13.6 V35 C52 49.8 42 60.3 30 65.6 C18 60.3 8 49.8 8 35 V13.6 Z" fill="url(#slate)"/>
+        <path d="M30 9.4 L49 15.9 V35 C49 48.2 40.5 57.4 30 62.2 C19.5 57.4 11 48.2 11 35 V15.9 Z" fill="none" stroke="#2DD4BF" stroke-opacity="0.45" stroke-width="0.9"/>
+        <path class="tickpath" d="M19.5 36.5 L27 44 L41.5 26.5" fill="none" stroke="#0B1220" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.35"/>
+        <path class="tickpath" d="M19.5 36.5 L27 44 L41.5 26.5" fill="none" stroke="#2DD4BF" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round" filter="url(#softglow)"/>
       </svg>
     </div>
     <div class="huge rise d2" style="margin-top:26px;font-size:92px">Ricky Rampersad Branch</div>

@@ -32,7 +32,7 @@
 
   header{padding:34px 0 8px}
   .brand{display:flex;align-items:center;gap:13px}
-  .brand svg{width:42px;height:42px;flex:none}
+  .brand svg{width:38px;height:46px;flex:none;filter:drop-shadow(0 0 14px rgba(45,212,191,.55))}
   .brand b{display:block;font:600 17px/1.15 var(--serif);color:#fff}
   .brand span{display:block;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--teal2);font-weight:700;margin-top:3px}
   h1{font:800 clamp(34px,7vw,62px)/1.05 var(--serif);margin:30px 0 0;letter-spacing:-.02em;color:#fff}
@@ -123,13 +123,18 @@
 
   <header>
     <div class="brand">
-      <svg viewBox="0 0 88 88" aria-hidden="true">
-        <defs><linearGradient id="gh" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#f0c448"/><stop offset="60%" stop-color="#c9942c"/><stop offset="100%" stop-color="#7a5810"/>
-        </linearGradient></defs>
-        <path d="M44 5L77 19V41C77 63 63 76 44 83C25 76 11 63 11 41V19Z" fill="url(#gh)"/>
-        <path d="M28 44L39 55L60 31" stroke="#07131f" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M28 44L39 55L60 31" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg viewBox="0 0 60 72" aria-hidden="true">
+        <defs>
+          <linearGradient id="slate" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#34435C"/><stop offset="1" stop-color="#1B2536"/></linearGradient>
+          <linearGradient id="tealg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2DD4BF"/><stop offset="0.55" stop-color="#0D9488"/><stop offset="1" stop-color="#0F766E"/></linearGradient>
+        </defs>
+        <path d="M30 2.5 L55.5 11 V35 C55.5 51.5 44 63.5 30 69.5 C16 63.5 4.5 51.5 4.5 35 V11 Z" fill="url(#tealg)"/>
+        <path d="M30 6.2 L52 13.6 V35 C52 49.8 42 60.3 30 65.6 C18 60.3 8 49.8 8 35 V13.6 Z" fill="url(#slate)"/>
+        <path d="M30 9.4 L49 15.9 V35 C49 48.2 40.5 57.4 30 62.2 C19.5 57.4 11 48.2 11 35 V15.9 Z" fill="none" stroke="#2DD4BF" stroke-opacity="0.45" stroke-width="0.9"/>
+        <path d="M19.5 36.5 L27 44 L41.5 26.5" fill="none" stroke="#0B1220" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.35"/>
+        <path d="M19.5 36.5 L27 44 L41.5 26.5" fill="none" stroke="#2DD4BF" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <div><b>Ricky Rampersad Branch</b><span>Guardian Life of the Caribbean</span></div>
     </div>
