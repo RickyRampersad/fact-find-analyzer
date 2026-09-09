@@ -115,6 +115,62 @@
 
   footer{margin-top:56px;padding:26px 0 60px;border-top:1px solid var(--line);
     display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--dim)}
+
+  /* the whole schedule */
+  .sch{display:grid;gap:10px}
+  .schrow{display:grid;grid-template-columns:104px 1fr 128px;gap:18px;align-items:center;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 20px}
+  .schrow .w{font-weight:800;font-size:15px;color:var(--gold2);text-align:right;font-variant-numeric:tabular-nums}
+  .schrow .t{font-size:15.5px;color:#fff}
+  .schrow .t small{display:block;color:var(--soft);font-size:14px;margin-top:2px}
+  .schrow .r{font-size:11px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;text-align:center;
+    border-radius:30px;padding:6px 0}
+  .r.cl{background:rgba(45,212,191,.17);color:var(--teal2);border:1px solid rgba(45,212,191,.42)}
+  .r.ad{background:rgba(255,217,122,.15);color:var(--gold2);border:1px solid rgba(255,217,122,.42)}
+  .r.bm{background:rgba(255,139,123,.15);color:var(--bad);border:1px solid rgba(255,139,123,.42)}
+  @media(max-width:640px){.schrow{grid-template-columns:80px 1fr;gap:10px 14px}.schrow .r{grid-column:2}}
+
+  /* what the Act asks */
+  .law{display:grid;gap:12px}
+  .lawrow{display:grid;grid-template-columns:150px 1fr 30px 1fr;gap:18px;align-items:center;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px}
+  .lawrow .c{font-size:12px;font-weight:800;color:var(--gold2);border:1px solid rgba(255,217,122,.42);
+    border-radius:8px;padding:8px 6px;text-align:center;line-height:1.3}
+  .lawrow .q{font-size:15px;color:var(--soft);font-style:italic}
+  .lawrow .a{text-align:center;color:var(--dim)}
+  .lawrow .d{font-size:15.5px;color:#fff;font-weight:600}
+  .lawrow .d small{display:block;font-weight:400;color:var(--teal2);font-size:14px;margin-top:2px}
+  @media(max-width:760px){.lawrow{grid-template-columns:1fr}.lawrow .a{display:none}}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+  @media(max-width:700px){.split{grid-template-columns:1fr}}
+  .sp{border-radius:16px;padding:22px 24px;border:1px solid}
+  .sp.l{border-color:rgba(255,217,122,.42);background:rgba(255,217,122,.07)}
+  .sp.o{border-color:rgba(45,212,191,.42);background:rgba(45,212,191,.08)}
+  .sp .h{font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+  .sp.l .h{color:var(--gold2)} .sp.o .h{color:var(--teal2)}
+  .sp .n{font:800 30px/1 var(--sans);color:#fff;margin:9px 0 8px}
+  .sp p{font-size:15px;color:var(--soft)} .sp p b{color:#fff}
+
+  /* the letters */
+  .lets{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+  .let{border-radius:11px;padding:12px 14px;font-size:14.5px;color:#fff;border:1px solid}
+  .let.c{border-color:rgba(45,212,191,.42);background:rgba(45,212,191,.08)}
+  .let.t{border-color:rgba(255,217,122,.38);background:rgba(255,217,122,.06)}
+  .key{display:flex;gap:20px;flex-wrap:wrap;margin:0 0 16px;font-size:14px;color:var(--soft)}
+  .key span{display:flex;align-items:center;gap:8px}
+  .key i{width:14px;height:14px;border-radius:4px;display:block}
+
+  /* the rehearsal */
+  .reh2{display:grid;grid-template-columns:1fr 90px 1fr;gap:16px;align-items:center}
+  @media(max-width:620px){.reh2{grid-template-columns:1fr}}
+  .rb{border-radius:16px;padding:24px;text-align:center;border:1px solid}
+  .rb .n{font:800 46px/1 var(--sans)} .rb .k{font-size:13px;color:var(--soft);margin-top:8px}
+  .rb.a{border-color:rgba(255,139,123,.45);background:rgba(255,139,123,.08)} .rb.a .n{color:var(--bad)}
+  .rb.b{border-color:rgba(45,212,191,.45);background:rgba(45,212,191,.08)} .rb.b .n{color:var(--teal2)}
+  .mid{text-align:center;font-size:13px;font-weight:800;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
+  .flt{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}
+  .flt span{font-size:13.5px;color:var(--soft);background:var(--panel);border:1px solid var(--line);
+    border-radius:30px;padding:8px 15px}
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.play{transition:none}}
 </style>
 </head>
@@ -210,6 +266,96 @@
     </div>
   </section>
 
+
+  <section>
+    <p class="k">Nothing is left to remember</p>
+    <h2>The whole <span>schedule.</span></h2>
+    <p class="intro">Every date, every letter, and who it goes to. Nothing on this list needs anyone to remember it.</p>
+    <div class="sch">
+      <div class="schrow"><div class="w">Day 3</div><div class="t">Client has not answered the draft<small>a gentle reminder, in your name</small></div><div class="r cl">Client</div></div>
+      <div class="schrow"><div class="w">Day 8</div><div class="t">Still nothing<small>the client is reminded &mdash; and you are asked to call</small></div><div class="r ad">You</div></div>
+      <div class="schrow"><div class="w">1 day</div><div class="t">The client says yes<small>the review is due within one business day</small></div><div class="r ad">Manager</div></div>
+      <div class="schrow"><div class="w">Day 7</div><div class="t">Approved, nothing keyed<small>the advisor is chased, direct manager copied</small></div><div class="r ad">You</div></div>
+      <div class="schrow"><div class="w">Day 10</div><div class="t">At the branch, not delivered<small>the advisor is chased</small></div><div class="r ad">You</div></div>
+      <div class="schrow"><div class="w">Day 15</div><div class="t">Still not delivered<small>it reaches the branch manager</small></div><div class="r bm">Branch mgr</div></div>
+      <div class="schrow"><div class="w">+2 days</div><div class="t">Delivered and paid<small>five questions on how the delivery went</small></div><div class="r cl">Client</div></div>
+      <div class="schrow"><div class="w">Every 5 days</div><div class="t">Clients who ticked &ldquo;keep me posted&rdquo;<small>a short note while nothing is moving</small></div><div class="r cl">Client</div></div>
+      <div class="schrow"><div class="w">Day 21</div><div class="t">Milestones-only clients, gone quiet<small>one note so the silence is not ours</small></div><div class="r cl">Client</div></div>
+      <div class="schrow"><div class="w">&minus;30 days</div><div class="t">Every year, before their birthday<small>has anything changed?</small></div><div class="r cl">Client</div></div>
+    </div>
+    <p class="pull">And the four taps in between: Signed and submitted &middot; At the branch &middot; Delivered and paid &middot; Not proceeding.</p>
+  </section>
+
+  <section>
+    <p class="k">None of it is a preference</p>
+    <h2>What the Act <span>asks of us.</span></h2>
+    <p class="intro">Every one of these was already an obligation. What changed is that something now answers it,
+      the same way, every time, without anyone having to remember.</p>
+    <div class="law">
+      <div class="lawrow"><div class="c">Schedule 11 B1(d)</div>
+        <div class="q">&ldquo;The consumer certifies the accuracy of the information recorded.&rdquo;</div>
+        <div class="a">&rarr;</div>
+        <div class="d">The client&rsquo;s Yes<small>They read it, confirm it and sign before anyone approves.</small></div></div>
+      <div class="lawrow"><div class="c">Guideline 5.2.2(b)&ndash;(c)</div>
+        <div class="q">&ldquo;Plain language, and the advice given in writing.&rdquo;</div>
+        <div class="a">&rarr;</div>
+        <div class="d">The letter<small>Branch letterhead, the Act quoted in full, your name at the top.</small></div></div>
+      <div class="lawrow"><div class="c">Schedule 11 E &middot; Guideline 5.4.3</div>
+        <div class="q">&ldquo;Post-sale communication, updates and periodic reviews.&rdquo;</div>
+        <div class="a">&rarr;</div>
+        <div class="d">Every milestone, and the yearly one<small>Plus the delivery survey &mdash; Guideline 5.1.2(a).</small></div></div>
+      <div class="lawrow"><div class="c">Act s.131(1)(c)</div>
+        <div class="q">&ldquo;An agent shall not cause a policyholder to replace a long-term policy without first discussing the advantages and disadvantages.&rdquo;</div>
+        <div class="a">&rarr;</div>
+        <div class="d">Named in the letter itself<small>Where a client holds cover elsewhere, the plan says so and says nothing is cancelled on their behalf.</small></div></div>
+    </div>
+
+    <div class="split">
+      <div class="sp l"><div class="h">Insurance Act 2018 &middot; s.268(1)</div>
+        <div class="n">20 business days</div>
+        <p>for the <b>insurer</b> to <b>issue</b> the policy, once the risk has been accepted.
+          That clock is head office&rsquo;s and it starts at acceptance.</p></div>
+      <div class="sp o"><div class="h">Ricky Rampersad Branch standard</div>
+        <div class="n">20 days</div>
+        <p>for <b>us</b> to <b>deliver</b> it, once it reaches the branch.
+          Nothing in the Act says this. <b>We chose it.</b></p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="k">Twenty-four letters carry it</p>
+    <h2>Every one written <span>to be read on a phone.</span></h2>
+    <div class="key">
+      <span><i style="background:rgba(45,212,191,.5);border:1px solid #2DD4BF"></i>14 a client can receive</span>
+      <span><i style="background:rgba(255,217,122,.4);border:1px solid #FFD97A"></i>10 that only we see</span>
+    </div>
+    <div class="lets">
+      <div class="let c">About your plan</div>
+      <div class="let c">A reminder, day 3</div>
+      <div class="let c">A reminder, day 8</div>
+      <div class="let c">Your plan, approved</div>
+      <div class="let c">A note on the decision</div>
+      <div class="let c">Your application is in</div>
+      <div class="let c">Your policy has been issued</div>
+      <div class="let c">Your policy is here</div>
+      <div class="let c">Your cover is in place</div>
+      <div class="let c">How was your delivery?</div>
+      <div class="let c">Still moving</div>
+      <div class="let c">Where your policy is</div>
+      <div class="let c">A year on &mdash; anything changed?</div>
+      <div class="let c">Thank you &mdash; not proceeding</div>
+      <div class="let t">A fact find is waiting</div>
+      <div class="let t">No application yet &mdash; day 7</div>
+      <div class="let t">Still at the branch &mdash; day 10</div>
+      <div class="let t">Still at the branch &mdash; day 15</div>
+      <div class="let t">Sent back, not returned &mdash; day 7</div>
+      <div class="let t">Sent back, not returned &mdash; day 14</div>
+      <div class="let t">Your client rated the delivery</div>
+      <div class="let t">Your client answered their review</div>
+      <div class="let t">This week&rsquo;s open cases</div>
+      <div class="let t">No email on this fact find</div>
+    </div>
+  </section>
   <section>
     <p class="k">One tap, when it happens</p>
     <h2>Four taps do <span>the telling.</span></h2>
@@ -244,6 +390,25 @@
     <p class="pull">Branch standard: delivered inside 20 days of the policy reaching the branch.</p>
   </section>
 
+
+  <section>
+    <p class="k">Before a single client heard from us</p>
+    <h2>It was rehearsed against <span>the real book.</span></h2>
+    <p class="intro">The engine was run in dry mode over every live case in the branch, and what it
+      <em>would</em> have sent was read line by line before anything was switched on.</p>
+    <div class="reh2">
+      <div class="rb a"><div class="n">31</div><div class="k">clients the first run would have written to</div></div>
+      <div class="mid">five faults later</div>
+      <div class="rb b"><div class="n">7</div><div class="k">clients it actually wrote to</div></div>
+    </div>
+    <div class="flt">
+      <span>Advice-only clients sent a policy journey</span>
+      <span>A sent-back case sent a yearly review</span>
+      <span>Every legacy case instantly overdue</span>
+      <span>Two advisors chased about delivered policies</span>
+      <span>Three milestones and a survey in one morning</span>
+    </div>
+  </section>
   <section>
     <p class="k">Who does what now</p>
     <h2>Four cards, <span>one client.</span></h2>

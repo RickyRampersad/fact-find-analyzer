@@ -1,8 +1,16 @@
 1
-00:00:00,050 --> 00:00:01,868
-None of this came from a system.
+00:00:00,050 --> 00:00:04,136
+You said approvals were moving before the client had even seen the plan.
 
 2
-00:00:01,868 --> 00:00:08,234
-It came from advisors saying the same thing often enough that it became impossible to ignore.
+00:00:04,136 --> 00:00:07,590
+So now nothing moves until the client says yes.
+
+3
+00:00:07,590 --> 00:00:11,920
+They read it, they confirm it, they rate the advice, and they sign.
+
+4
+00:00:11,920 --> 00:00:14,342
+Only then can a manager approve.
 

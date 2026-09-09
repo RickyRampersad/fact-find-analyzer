@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fold the narration MP3s into 360enhancements-film.html as data URIs.
+"""Fold the narration MP3s into film.html as data URIs.
 
 The film has to stay a single file: the wall plays it in an iframe and the
 hosted copy runs under a policy that will not fetch a sibling asset, so an
@@ -7,13 +7,13 @@ hosted copy runs under a policy that will not fetch a sibling asset, so an
 
 Run ./build-voice.sh first, then this. Re-running is safe — it replaces
 whatever is between the markers. It also prints the measured line lengths, so
-the SCENES and CUES tables in 360enhancements-film.html can be checked against the audio that
+the SCENES and CUES tables in film.html can be checked against the audio that
 is actually in it.
 """
 import base64, pathlib, re, sys
 
 here = pathlib.Path(__file__).parent
-film = here.parent / '360enhancements-film.html'
+film = here.parent / 'film.html'
 html = film.read_text(encoding='utf-8')
 
 mp3s = sorted(here.glob('line*.mp3'))
@@ -29,14 +29,14 @@ block = '\n' + ',\n'.join(parts) + '\n'
 
 start, end = '/*__VO_START__*/', '/*__VO_END__*/'
 if start not in html or end not in html:
-    sys.exit('Markers missing in 360enhancements-film.html — nothing was changed.')
+    sys.exit('Markers missing in film.html — nothing was changed.')
 html = re.sub(re.escape(start) + r'.*?' + re.escape(end),
               start + block + end, html, flags=re.S)
 film.write_text(html, encoding='utf-8')
 
 print(f'{len(mp3s)} lines embedded, {total/1024:.0f} KB of audio '
       f'({len(block)/1024:.0f} KB as base64)')
-print(f'360enhancements-film.html is now {len(html)/1024:.0f} KB')
+print(f'film.html is now {len(html)/1024:.0f} KB')
 
 # The lengths the scene table has to agree with.
 print('\nLine lengths, from the subtitle cues:')

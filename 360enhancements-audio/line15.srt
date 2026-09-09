@@ -1,0 +1,20 @@
+1
+00:00:00,050 --> 00:00:02,036
+None of it went out untested.
+
+2
+00:00:02,036 --> 00:00:05,360
+It was rehearsed against the branch's real book first.
+
+3
+00:00:05,360 --> 00:00:08,492
+The first run would have written to thirty one clients.
+
+4
+00:00:08,492 --> 00:00:11,262
+Five faults later, it wrote to seven.
+
+5
+00:00:11,262 --> 00:00:13,170
+That is what a rehearsal is for.
+
