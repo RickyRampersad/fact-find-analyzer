@@ -110,3 +110,65 @@
   to = "/index.html"
   status = 404
   force = true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THE SAME RULES AGAIN, ON THE URLS PEOPLE ACTUALLY OPEN.
+#
+# Netlify matches a [[headers]] block against the REQUEST path, and it serves
+# ffproject.html at /ffproject. Advisors have the clean URL; nobody types the
+# extension. So every no-store block above has been matching a path almost
+# nobody requests:
+#
+#   /ffproject       cache-control: public,max-age=0,must-revalidate
+#   /ffproject.html  cache-control: no-store
+#
+# must-revalidate stops a stale copy being shown, but the body is still written
+# to the disk cache and still comes back on the back button after someone signs
+# out. That is exactly the shared-device case the blocks above were written for
+# — the fact find's names, dates of birth and incomes; the wall's client list,
+# advisor production and roster, on an office screen a visitor pass can open;
+# the signing page's sums assured and premiums. The rules were right and were
+# aimed one character wide.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[[headers]]
+  for = "/ffproject"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/insights"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/wall"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/confirm"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/360enhancements"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/360enhancements-film"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
