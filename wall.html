@@ -5706,13 +5706,19 @@ var PROD = {
                !dl.ofStandard ? '' : std >= 90 ? 'good' : std >= 70 ? 'warn' : 'bad') +
           '</div>';
         var waiting = cf.waiting||0, yes = cf.yes||0, chg = cf.changes||0, tot = yes+waiting+chg;
+        var back = cf.sentBack||0, backOld = cf.sentBackOld||0;
         h += '<div class="jrRow">' +
           card(yes, 'clients said Yes',
                'they read the draft, confirmed it and signed' +
-               ((cf.hours||0) ? ' &mdash; ' + cf.hours + ' hours on average' : '')) +
+               ((cf.hours||0) ? ' &mdash; ' + cf.hours + ' hour' + (cf.hours===1?'':'s') + ' on average' : '')) +
           card(waiting, 'still to answer', 'reminded on day 3 and day 8, then their advisor is asked to call',
                waiting > 0 ? 'warn' : '') +
-          card(chg, 'asked for a change', 'nothing goes ahead until it is right') +
+          /* A case a manager sent back that nobody resubmitted is neither
+             waiting on a client nor moving. It is the quietest way a client
+             is forgotten, so it gets a figure of its own. */
+          card(back, 'sent back, not returned',
+               back ? (backOld ? backOld + ' of them over a fortnight old &mdash; ' : '') + 'the advisor is chased at 7 days'
+                    : 'nothing is sitting with an advisor', back ? (backOld ? 'bad' : 'warn') : 'good') +
           card((X.noEmail||0), 'with no email', (X.noEmail||0) ? 'these clients cannot be reached at all &mdash; get the address' : 'every open case can reach its client',
                (X.noEmail||0) ? 'bad' : 'good') +
           '</div>';
