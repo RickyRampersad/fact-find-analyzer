@@ -1,0 +1,12 @@
+1
+00:00:00,050 --> 00:00:02,925
+Nothing moves until the client says yes.
+
+2
+00:00:02,925 --> 00:00:07,512
+They read the plan, confirm it, rate the advice, and sign on their phone.
+
+3
+00:00:07,512 --> 00:00:09,987
+Only then can a manager approve.
+

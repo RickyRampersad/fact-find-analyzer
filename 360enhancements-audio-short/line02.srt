@@ -1,0 +1,32 @@
+1
+00:00:00,050 --> 00:00:01,868
+Here is the whole schedule.
+
+2
+00:00:01,868 --> 00:00:05,811
+Day three and day eight if the client goes quiet.
+
+3
+00:00:05,811 --> 00:00:08,002
+One business day for the review.
+
+4
+00:00:08,002 --> 00:00:10,502
+Day seven if nothing has been keyed.
+
+5
+00:00:10,502 --> 00:00:12,319
+Day ten at the branch.
+
+6
+00:00:12,319 --> 00:00:15,502
+Day fifteen it reaches the branch manager.
+
+7
+00:00:15,502 --> 00:00:18,247
+The survey two days after delivery.
+
+8
+00:00:18,247 --> 00:00:21,739
+And every year, thirty days before their birthday.
+

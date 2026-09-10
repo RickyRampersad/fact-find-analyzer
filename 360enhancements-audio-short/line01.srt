@@ -1,0 +1,8 @@
+1
+00:00:00,050 --> 00:00:02,242
+This one is for the advisors.
+
+2
+00:00:02,242 --> 00:00:05,206
+Every change in it came from something one of you said.
+

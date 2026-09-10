@@ -172,3 +172,17 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "no-referrer"
     Cache-Control = "no-store"
+
+# The short cut's narration is build output too, for the same reason.
+[[redirects]]
+  from = "/360enhancements-audio-short/*"
+  to = "/index.html"
+  status = 404
+  force = true
+
+[[headers]]
+  for = "/360enhancements-short.html"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
