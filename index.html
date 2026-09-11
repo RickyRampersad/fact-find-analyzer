@@ -1108,9 +1108,45 @@ async function liRunTest(btn, out){
   btn.disabled = false; btn.textContent = 'Test again';
 }
 
-async function fetchJson(url,ms){
-  // 20s, not 7. An Apps Script web app answers on script.google.com with a 302
-  // to googleusercontent.com, and a cold container has to spin up before it
+// MEASURED, NOT ASSUMED.
+// 13 timed calls to ?action=zzz — an action that does no work at all — came
+// back with a median of 3.2s and one run of 28.4s. That 28s run hit a server
+// that had answered in 3.3s three seconds earlier, so the "it sleeps when
+// unused" story was wrong: the container had not gone idle, Apps Script had
+// simply recycled it, and a fresh container re-evaluates every top-level line
+// of an eleven-file project before doGet is called. It can strike at any time,
+// warm or not, and it did so on roughly one request in twelve.
+//
+// The old behaviour was to give up at 20s and ask a person to press the button
+// again — making the human do the retry the code should do itself. So: the
+// first attempt gets room for the tail, and a timeout or a dead connection is
+// retried once, silently, before anyone is told anything.
+var FETCH_MS       = 30000;  // first attempt — wide enough for the slow tail
+var FETCH_RETRY_MS = 20000;  // second — whatever answers now is warm
+var FETCH_PAUSE_MS = 500;    // a breath, so a recycling container is not hammered
+
+async function fetchJson(url, ms){
+  try{
+    return await fetchOnce(url, ms || FETCH_MS);
+  }catch(e){
+    // Only the two failures a retry can actually fix. A 500, an HTML error
+    // page or a missing endpoint are real answers — retrying hides them.
+    if(e && (e.kind === 'timeout' || e.kind === 'network')){
+      await new Promise(function(r){ setTimeout(r, FETCH_PAUSE_MS); });
+      try{
+        return await fetchOnce(url, FETCH_RETRY_MS);
+      }catch(e2){
+        if(e2) e2.retried = true;
+        throw e2;
+      }
+    }
+    throw e;
+  }
+}
+
+async function fetchOnce(url,ms){
+  // An Apps Script web app answers on script.google.com with a 302 to
+  // googleusercontent.com, and the container has to be running before it
   // replies at all. Seven seconds was comfortably inside that on a first call,
   // so a perfectly healthy server was reported as unreachable.
   // Every failure used to arrive at the caller as one anonymous throw, so a
@@ -1119,7 +1155,7 @@ async function fetchJson(url,ms){
   // guess in three cases out of four, and it is the reason a dashboard showing
   // NO DATA could not be diagnosed from the screen. Each one now carries what
   // actually happened.
-  ms=ms||20000; var ctrl=new AbortController(); var t=setTimeout(function(){ctrl.abort();},ms);
+  ms=ms||FETCH_MS; var ctrl=new AbortController(); var t=setTimeout(function(){ctrl.abort();},ms);
   var res;
   try{
     res = await fetch(url,{method:'GET',signal:ctrl.signal,redirect:'follow'});
@@ -1498,9 +1534,9 @@ async function doLogin(ev){
         (e && e.message === 'no-endpoint')
           ? 'No data endpoint is configured, so sign-in is unavailable.'
       : (kind === 'timeout')
-          ? 'The branch server did not answer in 20 seconds. It sleeps when unused and takes a moment to wake — press Sign in again.'
+          ? 'The branch server is running slowly right now. It was tried twice and did not answer either time — wait a moment and press Sign in again.'
       : (kind === 'network')
-          ? 'Could not reach the branch server at all. Check the connection, then try again.'
+          ? 'Could not reach the branch server at all, on two attempts. Check the connection, then try again.'
       : (kind === 'status')
           ? (e.message + ' Nothing is wrong with your details — tell the branch office what this says.')
       : (kind === 'notjson')
@@ -1615,19 +1651,10 @@ async function refreshData(){
       var url=ep+(ep.indexOf('?')>-1?'&':'?')+'action=data&token='+encodeURIComponent(SESSION.token||'')+
               '&email='+encodeURIComponent(SESSION.email||'')+
               '&code='+encodeURIComponent(SESSION.code||'');
-      var j;
-      try{
-        j = await fetchJson(url);
-      }catch(e1){
-        // A cold Apps Script container can miss the first call and answer the
-        // second comfortably. Worth exactly one more try, and only for the two
-        // failures a retry can actually fix.
-        if(e1.kind === 'timeout' || e1.kind === 'network'){
-          j = await fetchJson(url, 30000);
-        } else {
-          throw e1;
-        }
-      }
+      // The retry that used to live here now lives in fetchJson, so sign-in and
+      // the roster get it too. Leaving it here as well would have meant four
+      // attempts on this one call and a two-minute wait before anyone was told.
+      var j = await fetchJson(url);
       if(j && j.ok && Array.isArray(j.rows)){ rows=j.rows.map(normalizeRow); SRC='live'; }
       else if(j && j.expired){ logout(); return; }
       else LOAD_ERROR=(j && j.error) ? j.error : 'The server returned no data.';
