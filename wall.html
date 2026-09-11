@@ -3987,7 +3987,14 @@ var PROD = {
      a range sample-accurately. The browser ends it on time by itself, so
      there is no watcher to get wrong. The element stays as a fallback for
      anything that will not decode. */
-  var voxBuf = null, voxSrc = null, voxGain = null, voxDecoding = false;
+  /* EVERY scheduled source, not just the last one.
+     A named line is three pieces — the words before the name, the name, and
+     the words after — scheduled back to back. speakParts kept only the last
+     in voxSrc, and stopVox can only stop what it is holding, so when a panel
+     turned the first two pieces carried on underneath the next line. Two
+     voices at once, on a wall that turns every fifteen seconds. That is the
+     echo, and it was loudest on the five panels that say somebody's name. */
+  var voxBuf = null, voxSrc = null, voxSrcs = [], voxGain = null, voxDecoding = false;
 
   function voxDecode(){
     if(voxBuf || voxDecoding || !AC) return;
@@ -4083,11 +4090,14 @@ var PROD = {
         src.connect(voxGain);
         src.start(at, segs[i][0], segs[i][1]);
         at += segs[i][1];
+        voxSrcs.push(src);
         last = src;
       }
     }catch(e){ return false; }
     voxSrc = last;
-    if(last) last.onended = function(){ voxSrc = null; duck(false); };
+    /* When the last piece ends the earlier ones are long finished, so the
+       whole list goes at once. */
+    if(last) last.onended = function(){ voxSrcs.length = 0; voxSrc = null; duck(false); };
     duck(true);
     return true;
   }
@@ -4103,10 +4113,14 @@ var PROD = {
   }
 
   function voxBusy(){
-    return !!voxSrc || (!!vox && !vox.paused);
+    return voxSrcs.length > 0 || (!!vox && !vox.paused);
   }
   function stopVox(){
-    if(voxSrc){ try{ voxSrc.onended = null; voxSrc.stop(); }catch(e){} voxSrc = null; }
+    for(var i = 0; i < voxSrcs.length; i++){
+      try{ voxSrcs[i].onended = null; voxSrcs[i].stop(); }catch(e){}
+    }
+    voxSrcs.length = 0;
+    voxSrc = null;
     if(vox){ try{ vox.pause(); }catch(e){} }
     segStop = null;
   }
@@ -4165,7 +4179,8 @@ var PROD = {
         voxSrc = AC.createBufferSource();
         voxSrc.buffer = voxBuf;
         voxSrc.connect(voxGain);
-        voxSrc.onended = function(){ voxSrc = null; duck(false); };
+        voxSrc.onended = function(){ voxSrcs.length = 0; voxSrc = null; duck(false); };
+        voxSrcs.push(voxSrc);
         duck(true);
         voxSrc.start(0, seg[0], seg[1]);
       }catch(e){ voxSrc = null; duck(false); }
