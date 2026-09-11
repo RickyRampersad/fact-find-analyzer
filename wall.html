@@ -2714,10 +2714,17 @@ function renderDay(d){
   var sub  = document.getElementById('dayLogSub');
   var st   = function(id, v){ var e=document.getElementById(id); if(e) e.textContent=v; };
 
+  dayReady = !!day;
+  if(!day && typeof panel !== 'undefined' && panel === 17 && !paused){
+    /* Parked on it and the feed just stopped carrying the day: do not sit
+       here for the rest of the rotation. */
+    setTimeout(function(){ if(!dayReady && panel === 17) showPanel(0); }, 60);
+  }
   if(!day){
     /* No day section in the feed at all. Say which switch is off rather than
        drawing zeros: zeros are a claim about the branch, and this is a claim
-       about the server. */
+       about the server. The panel is also stepped over by the rotation while
+       this is true - see panelOff. */
     if(head) head.innerHTML = 'The day&rsquo;s log is not switched on yet';
     box.innerHTML = '<div class="empty">Waiting on the branch server. '+
       'The day view needs the latest version deployed.</div>';
@@ -3232,7 +3239,11 @@ function showPanel(i){
     var dd=document.getElementById('pDots');
     if(dd){
       var kids=dd.children;
-      for(var q=0;q<kids.length;q++) kids[q].classList.toggle('on', q===panel);
+      for(var q=0;q<kids.length;q++){
+        kids[q].classList.toggle('on', q===panel);
+        /* A dot for a panel the rotation will not visit is a dot that lies. */
+        kids[q].style.display = (panelOff(q) && q!==panel) ? 'none' : '';
+      }
   }
   /* Stay where you were. A reload used to drop back to panel one, so
      anyone looking at panel eleven and pulling to refresh lost their
@@ -3240,6 +3251,15 @@ function showPanel(i){
   try{ localStorage.setItem('rrbPanel', String(panel)); }catch(e){}
   if(lastGood) render(lastGood);
 }
+/* PANEL 18 IS NOT ALWAYS THERE. It needs day in the feed, which needs block
+   21 deployed. Until then the automatic rotation steps straight over it and
+   its dot is hidden - because a wall that parks an empty slide on a branch
+   screen for fifteen seconds every four minutes is worse than a wall with
+   seventeen slides. Arrow keys and Shift+8 still reach it, so it can be
+   looked at on purpose. */
+var dayReady = false;
+function panelOff(i){ return i === 17 && !dayReady; }
+
 function rotate(){
   if(paused) return;
   /* This used to carry its own copy of showPanel's body - the same loop over
@@ -3248,7 +3268,11 @@ function rotate(){
      the last manual move had set them to, which is why the corner read
      "01 / 17 The money" over every panel on the board. One way to change
      panel, used by the arrows, the dots, the keyboard and the clock alike. */
-  showPanel(panel + 1);
+  var next = panel + 1;
+  /* Bounded: step at most PANELS times, so a future change that switches
+     several panels off can never spin this forever. */
+  for(var g = 0; g < PANELS && panelOff(((next % PANELS) + PANELS) % PANELS); g++) next++;
+  showPanel(next);
 }
 /* Restore the panel this device was last on, before anything paints. */
 try{
