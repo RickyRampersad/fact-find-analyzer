@@ -14172,7 +14172,34 @@ function pf_moneyNeg(v) {
 function pf_chk(checked) {
   return '<span class="pf-check' + (checked ? ' checked' : '') + '"></span>';
 }
-function pf_sig(role) {
+/* A Drive share link is a WEB PAGE, not an image.
+   ffSaveSigs_ stores f.getUrl(), which is
+   https://drive.google.com/file/d/<id>/view — that address answers with
+   text/html. An <img> pointing at it can never render, so every signature
+   loaded back from the server was invisible. The image form of the same
+   file is uc?export=view&id=<id>, which answers with the bytes. Rewriting
+   it here fixes every record already on the sheet, with nobody re-signing
+   anything. */
+/* injected: stand-in styling */
+function pf_sigStyleOnce_() {
+  if (document.getElementById('pfSigTypedCss')) return;
+  var st = document.createElement('style'); st.id = 'pfSigTypedCss';
+  st.textContent = ".pf-sig-typed{display:inline-flex;flex-direction:column;justify-content:flex-end;" +
+    "font-family:'Brush Script MT','Segoe Script',cursive;font-size:15pt;line-height:1.05;color:#111}" +
+    ".pf-sig-typed em{font-style:normal;font-size:6.5pt;letter-spacing:.04em;text-transform:uppercase;" +
+    "color:#555;font-family:Arial,Helvetica,sans-serif;margin-top:.6mm}";
+  document.head.appendChild(st);
+}
+function pf_sigSrc(u) {
+  u = String(u || '');
+  if (!u || u.indexOf('data:') === 0) return u;
+  var m = u.match(/drive\.google\.com\/file\/d\/([^/?#]+)/) ||
+          u.match(/[?&]id=([^&#]+)/);
+  return m ? 'https://drive.google.com/uc?export=view&id=' + m[1] : u;
+}
+
+function pf_sig(role, fallbackName) {
+  try { pf_sigStyleOnce_(); } catch (e) {}
   // Try local data URL first (just-signed), then server URL (loaded view-mode)
   var sigs = (typeof signatures !== 'undefined') ? signatures : {};
   var st = (typeof state !== 'undefined') ? state : {};
@@ -14187,9 +14214,37 @@ function pf_sig(role) {
   var dataUrl = (sigs && sigs[role]) || null;
   var urlField = URL_FIELD[role] || (role + 'SigUrl');
   var serverUrl = (st && st[urlField]) || null;
-  var src = dataUrl || serverUrl;
-  if (!src) return '';
-  return '<img class="pf-sig-img" src="' + pf$(src) + '" alt="' + role + ' signature" onerror="this.style.display=\'none\'">';
+
+  /* 'manager' is the LEGACY field. A Direct Manager signs into dmSigUrl and a
+     Branch Manager into bmSigUrl, so asking for 'manager' found an empty field
+     and printed nothing at all — a second, independent reason the box came out
+     blank. Ask for the legacy field, then the two real ones. */
+  if (!dataUrl && !serverUrl && role === 'manager') {
+    serverUrl = (st && (st.dmSigUrl || st.bmSigUrl)) || null;
+    dataUrl = (sigs && (sigs.directManager || sigs.branchManager)) || null;
+  }
+
+  var src = dataUrl || pf_sigSrc(serverUrl);
+
+  /* NEVER FAIL SILENTLY AGAIN. The old handler was onerror="display:none",
+     so a signature that would not load was deleted from the page and the line
+     came out blank — which reads as "not signed" and is why this went months
+     without anyone being able to say what was wrong. If the image cannot be
+     drawn, the typed name stands in its place, and the record still says who
+     signed and that it was signed electronically. */
+  var typed = pf$(String(fallbackName || '').trim());
+  var stand = typed
+    ? '<span class=\'pf-sig-typed\'>' + typed +
+      '<em>signed electronically</em></span>'
+    : '';
+  if (!src) return stand;
+
+  var id = 'sg' + Math.random().toString(36).slice(2, 9);
+  return '<img class="pf-sig-img" src="' + pf$(src) + '" alt="' + role + ' signature"' +
+         (stand ? ' onerror="this.style.display=\'none\';var n=document.getElementById(\'' + id +
+                  '\'); if(n) n.style.display=\'inline-flex\';"' :
+                  ' onerror="this.style.display=\'none\'"') + '>' +
+         (stand ? '<span id="' + id + '" style="display:none">' + stand + '</span>' : '');
 }
 function pf_dateStr(v) {
   if (!v) return '';
@@ -14817,8 +14872,11 @@ function buildPrintLayout() {
   html += '<tr><td style="border:1pt solid #000; font-size:9.5pt; padding:2mm 2.5mm; height:18mm; vertical-align:top">Manager&rsquo;s Comments: (Necessary if in disagreement with recommendation(s)):' + (s.mgrComments ? '<div style="margin-top:1.5mm; white-space:pre-wrap">' + pf$(s.mgrComments) + '</div>' : '') + '</td></tr>';
   html += '<tr><td style="border:1pt solid #000; font-size:9.5pt; padding:2mm 2.5mm; height:20mm; vertical-align:top">Remedial Action:' + (s.mgrRemedial ? '<div style="margin-top:1.5mm; white-space:pre-wrap">' + pf$(s.mgrRemedial) + '</div>' : '') + '</td></tr>';
   html += '<tr><td style="border:1pt solid #000; font-size:9.5pt; padding:2mm 2.5mm; height:24mm; vertical-align:bottom">' +
-            '<div style="width:62mm; border-bottom:0.7pt solid #000; min-height:11mm; display:flex; align-items:flex-end">' + pf_sig('manager') + '</div>' +
-            '<div style="margin-top:0.8mm">Manager&rsquo;s Signature</div>' +
+            '<div style="width:62mm; border-bottom:0.7pt solid #000; min-height:11mm; display:flex; align-items:flex-end">' +
+              pf_sig('manager', s.mgrName || s.reviewerName || s.dmName) + '</div>' +
+            '<div style="margin-top:0.8mm">Manager&rsquo;s Signature' +
+              ((s.mgrName || s.reviewerName || s.dmName)
+                ? ' &mdash; ' + pf$(s.mgrName || s.reviewerName || s.dmName) : '') + '</div>' +
             '<div>Date: ' + pf_dateStr(s.mgrSigDate) + '</div>' +
           '</td></tr>';
   html += '</table>';
