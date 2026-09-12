@@ -6510,7 +6510,23 @@ async function submitForm() {
     console.error(e);
     btn.disabled = false;
     btn.textContent = origLabel;
-    result.innerHTML = `<span style="color:var(--danger)"><strong>Submission failed:</strong> ${e.message}<br><span style="color:var(--muted);font-size:12px">Check the endpoint URL and Apps Script deployment.</span></span>`;
+    /* SAY WHAT KIND OF FAILURE THIS IS.
+       Every failure printed "Check the endpoint URL and Apps Script
+       deployment". When the fault was a TypeError inside this page - which is
+       what stopped a submit on 12 September - that line sent the advisor and
+       the branch manager to check a deployment that was working perfectly.
+       A network fault and a fault in the page need different people to do
+       different things, so the message now says which it was. */
+    var msg = String((e && e.message) || 'Something went wrong.');
+    var inPage = /is not a function|undefined is not|cannot read propert|null is not/i.test(msg);
+    var hint = inPage
+      ? 'This is a fault in the page, not in your work or your connection. ' +
+        'Nothing you typed is lost. Send this message to the branch manager &mdash; ' +
+        'it names the exact line, and it is a quick fix.'
+      : 'Check your connection and try again. If it keeps failing, send this ' +
+        'message to the branch manager.';
+    result.innerHTML = '<span style="color:var(--danger)"><strong>Submission failed:</strong> ' +
+      escapeHtml(msg) + '<br><span style="color:var(--muted);font-size:12px">' + hint + '</span></span>';
   }
 }
 
@@ -14911,6 +14927,21 @@ function buildPrintLayout() {
               (s.mgrSignatureMethod
                 ? '<span style="font-size:7pt; color:#555; margin-left:3mm">' +
                   pf$(s.mgrSignatureMethod) + '</span>' : '') + '</div>' +
+            /* WHAT THE RECORD HOLDS, not a legal opinion.
+               Schedule 11 sets its standard on the information: B1 requires the
+               consumer's needs, circumstances and finances to be obtained and
+               recorded before anything is recommended, B1(d) that the consumer
+               certify that information's accuracy, and B2 that the advice be
+               suitable against it. It prescribes no form of signature. So this
+               line states who signed, when and by what means - which is the
+               thing a file has to be able to show - and leaves the conclusion
+               to the reader. */
+            '<div style="font-size:7pt; color:#666; margin-top:1.2mm; line-height:1.35">' +
+              'Signed electronically on review. Insurance Act, 2018 &middot; Schedule 11 ' +
+              'sets its standard on the information obtained and recorded (B1, B1(d)) and ' +
+              'the suitability of the advice given against it (B2). This record carries the ' +
+              'reviewer, the date and the method above.' +
+            '</div>' +
           '</td></tr>';
   html += '</table>';
 
