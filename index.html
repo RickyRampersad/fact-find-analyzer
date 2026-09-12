@@ -3466,8 +3466,15 @@ function buildWeeklyReport(){
   /* Ranked by the protection found, premium breaking a tie. Need, not
      premium, because the need is the thing the branch is measured on and
      the thing an advisor is being recognised for having asked about. */
-  var top3 = week.slice()
-    .filter(function(r){ return needOf(r) > 0 || (r.premium || 0) > 0; })
+  /* A fact find with no Insurance Need figure cannot be ranked on one. It is
+     NOT a zero - a zero would say the advisor found nothing, when what
+     actually happened is that nobody wrote the number down. Counting them
+     separately is the same rule the month panel uses for cases carrying no
+     client decision. */
+  var rankable = week.filter(function(r){ return needOf(r) > 0; });
+  var unranked = week.length - rankable.length;
+
+  var top3 = rankable.slice()
     .sort(function(a, b){
       return (needOf(b) - needOf(a)) || ((b.premium || 0) - (a.premium || 0));
     })
@@ -3499,6 +3506,8 @@ function buildWeeklyReport(){
               : (SESSION.scope.kind === 'unit' ? (SESSION.unit || 'Your unit') : 'Your cases'),
     submitted: week.length,
     submittedPrev: prev.length,
+    rankable: rankable.length,
+    unranked: unranked,
     approved: approved.length,
     need: week.reduce(function(t, r){ return t + needOf(r); }, 0),
     premium: week.reduce(function(t, r){ return t + (r.premium || 0); }, 0),
@@ -3538,7 +3547,7 @@ function weeklyMessage(d){
            (d.premium > 0 ? ' · *' + money(d.premium) + '* monthly premium recommended' : ''));
   }
 
-  if (weeklyMsgOn('top3') && d.top3.length){
+  if (weeklyMsgOn('top3') && d.top3.length && d.rankable > 0){
     var medal = ['🥇', '🥈', '🥉'];
     L.push('');
     /* Say what "top" is ranked by. A leaderboard on a WhatsApp group with no
@@ -3550,6 +3559,16 @@ function weeklyMessage(d){
       L.push(medal[i] + ' *' + t.advisor + '* — ' + wkMoney(t.need) + ' found' +
              (t.premium > 0 ? ', ' + money(t.premium) + '/mth recommended' : ''));
     });
+    /* SAY WHAT THE BOARD IS DRAWN FROM.
+       Without this line an advisor who did five fact finds and left the
+       Insurance Need blank on all five is simply absent from the board, and
+       the group reads that as a quiet week. It was not a quiet week. The
+       count goes out with the board so nobody is ranked nil for a field
+       nobody filled in. */
+    if (d.unranked > 0){
+      L.push('_Ranked from the ' + d.rankable + ' of ' + d.submitted +
+             ' fact finds that carry an Insurance Need figure._');
+    }
     L.push('_The need was already there. Somebody asked the question._');
   }
 
@@ -3605,6 +3624,9 @@ function msgCard(cfg){
                '<input type="checkbox" ' + cfg.attr + '="' + o[0] + '" checked> ' + escapeHtml(o[1]) + '</label>';
       }).join('') +
     '</div>' +
+    (cfg.note ? '<div id="' + cfg.note + '" style="display:none;font-size:12.5px;line-height:1.5;' +
+        'padding:10px 12px;margin:0 0 12px;border-left:3px solid #F59E0B;' +
+        'background:rgba(245,158,11,.08);border-radius:0 8px 8px 0;color:var(--ink)"></div>' : '') +
     '<textarea id="' + cfg.id + 'Text" rows="' + (cfg.rows || 15) + '" spellcheck="false" ' +
       'style="width:100%;box-sizing:border-box;font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;' +
       'padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);' +
@@ -3651,12 +3673,29 @@ function renderDailyMessage(){
 
   msgCard({
     id: 'weeklyMsg', attr: 'data-wmsg', title: 'The Friday message · the week',
+    note: 'weeklyNeedNote',
     sub: 'The whole week for the same group, with the three fact finds that found ' +
          'the most protection. Advisors are named; clients never are.',
     rows: 18,
     opts: [['top3','Top 3 fact finds'], ['volume','Most fact finds'],
            ['queue','Signing queue'], ['quiet','Quiet advisors']],
-    write: function(){ return weeklyMessage(buildWeeklyReport()); }
+    write: function(){
+      var w = buildWeeklyReport();
+      var note = document.getElementById('weeklyNeedNote');
+      if (note){
+        /* On the page, not in the message. The group does not need to be told
+           who left a field blank; the branch manager does. */
+        note.innerHTML = w.unranked > 0
+          ? '<b>' + w.unranked + ' of ' + w.submitted + '</b> fact ' +
+            (w.unranked === 1 ? 'find carries' : 'finds carry') +
+            ' no Insurance Need figure, so ' + (w.unranked === 1 ? 'it is' : 'they are') +
+            ' not in the ranking. Cover is being recommended without the need ' +
+            'behind it written down &mdash; that is a suitability question, not just a gap in a board.'
+          : '';
+        note.style.display = w.unranked > 0 ? '' : 'none';
+      }
+      return weeklyMessage(w);
+    }
   });
 }
 
