@@ -131,6 +131,38 @@
 # aimed one character wide.
 # ─────────────────────────────────────────────────────────────────────────────
 
+# THE DASHBOARD ITSELF WAS MISSED.
+#
+# Every sensitive page got no-store except the one people open first. The
+# dashboard is served at "/" and at "/index.html", and neither path had a
+# block, so it fell through to Netlify's default:
+#
+#   /              cache-control: public,max-age=0,must-revalidate
+#   /index.html    cache-control: public,max-age=0,must-revalidate
+#
+# "public" is the part that matters. It tells shared caches they MAY store the
+# body; must-revalidate only governs reuse of what was stored. This is the page
+# carrying client names, dates of birth, incomes, and every advisor's
+# production — on branch machines several people sign into. Same finding as the
+# clean-URL one above, on the one URL nobody thought to name because it has no
+# name.
+#
+# Both spellings, because "/" and "/index.html" are matched separately.
+
+[[headers]]
+  for = "/"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
 [[headers]]
   for = "/ffproject"
   [headers.values]
