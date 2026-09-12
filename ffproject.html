@@ -14219,10 +14219,20 @@ function pf_chk(checked) {
 function pf_sigStyleOnce_() {
   if (document.getElementById('pfSigTypedCss')) return;
   var st = document.createElement('style'); st.id = 'pfSigTypedCss';
+  /* NOT a handwriting font.
+     The first cut set this in Brush Script. Two things wrong with that. It
+     falls back to whatever the device has - on a machine without that face it
+     came out as plain serif, so the look could not be relied on anyway. And
+     the bigger one: a typed name dressed in cursive imitates a handwritten
+     mark that nobody made. On a file that is kept to be inspected, a name set
+     plainly and captioned for what it is beats a drawing that was never
+     drawn. So: larger than the body text, tracked out, unmistakably the
+     signature - and honest about being typed. */
   st.textContent = ".pf-sig-typed{display:inline-flex;flex-direction:column;justify-content:flex-end;" +
-    "font-family:'Brush Script MT','Segoe Script',cursive;font-size:15pt;line-height:1.05;color:#111}" +
-    ".pf-sig-typed em{font-style:normal;font-size:6.5pt;letter-spacing:.04em;text-transform:uppercase;" +
-    "color:#555;font-family:Arial,Helvetica,sans-serif;margin-top:.6mm}";
+    "font:600 13pt/1.15 Georgia,'Times New Roman',serif;letter-spacing:.02em;color:#111;" +
+    "padding-bottom:1.2mm}" +
+    ".pf-sig-cap{font:700 6.5pt/1 Arial,Helvetica,sans-serif;letter-spacing:.09em;" +
+    "text-transform:uppercase;color:#555;margin-top:0.7mm}";
   document.head.appendChild(st);
 }
 function pf_sigSrc(u) {
@@ -14275,10 +14285,10 @@ function pf_sig(role, fallbackName) {
      record and a blank box on the document. mgrName is only the fallback: it
      is who the system believes they are, not what they signed as. */
   var typed = pf$(String(fallbackName || '').trim());
-  var stand = typed
-    ? '<span class=\'pf-sig-typed\'>' + typed +
-      '<em>signed electronically</em></span>'
-    : '';
+  /* The caption used to sit inside the signing box, which put it straight on
+     top of the ruled line and read as struck through. The name goes in the
+     box; the caption goes under the rule, where a caption belongs. */
+  var stand = typed ? '<span class=\'pf-sig-typed\'>' + typed + '</span>' : '';
   if (!src) return stand;
 
   var id = 'sg' + Math.random().toString(36).slice(2, 9);
@@ -14914,34 +14924,48 @@ function buildPrintLayout() {
   html += '<tr><td style="border:1pt solid #000; font-size:9.5pt; padding:2mm 2.5mm; height:18mm; vertical-align:top">Manager&rsquo;s Comments: (Necessary if in disagreement with recommendation(s)):' + (s.mgrComments ? '<div style="margin-top:1.5mm; white-space:pre-wrap">' + pf$(s.mgrComments) + '</div>' : '') + '</td></tr>';
   html += '<tr><td style="border:1pt solid #000; font-size:9.5pt; padding:2mm 2.5mm; height:20mm; vertical-align:top">Remedial Action:' + (s.mgrRemedial ? '<div style="margin-top:1.5mm; white-space:pre-wrap">' + pf$(s.mgrRemedial) + '</div>' : '') + '</td></tr>';
   html += '<tr><td style="border:1pt solid #000; font-size:9.5pt; padding:2mm 2.5mm; height:24mm; vertical-align:bottom">' +
-            '<div style="width:62mm; border-bottom:0.7pt solid #000; min-height:11mm; display:flex; align-items:flex-end">' +
-              pf_sig('manager', s.mgrSignName || s.mgrName || s.reviewerName || s.dmName) + '</div>' +
-            '<div style="margin-top:0.8mm">Manager&rsquo;s Signature' +
-              ((s.mgrSignName || s.mgrName || s.reviewerName || s.dmName)
-                ? ' &mdash; ' + pf$(s.mgrSignName || s.mgrName || s.reviewerName || s.dmName) : '') + '</div>' +
-            '<div>Date: ' + pf_dateStr(s.mgrSigDate) +
-              /* How it was signed. "Mgr Signature Method" has been recorded all
-                 along - Email one-tap, Email - Drawn, Dashboard - Drawn - and
-                 never printed, so the document could not say how the sign-off
+            /* IS THIS BOX ACTUALLY SIGNED?
+               Everything under it is only true when it is. The first cut
+               printed "Signed electronically on review" and the whole Act
+               citation under an EMPTY box - a document asserting a sign-off
+               that had not happened, on the one page an inspector turns to.
+               That is worse than the blank box it replaced. */
+            (function () {
+              var who    = s.mgrSignName || s.mgrName || s.reviewerName || s.dmName;
+              var signed = !!(s.mgrSignName || s.dmSigUrl || s.bmSigUrl || s.managerSigUrl);
+              var out =
+                '<div style="width:62mm; border-bottom:0.7pt solid #000; min-height:11mm; ' +
+                  'display:flex; align-items:flex-end">' + pf_sig('manager', who) + '</div>';
+              /* The caption sits UNDER the rule. Inside the box it landed on
+                 the line itself and read as struck through. It also carries the
+                 method - "Mgr Signature Method" has been recorded all along
+                 (Email one-tap, Email - Drawn, Dashboard - Drawn) and never
+                 printed, so the document could not say how the sign-off
                  happened. On a signed record that is the sentence that matters. */
-              (s.mgrSignatureMethod
-                ? '<span style="font-size:7pt; color:#555; margin-left:3mm">' +
-                  pf$(s.mgrSignatureMethod) + '</span>' : '') + '</div>' +
-            /* WHAT THE RECORD HOLDS, not a legal opinion.
-               Schedule 11 sets its standard on the information: B1 requires the
-               consumer's needs, circumstances and finances to be obtained and
-               recorded before anything is recommended, B1(d) that the consumer
-               certify that information's accuracy, and B2 that the advice be
-               suitable against it. It prescribes no form of signature. So this
-               line states who signed, when and by what means - which is the
-               thing a file has to be able to show - and leaves the conclusion
-               to the reader. */
-            '<div style="font-size:7pt; color:#666; margin-top:1.2mm; line-height:1.35">' +
-              'Signed electronically on review. Insurance Act, 2018 &middot; Schedule 11 ' +
-              'sets its standard on the information obtained and recorded (B1, B1(d)) and ' +
-              'the suitability of the advice given against it (B2). This record carries the ' +
-              'reviewer, the date and the method above.' +
-            '</div>' +
+              if (signed) {
+                out += '<div class="pf-sig-cap">Signed electronically' +
+                       (s.mgrSignatureMethod ? ' &middot; ' + pf$(s.mgrSignatureMethod) : '') +
+                       '</div>';
+              }
+              out += '<div style="margin-top:0.8mm">Manager&rsquo;s Signature' +
+                     (who ? ' &mdash; ' + pf$(who) : '') + '</div>' +
+                     '<div>Date: ' + pf_dateStr(s.mgrSigDate) + '</div>';
+              /* WHAT THE RECORD HOLDS, not a legal opinion. Schedule 11 sets
+                 its standard on the information: B1 obtain and record before
+                 advising, B1(d) the consumer certifies its accuracy, B2 the
+                 advice is suitable against it. It prescribes no form of
+                 signature. So this states who signed, when and by what means -
+                 what a file has to be able to show - and leaves the conclusion
+                 to the reader. Only on a box that was signed. */
+              if (signed) {
+                out += '<div style="font-size:7pt; color:#666; margin-top:1.2mm; line-height:1.35">' +
+                  'Insurance Act, 2018 &middot; Schedule 11 sets its standard on the information ' +
+                  'obtained and recorded (B1, B1(d)) and the suitability of the advice given ' +
+                  'against it (B2). This record carries the reviewer, the date and the method above.' +
+                  '</div>';
+              }
+              return out;
+            })() +
           '</td></tr>';
   html += '</table>';
 
