@@ -14232,6 +14232,13 @@ function pf_sig(role, fallbackName) {
      without anyone being able to say what was wrong. If the image cannot be
      drawn, the typed name stands in its place, and the record still says who
      signed and that it was signed electronically. */
+  /* WHAT THEY TYPED, not who we think they are.
+     The decision page makes the manager type a name and REFUSES to submit
+     without it - that typed name is the electronic signature, and it lands on
+     the sheet as "Mgr Signed As". The form never read it. So a manager who
+     approved with one tap (no drawing) had a required signature sitting on the
+     record and a blank box on the document. mgrName is only the fallback: it
+     is who the system believes they are, not what they signed as. */
   var typed = pf$(String(fallbackName || '').trim());
   var stand = typed
     ? '<span class=\'pf-sig-typed\'>' + typed +
@@ -14364,13 +14371,13 @@ function buildPrintLayout() {
   // The client signs from their own email now, so this line is no longer an
   // empty space waiting for a pen — where they have signed, their mark and the
   // date they made it print here, exactly like the advisor's beside it.
-  html +=   '<div class="pf-sig-line">' + pf_sig('client') + '</div>';
+  html +=   '<div class="pf-sig-line">' + pf_sig('client', s.clientSignName || s.clientName || s.fullName) + '</div>';
   html +=   '<div class="pf-sig-cap">Signature of Client (on behalf of all persons to be insured)</div>';
   html +=   '<div class="pf-sig-date">Date: ' +
               (s.clientSigDate ? pf_dateStr(s.clientSigDate) : '__________________________') + '</div>';
   html += '</div>';
   html += '<div>';
-  html +=   '<div class="pf-sig-line">' + pf_sig('advisor') + '</div>';
+  html +=   '<div class="pf-sig-line">' + pf_sig('advisor', s.advisorName) + '</div>';
   html +=   '<div class="pf-sig-cap">Signature of Advisor</div>';
   html +=   '<div class="pf-sig-date">Date: ' + pf_dateStr(s.advisorSigDate) + '</div>';
   html += '</div>';
@@ -14844,13 +14851,13 @@ function buildPrintLayout() {
   // The client signs from their own email now, so this line is no longer an
   // empty space waiting for a pen — where they have signed, their mark and the
   // date they made it print here, exactly like the advisor's beside it.
-  html +=   '<div class="pf-sig-line">' + pf_sig('client') + '</div>';
+  html +=   '<div class="pf-sig-line">' + pf_sig('client', s.clientSignName || s.clientName || s.fullName) + '</div>';
   html +=   '<div class="pf-sig-cap">Signature of Client (on behalf of all persons to be insured)</div>';
   html +=   '<div class="pf-sig-date">Date: ' +
               (s.clientSigDate ? pf_dateStr(s.clientSigDate) : '__________________________') + '</div>';
   html += '</div>';
   html += '<div>';
-  html +=   '<div class="pf-sig-line">' + pf_sig('advisor') + '</div>';
+  html +=   '<div class="pf-sig-line">' + pf_sig('advisor', s.advisorName) + '</div>';
   html +=   '<div class="pf-sig-cap">Signature of Advisor</div>';
   html +=   '<div class="pf-sig-date">Date: ' + pf_dateStr(s.advisorSigDate) + '</div>';
   html += '</div>';
@@ -14873,11 +14880,18 @@ function buildPrintLayout() {
   html += '<tr><td style="border:1pt solid #000; font-size:9.5pt; padding:2mm 2.5mm; height:20mm; vertical-align:top">Remedial Action:' + (s.mgrRemedial ? '<div style="margin-top:1.5mm; white-space:pre-wrap">' + pf$(s.mgrRemedial) + '</div>' : '') + '</td></tr>';
   html += '<tr><td style="border:1pt solid #000; font-size:9.5pt; padding:2mm 2.5mm; height:24mm; vertical-align:bottom">' +
             '<div style="width:62mm; border-bottom:0.7pt solid #000; min-height:11mm; display:flex; align-items:flex-end">' +
-              pf_sig('manager', s.mgrName || s.reviewerName || s.dmName) + '</div>' +
+              pf_sig('manager', s.mgrSignName || s.mgrName || s.reviewerName || s.dmName) + '</div>' +
             '<div style="margin-top:0.8mm">Manager&rsquo;s Signature' +
-              ((s.mgrName || s.reviewerName || s.dmName)
-                ? ' &mdash; ' + pf$(s.mgrName || s.reviewerName || s.dmName) : '') + '</div>' +
-            '<div>Date: ' + pf_dateStr(s.mgrSigDate) + '</div>' +
+              ((s.mgrSignName || s.mgrName || s.reviewerName || s.dmName)
+                ? ' &mdash; ' + pf$(s.mgrSignName || s.mgrName || s.reviewerName || s.dmName) : '') + '</div>' +
+            '<div>Date: ' + pf_dateStr(s.mgrSigDate) +
+              /* How it was signed. "Mgr Signature Method" has been recorded all
+                 along - Email one-tap, Email - Drawn, Dashboard - Drawn - and
+                 never printed, so the document could not say how the sign-off
+                 happened. On a signed record that is the sentence that matters. */
+              (s.mgrSignatureMethod
+                ? '<span style="font-size:7pt; color:#555; margin-left:3mm">' +
+                  pf$(s.mgrSignatureMethod) + '</span>' : '') + '</div>' +
           '</td></tr>';
   html += '</table>';
 
@@ -16013,12 +16027,12 @@ function pf_buildReplacementDisclosure(s) {
   h += '<table style="width:100%;border-collapse:collapse;font-size:8pt;margin-top:4mm">' +
        '<tr>' +
        '<td style="width:38%;padding-right:6mm;vertical-align:bottom">' +
-         '<div style="border-bottom:0.6pt solid #000;height:11mm">' + pf_sig('client') + '</div>' +
+         '<div style="border-bottom:0.6pt solid #000;height:11mm">' + pf_sig('client', s.clientSignName || s.clientName || s.fullName) + '</div>' +
          '<div style="margin-top:0.8mm">Policyholder&rsquo;s signature</div>' +
          '<div>Date: ' + BLANK + '</div>' +
        '</td>' +
        '<td style="width:38%;padding-right:6mm;vertical-align:bottom">' +
-         '<div style="border-bottom:0.6pt solid #000;height:11mm">' + pf_sig('advisor') + '</div>' +
+         '<div style="border-bottom:0.6pt solid #000;height:11mm">' + pf_sig('advisor', s.advisorName) + '</div>' +
          '<div style="margin-top:0.8mm">Witnessed by agent, broker or sales representative</div>' +
          '<div>' + (s.advisorName ? pf$(s.advisorName) : BLANK) +
            (s.agentCode ? ' &middot; ' + pf$(s.agentCode) : '') + '</div>' +
