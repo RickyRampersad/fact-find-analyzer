@@ -3417,48 +3417,214 @@ function dailyMessage(d){
 /* Appended after renderDaily() has rewritten #dailyBody, so it cannot
    duplicate itself. The textarea is deliberately editable — the message is
    a starting point, not a broadcast you are stuck with. */
-function renderDailyMessage(){
-  const body = document.getElementById('dailyBody');
+/* ---- the Friday message ------------------------------------------------
+   The week, written for the same group as the 5pm message.
+
+   Same privacy rule as dailyMessage, with ONE deliberate exception - which
+   is the thing that was asked for. The three fact finds that found the most
+   protection are named by ADVISOR and by the need they found. No client
+   name, no policy number, no contact detail, and nothing that says which
+   client a figure belongs to. It is still further down than the daily
+   message goes, so it has its own checkbox and can be switched off for a
+   week where even that is too close.
+
+   Built from ALL - already role-scoped - and from the same helpers the
+   daily report uses, so the two can never disagree about a shared figure. */
+
+/* Sunday, the way rrbWall counts a branch week. The weekly message and the
+   wall have to start the week on the same day or they will quietly report
+   different numbers for the same seven days. */
+function weekStart(){
+  var d = new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate());
+  return new Date(d.getTime() - d.getDay() * 86400000);
+}
+
+/* Millions read badly in full on a phone: TT$10,904,026 wraps and nobody
+   reads past the comma. Anything under a million keeps its exact figure. */
+function wkMoney(n){
+  n = Math.round(n || 0);
+  if (n >= 1000000) return 'TT$' + (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  return money(n);
+}
+
+function buildWeeklyReport(){
+  var start = weekStart();
+  var prevStart = new Date(start.getTime() - 7 * 86400000);
+  var rows = ALL.slice();
+  var at = function(iso){ var t = new Date(iso).getTime(); return isFinite(t) ? t : null; };
+  var between = function(iso, from, to){
+    var t = at(iso);
+    return t !== null && t >= from.getTime() && (!to || t < to.getTime());
+  };
+
+  var week = rows.filter(function(r){ return between(r.submittedAt, start); });
+  var prev = rows.filter(function(r){ return between(r.submittedAt, prevStart, start); });
+  var approved = rows.filter(function(r){ return r.approvedAt && between(r.approvedAt, start); });
+
+  var needOf = function(r){ return qNum(r.insuranceNeed_calc); };
+
+  /* Ranked by the protection found, premium breaking a tie. Need, not
+     premium, because the need is the thing the branch is measured on and
+     the thing an advisor is being recognised for having asked about. */
+  var top3 = week.slice()
+    .filter(function(r){ return needOf(r) > 0 || (r.premium || 0) > 0; })
+    .sort(function(a, b){
+      return (needOf(b) - needOf(a)) || ((b.premium || 0) - (a.premium || 0));
+    })
+    .slice(0, 3)
+    .map(function(r){
+      return { advisor: r.advisorName || r.agentCode || 'an advisor',
+               need: needOf(r), premium: r.premium || 0, quality: r.quality || 0 };
+    });
+
+  var by = {};
+  week.forEach(function(r){
+    var k = r.agentCode || r.advisorName; if(!k) return;
+    var a = by[k] || (by[k] = { name: r.advisorName || k, ff: 0, need: 0, prem: 0 });
+    a.ff++; a.need += needOf(r); a.prem += (r.premium || 0);
+  });
+  var busiest = null;
+  Object.keys(by).forEach(function(k){
+    var a = by[k];
+    if (!busiest || a.ff > busiest.ff || (a.ff === busiest.ff && a.need > busiest.need)) busiest = a;
+  });
+
+  var awaiting = rows
+    .filter(function(r){ var g = statusGroup(r.status); return g === 'pending' || g === 'review'; })
+    .map(function(r){ return Object.assign({ ageDays: Math.floor(daysBetween(NOW, new Date(r.submittedAt))) }, r); });
+
+  return {
+    from: start, to: NOW,
+    scopeLabel: SESSION.scope.kind === 'branch' ? 'Branch-wide'
+              : (SESSION.scope.kind === 'unit' ? (SESSION.unit || 'Your unit') : 'Your cases'),
+    submitted: week.length,
+    submittedPrev: prev.length,
+    approved: approved.length,
+    need: week.reduce(function(t, r){ return t + needOf(r); }, 0),
+    premium: week.reduce(function(t, r){ return t + (r.premium || 0); }, 0),
+    advisorsActive: Object.keys(by).length,
+    top3: top3,
+    busiest: busiest,
+    awaiting: awaiting,
+    stuck: awaiting.filter(function(r){ return r.ageDays > STUCK_DAYS; }),
+    quiet: (SESSION.scope.kind === 'agent') ? [] : quietAgents(QUIET_DAYS)
+  };
+}
+
+function weeklyMsgOn(k){
+  var el = document.querySelector('[data-wmsg="' + k + '"]');
+  return !el || el.checked;
+}
+
+function weeklyMessage(d){
+  var L = [];
+  var plural = function(n, one, many){ return n === 1 ? one : many; };
+  var dd = function(x){ return x.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long' }); };
+
+  L.push('*Ricky Rampersad Branch — the week*');
+  L.push('_' + dd(d.from) + ' to ' + dd(d.to) + ' · ' + d.scopeLabel + '_');
+  L.push('');
+  L.push('*' + d.submitted + '* ' + plural(d.submitted, 'fact find', 'fact finds') +
+         ' this week · *' + d.approved + '* signed off');
+  if (d.submittedPrev){
+    var diff = d.submitted - d.submittedPrev;
+    L.push('Last week: ' + d.submittedPrev + '.' +
+      (diff > 0 ? ' Ahead by ' + diff + '.' : diff < 0 ? ' Down by ' + Math.abs(diff) + '.' : ' Level.'));
+  }
+
+  if (d.need > 0 || d.premium > 0){
+    L.push('');
+    L.push('*' + wkMoney(d.need) + '* of protection identified' +
+           (d.premium > 0 ? ' · *' + money(d.premium) + '* monthly premium recommended' : ''));
+  }
+
+  if (weeklyMsgOn('top3') && d.top3.length){
+    var medal = ['🥇', '🥈', '🥉'];
+    L.push('');
+    /* Say what "top" is ranked by. A leaderboard on a WhatsApp group with no
+       stated measure gets read as whoever sold most, and this one is not. */
+    L.push(d.top3.length === 1
+      ? '*The biggest fact find this week* _(by protection found)_'
+      : '*Top ' + d.top3.length + ' fact finds this week* _(by protection found)_');
+    d.top3.forEach(function(t, i){
+      L.push(medal[i] + ' *' + t.advisor + '* — ' + wkMoney(t.need) + ' found' +
+             (t.premium > 0 ? ', ' + money(t.premium) + '/mth recommended' : ''));
+    });
+    L.push('_The need was already there. Somebody asked the question._');
+  }
+
+  if (weeklyMsgOn('volume') && d.busiest && d.busiest.ff > 1){
+    L.push('');
+    L.push('🏆 *' + d.busiest.name + '* — ' + d.busiest.ff + ' fact finds this week, ' +
+           wkMoney(d.busiest.need) + ' found.');
+  }
+
+  if (weeklyMsgOn('queue')){
+    L.push('');
+    if (d.awaiting.length){
+      L.push('*' + d.awaiting.length + ' ' + plural(d.awaiting.length, 'file', 'files') +
+             ' waiting on my signature' +
+             (d.stuck.length ? ' — ' + d.stuck.length + ' over ' + STUCK_DAYS + ' days' : '') + '.*');
+    } else {
+      L.push('*Nothing waiting on my signature* going into the weekend.');
+    }
+  }
+
+  if (weeklyMsgOn('quiet') && d.quiet.length){
+    L.push('');
+    L.push('*Nothing in ' + QUIET_DAYS + ' days:* ' +
+           d.quiet.map(function(q){ return q.name; }).join(', ') + '.');
+    L.push('_One conversation on Monday changes that._');
+  }
+
+  L.push('');
+  L.push('Keep asking the questions. The needs are already there.');
+  L.push('— ' + (SESSION && SESSION.name ? SESSION.name : 'Ricky'));
+  return L.join('\n');
+}
+
+/* ONE CARD BUILDER, USED TWICE.
+   The daily message card was fifty lines of textarea, checkboxes, WhatsApp
+   and Copy wiring. A second copy of all of it for the weekly message is how
+   the two drift apart - one gets a fix and the other does not. Both are
+   built from this, and they differ only in their title, their checkboxes
+   and the function that writes the text. */
+function msgCard(cfg){
+  var body = document.getElementById('dailyBody');
   if (!body || !SESSION) return;
 
-  const opts = [['pipeline','Pipeline'], ['top','Top advisor'],
-                ['queue','Signing queue'], ['quiet','Quiet advisors']];
-
-  const card = document.createElement('div');
+  var card = document.createElement('div');
   card.className = 'card col-12 no-print';
-  card.id = 'dailyMsgCard';
+  card.id = cfg.id;
   card.innerHTML =
-    '<h3>The 5pm message</h3>' +
-    '<div class="csub">The same figures, written for the branch WhatsApp group. ' +
-    'Counts only — no client names go out this way. Edit it before you send.</div>' +
-    '<div id="dailyMsgOpts" style="display:flex;flex-wrap:wrap;gap:14px;margin:12px 0 10px">' +
-      opts.map(function(o){
-        return '<label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">' +
-               '<input type="checkbox" data-msg="' + o[0] + '" checked> ' + escapeHtml(o[1]) + '</label>';
+    '<h3>' + escapeHtml(cfg.title) + '</h3>' +
+    '<div class="csub">' + cfg.sub + '</div>' +
+    '<div id="' + cfg.id + 'Opts" style="display:flex;flex-wrap:wrap;gap:14px;margin:10px 0 12px">' +
+      cfg.opts.map(function(o){
+        return '<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)">' +
+               '<input type="checkbox" ' + cfg.attr + '="' + o[0] + '" checked> ' + escapeHtml(o[1]) + '</label>';
       }).join('') +
     '</div>' +
-    '<textarea id="dailyMsgText" rows="15" spellcheck="false" ' +
+    '<textarea id="' + cfg.id + 'Text" rows="' + (cfg.rows || 15) + '" spellcheck="false" ' +
       'style="width:100%;box-sizing:border-box;font:13.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;' +
       'padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);' +
       'color:var(--ink);resize:vertical"></textarea>' +
     '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px">' +
-      '<button class="btn sm" id="dailyMsgWa">Send on WhatsApp</button>' +
-      '<button class="btn sm ghost" id="dailyMsgCopy">Copy the message</button>' +
+      '<button class="btn sm" data-act="wa">Send on WhatsApp</button>' +
+      '<button class="btn sm ghost" data-act="copy">Copy the message</button>' +
     '</div>';
   body.appendChild(card);
 
-  const ta = card.querySelector('#dailyMsgText');
-  const redraw = function(){ ta.value = dailyMessage(buildDailyReport()); };
+  var ta = card.querySelector('#' + cfg.id + 'Text');
+  var redraw = function(){ ta.value = cfg.write(); };
   redraw();
+  card.querySelector('#' + cfg.id + 'Opts').addEventListener('change', redraw);
 
-  card.querySelector('#dailyMsgOpts').addEventListener('change', redraw);
-
-  card.querySelector('#dailyMsgWa').addEventListener('click', function(){
+  card.querySelector('[data-act="wa"]').addEventListener('click', function(){
     window.open('https://wa.me/?text=' + encodeURIComponent(ta.value), '_blank', 'noopener');
   });
-
-  card.querySelector('#dailyMsgCopy').addEventListener('click', function(){
-    const b = this;
+  card.querySelector('[data-act="copy"]').addEventListener('click', function(){
+    var b = this;
     navigator.clipboard.writeText(ta.value).then(function(){
       b.textContent = 'Copied';
       setTimeout(function(){ b.textContent = 'Copy the message'; }, 1700);
@@ -3467,6 +3633,30 @@ function renderDailyMessage(){
       b.textContent = 'Press ⌘C / Ctrl+C';
       setTimeout(function(){ b.textContent = 'Copy the message'; }, 2400);
     });
+  });
+}
+
+/* Appended after renderDaily() has rewritten #dailyBody, so neither card can
+   duplicate itself. Both textareas are editable on purpose - each message is
+   a starting point, not a broadcast you are stuck with. */
+function renderDailyMessage(){
+  msgCard({
+    id: 'dailyMsg', attr: 'data-msg', title: 'The 5pm message',
+    sub: 'The same figures, written for the branch WhatsApp group. ' +
+         'Counts only — no client names leave this page.',
+    opts: [['pipeline','Pipeline'], ['top','Top advisor'],
+           ['queue','Signing queue'], ['quiet','Quiet advisors']],
+    write: function(){ return dailyMessage(buildDailyReport()); }
+  });
+
+  msgCard({
+    id: 'weeklyMsg', attr: 'data-wmsg', title: 'The Friday message · the week',
+    sub: 'The whole week for the same group, with the three fact finds that found ' +
+         'the most protection. Advisors are named; clients never are.',
+    rows: 18,
+    opts: [['top3','Top 3 fact finds'], ['volume','Most fact finds'],
+           ['queue','Signing queue'], ['quiet','Quiet advisors']],
+    write: function(){ return weeklyMessage(buildWeeklyReport()); }
   });
 }
 
