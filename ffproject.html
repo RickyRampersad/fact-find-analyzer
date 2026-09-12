@@ -5959,7 +5959,26 @@ async function loadFromUrl() {
     // holds and nothing else.
     Object.keys(state).forEach(function(k){ delete state[k]; });
     Object.keys(signatures).forEach(function(k){ delete signatures[k]; });
-    Object.assign(state, out.data);
+    /* THE SHEET SENDS NUMBERS. THIS FORM IS WRITTEN FOR TEXT.
+       Everything the advisor types arrives as a string, so the form is full of
+       (state.x || '').trim() - 38 of them. A spreadsheet cell holding 1711.19
+       comes back over JSON as the NUMBER 1711.19, and a number has no .trim,
+       so the first one reached threw and the whole submit died with
+       "Submission failed: ... .trim is not a function".
+
+       Nobody had ever hit it because until today nobody could reopen a
+       submitted case - the form only ever held what a person had typed into
+       it. The advisor edit link changed that this afternoon, and this was
+       waiting.
+
+       Fixed here rather than at the 38 call sites: hydration is the one door
+       server data comes through, and patching the symptoms would leave every
+       one I did not find still armed. Booleans are left alone - checkboxes
+       read state[k] for truthiness, and the string "false" is true. */
+    Object.keys(out.data).forEach(function (k) {
+      var v = out.data[k];
+      state[k] = (typeof v === 'number') ? String(v) : v;
+    });
     state.submissionId = LOAD_ID;
     saveState();
 
