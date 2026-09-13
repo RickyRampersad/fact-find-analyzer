@@ -3792,8 +3792,19 @@ const RAI_MASCOT = `<svg class="rai-avatar" viewBox="0 0 64 64" xmlns="http://ww
            meeting, unchallenged by the only other person in the room.
 
            Signable here at the appointment, or by the client from the link in
-           their summary email — factfind360.com/confirm writes into this same
-           data-sig="client" pad, so the two routes cannot disagree. -->
+           their summary email.
+
+           THE PAD USED TO BE HERE AND IT NEVER WORKED. An agent submit builds
+           payload._signatures = { advisor: ... } and nothing else, so a mark
+           the client drew on this page was dropped at submit and never reached
+           the server — which is why 60 of 66 approved cases carry no client
+           signature of any kind. A typed name is not a workaround for that: it
+           travels with the form data like every other field, lands on the sheet
+           as "Client Signed As", and is what the Act actually asks for —
+           Schedule 11 B1(d), the consumer CERTIFYING the accuracy of the
+           information, not a picture of a pen stroke. The pad is gone rather
+           than left in place, because a control that silently discards what you
+           put into it is worse than no control at all. -->
       <div class="field" id="clientSignBlock"
            style="border:1.5px solid #0D9488; background:#F0FDFA;
                   border-radius:10px; padding:14px; margin-top:14px">
@@ -3806,11 +3817,16 @@ const RAI_MASCOT = `<svg class="rai-avatar" viewBox="0 0 64 64" xmlns="http://ww
         </div>
         <div class="sig-row">
           <div class="sig-block">
-            <label>Client Signature</label>
-            <canvas class="sig-pad" data-sig="client"></canvas>
-            <div class="sig-actions">
-              <span>Sign on the pad above</span>
-              <button class="sig-clear" type="button" onclick="clearSig('client')">Clear</button>
+            <label>Client&rsquo;s full name, typed by the client
+              <span style="color:#DC2626">*</span></label>
+            <input type="text" data-field="clientSignName"
+                   placeholder="Type your full name"
+                   autocomplete="off" autocapitalize="words"
+                   style="font-size:16px">
+            <div class="hint" style="margin-top:6px">
+              Typing your name here is your signature. Insurance Act 2018
+              s.266 and Schedule&nbsp;11 B1(d) &mdash; the consumer certifies
+              the accuracy of the information provided to the insurer.
             </div>
             <label style="margin-top:10px">Date</label>
             <input type="date" data-field="clientSigDate">
@@ -14298,6 +14314,38 @@ function pf_sig(role, fallbackName) {
                   ' onerror="this.style.display=\'none\'"') + '>' +
          (stand ? '<span id="' + id + '" style="display:none">' + stand + '</span>' : '');
 }
+/* THE CLIENT'S LINE MUST NEVER INVENT A SIGNATURE.
+
+   pf_sig falls back to whatever name it is handed, and every client call site
+   handed it `clientSignName || clientName || fullName`. So a client who signed
+   nothing still had their name printed in signature script on the signature
+   line — on 60 of 66 approved cases, that is what the document said.
+
+   The only acceptable evidence is something the CLIENT put there: the name
+   they typed, or a mark that actually reached the server. Who we believe they
+   are is not evidence that they signed. With no evidence the line prints
+   blank, exactly as an unsigned paper form does. */
+function pf_clientSigned_() {
+  var st   = (typeof state !== 'undefined') ? state : {};
+  var sigs = (typeof signatures !== 'undefined') ? signatures : {};
+  return !!(String(st.clientSignName || '').trim() ||
+            String(st.clientSigUrl   || '').trim() ||
+            (sigs && sigs.client));
+}
+function pf_clientSig_() {
+  if (!pf_clientSigned_()) return '';
+  var st = (typeof state !== 'undefined') ? state : {};
+  // No fallback name. If they drew but typed nothing, pf_sig prints the mark.
+  return pf_sig('client', st.clientSignName || '');
+}
+/* The Act note belongs under a signature that exists, never under an empty
+   box — an empty box with a statute under it asserts a sign-off nobody made. */
+function pf_clientActNote_() {
+  if (!pf_clientSigned_()) return '';
+  return '<div class="pf-sig-cap" style="font-size:7pt;color:#475569">' +
+         'Signed electronically by typed name &middot; Insurance Act 2018 s.266, ' +
+         'Schedule 11 B1(d)</div>';
+}
 function pf_dateStr(v) {
   if (!v) return '';
   if (v instanceof Date) return v.toLocaleDateString('en-GB');
@@ -14416,8 +14464,9 @@ function buildPrintLayout() {
   // The client signs from their own email now, so this line is no longer an
   // empty space waiting for a pen — where they have signed, their mark and the
   // date they made it print here, exactly like the advisor's beside it.
-  html +=   '<div class="pf-sig-line">' + pf_sig('client', s.clientSignName || s.clientName || s.fullName) + '</div>';
+  html +=   '<div class="pf-sig-line">' + pf_clientSig_() + '</div>';
   html +=   '<div class="pf-sig-cap">Signature of Client (on behalf of all persons to be insured)</div>';
+  html +=   pf_clientActNote_();
   html +=   '<div class="pf-sig-date">Date: ' +
               (s.clientSigDate ? pf_dateStr(s.clientSigDate) : '__________________________') + '</div>';
   html += '</div>';
@@ -14896,8 +14945,9 @@ function buildPrintLayout() {
   // The client signs from their own email now, so this line is no longer an
   // empty space waiting for a pen — where they have signed, their mark and the
   // date they made it print here, exactly like the advisor's beside it.
-  html +=   '<div class="pf-sig-line">' + pf_sig('client', s.clientSignName || s.clientName || s.fullName) + '</div>';
+  html +=   '<div class="pf-sig-line">' + pf_clientSig_() + '</div>';
   html +=   '<div class="pf-sig-cap">Signature of Client (on behalf of all persons to be insured)</div>';
+  html +=   pf_clientActNote_();
   html +=   '<div class="pf-sig-date">Date: ' +
               (s.clientSigDate ? pf_dateStr(s.clientSigDate) : '__________________________') + '</div>';
   html += '</div>';
@@ -16101,7 +16151,7 @@ function pf_buildReplacementDisclosure(s) {
   h += '<table style="width:100%;border-collapse:collapse;font-size:8pt;margin-top:4mm">' +
        '<tr>' +
        '<td style="width:38%;padding-right:6mm;vertical-align:bottom">' +
-         '<div style="border-bottom:0.6pt solid #000;height:11mm">' + pf_sig('client', s.clientSignName || s.clientName || s.fullName) + '</div>' +
+         '<div style="border-bottom:0.6pt solid #000;height:11mm">' + pf_clientSig_() + '</div>' +
          '<div style="margin-top:0.8mm">Policyholder&rsquo;s signature</div>' +
          '<div>Date: ' + BLANK + '</div>' +
        '</td>' +
