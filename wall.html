@@ -3496,6 +3496,20 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
                  window.__openWall(null); } }catch(err){}
           if(!paused){ try{ if(window.rrbBed) window.rrbBed(false);
                             if(typeof announce==='function') announce(); }catch(err){} }
+        } else if(d && /enter the screen code/i.test(String(d.error||'')) && code){
+          /* A code WAS sent and the server still says none arrived: it is
+             reading the old parameter name, so it is out of date. Saying "that
+             code is not right" here would be a lie - the code is right. Say
+             what is actually wrong, and do not hold the screen hostage to it. */
+          if(e) e.textContent = 'The screen code is not switched on at the branch '+
+                                'server yet. Opening the board without it.';
+          window.__wallLocked = false;
+          var c2 = document.getElementById('wlock');
+          setTimeout(function(){
+            if(c2) c2.hidden = true;
+            try{ if(window.__wallOpened !== true && typeof window.__openWall === 'function'){
+                   window.__openWall(null); } }catch(err){}
+          }, 1800);
         } else {
           if(e) e.textContent = (d && d.error) ? d.error : 'That code is not right.';
           if(i){ i.value=''; i.focus(); }
@@ -7061,6 +7075,13 @@ var PROD = {
        A code that can be walked around is not a code. The television now types
        it once and the pass is remembered on that screen for twelve hours. */
     if(window.rrbScreenPassAlive_ && window.rrbScreenPassAlive_()){ openWall(null); return; }
+    /* The cover goes up. It cannot be told in advance whether the branch
+       server can check a code - an updated server and an out-of-date one give
+       the same answer to a code-less probe, and the only question that WOULD
+       separate them spends one of the twelve wrong tries, which a screen that
+       reloads would burn through. So the page finds out the honest way: when
+       somebody types a code. See rrbWallUnlock - a server that ignores the
+       code says so and opens the board rather than holding the branch out. */
     if(window.rrbWallLock) window.rrbWallLock();
     /* Deliberately no return: the sign-in handlers below still get wired, so
        "sign in instead" on the cover reaches a working form. */
