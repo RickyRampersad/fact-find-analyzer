@@ -3600,6 +3600,77 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
     };
   })();
 
+  /* ---- ...and the board must exist before the door is opened. -----------
+     Raising the cover at 9% created a second fault, found on the branch
+     television within the hour: the code box now appears long before
+     openWall does. openWall is assigned to window.__openWall in the boot
+     code at 99%, so a correct code entered early passed this test
+
+         typeof window.__openWall === 'function'
+
+     with 'undefined', silently did nothing, and dropped the cover anyway.
+     The branch was left looking at an un-opened board reading TT$0 and
+     0 fact finds. It righted itself when the page finished loading, which
+     is no comfort at all to somebody standing in front of a screen.
+
+     The board genuinely cannot be drawn before its code has parsed. So the
+     honest thing is not to pretend it can: hold the cover, say the code was
+     accepted, and open the moment the real openWall arrives.
+
+     A property setter does that without editing the boot code - the boot
+     line IS the assignment, so it announces itself. The flush is deferred a
+     tick so the boot code's own openWall call lands first; whoever gets
+     there first wins and the other stands down, because openWall has no
+     reentrancy guard and would otherwise re-fire every panel's fetch. */
+  (function(){
+    var real = null, pending = false, pendingWho = null;
+
+    function coverBusy(on){
+      var c = document.getElementById('wlock'); if(!c) return;
+      var box = document.getElementById('wlkBusy');
+      var g = document.getElementById('wlkGo'), i = document.getElementById('wlkCode');
+      if(on){
+        c.hidden = false;
+        if(!box){
+          box = document.createElement('div');
+          box.id = 'wlkBusy';
+          box.style.cssText = 'margin-top:14px;font-size:15px;color:#334155';
+          box.textContent = 'Code accepted. Opening the board\u2026';
+          (g && g.parentNode ? g.parentNode : c).appendChild(box);
+        }
+        box.hidden = false;
+        if(g) g.hidden = true;
+        if(i) i.hidden = true;
+        var e = document.getElementById('wlkErr'); if(e) e.textContent = '';
+      } else {
+        if(box) box.hidden = true;
+        if(g) g.hidden = false;
+        if(i) i.hidden = false;
+        c.hidden = true;
+      }
+    }
+
+    try{
+      Object.defineProperty(window, '__openWall', {
+        configurable: true,
+        get: function(){
+          if(real) return real;
+          return function(who){ pending = true; pendingWho = who || null; coverBusy(true); };
+        },
+        set: function(fn){
+          real = fn;
+          if(pending && typeof fn === 'function'){
+            pending = false;
+            setTimeout(function(){
+              if(window.__wallOpened !== true){ try{ fn(pendingWho); }catch(e){} }
+              coverBusy(false);
+            }, 0);
+          }
+        }
+      });
+    }catch(e){}
+  })();
+
   var slot=document.getElementById('hRail');
   (slot||document.body).appendChild(rail);
 
