@@ -3535,6 +3535,71 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
     });
   })();
 
+  /* ---- The cover goes up HERE, not 1.9MB later. --------------------------
+     Measured 14 Sep: the code box is parsed at 5% of this file and its
+     handler at 9%, but the line that RAISED the cover sat at 99% — behind
+     two embedded MP3s totalling 1.9MB, which is 82% of the page. So the
+     television downloaded Andrew reading the week's numbers before it would
+     let anybody type a code. The board was never slow. The login was waiting
+     on audio it does not need in order to ask a question.
+
+     Raised at 9% instead. The narration keeps arriving behind the cover, and
+     is ready long before anyone has finished typing four digits.
+
+     Two people must not see this cover, and both answers are in localStorage,
+     so both can be had this early: somebody with a real sign-in, and a screen
+     whose twelve-hour pass is still alive. wallSession() itself is not defined
+     until 98%, so its storage read is replicated — conservatively. Any stored
+     token at all defers to the boot code, which does the full liveness check.
+     Worst case there is exactly today's behaviour, never worse. */
+  (function(){
+    var rawLock = window.rrbWallLock;
+    if(typeof rawLock !== 'function') return;
+
+    var skip = false;
+    try{
+      if(window.rrbScreenPassAlive_ && window.rrbScreenPassAlive_()) skip = true;
+      if(!skip){
+        var raw = null;
+        try{ raw = localStorage.getItem('rrbSession'); }catch(e){}
+        if(raw){ try{ if(JSON.parse(raw).token) skip = true; }catch(e){} }
+      }
+    }catch(e){}
+
+    if(!skip){
+      window.__wallCoverRaised = true;
+      rawLock();
+
+      /* Wake the branch server while the code is being typed. Apps Script
+         sleeps, and a cold one spends its first seconds starting up — seconds
+         the branch was paying for AFTER pressing the button, staring at
+         'Checking...'. This pays them during the walk to the keyboard instead.
+         ?action=zzz is the build marker: ungated, no side effect, and it
+         spends none of the twelve wrong tries. Failure is ignored on purpose;
+         it is a warm-up, not a check. */
+      try{
+        if(typeof ENDPOINT === 'string' && ENDPOINT){
+          fetch(ENDPOINT + '?action=zzz&_=' + Date.now(), {cache:'no-store'})
+            .catch(function(){});
+        }
+      }catch(e){}
+    }
+
+    /* The boot code at the end of the file calls rrbWallLock() again. By then
+       the branch may already have typed a code into the box, or even unlocked
+       the screen — and rrbWallLock empties the box and tears up the pass. So
+       absorb exactly that one call, and only when the cover is already up.
+       Every later call still works: Hide has to keep hiding. */
+    var bootCallPending = true;
+    window.rrbWallLock = function(){
+      if(bootCallPending){
+        bootCallPending = false;
+        if(window.__wallCoverRaised) return;
+      }
+      return rawLock.apply(this, arguments);
+    };
+  })();
+
   var slot=document.getElementById('hRail');
   (slot||document.body).appendChild(rail);
 
