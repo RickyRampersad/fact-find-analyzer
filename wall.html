@@ -1926,6 +1926,52 @@
 </div>
 
 
+<!-- SCREEN LOCK.
+     The wall runs signed-in on a screen all day. This blanks it on demand so
+     a visitor in the branch is not reading the board over somebody's shoulder.
+
+     It is a PRIVACY COVER, not a second sign-in. The data behind it is already
+     gated by the agent sign-in; this hides what is on the glass. The code is
+     NOT in this file — the page asks the branch server, which holds it in a
+     Script Property, because this file is public and a number written here
+     would be readable by anyone who views the source.
+
+     If the server cannot be reached the cover says to reload, which returns to
+     the real sign-in. A screen can never be locked out permanently. -->
+<style>
+  /* The wide tracking is for the digits as they are typed. Left on the
+     placeholder it pushed "Screen code" out of the box and it read "Screen co". */
+  #wlkCode::placeholder{ letter-spacing:normal; opacity:.55 }
+  #wlkGo:disabled{ opacity:.6; cursor:default }
+</style>
+<div id="wlock" hidden style="position:fixed; inset:0; z-index:99999;
+     background:#0B1220; display:flex; align-items:center; justify-content:center;
+     flex-direction:column; gap:22px; font-family:inherit">
+  <div style="font-size:clamp(28px,5vw,64px); font-weight:800; letter-spacing:.02em;
+              color:#E2E8F0; text-align:center; line-height:1.15">
+    Ricky Rampersad Branch
+  </div>
+  <div style="font-size:clamp(14px,1.6vw,20px); color:#64748B; text-align:center;
+              max-width:32ch; line-height:1.5">
+    The board is hidden. Enter the screen code to bring it back.
+  </div>
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center">
+    <input id="wlkCode" type="password" inputmode="numeric" autocomplete="off"
+           placeholder="Screen code" maxlength="12"
+           style="font-size:clamp(18px,2.2vw,26px); padding:.6em .8em; width:9em;
+                  text-align:center; letter-spacing:.35em; border-radius:12px;
+                  border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.06);
+                  color:#F8FAFC; outline:none">
+    <button id="wlkGo" type="button"
+            style="font-size:clamp(16px,1.9vw,22px); font-weight:800; padding:.65em 1.3em;
+                   border-radius:12px; border:0; background:#2DD4BF; color:#042F2E;
+                   cursor:pointer">Show the board</button>
+  </div>
+  <div id="wlkErr" role="alert"
+       style="min-height:1.4em; color:#FCA5A5; font-size:clamp(13px,1.4vw,17px);
+              text-align:center; max-width:40ch"></div>
+</div>
+
 <!-- The shield and the branch name live on the rail at the foot of the
      screen now, beside the dots. The header is the controls and the clock,
      one thin line, so the panels get the rows the brand was sitting on. -->
@@ -3261,7 +3307,7 @@ var dayReady = false;
 function panelOff(i){ return i === 17 && !dayReady; }
 
 function rotate(){
-  if(paused) return;
+  if(paused || window.__wallLocked) return;
   /* This used to carry its own copy of showPanel's body - the same loop over
      the panels and ticks, and nothing else. So the automatic rotation moved
      the panels while the slide number and the navigation dots kept whatever
@@ -3381,6 +3427,58 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
   window.addEventListener('load', function(){ fitMain(); setTimeout(fitMain, 400); });
   window.addEventListener('resize', fitMain);
   window.addEventListener('orientationchange', function(){ setTimeout(fitMain, 300); });
+  /* ── screen lock ──────────────────────────────────────────────────────
+     Locking is free and instant. Unlocking asks the server, so the code is
+     never in this file. Everything fails towards "reload and sign in", never
+     towards a screen nobody can recover. */
+  window.__wallLocked = false;
+  window.rrbWallLock = function(){
+    var c = document.getElementById('wlock');
+    if(!c) return;
+    window.__wallLocked = true;
+    c.hidden = false;
+    var e = document.getElementById('wlkErr'); if(e) e.textContent = '';
+    var i = document.getElementById('wlkCode'); if(i){ i.value=''; setTimeout(function(){ i.focus(); }, 60); }
+    /* The voice carries further than the picture. A hidden board that is still
+       reading the week's numbers out loud has hidden nothing. */
+    try{ if(window.rrbHush) window.rrbHush(); }catch(err){}
+  };
+  window.rrbWallUnlock = function(){
+    var i = document.getElementById('wlkCode');
+    var e = document.getElementById('wlkErr');
+    var g = document.getElementById('wlkGo');
+    var code = i ? String(i.value||'').trim() : '';
+    if(!code){ if(e) e.textContent='Enter the screen code.'; return; }
+    if(g){ g.disabled = true; g.textContent = 'Checking…'; }
+    if(e) e.textContent = '';
+    fetch(ENDPOINT+'?action=walllock&c='+encodeURIComponent(code)+'&_='+Date.now(),
+          {cache:'no-store'})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d && d.ok){
+          window.__wallLocked = false;
+          var c = document.getElementById('wlock'); if(c) c.hidden = true;
+          if(i) i.value='';
+          if(!paused){ try{ if(window.rrbBed) window.rrbBed(false);
+                            if(typeof announce==='function') announce(); }catch(err){} }
+        } else {
+          if(e) e.textContent = (d && d.error) ? d.error : 'That code is not right.';
+          if(i){ i.value=''; i.focus(); }
+        }
+      })
+      .catch(function(){
+        if(e) e.textContent = 'Cannot reach the branch server. Reload the page to sign in again.';
+      })
+      .then(function(){ if(g){ g.disabled=false; g.textContent='Show the board'; } });
+  };
+  (function(){
+    var g = document.getElementById('wlkGo'), i = document.getElementById('wlkCode');
+    if(g) g.addEventListener('click', function(){ window.rrbWallUnlock(); });
+    if(i) i.addEventListener('keydown', function(ev){
+      if(ev.key === 'Enter'){ ev.preventDefault(); window.rrbWallUnlock(); }
+    });
+  })();
+
   var slot=document.getElementById('hRail');
   (slot||document.body).appendChild(rail);
 
@@ -3399,6 +3497,9 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
     hold.style.background = paused ? 'rgba(245,185,53,.30)' : 'rgba(255,255,255,.09)';
     hold.style.borderColor = paused ? 'rgba(245,185,53,.55)' : 'rgba(255,255,255,.18)';
   });
+  /* Hide: blanks the board. See the #wlock comment above the markup for why
+     the code lives on the server and not in this file. */
+  btn('\u25CF Hide','Hide the board from the room',function(){ window.rrbWallLock(); });
   btn('\u25B6\u25B6','Next panel',function(){ showPanel(panel+1); });
   (slot||document.body).appendChild(bar);
   /* The header just grew by a row's worth of controls. main is sized from
