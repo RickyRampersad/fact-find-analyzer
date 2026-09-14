@@ -3592,19 +3592,15 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
       window.__wallCoverRaised = true;
       rawLock();
 
-      /* Wake the branch server while the code is being typed. Apps Script
-         sleeps, and a cold one spends its first seconds starting up — seconds
-         the branch was paying for AFTER pressing the button, staring at
-         'Checking...'. This pays them during the walk to the keyboard instead.
-         ?action=zzz is the build marker: ungated, no side effect, and it
-         spends none of the twelve wrong tries. Failure is ignored on purpose;
-         it is a warm-up, not a check. */
-      try{
-        if(typeof ENDPOINT === 'string' && ENDPOINT){
-          fetch(ENDPOINT + '?action=zzz&_=' + Date.now(), {cache:'no-store'})
-            .catch(function(){});
-        }
-      }catch(e){}
+      /* A warm-up request used to live here: ?action=zzz on page load, to pay
+         Apps Script's cold start before anybody pressed the button. Removed
+         14 September, unpressed on the branch's phone with the button stuck
+         on 'Checking...'. Apps Script can serialise requests from the same
+         client, so a warm-up that is itself waking a cold server is exactly
+         the thing a real unlock would then have to queue behind - a guess
+         that makes the one request that matters slower. The board's speed
+         came from the audio and the early cover, both measured. This was
+         never measured, so it does not get to stay. */
     }
 
     /* The boot code at the end of the file calls rrbWallLock() again. By then
@@ -3612,6 +3608,38 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
        the screen — and rrbWallLock empties the box and tears up the pass. So
        absorb exactly that one call, and only when the cover is already up.
        Every later call still works: Hide has to keep hiding. */
+    /* 'Checking...' with no end to it is the worst thing this screen can
+       say. The unlock has no timeout: if the branch server never answers,
+       the button stays disabled reading 'Checking...' and the only way out
+       is a reload nobody thinks to try - which is what the branch saw on a
+       phone, on LTE, at nine in the morning.
+
+       This does not touch the request. It watches the button, says what is
+       actually happening while the wait is reasonable, and hands the button
+       back when it stops being reasonable. A late answer still opens the
+       board; this only stops the screen from lying in the meantime. */
+    (function(){
+      var t0 = null, said = false;
+      setInterval(function(){
+        var g = document.getElementById('wlkGo');
+        var e = document.getElementById('wlkErr');
+        if(!g) return;
+        var checking = /Checking/i.test(g.textContent || '');
+        if(!checking){ t0 = null; said = false; return; }
+        if(t0 === null){ t0 = Date.now(); said = false; return; }
+        var secs = (Date.now() - t0) / 1000;
+        if(secs > 6 && !said && e){
+          said = true;
+          e.textContent = 'Waking the branch server. The first check of the day can take half a minute.';
+        }
+        if(secs > 45){
+          t0 = null; said = false;
+          g.disabled = false; g.textContent = 'Show the board';
+          if(e) e.textContent = 'The branch server did not answer. Tap Show the board to try again.';
+        }
+      }, 1000);
+    })();
+
     var bootCallPending = true;
     window.rrbWallLock = function(){
       if(bootCallPending){
@@ -3757,8 +3785,25 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
     })(i);
   }
 })();
-tick(); poll();
-setInterval(tick,1000); setInterval(poll,POLL_MS); setInterval(rotate,ROTATE_MS);
+tick();
+/* Do not ask the branch server for board data while the board is covered.
+   It is work nobody can see - and Apps Script serialises requests from one
+   client, so this full board query is precisely what a screen code typed
+   during load had to queue behind. On a phone on LTE that is 'Checking...'
+   sitting there with no end to it, which is what the branch saw.
+
+   Raising the cover at 9% did not create this. It made it reachable: before,
+   nobody could type a code until the page had finished and this query had
+   long since returned. Now the two meet, so they are put in order instead. */
+(function(){
+  (function waitForGlass(){
+    if(window.__wallLocked){ setTimeout(waitForGlass, 300); return; }
+    poll();
+  })();
+})();
+setInterval(tick,1000);
+setInterval(function(){ if(!window.__wallLocked) poll(); }, POLL_MS);
+setInterval(rotate,ROTATE_MS);
 setInterval(function(){
   if(new Date().getHours()!==4) return;
   // location.reload() can be served from cache, which would pin this screen to
