@@ -5035,7 +5035,7 @@ var PROD = {
       bed=AC.createGain(); bed.gain.value=1.0; bed.connect(master);
     }
     AC.resume(); soundOn=true; chordI=0; bedLoop();
-    voxDecode(); nameDecode();
+    voxDecode(); nameDecode(); quietDecode();
     /* Unlock the voice element HERE, inside the click. Everything after this
        is a seek on an element the browser has already let play. */
     try {
@@ -5089,6 +5089,12 @@ var PROD = {
   window.rrbHush = hushVoice;   // the Hold button lives in another closure
   /* Is he speaking right now? Both paths: the scheduled buffers and the
      element fallback. rotate() asks before it moves the board. */
+  /* What the quiet-board voice is doing, for the same reason rrbVoice exists:
+     so somebody on the wall can ask instead of guess. */
+  window.rrbQuiet_ = function(){
+    return { decoded:!!quietBuf, line:quietIdx, lastAt:quietAt,
+             quietBoard:(function(){ try{ return boardIsQuiet_(); }catch(e){ return null; } })() };
+  };
   window.rrbVoiceBusy_ = function(){
     try{ return !!voxSrc || voxSrcs.length > 0 || segStop !== null; }
     catch(e){ return false; }
@@ -5101,6 +5107,75 @@ var PROD = {
              playing:!!voxSrc, line:said, seg:(said?VSEG[said]:null),
              ctx:(AC?AC.state:'none') };
   };
+
+  /* ── WHEN THERE IS NOTHING ON THE BOARD ─────────────────────────────────
+     Silence on an empty board was the right first move - a confident line
+     over TT$0 is worse than nothing. But eighteen panels of nothing, said
+     nothing about, is its own kind of wrong on a branch television.
+
+     So on a genuinely quiet board he says one short line, and then stops.
+     Four of them, written for this and rendered in the same voice and at the
+     same rate as the rest (edge-tts, Andrew, -3%), taken in turn so the same
+     words never land twice running, and never more often than once every
+     three minutes. Condensed, relevant, not repetitive - which is the whole
+     of what was asked for.
+
+         Nothing on the board yet today.
+         The first fact find sets the pace.
+         One conversation puts a name up here.
+         The board is clear. Somebody take it.
+
+     Offsets are arithmetic, not estimated: the file was assembled here from
+     four renders with half a second between them, and each window was then
+     checked to contain speech with silence after it. */
+  var QUIET_SRC = "wall-quiet.mp3";
+  var QSEG = [[0,2.0],[2.3,2.65],[5.3,2.72],[8.37,2.65]];
+  var quietBuf=null, quietDecoding=false, quietIdx=-1, quietAt=0;
+  var QUIET_GAP_MS = 180000;
+
+  function quietDecode(){
+    if(quietBuf || quietDecoding || !AC) return;
+    quietDecoding = true;
+    try{
+      var ok=function(b){ quietBuf=b; quietDecoding=false; };
+      var no=function(){ quietDecoding=false; };
+      window.rrbAudioBytes_(QUIET_SRC, function(ab){
+        try{ var pr=AC.decodeAudioData(ab, ok, no); if(pr&&pr.then) pr.then(ok).catch(no); }
+        catch(e){ no(); }
+      }, no);
+    }catch(e){ quietDecoding=false; }
+  }
+
+  /* Nothing submitted today, this week or this month. Not "this panel is
+     empty" - the whole board having nothing to report. */
+  function boardIsQuiet_(){
+    var d = lastGood;
+    if(!d) return false;
+    function z(o){ return !o || !(+o.submitted > 0); }
+    return z(d.today) && z(d.week) && z(d.month);
+  }
+
+  function sayQuiet(){
+    if(!soundOn || !quietBuf || !AC) return;
+    if(typeof paused !== 'undefined' && paused) return;
+    var now = Date.now();
+    if(now - quietAt < QUIET_GAP_MS) return;
+    quietAt = now;
+    quietIdx = (quietIdx + 1) % QSEG.length;
+    var seg = QSEG[quietIdx];
+    stopVox();
+    if(!voxGain){ voxGain = AC.createGain(); voxGain.gain.value = 0.95;
+                  voxGain.connect(master); }
+    try{
+      voxSrc = AC.createBufferSource();
+      voxSrc.buffer = quietBuf;
+      voxSrc.connect(voxGain);
+      voxSrc.onended = function(){ voxSrcs.length = 0; voxSrc = null; duck(false); };
+      voxSrcs.push(voxSrc);
+      duck(true);
+      voxSrc.start(0, seg[0], seg[1]);
+    }catch(e){ voxSrc = null; duck(false); }
+  }
 
   /* Is there anything on this panel worth speaking about?
 
@@ -5128,8 +5203,8 @@ var PROD = {
     for(var i=0;i<PANELS;i++){
       var el=document.getElementById('p'+i);
       if(el && el.classList.contains('on')){
-        if(panelHasData_(el)) say('p'+i);
-        else said = null;
+        if(panelHasData_(el)){ say('p'+i); }
+        else { said = null; if(boardIsQuiet_()) sayQuiet(); }
         return;
       }
     }
