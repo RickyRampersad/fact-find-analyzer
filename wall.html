@@ -4595,29 +4595,94 @@ var PROD = {
      [offset, length] in seconds. */
   var VSEG = {"p0": [0.0, 5.784], "p1": [6.792, 7.416], "p2": [15.216, 7.128], "p3": [23.352, 7.104], "p4": [31.464, 8.064], "p5": [40.536, 6.12], "p6": [47.664, 5.544], "p7": [54.216, 7.776], "p8": [63.0, 7.536], "p9": [71.544, 6.552], "p10": [79.104, 4.128], "p11": [84.24, 6.648], "p12": [91.896, 9.816], "p13": [102.72, 11.976], "p14": [115.704, 11.376], "p15": [128.088, 6.888], "p16": [135.984, 9.48], "p17": [146.563, 8.023]};
   var AC=null, master=null, bed=null, soundOn=false, chordT=null, chordI=0, said=null, cur=null;
-  var CHORDS=[[73.42,110.00,146.83,220.00,293.66,369.99],
-              [55.00,110.00,164.81,220.00,277.18,329.63],
-              [61.74,123.47,146.83,185.00,246.94,293.66],
-              [49.00,98.00,146.83,196.00,246.94,293.66]];
-  var CHORD_LEN=8.0;
+  /* ── THE BED, REBUILT TO PUSH RATHER THAN SETTLE ────────────────────────
+     Asked for on 14 September: motivational, not calm.
+
+     The chords were never the problem - D - A - Bm - G is the most anthemic
+     four bars in popular music and it stays, because it is what makes the
+     three branch films sound like one organisation. What made the old bed
+     calm was everything around them: eight seconds a chord, a 2.2 second
+     attack so nothing ever arrived, and a 900Hz lowpass with the lid shut.
+     It was written to disappear under a voice.
+
+     So the harmony is untouched and the delivery is rebuilt.
+
+       chord length   8s  ->  4s    twice the harmonic movement
+       attack        2.2s -> 0.35s  chords land instead of blooming
+       filter       900Hz -> 2200Hz the lid comes off
+       pluck             -> added   the eighth-note line that carries drive
+       pulse             -> added   a brushed hat on the beat
+
+     Still D major at 108 BPM, the branch key and tempo, so the wall and the
+     films remain the same organisation. Still under the voice: everything
+     here runs through `bed`, which duck() already drops to 42% the moment
+     Andrew speaks, and the pluck sits at a tenth of the pad's level so it
+     drives without competing with a sentence. */
+  var CHORDS=[[73.42,146.83,220.00,293.66,369.99,440.00],
+              [55.00,164.81,220.00,277.18,329.63,440.00],
+              [61.74,123.47,185.00,246.94,293.66,369.99],
+              [49.00,146.83,196.00,246.94,293.66,392.00]];
+  var CHORD_LEN=4.0;
+  var BPM=108, BEAT=60/108, EIGHTH=(60/108)/2;
+
   function chord(fr, when){
+    /* the pad - the same six notes, but arriving */
     fr.forEach(function(f,i){
       var low=i<2, types= low?['sine']:['sawtooth','sawtooth','triangle'];
       types.forEach(function(type,k){
         var o=AC.createOscillator(), g=AC.createGain(), lp=AC.createBiquadFilter();
         o.type=type; o.frequency.value = type==='triangle' ? f*2 : f;
-        if(type==='sawtooth') o.detune.value = k===0?-6:6;
-        lp.type='lowpass'; lp.frequency.value=900; lp.Q.value=0.4;
-        var peak=(type==='sine'?0.05:type==='triangle'?0.014:0.02)/Math.max(1,i*0.6);
+        if(type==='sawtooth') o.detune.value = k===0?-7:7;
+        lp.type='lowpass'; lp.frequency.value=2200; lp.Q.value=0.6;
+        var peak=(type==='sine'?0.050:type==='triangle'?0.010:0.014)/Math.max(1,i*0.5);
         g.gain.setValueAtTime(0.0001,when);
-        g.gain.linearRampToValueAtTime(peak,when+2.2);
-        g.gain.setValueAtTime(peak,when+CHORD_LEN-3.4);
-        g.gain.exponentialRampToValueAtTime(0.0001,when+CHORD_LEN+0.5);
+        g.gain.linearRampToValueAtTime(peak,when+0.35);
+        g.gain.setValueAtTime(peak,when+CHORD_LEN-1.1);
+        g.gain.exponentialRampToValueAtTime(0.0001,when+CHORD_LEN+0.35);
         o.connect(lp); lp.connect(g); g.connect(bed);
-        o.start(when); o.stop(when+CHORD_LEN+0.8);
+        o.start(when); o.stop(when+CHORD_LEN+0.6);
       });
     });
+
+    /* the pluck - up and back down the top of the chord, on the eighths.
+       This is the part that does the actual work: a held chord can only
+       ever sit still, and a moving line cannot. */
+    var top=[fr[2],fr[3],fr[4],fr[5],fr[4],fr[3]];
+    var n=Math.floor(CHORD_LEN/EIGHTH);
+    for(var q=0;q<n;q++){
+      (function(q){
+        var t=when+q*EIGHTH;
+        var f=top[q%top.length];
+        var o=AC.createOscillator(), g=AC.createGain(), lp=AC.createBiquadFilter();
+        o.type='triangle'; o.frequency.value=f*2;
+        lp.type='lowpass'; lp.frequency.value=3200; lp.Q.value=0.7;
+        var peak=0.030*(q%2?0.66:1);      /* offbeats lighter, so it swings */
+        g.gain.setValueAtTime(0.0001,t);
+        g.gain.linearRampToValueAtTime(peak,t+0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001,t+0.32);
+        o.connect(lp); lp.connect(g); g.connect(bed);
+        o.start(t); o.stop(t+0.5);
+      })(q);
+    }
+
+    /* the brushed hat - quiet, high, on the beat. Momentum you feel rather
+       than hear, and high enough to stay clear of a speaking voice. */
+    var beats=Math.floor(CHORD_LEN/BEAT);
+    for(var bq=0;bq<beats;bq++){
+      (function(bq){
+        var t=when+bq*BEAT;
+        var len=0.055, sr=AC.sampleRate;
+        var buf=AC.createBuffer(1, Math.ceil(sr*len), sr), ch=buf.getChannelData(0);
+        for(var i=0;i<ch.length;i++) ch[i]=(Math.random()*2-1)*(1-i/ch.length);
+        var src=AC.createBufferSource(); src.buffer=buf;
+        var hp=AC.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=7000;
+        var g=AC.createGain(); g.gain.value = bq%2 ? 0.026 : 0.038;
+        src.connect(hp); hp.connect(g); g.connect(bed);
+        src.start(t);
+      })(bq);
+    }
   }
+
   function bedLoop(){
     if(!soundOn) return;
     chord(CHORDS[chordI++ % CHORDS.length], AC.currentTime+0.05);
