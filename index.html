@@ -2614,7 +2614,13 @@ function renderProspecting(){
   function myLink(first){
     var q = 't=' + pxToken();
     if (first) q += '&c=' + encodeURIComponent(first);
-    return PX_MEET + encodeURIComponent(code) + '/?' + q;
+    /* UPPERCASE, always. The branch site is GitHub Pages and it is
+       case-sensitive: /meet/a/A14158/ is the advisor's page and
+       /meet/a/a14158/ is a 404 - shown to the PROSPECT, not to the advisor.
+       This was building the path from SESSION.code exactly as it arrived, so
+       one lowercase code anywhere upstream killed that advisor's link with
+       nothing to say why. */
+    return PX_MEET + encodeURIComponent(String(code || '').trim().toUpperCase()) + '/?' + q;
   }
 
   function wireSend(){
