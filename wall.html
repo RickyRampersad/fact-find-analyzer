@@ -3384,9 +3384,16 @@ function rrbDropHidden_(arr){
 }
 function rrbScrubFeed_(d){
   if(!d) return d;
-  d.leaders   = rrbDropHidden_(d.leaders);
-  d.approvals = rrbDropHidden_(d.approvals);
-  d.managers  = rrbDropHidden_(d.managers);
+  /* Four named lists, not three. monthLeaders sits beside leaders and feeds
+     the same spotlight when the week is empty - found by reading the render
+     rather than by it appearing on the board. The rows do not agree on a
+     field either: leaders and managers use .name, approvals and justIn use
+     .agent. rrbHiddenRow_ reads every string on the row for exactly that
+     reason, so it does not matter which one a feed chooses. */
+  d.leaders      = rrbDropHidden_(d.leaders);
+  d.monthLeaders = rrbDropHidden_(d.monthLeaders);
+  d.approvals    = rrbDropHidden_(d.approvals);
+  d.managers     = rrbDropHidden_(d.managers);
   if(d.justIn && rrbHiddenRow_(d.justIn)) d.justIn = null;
   if(d.queue && rrbOffBoard_(d.queue.oldestWho)) d.queue.oldestWho = '';
   return d;
@@ -5122,6 +5129,18 @@ var PROD = {
        roughly two extra readings per panel at a fifteen second rotation.
        That is the duplication, and it is most of what "robotic" was. */
     if(said === id) return;
+    /* ── CONDENSED ──────────────────────────────────────────────────────
+       A line per panel is a line every fifteen seconds - four a minute, all
+       day, in a room people are working in. Asked to condense it further, so
+       there is a floor between spoken lines now regardless of how many panels
+       turn: he speaks, then holds his peace, and the next thing he says is
+       about whatever is on the board by then.
+
+       The board keeps moving at its own pace. This governs only how often he
+       opens his mouth. */
+    var _now = Date.now();
+    if(_now - saidAt < SAY_GAP_MS) return;
+    saidAt = _now;
     said = id;
     /* A named line beats a general one on these five panels. If the pack
        has not decoded yet, or the leader is not in it, this returns false
@@ -5273,6 +5292,9 @@ var PROD = {
   var QUIET_SRC = "wall-quiet.mp3";
   var QSEG = [[0,2.0],[2.3,2.65],[5.3,2.72],[8.37,2.65]];
   var quietBuf=null, quietDecoding=false, quietIdx=-1, quietAt=0;
+  /* How rarely he speaks about the panels. 90s is roughly one line for every
+     six panels that turn, against one for every single panel before. */
+  var SAY_GAP_MS = 90000, saidAt = 0;
   var QUIET_GAP_MS = 180000;
 
   function quietDecode(){
