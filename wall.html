@@ -4713,7 +4713,19 @@ var PROD = {
      The synthesised bed is not deleted. It is the fallback: a screen that
      cannot play this file gets the branch chords rather than silence. */
   var MUSIC_SRC = "wall-music.mp3";
-  var MUSIC_VOL = 0.55, musicEl = null;
+  /* Levels, measured rather than picked. Andrew's file is -21.6dB mean and
+     plays through voxGain 0.95 into master 0.9, so he lands at -23.0dB.
+     The track went in at -15.2dB mean at 0.55, which put it at -20.4dB -
+     LOUDER than him with nothing ducked, and only 5dB under him while he
+     spoke. A bed belongs 15 to 20dB under a voice. That is why he was being
+     overpowered, and it was arithmetic, not taste.
+
+     The file itself is now cut 10.8dB, so it is a bed on any path that plays
+     it, and the mix takes it the rest of the way:
+
+        music alone           -32.0 dB    9dB under him - present, not loud
+        music while he speaks -41.1 dB   18dB under him - properly out of the way */
+  var MUSIC_VOL = 0.50, MUSIC_DUCK = 0.35, musicEl = null;
 
   function bedLoop(){
     if(!soundOn) return;
@@ -4740,7 +4752,7 @@ var PROD = {
     /* The track plays on its own element, outside the Web Audio graph, so the
        bed gain cannot reach it. Duck it directly, by the same amount. */
     if(musicEl){
-      try{ musicEl.volume = down ? MUSIC_VOL*0.42 : MUSIC_VOL; }catch(e){}
+      try{ musicEl.volume = down ? MUSIC_VOL*MUSIC_DUCK : MUSIC_VOL; }catch(e){}
     }
     if(!bed) return;
     var t=AC.currentTime;
