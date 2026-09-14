@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Is the branch server answering?</title>
+<!-- A one-tap test of the single link in the wall's sign-in that cannot be
+     tested from the machine this was written on: the round trip to Apps
+     Script. It asks ?action=zzz - ungated, no side effect, and it spends
+     none of the twelve wrong code tries. No code is typed here and none is
+     needed. -->
+<style>
+  :root{ color-scheme:dark }
+  body{ margin:0; background:#0B1220; color:#E2E8F0; padding:32px 22px;
+        font:17px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; }
+  h1{ font-size:24px; margin:0 0 6px; letter-spacing:-.01em }
+  .sub{ color:#94A3B8; font-size:15px; margin:0 0 26px }
+  .card{ background:#111C2E; border:1px solid #1E293B; border-radius:14px;
+         padding:20px; margin:0 0 16px }
+  .lbl{ color:#94A3B8; font-size:13px; text-transform:uppercase;
+        letter-spacing:.06em; margin:0 0 8px }
+  .big{ font-size:22px; font-weight:700; margin:0 }
+  .ok{ color:#34D399 } .bad{ color:#F87171 } .wait{ color:#FBBF24 }
+  pre{ background:#0A1120; border:1px solid #1E293B; border-radius:10px;
+       padding:12px; overflow-x:auto; font-size:12px; color:#94A3B8;
+       white-space:pre-wrap; word-break:break-all; margin:10px 0 0 }
+  .foot{ color:#64748B; font-size:13px; margin-top:24px }
+</style>
+</head>
+<body>
+<h1>Is the branch server answering?</h1>
+<p class="sub">This is the one thing that could not be tested from my end.
+   Nothing is signed in and no screen code is used.</p>
+
+<div class="card">
+  <p class="lbl">The branch server</p>
+  <p class="big wait" id="s1">Asking&hellip;</p>
+  <pre id="d1">starting</pre>
+</div>
+
+<div class="card">
+  <p class="lbl">Your connection to the wall itself</p>
+  <p class="big wait" id="s2">Asking&hellip;</p>
+  <pre id="d2">starting</pre>
+</div>
+
+<p class="foot">Screenshot this whole page and send it back.</p>
+
+<script>
+(function(){
+  var EP = "https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec";
+  function set(n, cls, text, detail){
+    document.getElementById('s'+n).className = 'big ' + cls;
+    document.getElementById('s'+n).textContent = text;
+    document.getElementById('d'+n).textContent = detail;
+  }
+
+  /* 1 - the Apps Script round trip, the link that has never been testable */
+  var t0 = Date.now(), done = false;
+  var ceiling = setTimeout(function(){
+    if(done) return; done = true;
+    set(1,'bad','No answer after 60 seconds',
+        'The branch server did not reply at all.\nThis is why the screen code sits on "Checking...".');
+  }, 60000);
+
+  fetch(EP + '?action=zzz&_=' + Date.now(), {cache:'no-store'})
+    .then(function(r){ return r.text().then(function(t){ return {status:r.status, body:t}; }); })
+    .then(function(o){
+      if(done) return; done = true; clearTimeout(ceiling);
+      var secs = ((Date.now()-t0)/1000).toFixed(1);
+      set(1,'ok','Answered in ' + secs + ' seconds',
+          'HTTP ' + o.status + '\n' + String(o.body).slice(0,400));
+    })
+    .catch(function(e){
+      if(done) return; done = true; clearTimeout(ceiling);
+      var secs = ((Date.now()-t0)/1000).toFixed(1);
+      set(1,'bad','Refused after ' + secs + ' seconds',
+          'The request was blocked or rejected.\n' + (e && e.message ? e.message : e) +
+          '\n\nOn a phone this usually means the network or the in-app browser\n' +
+          'is blocking the request.');
+    });
+
+  /* 2 - a plain file from the same site, as a control */
+  var u0 = Date.now();
+  fetch('wall-names.mp3', {method:'GET', cache:'no-store'})
+    .then(function(r){
+      var secs = ((Date.now()-u0)/1000).toFixed(1);
+      set(2, r.ok?'ok':'bad', r.ok ? ('Fine — ' + secs + 's') : ('HTTP ' + r.status),
+          'Fetching a file from factfind360.com itself.\nHTTP ' + r.status);
+    })
+    .catch(function(e){
+      set(2,'bad','Blocked','Could not fetch a file from this same site.\n' +
+          (e && e.message ? e.message : e));
+    });
+})();
+</script>
+</body>
+</html>
