@@ -3332,8 +3332,18 @@ function showPanel(i){
 var dayReady = false;
 function panelOff(i){ return i === 17 && !dayReady; }
 
+var rotateWait=null;
 function rotate(){
   if(paused || window.__wallLocked) return;
+  /* Do not move the board out from under a sentence. The longest line is 12.0s
+     against a 15s rotation so it normally fits, but announce() runs on a 700ms
+     interval and the five named lines are assembled at play time from three
+     clips - so "normally" is not always. Wait him out in half seconds rather
+     than surrendering the whole next turn. */
+  if(window.rrbVoiceBusy_ && window.rrbVoiceBusy_()){
+    if(!rotateWait) rotateWait=setTimeout(function(){ rotateWait=null; rotate(); }, 500);
+    return;
+  }
   /* This used to carry its own copy of showPanel's body - the same loop over
      the panels and ticks, and nothing else. So the automatic rotation moved
      the panels while the slide number and the navigation dots kept whatever
@@ -5051,6 +5061,12 @@ var PROD = {
      button half working. Ramped rather than cut, because a pad chopped at
      zero crossing clicks. */
   function bedPause(on){
+    /* The track plays on its own element, outside this graph, so bed.gain
+       cannot reach it. Hold has to stop it HERE, or Hold does not hold -
+       which is exactly what happened the moment the track went in. */
+    if(musicEl){
+      try{ if(on) musicEl.pause(); else if(soundOn) musicEl.play(); }catch(e){}
+    }
     if(!AC || !bed) return;
     try{
       bed.gain.cancelScheduledValues(AC.currentTime);
@@ -5071,6 +5087,12 @@ var PROD = {
     duck(false);
   }
   window.rrbHush = hushVoice;   // the Hold button lives in another closure
+  /* Is he speaking right now? Both paths: the scheduled buffers and the
+     element fallback. rotate() asks before it moves the board. */
+  window.rrbVoiceBusy_ = function(){
+    try{ return !!voxSrc || voxSrcs.length > 0 || segStop !== null; }
+    catch(e){ return false; }
+  };
   /* What the voice is doing, for when somebody says they cannot hear it.
      Open the console on the wall and call rrbVoice(). Tells you whether the
      file decoded, whether a line is playing now and which one. */
@@ -5080,10 +5102,36 @@ var PROD = {
              ctx:(AC?AC.state:'none') };
   };
 
+  /* Is there anything on this panel worth speaking about?
+
+     Andrew reads a line per panel whether or not the panel has figures on it,
+     so on a quiet morning the branch hears him narrate TT$0 and "Nothing yet
+     - first one on the board sets the pace." Confident narration over an
+     empty board is worse than silence.
+
+     Deliberately conservative - it speaks unless the panel is demonstrably
+     empty. A real figure anywhere wins, because several panels carry an empty
+     sub-list beside figures that matter. A panel with no figures at all is an
+     explanatory one and still gets its line. */
+  function panelHasData_(el){
+    if(!el) return true;
+    var txt = el.innerText || '';
+    var nums = (txt.replace(/\b(19|20)\d{2}\b/g,' ').match(/\d[\d,.]*/g) || []);
+    for(var i=0;i<nums.length;i++){
+      if(parseFloat(String(nums[i]).replace(/,/g,'')) > 0) return true;
+    }
+    if(el.querySelector('.empty')) return false;
+    return nums.length === 0;
+  }
+
   function announce(){
     for(var i=0;i<PANELS;i++){
       var el=document.getElementById('p'+i);
-      if(el && el.classList.contains('on')){ say('p'+i); return; }
+      if(el && el.classList.contains('on')){
+        if(panelHasData_(el)) say('p'+i);
+        else said = null;
+        return;
+      }
     }
     said=null;
   }
