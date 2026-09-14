@@ -1965,6 +1965,49 @@
      placeholder it pushed "Screen code" out of the box and it read "Screen co". */
   #wlkCode::placeholder{ letter-spacing:normal; opacity:.55 }
   #wlkGo:disabled{ opacity:.6; cursor:default }
+
+  /* ── THE HEADER WAS PAINTING OVER ITSELF ────────────────────────────────
+     Reported from the branch, with a screenshot: the top of the wall jumbled,
+     "How it works" with the Hide and next buttons sitting on top of it, and
+     the sound control impossible to find.
+
+     Measured at 1280: #hRail is 688px wide and #pRail inside it is 832px. The
+     child overflowed its own parent by 144px, so the buttons were drawn at
+     864 - past the rail's right edge at 710 - straight over the "How it works"
+     link at 742. Nothing in that chain was allowed to wrap, so instead of
+     moving down, things moved on top of each other.
+
+     It was not a narrow-window problem either. Swept 900 to 1920: overlapping
+     at every width from 900 to 1600, and the clock wrapping to two lines at
+     all of them, which is what pushed the header out of shape.
+
+     So everything in the header may wrap now, at both levels, and the clock
+     may not. */
+  header{ flex-wrap:wrap; row-gap:.45em; align-items:center; }
+  header > *{ min-width:0; }
+  #hRail{ display:flex; flex-wrap:wrap; align-items:center; gap:.6em;
+          flex:1 1 auto; min-width:0; }
+  #pRail{ display:flex; flex-wrap:wrap; align-items:center; gap:.5em;
+          flex:0 1 auto; min-width:0; }
+  /* The date read "pm - Mon, Sep" over "14" at every desktop width, and a
+     40px clock in a 48px header is what made the whole bar look broken. */
+  #clock, #clock.num, .clock, .clock.num, #date{
+    white-space:nowrap !important; word-break:keep-all !important;
+    overflow-wrap:normal !important; }
+  #clock{ flex:none; }
+
+  /* ── THE ONE CONTROL ANYBODY ACTUALLY NEEDS TO FIND ─────────────────────
+     Sound cannot start on its own - browsers forbid it - so this button is
+     the only way the branch ever hears the wall. It was a single glyph, 30px
+     wide, in the middle of a crowded bar. It says what it is now. */
+  #pdSnd{ flex:none; display:inline-flex; align-items:center; gap:.35em;
+          padding:.3em .85em; border-radius:2em; font-size:1em;
+          border:1px solid var(--line); }
+  #pdSnd::after{ content:'Sound'; font-size:.68em; font-weight:800;
+                 letter-spacing:.09em; text-transform:uppercase; }
+  #pdSnd.on{ border-color:var(--teal); }
+  #pdSnd.on::after{ content:'Sound on'; }
+
 </style>
 <div id="wlock" hidden style="position:fixed; inset:0; z-index:99999;
      background:#0B1220; display:flex; align-items:center; justify-content:center;
@@ -3262,6 +3305,93 @@ function render(d){
   firstPaint=false;
 }
 
+/* ── SOMEBODY WHO IS NO LONGER ON THE GLASS ──────────────────────────────
+   Instruction from the branch manager, 14 September: the production stays on
+   the board, the person is not named. They have left the branch.
+
+   THE LIST HOLDS NO NAMES, AND THAT IS THE POINT. This file is served
+   publicly from factfind360.com, so a plain list of who has been taken off
+   the board would name them to anybody who viewed the source - and name them
+   alongside the reason, which is worse than the leaderboard ever was. The
+   entries below are FNV-1a hashes. They can confirm a name the feed already
+   contains; they cannot be read back into one.
+
+   The headline figures are the server's own fields - today, the week, the
+   month, premium, the series, the flags - not sums of the named lists. So
+   nothing here reduces what they produced; it is still inside every total on
+   the board. Only the places that print or speak a PERSON are filtered.
+
+   Three named lists reach the glass, across two feeds: the branch feed's
+   leaders, approvals, managers, just-in and longest-waiting; the production
+   feed's board; and the held-back book by advisor. All are scrubbed at the
+   door they arrive through, rather than at each of the places that render a
+   name - there are several of those, the voice is one of them, and a name
+   missed in one place is the whole instruction undone.
+
+   Matching is deliberately narrow: a PAIR of name parts, or the agent code.
+   One part alone is never enough, so a colleague who shares a first name or
+   a surname stays on the board.
+
+   NOT touched: the branch manager's spreadsheet. That is the management
+   record of work actually done, not the glass in the room. */
+var RRB_OFF_THE_BOARD = ['cff19f85','248db151','954e0e57'];
+
+/* FNV-1a. The multiply MUST be 32-bit: h * 0x01000193 goes past 2^53 for a
+   string of any length and JavaScript quietly loses the low bits, so short
+   inputs hashed correctly and longer ones did not - which showed up as the
+   agent code matching while the name sailed straight through. Math.imul is
+   exact; the fallback is there because this runs on television browsers. */
+function rrbMul32_(a,b){
+  if(Math.imul) return Math.imul(a,b);
+  var al=a&0xffff, ah=a>>>16, bl=b&0xffff, bh=b>>>16;
+  return (((al*bl)>>>0) + ((((ah*bl + al*bh) & 0xffff) << 16)>>>0)) >>> 0;
+}
+function rrbH_(v){
+  var t = String(v).toLowerCase().replace(/[^a-z0-9]/g,'');
+  var h = 0x811c9dc5;
+  for(var i=0;i<t.length;i++){
+    h ^= t.charCodeAt(i);
+    h = rrbMul32_(h, 0x01000193) >>> 0;
+  }
+  return (h >>> 0).toString(16);
+}
+function rrbOffBoard_(v){
+  if(!v) return false;
+  var t = String(v).toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/)
+            .filter(function(x){ return x.length > 1; });
+  var i, j;
+  for(i=0;i<t.length;i++){
+    if(RRB_OFF_THE_BOARD.indexOf(rrbH_(t[i])) > -1) return true;   /* an agent code */
+    for(j=i+1;j<t.length;j++){                                      /* a pair of name parts */
+      var pair = [t[i], t[j]].sort().join('');
+      if(RRB_OFF_THE_BOARD.indexOf(rrbH_(pair)) > -1) return true;
+    }
+  }
+  return false;
+}
+function rrbHiddenRow_(row){
+  if(!row) return false;
+  if(typeof row === 'string') return rrbOffBoard_(row);
+  for(var k in row){
+    if(!Object.prototype.hasOwnProperty.call(row,k)) continue;
+    if(typeof row[k] === 'string' && rrbOffBoard_(row[k])) return true;
+  }
+  return false;
+}
+function rrbDropHidden_(arr){
+  if(Object.prototype.toString.call(arr) !== '[object Array]') return arr;
+  return arr.filter(function(r){ return !rrbHiddenRow_(r); });
+}
+function rrbScrubFeed_(d){
+  if(!d) return d;
+  d.leaders   = rrbDropHidden_(d.leaders);
+  d.approvals = rrbDropHidden_(d.approvals);
+  d.managers  = rrbDropHidden_(d.managers);
+  if(d.justIn && rrbHiddenRow_(d.justIn)) d.justIn = null;
+  if(d.queue && rrbOffBoard_(d.queue.oldestWho)) d.queue.oldestWho = '';
+  return d;
+}
+
 function poll(){
   fetch(ENDPOINT+'?action=wall&k='+encodeURIComponent(WALL_KEY)+'&_='+Date.now(),{cache:'no-store'})
     .then(function(r){return r.json();})
@@ -3271,6 +3401,7 @@ function poll(){
                      month:{submitted:0,approved:0,premium:0,label:''},series:[],leaders:[],approvals:[],
                      queue:{pending:0,oldestDays:0,oldestWho:'',breaching:0},managers:[],
                      flags:{replacements:0,overCommitted:0,evidence:0},justIn:null};
+      d = rrbScrubFeed_(d);
       lastGood=d; lastAt=Date.now(); render(d);
     })
     .catch(function(e){ console.warn('wall poll failed:', e.message); });
@@ -4478,7 +4609,6 @@ var PROD = {
     {a:'Varun Seegolam',     n:27, api:637563},
     {a:'Gary Sookdeo',       n:50, api:462011},
     {a:'Anthony Simmons',    n:64, api:454380},
-    {a:'Aidan Eugene',       n:67, api:382922},
     {a:'Fawwaz Mohamed',     n:28, api:352783},
     {a:'Randolph Gonzales',  n:23, api:347321},
     {a:'Ricky Rampersad',    n:22, api:309970},
@@ -4855,7 +4985,7 @@ var PROD = {
      falls back to the rendered line - a missing clip is silence in the
      middle of a sentence, and that is worse than a general one. */
   var NAME_SRC = "wall-names.mp3";
-  var NIDX = {"c0a": [0.0, 1.776], "c0b": [1.776, 2.448], "c1a": [4.224, 2.592], "c1b": [6.816, 1.824], "c2a": [8.64, 1.776], "c2b": [10.416, 3.984], "c3a": [14.4, 3.096], "c3b": [17.496, 2.232], "c4a": [19.728, 1.776], "c4b": [21.504, 2.64], "n_Aidan": [24.144, 1.776], "n_Akaash": [25.92, 1.776], "n_Aleema": [27.696, 1.776], "n_Alyssa": [29.472, 1.776], "n_Anthony": [31.248, 1.776], "n_Chris": [33.024, 1.776], "n_Crystal": [34.8, 1.776], "n_Daniel": [36.576, 1.776], "n_Darryl": [38.352, 1.776], "n_Dhalina": [40.128, 1.776], "n_Faizal": [41.904, 1.776], "n_Fawwaz": [43.68, 1.776], "n_Felicia": [45.456, 1.776], "n_Gary": [47.232, 1.776], "n_Jamil": [49.008, 1.776], "n_Javid": [50.784, 1.776], "n_Jesus": [52.56, 1.776], "n_John": [54.336, 1.776], "n_Joy": [56.112, 1.776], "n_Kerwyn": [57.888, 1.776], "n_Lizara": [59.664, 1.776], "n_Malcolm": [61.44, 1.776], "n_Meera": [63.216, 1.776], "n_Naila": [64.992, 1.776], "n_Narissa": [66.768, 1.776], "n_Neil": [68.544, 1.776], "n_Premchand": [70.32, 1.776], "n_Rajiv": [72.096, 1.776], "n_Randolph": [73.872, 1.776], "n_Ricky": [75.648, 1.776], "n_Stephanie": [77.424, 1.776], "n_Tricia": [79.2, 1.776], "n_Varun": [80.976, 1.776]};
+  var NIDX = {"c0a": [0.0, 1.776], "c0b": [1.776, 2.448], "c1a": [4.224, 2.592], "c1b": [6.816, 1.824], "c2a": [8.64, 1.776], "c2b": [10.416, 3.984], "c3a": [14.4, 3.096], "c3b": [17.496, 2.232], "c4a": [19.728, 1.776], "c4b": [21.504, 2.64], "n_Akaash": [25.92, 1.776], "n_Aleema": [27.696, 1.776], "n_Alyssa": [29.472, 1.776], "n_Anthony": [31.248, 1.776], "n_Chris": [33.024, 1.776], "n_Crystal": [34.8, 1.776], "n_Daniel": [36.576, 1.776], "n_Darryl": [38.352, 1.776], "n_Dhalina": [40.128, 1.776], "n_Faizal": [41.904, 1.776], "n_Fawwaz": [43.68, 1.776], "n_Felicia": [45.456, 1.776], "n_Gary": [47.232, 1.776], "n_Jamil": [49.008, 1.776], "n_Javid": [50.784, 1.776], "n_Jesus": [52.56, 1.776], "n_John": [54.336, 1.776], "n_Joy": [56.112, 1.776], "n_Kerwyn": [57.888, 1.776], "n_Lizara": [59.664, 1.776], "n_Malcolm": [61.44, 1.776], "n_Meera": [63.216, 1.776], "n_Naila": [64.992, 1.776], "n_Narissa": [66.768, 1.776], "n_Neil": [68.544, 1.776], "n_Premchand": [70.32, 1.776], "n_Rajiv": [72.096, 1.776], "n_Randolph": [73.872, 1.776], "n_Ricky": [75.648, 1.776], "n_Stephanie": [77.424, 1.776], "n_Tricia": [79.2, 1.776], "n_Varun": [80.976, 1.776]};
   /* Which panels have somebody to name, and where the name comes from. */
   /* Read from exactly what headlines() used. Guessing the source got p0,
      p1 and p2 wrong in three different ways at once - the board said
@@ -6510,7 +6640,6 @@ var PROD = {
     A12408: {quota:300000, settled:69774.48, type:"Year 3", name:"Stephanie Rajkumar", p2:57.2, p3:64.3, p5:62.9},
     A12530: {quota:300000, settled:217088.84, type:"Year 3", name:"John Boodhoo", p2:86.0, p3:82.7, p5:82.0},
     A12663: {quota:300000, settled:102692.89, type:"Year 3", name:"Jamil Khan", p2:99.1, p3:99.3, p5:99.3},
-    A12749: {quota:300000, settled:291195.92, type:"Year 3", name:"Aidan Eugene", p2:89.5, p3:89.2, p5:89.2},
     A13088: {quota:225000, settled:63990.48, type:"Year 2", name:"Alyssa Joseph", p2:82.3, p3:76.0, p5:76.0},
     A13617: {quota:150000, settled:209712.60, type:"Year 1", name:"Naila Samuel", p2:92.9, p3:92.9, p5:92.9},
     A13682: {quota:150000, settled:128422.32, type:"Year 1", name:"Daniel Bhagwandas", p2:100.0, p3:100.0, p5:100.0},
@@ -7983,13 +8112,18 @@ var PROD = {
         if(p.monthly&&p.monthly.length)
           PROD.months = p.monthly.map(function(x){ return {m:x.m, nb:x.api||0, inc:x.inc||0}; });
         if(p.leaders&&p.leaders.length)
-          PROD.board = p.leaders.slice(0,8).map(function(x){ return {a:x.a, n:x.n, api:x.api}; });
+          /* The production board prints x.a as the advisor's name - the second
+             place a name reaches the glass. Filtered before the slice, so
+             eight others fill the space rather than seven. */
+          PROD.board = rrbDropHidden_(p.leaders).slice(0,8)
+                         .map(function(x){ return {a:x.a, n:x.n, api:x.api}; });
         if(p.units&&p.units.length) PROD.units=p.units;
         if(p.days&&p.days.length)   PROD.days=p.days;
         if(p.heldBack){
           PROD.held = {n:p.heldBack.n, api:p.heldBack.api, avgDays:p.heldBack.avgDays,
             bands:p.heldBack.bands||PROD.held.bands,
-            books:(p.heldBack.byAgent||[]).slice(0,5)};
+            /* the held-back book is listed by advisor - the third named list */
+            books:rrbDropHidden_(p.heldBack.byAgent||[]).slice(0,5)};
         }
         paint();
       })
