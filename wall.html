@@ -4683,12 +4683,55 @@ var PROD = {
     }
   }
 
-  function bedLoop(){
+  function bedSynth(){
     if(!soundOn) return;
     chord(CHORDS[chordI++ % CHORDS.length], AC.currentTime+0.05);
-    chordT=setTimeout(bedLoop,(CHORD_LEN-0.15)*1000);
+    chordT=setTimeout(bedSynth,(CHORD_LEN-0.15)*1000);
+  }
+
+  /* ── THE BRANCH MANAGER'S OWN TRACK ─────────────────────────────────────
+     Supplied 14 September: a 28 second recording made on a phone. Trimmed to
+     where it reaches level, rumble filtered off below 55Hz, the room quieted,
+     and the tail crossfaded 1.5s back over the head so the restart cannot be
+     heard. 22 seconds, looping.
+
+     Played on a plain <audio> element rather than through a Web Audio source
+     node. createMediaElementSource has a history of failing quietly on iOS and
+     on television browsers, and this has to work on exactly those two. So the
+     voice ducks it by the element's own volume instead - see duck().
+
+     The synthesised bed is not deleted. It is the fallback: a screen that
+     cannot play this file gets the branch chords rather than silence. */
+  var MUSIC_SRC = "wall-music.mp3";
+  var MUSIC_VOL = 0.55, musicEl = null;
+
+  function bedLoop(){
+    if(!soundOn) return;
+    if(musicEl){ try{ musicEl.play(); }catch(e){} return; }
+    try{
+      musicEl = document.createElement('audio');
+      musicEl.id = 'wallBed';
+      musicEl.loop = true;
+      musicEl.preload = 'auto';
+      musicEl.setAttribute('playsinline','');
+      musicEl.volume = MUSIC_VOL;
+      musicEl.src = MUSIC_SRC;
+      document.body.appendChild(musicEl);
+      musicEl.addEventListener('error', function(){ musicEl=null; bedSynth(); });
+      var pr = musicEl.play();
+      if(pr && pr.catch) pr.catch(function(){ musicEl=null; bedSynth(); });
+    }catch(e){ musicEl=null; bedSynth(); }
+  }
+  function bedStop(){
+    if(!musicEl) return;
+    try{ musicEl.pause(); }catch(e){}
   }
   function duck(down){
+    /* The track plays on its own element, outside the Web Audio graph, so the
+       bed gain cannot reach it. Duck it directly, by the same amount. */
+    if(musicEl){
+      try{ musicEl.volume = down ? MUSIC_VOL*0.42 : MUSIC_VOL; }catch(e){}
+    }
     if(!bed) return;
     var t=AC.currentTime;
     bed.gain.cancelScheduledValues(t);
@@ -4969,6 +5012,7 @@ var PROD = {
     var b=document.getElementById('pdSnd');
     if(soundOn){
       soundOn=false; clearTimeout(chordT);
+      bedStop();
       stopVox();
       if(AC) AC.suspend();
       b.classList.remove('on'); b.innerHTML='\u266A';
