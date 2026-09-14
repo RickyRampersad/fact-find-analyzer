@@ -1970,6 +1970,10 @@
   <div id="wlkErr" role="alert"
        style="min-height:1.4em; color:#FCA5A5; font-size:clamp(13px,1.4vw,17px);
               text-align:center; max-width:40ch"></div>
+  <button id="wlkSignin" type="button"
+          style="background:transparent; border:0; color:#64748B; cursor:pointer;
+                 font-size:clamp(12px,1.3vw,16px); text-decoration:underline;
+                 padding:.4em .6em">I have an agent number &mdash; sign in instead</button>
 </div>
 
 <!-- The shield and the branch name live on the rail at the foot of the
@@ -3432,10 +3436,31 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
      never in this file. Everything fails towards "reload and sign in", never
      towards a screen nobody can recover. */
   window.__wallLocked = false;
+
+  /* A screen pass. The branch television cannot be asked for the code every
+     time the page reloads, so a correct code is remembered on THAT device for
+     twelve hours. It is not a session and it is not an identity — it unlocks
+     the glass and nothing else. Hide clears it immediately. */
+  var RRB_PASS_KEY = 'rrbScreenPass';
+  var RRB_PASS_HRS = 12;
+  window.rrbScreenPassAlive_ = function(){
+    try{
+      var t = parseInt(localStorage.getItem(RRB_PASS_KEY), 10);
+      return !!t && t > Date.now();
+    }catch(e){ return false; }
+  };
+  window.rrbScreenPassSet_ = function(){
+    try{ localStorage.setItem(RRB_PASS_KEY, String(Date.now() + RRB_PASS_HRS*3600*1000)); }catch(e){}
+  };
+  window.rrbScreenPassClear_ = function(){
+    try{ localStorage.removeItem(RRB_PASS_KEY); }catch(e){}
+  };
+
   window.rrbWallLock = function(){
     var c = document.getElementById('wlock');
     if(!c) return;
     window.__wallLocked = true;
+    window.rrbScreenPassClear_();
     c.hidden = false;
     var e = document.getElementById('wlkErr'); if(e) e.textContent = '';
     var i = document.getElementById('wlkCode'); if(i){ i.value=''; setTimeout(function(){ i.focus(); }, 60); }
@@ -3457,8 +3482,14 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
       .then(function(d){
         if(d && d.ok){
           window.__wallLocked = false;
+          window.rrbScreenPassSet_();
           var c = document.getElementById('wlock'); if(c) c.hidden = true;
           if(i) i.value='';
+          /* When the cover IS the way in, the board behind it has not been
+             opened yet. openWall(null) is the unattended-screen view: the
+             board, and nothing that belongs to a person. */
+          try{ if(window.__wallOpened !== true && typeof window.__openWall === 'function'){
+                 window.__openWall(null); } }catch(err){}
           if(!paused){ try{ if(window.rrbBed) window.rrbBed(false);
                             if(typeof announce==='function') announce(); }catch(err){} }
         } else {
@@ -3476,6 +3507,13 @@ $('p'+panel).classList.add('on'); $('k'+panel).classList.add('on');
     if(g) g.addEventListener('click', function(){ window.rrbWallUnlock(); });
     if(i) i.addEventListener('keydown', function(ev){
       if(ev.key === 'Enter'){ ev.preventDefault(); window.rrbWallUnlock(); }
+    });
+    var si = document.getElementById('wlkSignin');
+    if(si) si.addEventListener('click', function(){
+      /* The sign-in card is already sitting underneath at a lower z-index.
+         Lifting the cover reveals it — no second copy of the form. */
+      window.__wallLocked = false;
+      var c = document.getElementById('wlock'); if(c) c.hidden = true;
     });
   })();
 
@@ -6987,6 +7025,7 @@ var PROD = {
 
   function openWall(who){
     WHO = who || null;
+    window.__wallOpened = true;
     document.getElementById('wgate').classList.add('gone');
     nameBadge(WHO);
     xlsFor(WHO);
@@ -7002,12 +7041,25 @@ var PROD = {
     var qs;
     try{ qs = new URLSearchParams(location.search); }catch(e){ qs = null; }
 
-    /* The television. Unattended, no sign-in, and the badge says plainly that
-       nobody is behind it. */
-    if(qs && qs.get('screen') === WALL_KEY){ openWall(null); return; }
+    /* So the screen code can open the board from its own scope. */
+    window.__openWall = openWall;
 
+    /* A real sign-in still wins. Somebody with an agent number gets their own
+       view — the settlement board, the submitted list, the spreadsheet if they
+       are entitled to it — and is never asked for the screen code. */
     var sess = wallSession();
     if(sess){ openWall(sess); return; }
+
+    /* Otherwise the screen code is the way in.
+       THE ?screen= BYPASS IS GONE. It compared against WALL_KEY, and WALL_KEY
+       is written into this file, which is served publicly — so anyone who
+       viewed the source could open the entire board with no sign-in at all.
+       A code that can be walked around is not a code. The television now types
+       it once and the pass is remembered on that screen for twelve hours. */
+    if(window.rrbScreenPassAlive_ && window.rrbScreenPassAlive_()){ openWall(null); return; }
+    if(window.rrbWallLock) window.rrbWallLock();
+    /* Deliberately no return: the sign-in handlers below still get wired, so
+       "sign in instead" on the cover reaches a working form. */
 
     var go = document.getElementById('wgGo');
     var codeEl = document.getElementById('wgCode');
