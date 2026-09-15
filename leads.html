@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Leads &middot; Ricky Rampersad Branch</title>
+<!-- THE LEAD DESK
+     Built 15 September. The prospect page already collects everything you
+     would qualify a lead on - what is on their mind, whether they want to
+     apply or just meet, when to call, income, household, the mortgage. None
+     of it was reachable by the advisor who has to make the call, and nothing
+     recorded whether the call was ever made.
+
+     This is that desk. Who is waiting, for how long, what they said, what to
+     say back, and one tap to log what happened.
+
+     Sign-in is the branch's existing one, and the session is the same key the
+     wall uses - an advisor already signed in there is signed in here. -->
+<style>
+  :root{
+    --bg:#0B1220; --card:#111C2E; --line:#1E293B; --ink:#E2E8F0; --ink-2:#94A3B8;
+    --teal:#2DD4BF; --teal-deep:#0D9488; --amber:#FBBF24; --red:#F87171; --green:#34D399;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{ margin:0; background:var(--bg); color:var(--ink);
+        font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+        padding:0 0 40px; -webkit-font-smoothing:antialiased }
+  header{ position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.6em;
+          align-items:center; padding:12px 16px; background:rgba(11,18,32,.96);
+          border-bottom:1px solid var(--line); backdrop-filter:blur(8px) }
+  .brand{ font-weight:800; letter-spacing:-.01em; flex:1 1 auto; min-width:0 }
+  .brand small{ display:block; font-weight:600; color:var(--ink-2); font-size:11px;
+                letter-spacing:.12em; text-transform:uppercase }
+  .wrap{ max-width:720px; margin:0 auto; padding:16px }
+  .tally{ display:flex; gap:10px; flex-wrap:wrap; margin:0 0 18px }
+  .t{ flex:1 1 30%; background:var(--card); border:1px solid var(--line);
+      border-radius:12px; padding:12px 14px }
+  .t b{ display:block; font-size:26px; letter-spacing:-.02em; font-variant-numeric:tabular-nums }
+  .t span{ font-size:11px; color:var(--ink-2); text-transform:uppercase; letter-spacing:.08em }
+  .t.warn b{ color:var(--amber) } .t.bad b{ color:var(--red) }
+
+  .lead{ background:var(--card); border:1px solid var(--line); border-radius:14px;
+         padding:0; margin:0 0 14px; overflow:hidden }
+  .lead.old{ border-color:rgba(251,191,36,.45) }
+  .lead.cold{ border-color:rgba(248,113,113,.5) }
+  .lhead{ display:flex; gap:12px; align-items:flex-start; padding:14px 16px; cursor:pointer }
+  .lhead h3{ margin:0; font-size:18px; letter-spacing:-.01em }
+  .lhead .meta{ font-size:13px; color:var(--ink-2); margin-top:2px }
+  .wait{ margin-left:auto; text-align:right; flex:none }
+  .wait b{ display:block; font-size:17px; font-variant-numeric:tabular-nums }
+  .wait span{ font-size:10px; color:var(--ink-2); text-transform:uppercase; letter-spacing:.08em }
+  .wait.warn b{ color:var(--amber) } .wait.bad b{ color:var(--red) }
+  .body{ border-top:1px solid var(--line); padding:16px }
+  .body[hidden]{ display:none !important }
+
+  .acts{ display:flex; gap:10px; margin:0 0 16px; flex-wrap:wrap }
+  .acts a{ flex:1 1 140px; text-align:center; text-decoration:none; font-weight:700;
+           padding:13px 10px; border-radius:11px; font-size:15px }
+  .call{ background:var(--teal); color:#04211D }
+  .wa{ background:rgba(45,212,191,.13); color:var(--teal); border:1px solid rgba(45,212,191,.45) }
+
+  .said{ background:rgba(45,212,191,.07); border:1px solid rgba(45,212,191,.25);
+         border-radius:11px; padding:12px 14px; margin:0 0 16px }
+  .said .k{ font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+            color:var(--teal); font-weight:800; margin-bottom:6px }
+  .said ul{ margin:0; padding-left:18px } .said li{ margin:3px 0 }
+  .facts{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 0 }
+  .facts span{ font-size:12px; background:rgba(148,163,184,.12); border-radius:20px;
+               padding:4px 11px; color:var(--ink-2) }
+
+  h4{ font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2);
+      margin:20px 0 8px; font-weight:800 }
+  .script{ border-left:3px solid var(--teal-deep); padding:2px 0 2px 14px; margin:0 0 6px }
+  .script p{ margin:0 0 10px } .script em{ color:var(--ink-2); font-style:normal; font-size:13px }
+  .guard{ background:rgba(248,113,113,.08); border:1px solid rgba(248,113,113,.3);
+          border-radius:11px; padding:12px 14px; margin:16px 0 0; font-size:14px }
+  .guard .k{ color:var(--red); font-weight:800; font-size:10px; letter-spacing:.1em;
+             text-transform:uppercase; margin-bottom:6px }
+
+  .log{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 0 }
+  .log button{ flex:1 1 46%; font:inherit; font-size:14px; font-weight:700; padding:12px 8px;
+               border-radius:11px; border:1px solid var(--line); background:#0A1120;
+               color:var(--ink); cursor:pointer }
+  .log button:hover{ border-color:var(--teal); color:var(--teal) }
+  .log button.on{ background:var(--teal); color:#04211D; border-color:var(--teal) }
+  textarea{ width:100%; margin-top:10px; background:#0A1120; color:var(--ink);
+            border:1px solid var(--line); border-radius:11px; padding:11px;
+            font:inherit; font-size:15px; resize:vertical; min-height:60px }
+  .save{ width:100%; margin-top:10px; font:inherit; font-size:16px; font-weight:800;
+         padding:14px; border-radius:11px; border:0; background:var(--teal);
+         color:#04211D; cursor:pointer }
+  .save:disabled{ opacity:.55; cursor:default }
+  .hist{ margin:14px 0 0; font-size:13px; color:var(--ink-2) }
+  .hist div{ padding:5px 0; border-top:1px dashed var(--line) }
+
+  .note{ background:var(--card); border:1px solid var(--line); border-radius:12px;
+         padding:16px; color:var(--ink-2); font-size:15px }
+  .note b{ color:var(--ink) }
+  input[type=text],input[type=password]{ width:100%; background:#0A1120; color:var(--ink);
+    border:1px solid var(--line); border-radius:11px; padding:13px; font:inherit;
+    font-size:16px; margin:6px 0 }
+  .err{ color:var(--red); font-size:14px; margin:8px 0 0; min-height:18px }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Leads<small>Ricky Rampersad Branch</small></div>
+  <div id="who" style="font-size:13px;color:var(--ink-2)"></div>
+</header>
+<div class="wrap" id="wrap"><div class="note">Loading&hellip;</div></div>
+<script src="leads.js"></script>
+</body>
+</html>
