@@ -16990,5 +16990,119 @@ function rrbRenderReadiness() {
 })();
 
 </script>
+<!-- ===== RR Branch Fact Find — New-Client Guard =========================
+  Paste this block immediately before </body> in ffproject.html.
+  Purpose: a previous client's saved fact find must NEVER load silently onto a
+  new one. On open, if a saved fact find with a client name is sitting on this
+  device, the agent is asked to Continue it or Start a new client — no silent
+  carry-over. "Start new" clears only this device's working copy (the saved
+  fact find on the server is untouched) and reloads to a blank form.
+  Classic script, global scope — reads MODE from the app; uses the app's own
+  storage keys. Namespaced rrbg-* so nothing collides.
+========================================================================= -->
+<style>
+#rrbg-ov{position:fixed;inset:0;background:rgba(7,19,31,.72);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:20px;font-family:inherit;-webkit-font-smoothing:antialiased}
+#rrbg-card{background:#fff;max-width:440px;width:100%;border-radius:16px;padding:24px 22px;box-shadow:0 24px 70px rgba(0,0,0,.4)}
+#rrbg-card h2{margin:0 0 10px;font-size:20px;line-height:1.25;color:#0E1F4D}
+#rrbg-card p.rrbg-body{margin:0 0 18px;font-size:15px;line-height:1.55;color:#33415a}
+#rrbg-card .rrbg-name{font-weight:800;color:#0F766E}
+#rrbg-btns{display:flex;flex-direction:column;gap:10px}
+#rrbg-btns button{width:100%;padding:14px 16px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;border:1px solid transparent;font-family:inherit}
+#rrbg-new{background:#0D9488;color:#fff}
+#rrbg-new:hover{background:#0b7f74}
+#rrbg-keep{background:#fff;color:#0E1F4D;border-color:#cbd5e1}
+#rrbg-keep:hover{background:#f4f6fb}
+#rrbg-note{margin:14px 0 0;font-size:12.5px;color:#64748b;text-align:center;line-height:1.4}
+</style>
+<script>
+// New-Client Guard — see comment block above.
+(function () {
+  var KEY = 'rrbranch_factfind_v3_0';       // the app's single agent working copy
+  var DRAFT_ID_KEY = 'rrbranch_draft_id';   // pointer to the server draft this device edits
+  // Fields that belong to the AGENT, not the client — a fresh form for a
+  // signed-in agent already has these, so they must not count as "client data".
+  var AGENT_FIELDS = { agentCode:1, advisorName:1, agentEmail:1, advisorNameOther:1, agentCodeOther:1, endpoint:1 };
+
+  // Pure decision: given the raw saved payload, the URL query and the app MODE,
+  // should we prompt, and under what client name?
+  function rrbgDecide(raw, search, mode) {
+    if (mode && mode !== 'agent') return { show:false };            // manager review / view
+    try { if (new URLSearchParams(search || '').get('id')) return { show:false }; } catch (e) {} // opening a record on purpose
+    if (!raw) return { show:false };                                // nothing saved
+    var p; try { p = JSON.parse(raw) || {}; } catch (e) { return { show:false }; }
+    var f = p.fields || {};
+    var name = String(f.clientName || f.fullName || f.adviceClientName || '').trim();
+    var n = 0, k;
+    for (k in f) {
+      if (!Object.prototype.hasOwnProperty.call(f, k)) continue;
+      if (AGENT_FIELDS[k]) continue;
+      if (String(f[k] == null ? '' : f[k]).trim() !== '') n++;
+    }
+    // Prompt when there is a real client on the device: a name, or a body of
+    // client answers. An essentially empty form (only agent identity) is fine.
+    if (!name && n < 4) return { show:false };
+    return { show:true, name:name };
+  }
+
+  function rrbgClear(store) {
+    try { store.removeItem(KEY); } catch (e) {}
+    try { store.removeItem(DRAFT_ID_KEY); } catch (e) {}
+  }
+
+  function rrbgRun() {
+    if (document.getElementById('rrbg-ov')) return;                 // show once
+    var mode = (typeof MODE !== 'undefined') ? MODE : 'agent';
+    var raw = null; try { raw = localStorage.getItem(KEY); } catch (e) { return; }
+    var d = rrbgDecide(raw, (location && location.search) || '', mode);
+    if (!d.show) return;
+    var who = d.name || 'a previous client';
+
+    var ov = document.createElement('div'); ov.id = 'rrbg-ov';
+    var card = document.createElement('div'); card.id = 'rrbg-card';
+    var h = document.createElement('h2'); h.textContent = 'Whose fact find is this?';
+    var body = document.createElement('p'); body.className = 'rrbg-body';
+    body.appendChild(document.createTextNode('This device still has a saved fact find open for '));
+    var nm = document.createElement('span'); nm.className = 'rrbg-name'; nm.textContent = who;
+    body.appendChild(nm);
+    body.appendChild(document.createTextNode('. Continue that one, or start a brand-new client?'));
+    var btns = document.createElement('div'); btns.id = 'rrbg-btns';
+    var bnew = document.createElement('button'); bnew.id = 'rrbg-new'; bnew.type = 'button';
+    bnew.textContent = 'Start a NEW client';
+    var bkeep = document.createElement('button'); bkeep.id = 'rrbg-keep'; bkeep.type = 'button';
+    bkeep.textContent = 'Continue ' + who;
+    var note = document.createElement('p'); note.id = 'rrbg-note';
+    note.textContent = 'Starting new clears the screen. The saved fact find is not deleted.';
+
+    bkeep.addEventListener('click', function () {
+      if (ov.remove) ov.remove(); else if (ov.parentNode) ov.parentNode.removeChild(ov);
+    });
+    bnew.addEventListener('click', function () {
+      // Wipe the in-memory copy too. Without this, a stray autosave can rewrite
+      // the working copy from the previous client's still-loaded `state` between
+      // here and the reload — the exact carry-over we are preventing. Mirrors
+      // the app's own newClient().
+      try { if (typeof state === 'object' && state) { for (var k in state) if (Object.prototype.hasOwnProperty.call(state, k)) delete state[k]; } } catch (e) {}
+      try { if (typeof signatures === 'object' && signatures) { for (var g in signatures) if (Object.prototype.hasOwnProperty.call(signatures, g)) delete signatures[g]; } } catch (e) {}
+      rrbgClear(localStorage);
+      try { location.reload(); } catch (e) {}
+    });
+
+    btns.appendChild(bnew); btns.appendChild(bkeep);
+    card.appendChild(h); card.appendChild(body); card.appendChild(btns); card.appendChild(note);
+    ov.appendChild(card); document.body.appendChild(ov);
+  }
+
+  // Exposed so it can be unit-tested and, if ever needed, re-run by hand.
+  window.rrbgDecide = rrbgDecide;
+  window.rrbgClear = rrbgClear;
+  window.rrbgRun = rrbgRun;
+
+  // Run after the app's own init/hydrate has settled.
+  function schedule() { setTimeout(rrbgRun, 350); }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') schedule();
+  else window.addEventListener('DOMContentLoaded', schedule);
+})();
+</script>
+<!-- ===== end New-Client Guard ===== -->
 </body>
 </html>
