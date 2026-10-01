@@ -470,6 +470,9 @@
     padding:.2em .32em; border-radius:.5em; background:rgba(4,18,15,.62); color:#fff;
     box-shadow:inset 0 0 0 1.2px var(--ac); white-space:nowrap; pointer-events:auto}
   .cal.big .cd .cwc.more{box-shadow:none; background:rgba(4,18,15,.42); color:#CFFAF3}
+  .cal.big .cd .cwc.big{font-size:.64em; padding:.24em .44em; letter-spacing:.02em}
+  .cal.big .calempty{grid-column:1/-1; align-self:center; justify-self:center; text-align:center;
+    color:var(--ink-3); font-weight:700; font-size:.92em; line-height:1.6; padding:1em .8em}
   .calkey{display:flex; align-items:center; gap:.5em; margin-top:.7em;
           font-size:.62em; font-weight:800; letter-spacing:.06em;
           text-transform:uppercase; color:var(--ink-4)}
@@ -3116,9 +3119,10 @@ function render(d){
       if(x.n){
         var who=whoForDay(idx);
         if(who.length){
+          var big=who.length<=2?' big':'';   /* a quiet day gets room to read the name */
           var shown=who.slice(0,2).map(function(w){
             var col=CMAP_ALL[w.n]||'#0F766E';
-            return '<span class="cwc" style="--ac:'+col+'" title="'+esc(w.n)+(w.c>1?' · '+w.c+' fact finds':'')+'">'+esc(ab3(w.n))+'</span>';
+            return '<span class="cwc'+big+'" style="--ac:'+col+'" title="'+esc(w.n)+(w.c>1?' · '+w.c+' fact finds':'')+'">'+esc(ab3(w.n))+'</span>';
           }).join('');
           var more=who.length>2?'<span class="cwc more" title="'+esc(who.slice(2).map(function(w){return w.n;}).join(', '))+'">+'+(who.length-2)+'</span>':'';
           chips='<span class="cwho">'+shown+more+'</span>';
@@ -3136,6 +3140,14 @@ function render(d){
       return '<i class="q'+q+'" style="background:'+QC[q-1]+'"></i>';}).join('');
     $('calKey').innerHTML='<span>Quiet</span>'+kq+'<span>Busy</span>'+
       '<span class="lb" style="margin-left:auto">'+mx+' on the best day</span>';
+    /* First days of a month: read as a fresh start, not a dead wall. */
+    if(!mdz.some(function(x){return x.n>0;})){
+      var mlab=(CALM.monthLabel||'This month').split(' ')[0];
+      $('calGrid').innerHTML='<div class="calempty">'+esc(mlab)+' has just begun.<br>'+
+        'The first fact find of the month will show here — with who did it.</div>';
+      setText('calNote','');
+      setHTML('calKey','');
+    }
 
     var mw=CALM.daysWorkedMonth||0, me=CALM.daysElapsedMonth||0;
     countTo($('rhDays'), mw);
@@ -3153,7 +3165,7 @@ function render(d){
 
     /* Agent × day. Each advisor keeps one hue across the row; within the row the
        cell only gets lighter with volume, so identity and magnitude never fight. */
-    var ags=(CALM.agents||[]).slice(0,7), extra=(CALM.agents||[]).length-ags.length;
+    var ags=(CALM.agents||[]).slice(0,12), extra=(CALM.agents||[]).length-ags.length;
     var amx=Math.max.apply(null,[1].concat(ags.map(function(a){
       return Math.max.apply(null,[0].concat(a.d));})));
     var CMAP=agColours(ags.map(function(a){return a.n;}));
