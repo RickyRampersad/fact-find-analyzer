@@ -463,6 +463,13 @@
   .cal.big .cd.q2{background:#12A594; color:#04211D}
   .cal.big .cd.q3{background:#3DDCC7; color:#04211D}
   .cal.big .cd.q4{background:#8FF2E2; color:#04211D}
+  /* Who worked each day — advisor initials in the cell, full name on tap. */
+  .cal.big .cd .cwho{position:absolute; left:0; right:0; bottom:.14em; display:flex;
+    justify-content:center; gap:.16em; padding:0 .18em; pointer-events:none; z-index:1}
+  .cal.big .cd .cwc{font-size:.46em; font-weight:800; line-height:1; letter-spacing:.02em;
+    padding:.2em .3em; border-radius:.5em; background:rgba(4,18,15,.62); color:#fff;
+    box-shadow:inset 0 0 0 1.2px var(--ac); white-space:nowrap; pointer-events:auto}
+  .cal.big .cd .cwc.more{box-shadow:none; background:rgba(4,18,15,.42); color:#CFFAF3}
   .calkey{display:flex; align-items:center; gap:.5em; margin-top:.7em;
           font-size:.62em; font-weight:800; letter-spacing:.06em;
           text-transform:uppercase; color:var(--ink-4)}
@@ -3092,12 +3099,32 @@ function render(d){
     var cells=['S','M','T','W','T','F','S']
       .map(function(h){return '<div class="hdd">'+h+'</div>';}).join('');
     for(var b=0;b<lead;b++) cells+='<div></div>';
-    cells+=mdz.map(function(x){
+    /* Who worked each day — read straight off the agent×day data so the
+       calendar can name the person behind a count, not just show the number. */
+    var AGS_ALL=(CALM.agents||[]);
+    var CMAP_ALL=agColours(AGS_ALL.map(function(a){return a.n;}));
+    function whoForDay(j){
+      var r=[]; AGS_ALL.forEach(function(a){ var c=(a.d&&a.d[j])||0; if(c>0) r.push({n:a.n,c:c}); });
+      return r;
+    }
+    cells+=mdz.map(function(x, idx){
       var q=qOf(x.n), we=(x.dow===0||x.dow===6);
+      var chips='';
+      if(x.n){
+        var who=whoForDay(idx);
+        if(who.length){
+          var shown=who.slice(0,2).map(function(w){
+            var col=CMAP_ALL[w.n]||'#0F766E';
+            return '<span class="cwc" style="--ac:'+col+'" title="'+esc(w.n)+(w.c>1?' · '+w.c+' fact finds':'')+'">'+esc(avatar(w.n).ini)+'</span>';
+          }).join('');
+          var more=who.length>2?'<span class="cwc more" title="'+esc(who.slice(2).map(function(w){return w.n;}).join(', '))+'">+'+(who.length-2)+'</span>':'';
+          chips='<span class="cwho">'+shown+more+'</span>';
+        }
+      }
       return '<div class="cd'+(x.n?' has q'+q:' zero')+(x.future?' fut':'')+
         (we?' wknd':'')+(x.today?' today':'')+'">'+
         '<span class="dm">'+x.dom+'</span>'+
-        '<span class="bn">'+(x.n||'·')+'</span></div>';
+        '<span class="bn">'+(x.n||'·')+'</span>'+chips+'</div>';
     }).join('');
     $('calGrid').innerHTML=cells;
     setText('calTitle', CALM.monthLabel||'Calendar');
