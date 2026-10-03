@@ -1385,7 +1385,10 @@
 }
 
   /* ── SETTLEMENT (panel 15) ────────────────────────────────────────────── */
-  .stl{display:grid; grid-template-rows:auto 1fr; gap:.8em; height:100%; min-height:0}
+  /* Three rows, not two: the headline, the Board / Every advisor / Products
+     switch, then the boards. With two, the switch landed in the 1fr row and
+     took every spare pixel, which a full year hid and a fresh one does not. */
+  .stl{display:grid; grid-template-rows:auto auto 1fr; gap:.8em; height:100%; min-height:0}
   /* The two client panels. Big figures with a plain sentence under each —
      read from across a room, so nothing here is smaller than the roster. */
   .jrny{display:grid; gap:.9em; height:100%; min-height:0; align-content:start}
@@ -6152,10 +6155,11 @@ var PROD = {
        most apps this year, most API this year. Nothing else is gold. */
     /* WITH ANOTHER BRANCH, BUT THE PRODUCTION IS STILL OURS.
        Javid and Aleema write under another branch now and the branch keeps
-       their production, so their figures stay in every total and in their
-       team's headcount — Ricky's team is twelve, not ten — and their names
-       come off the rows and off the recognition board. They are skipped
-       only at the point of drawing. Declared here, above the first use. */
+       their production, so their figures stay in every total, and their names
+       come off the rows and off the recognition board. They are skipped only
+       at the point of drawing. From 1 October they are Not Active on the
+       Access tab, so a team's headcount counts the names it shows. Declared
+       here, above the first use. */
     var SUB_ELSEWHERE = { A04020: 1, A04028: 1 };
     function elsewhere(label){
       var c2 = String(label||'').toUpperCase().match(/[AU](\d{5})/);
@@ -6450,7 +6454,7 @@ var PROD = {
     box.style.gridTemplateColumns = '';
     box.innerHTML = colOf.map(function(col){
       return '<div class="sbUnit">' + head() + col.map(function(tm){
-        var mr = tm.row, n = tm.ags.length;
+        var mr = tm.row, n = tm.ags.filter(function(x){ return !elsewhere(x.label); }).length;
         var api = yy(mr,1) || tm.ags.reduce(function(a,c){ return a+yy(c,1); },0);
         var share = Math.max(1, api/branchApi*100);
         var h = '';
@@ -6988,7 +6992,11 @@ var PROD = {
       try { settleFor(WHO); } catch(e){}
     }
 
-    var names = MN.slice(0, stl && stl.months ? stl.months.length : ((S.series||[]).length || 9));
+    /* Named from the settlement board's own months, in its own order: January
+       to September for FY26, October to September from 1 October. */
+    var names = (stl && stl.months && stl.months.length)
+      ? stl.months.map(function(x){ return MN[((x.m || 1) - 1) % 12]; })
+      : ((S.series && S.series.length) ? S.series.map(function(x){ return x.m; }) : MN.slice(0, 9));
     var max = 0;
     names.forEach(function(n){
       if((sub[n]||0) > max) max = sub[n]||0;
@@ -7485,10 +7493,14 @@ var PROD = {
      paper. Cells are shaded against the busiest cell on the board, so a strong
      month is visible from across the room without reading a number. */
   function stlAgentGrid(j){
-    /* However many months the server sends — the branch year ends 30 September,
-       so it sends nine, and three empty columns never reach the wall. */
-    var nm = ['J','F','M','A','M','J','J','A','S','O','N','D']
-               .slice(0, (j.months || []).length || 12);
+    /* However many months the server sends, each named from its own month
+       number rather than its place in the list. FY26 ran January to September,
+       so position and month agreed; from 1 October the year runs October to
+       September, and position 0 is October. */
+    var MI = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+    var nm = (j.months && j.months.length)
+      ? j.months.map(function(x){ return MI[((x.m || 1) - 1) % 12]; })
+      : MI;
     var key = stlKey();
     var rows = (j.matrix || []).slice(0, 12);
     var max = 0;
@@ -7610,19 +7622,29 @@ var PROD = {
     var monLeft  = (j.goal && j.goal.monthsLeft) || 0;
     var times    = (j.goal && j.goal.times) || 0;
 
+    /* NO TARGET, SAID PLAINLY. A new year opens before its target is set, and
+       a bar measured against nothing reads as 0% of a real number. Until the
+       server sends a target, the hero says what has settled and that the
+       target is still to come, and draws no bar. */
+    var noTgt = !tgt;
+    var yrName = j.fyLabel ? String(j.fyLabel).replace(/[^A-Za-z0-9 ]/g, '') : 'this year';
     var h = '<div class="stlHero">' +
       '<div class="stlBig"><b>' + stlFull(api) + '</b>' +
-      '<span class="stlOf">settled of ' + stlMoney(j.goal ? j.goal.value : 0) +
-      ' target &middot; ' + goalPct + '% of the ' + stlMoney(tgt) + ' quota</span>' +
-      '<span class="stlPct">' + pctGoal.toFixed(1) + '%</span>' +
+      (noTgt
+        ? '<span class="stlOf">settled in ' + yrName + ' &middot; the ' + yrName +
+          ' target is not set yet</span>'
+        : '<span class="stlOf">settled of ' + stlMoney(j.goal ? j.goal.value : 0) +
+          ' target &middot; ' + goalPct + '% of the ' + stlMoney(tgt) + ' quota</span>' +
+          '<span class="stlPct">' + pctGoal.toFixed(1) + '%</span>') +
       stlCountdown(j) + '</div>' +
-      '<div class="stlBar"><div class="stlFill" style="width:' + Math.min(100,pct).toFixed(2) + '%"></div>' +
-      '<div class="stlGoal" style="left:' + goalPct + '%"><span>target ' +
-      stlMoney(tgt * goalPct / 100) + '</span></div></div>' +
+      (noTgt ? '' :
+        '<div class="stlBar"><div class="stlFill" style="width:' + Math.min(100,pct).toFixed(2) + '%"></div>' +
+        '<div class="stlGoal" style="left:' + goalPct + '%"><span>target ' +
+        stlMoney(tgt * goalPct / 100) + '</span></div></div>') +
       '<div class="stlSub">' +
       '<span><b>' + apps + '</b> applications</span>' +
       '<span><b>' + (j.agents ? j.agents.length : 0) + '</b> agents settling</span>' +
-      '<span><b>' + stlMoney(toGo) + '</b> to the target</span>' +
+      (noTgt ? '' : '<span><b>' + stlMoney(toGo) + '</b> to the target</span>') +
       (apps ? '<span><b>' + stlFull(api/apps) + '</b> per application</span>' : '') +
       ((j.ytd && j.ytd.cover) ? '<span><b>' + stlMoney(j.ytd.cover) + '</b> of cover placed</span>' : '') +
       (perMonth ? '<span style="color:var(--gold)"><b style="color:var(--gold)">' +
@@ -7634,7 +7656,11 @@ var PROD = {
     var mons = j.months || [], top = 0;
     var bk = stlKey();
     mons.forEach(function(m){ if((m[bk]||0) > top) top = m[bk]||0; });
-    var names = ['J','F','M','A','M','J','J','A','S','O','N','D'].slice(0, mons.length || 12);
+    /* Each bar named from its own month number, not its place: from 1 October
+       the first bar is October. */
+    var MI = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+    var MN3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var names = mons.map(function(m){ return MI[((m.m || 1) - 1) % 12]; });
     var mh = '<div class="stlCard"><div class="stlCap">By month' +
       '<div class="stlPills">' +
       '<button type="button" class="stlPill' + (STL.month?'':' on') + '" data-mon="0">Year</button>' +
@@ -7665,7 +7691,7 @@ var PROD = {
     var lk = stlKey();
     ags.sort(function(a,b){ return (b[lk]||0) - (a[lk]||0); });
     var lh = '<div class="stlCard"><div class="stlCap">' +
-      (STL.month ? names[STL.month-1] + ' leaders' : 'Top settlers, year') +
+      (STL.month ? MN3[(STL.month - 1) % 12] + ' leaders' : 'Top settlers, ' + yrName) +
       stlPills() +
       '</div><div class="stlLeague">';
     if(!ags.length){
@@ -7713,7 +7739,7 @@ var PROD = {
     });
 
     var t = document.getElementById('t_p14');
-    if(t) t.textContent = 'Settlement ' + j.year;
+    if(t) t.textContent = 'Settlement ' + (j.fyLabel || j.year);
     var note = document.getElementById('stlNote');
     if(note) note.textContent = 'Net of reversals and riders. ' +
       (j.diag ? j.diag.used + ' rows read from ' + j.diag.tab + '.' : '');
