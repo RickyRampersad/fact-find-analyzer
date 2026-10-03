@@ -6335,11 +6335,19 @@ var PROD = {
                                  + '<div class="c pc pc5"></div><div class="c st"></div>';
       return out + persCell(r._p2) + persCell(r._p3) + persCell(r._p5, ' pc5') + starCell(r);
     }
+    /* WHICH YEAR EACH SIDE IS. Once the feed counts from 1 October it says so
+       (yearLabel, FY27), and the settled side names its own year from the
+       settlement board until that rolls over too. Two columns both headed
+       "year" would put this year's first week beside last year's whole. */
+    var stlD = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
+    var subYr = S.yearLabel ? esc(S.yearLabel) : 'year';
+    var setYr = (S.yearLabel && stlD && stlD.fyEndsOn)
+      ? 'FY' + esc(String(stlD.fyEndsOn).slice(2, 4)) : 'year';
     function head(){
       return '<div class="sbR hdg"><div class="l"></div>'
         + '<div class="grp">Submitted &mdash; week</div>'
-        + '<div class="grp">Submitted &mdash; year</div>'
-        + '<div class="grp s1">Settled &mdash; year</div>'
+        + '<div class="grp">Submitted &mdash; ' + subYr + '</div>'
+        + '<div class="grp s1">Settled &mdash; ' + setYr + '</div>'
         + '<div class="grp pc">Persistency %</div>'
         + '<div class="grp st">Client</div></div>'
         + '<div class="sbR hd"><div class="l">Advisor</div>'
@@ -6424,7 +6432,15 @@ var PROD = {
                  + (tm.row ? 1.6 : 0.2);
       }, 0);
     }
-    groups.forEach(function(g){
+    /* ONE HIERARCHY STILL FILLS TWO COLUMNS. From 1 October the branch is a
+       single hierarchy, the branch manager's, with Akaash's team inside it.
+       Packing whole hierarchies put all of it in the left column and left the
+       right one empty, so a lone hierarchy is packed team by team instead,
+       the head's team first. Two or more hierarchies still never split. */
+    var packs = groups.length === 1
+      ? groups[0].teams.map(function(tm){ return { teams: [tm] }; })
+      : groups;
+    packs.forEach(function(g){
       var i = colH[0] <= colH[1] ? 0 : 1;
       g.teams.forEach(function(tm){ colOf[i].push(tm); });
       colH[i] += groupH(g);
@@ -6499,10 +6515,12 @@ var PROD = {
         + tile(' wk', 'This week', w(t,0), w(t,1))
         + tile('', S.monthLabel ? esc(String(S.monthLabel).slice(0,3)) + ' to date' : 'Month to date',
                hasMo ? mo(t,0) : null, hasMo ? mo(t,1) : null)
-        + tile('', 'Year to date', yy(t,0), yy(t,1))
+        + tile('', S.yearLabel ? subYr + ' to date' : 'Year to date', yy(t,0), yy(t,1))
         /* Short enough to survive a laptop: at 1440 the long captions were
-           cut to "YEAR T…" and "SETTLE…", which is worse than saying less. */
-        + tile(' set', 'Settled &middot; year', setApps || null, t._settled || null)
+           cut to "YEAR T…" and "SETTLE…", which is worse than saying less.
+           "FY27 to date" and "Settled · FY26" are the same lengths as the
+           captions they replace. */
+        + tile(' set', 'Settled &middot; ' + setYr, setApps || null, t._settled || null)
         + '</div>';
     }
 
