@@ -1744,7 +1744,21 @@
     vertical-align: top;
     text-align: left;
     font-size: 9pt;
+    /* Typed text must stay inside its cell. Without these, a long reason — or a
+       single long token like a figure or an email — widens the column, throws
+       the table's proportions out, and pushes rows onto the next page. These
+       wrap it instead, so what the agent types fits the box it is typed into. */
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
   }
+  /* Free-text tables (the recommendation reasons, "what else this fact find
+     found", the next-appointment questions) hold columns of prose. Fixed layout
+     makes each column keep the width set on its header rather than stretching to
+     the longest cell, so the columns line up the same on every page and the text
+     wraps down inside them. Only these tables carry it — the Guardian-form
+     tables above stay auto so they still match the published form. */
+  .pf-table.pf-table-fixed { table-layout: fixed; }
   .pf-table th {
     background: #fff;
     font-weight: 700;
@@ -14814,10 +14828,10 @@ function buildPrintLayout() {
 
   html += '<div class="pf-h2">Notes</div>';
   html += '<div style="font-size:8.5pt; font-style:italic; margin-bottom:1.5mm">Agent&rsquo;s notes &amp; product rationale (reasons for the recommendation)</div>';
-  html += '<div style="border:0.5pt solid #555; min-height:30mm; padding:3mm; font-size:9pt; white-space:pre-wrap">' + pf$(s.notes || '') + '</div>';
+  html += '<div style="border:0.5pt solid #555; min-height:30mm; padding:3mm; font-size:9pt; white-space:pre-wrap; overflow-wrap:break-word; word-break:break-word">' + pf$(s.notes || '') + '</div>';
 
   html += '<div class="pf-h2">Recommendations</div>';
-  html += '<table class="pf-table"><thead><tr>';
+  html += '<table class="pf-table pf-table-fixed"><thead><tr>';
   // Guardian's table is Priority | Need | Advisor's Recommendation. Who, Amount,
   // Gap, Premium and the written Reason are RR Branch additions — they move to
   // the addendum in strict mode rather than widening Guardian's table.
@@ -16264,7 +16278,7 @@ function pf_displacedDetail(s) {
     h += '<div class="pf-h3">Recommendations &mdash; sizing and advisor&rsquo;s reasoning</div>';
     h += '<div style="font-size:8pt; color:#64748B; margin-bottom:1mm">Row numbers match the ' +
          'Recommendations table on page 5.</div>';
-    h += '<table class="pf-table"><thead><tr><th style="width:7%">Rec #</th><th style="width:9%">Who</th>' +
+    h += '<table class="pf-table pf-table-fixed"><thead><tr><th style="width:7%">Rec #</th><th style="width:9%">Who</th>' +
          '<th style="width:12%">Amount</th><th style="width:10%">Gap</th><th style="width:10%">Premium</th>' +
          '<th>Reason for Recommendation</th></tr></thead><tbody>' + rec + '</tbody></table>';
   }
@@ -16305,7 +16319,7 @@ function pf_displacedDetail(s) {
            ' the client&rsquo;s own answers point at, which nothing recommended today answers. ' +
            'Ranked by exposure. Not part of the Guardian form and not a recommendation &mdash; ' +
            'this is the next conversation, written down while it is fresh.</div>';
-      h += '<table class="pf-table" style="font-size:8pt"><thead><tr>' +
+      h += '<table class="pf-table pf-table-fixed" style="font-size:8pt"><thead><tr>' +
            '<th style="width:5%">#</th>' +
            '<th style="width:26%">What was spotted</th>' +
            '<th style="width:22%">On the file</th>' +
@@ -16324,7 +16338,7 @@ function pf_displacedDetail(s) {
       h += '</tbody></table>';
 
       h += '<div class="pf-h3" style="margin-top:3mm">Questions for the next appointment</div>';
-      h += '<table class="pf-table" style="font-size:8pt"><tbody>';
+      h += '<table class="pf-table pf-table-fixed" style="font-size:8pt"><tbody>';
       opps.forEach(function (o, ix) {
         h += '<tr><td style="width:5%;text-align:center">' + (ix + 1) + '</td>' +
              '<td>&ldquo;' + o.ask + '&rdquo;</td></tr>';
@@ -16339,7 +16353,7 @@ function pf_displacedDetail(s) {
     h += '<div style="font-size:8pt; color:#64748B; margin-bottom:1mm">Guardian&rsquo;s ' +
          'Recommendations table holds four rows. The client was advised on these as well, ' +
          'and they are recorded here in full.</div>';
-    h += '<table class="pf-table"><thead><tr><th style="width:7%">Priority</th>' +
+    h += '<table class="pf-table pf-table-fixed"><thead><tr><th style="width:7%">Priority</th>' +
          '<th style="width:9%">Who</th><th style="width:18%">Need</th>' +
          '<th style="width:18%">Advisor&rsquo;s Recommendation</th>' +
          '<th style="width:11%">Amount</th><th style="width:10%">Premium</th>' +
