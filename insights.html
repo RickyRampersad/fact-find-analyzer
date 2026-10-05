@@ -372,7 +372,9 @@
 <div id="tip"></div>
 
 <script>
-var ENDPOINT='https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
+/* The current deployment, as the home page and the wall use. See the note
+   above DEFAULT_ENDPOINT in index.html (5 October 2026). */
+var ENDPOINT='https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec';
 var ROWS=[], ME=null, RANGE='month', FILTER={agent:null,manager:null};
 var $=function(i){return document.getElementById(i);};
 /* Same guard as the wallboard: writing into an element that no longer exists

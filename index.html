@@ -973,7 +973,12 @@
 // ---- endpoint (shared with the fact-find form if present) ----
 // Default = the branch fact-find Apps Script /exec. Add DashboardApi.gs to THAT
 // project and re-deploy (Manage deployments ▸ Edit, keep the same URL) to go live.
-var DEFAULT_ENDPOINT='https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec';
+/* 5 October 2026: moved from AKfycbyUnSnQ...XMoczA, which is pinned to an old
+   version of the same Apps Script project, to the deployment the wall uses,
+   which runs the current one. Same project, so the same sheet, passwords and
+   sessions; nobody signed in is signed out. An advisor on the Access tab,
+   Stephanie Rajkumar (A12408), could not sign in through the old one. */
+var DEFAULT_ENDPOINT='https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec';
 
 // The endpoint receives complete fact finds — income, assets, debts, dependants,
 // health answers, and the generated PDF. It is therefore LOCKED by default: a
