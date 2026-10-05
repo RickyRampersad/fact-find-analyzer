@@ -547,6 +547,14 @@
   .qchk input{accent-color:var(--teal);width:15px;height:15px;margin-top:1px;flex:none}
   .qopen{font-size:11.5px;font-weight:700;color:var(--teal-deep);text-decoration:none}
   .qopen:hover{text-decoration:underline}
+  /* Continue / Open on a case row: quiet beside the figures, solid where the
+     advisor has something to finish. */
+  .rowAct{font:inherit;font-size:11.5px;font-weight:800;color:var(--teal-deep);background:none;cursor:pointer;
+          border:1px solid rgba(13,148,136,.45);border-radius:7px;padding:4px 9px;white-space:nowrap}
+  .rowAct.go{background:var(--teal);border-color:var(--teal);color:#fff}
+  .rowAct:hover{filter:brightness(.94)}
+  .rowAct[disabled]{opacity:.55;cursor:wait}
+  .qown{font-size:12px;font-weight:700;color:var(--muted);line-height:1.4}
   .qempty{color:var(--muted);font-size:12.5px;padding:10px 0}
   @media (max-width:640px){
     .qc{grid-template-columns:auto minmax(0,1fr); gap:8px 10px}
@@ -973,11 +981,14 @@
 // ---- endpoint (shared with the fact-find form if present) ----
 // Default = the branch fact-find Apps Script /exec. Add DashboardApi.gs to THAT
 // project and re-deploy (Manage deployments ▸ Edit, keep the same URL) to go live.
-/* 5 October 2026: moved from AKfycbyUnSnQ...XMoczA, which is pinned to an old
-   version of the same Apps Script project, to the deployment the wall uses,
-   which runs the current one. Same project, so the same sheet, passwords and
-   sessions; nobody signed in is signed out. An advisor on the Access tab,
-   Stephanie Rajkumar (A12408), could not sign in through the old one. */
+/* 5 October 2026: moved from AKfycbyUnSnQ...XMoczA to the deployment the wall
+   uses, which runs RR Branch FF System, the project that is maintained. The
+   old address is an older COPY of the system: another Apps Script project,
+   on the same spreadsheet but with its own Script Properties. So it has its
+   own passwords and its own signing key. An advisor on the Access tab,
+   Stephanie Rajkumar (A12408), could not sign in through the old one, and a
+   sign-in made here is not accepted there: FFPROJECT.html sends anything
+   carried on a sign-in to this deployment (sessionEndpoint). */
 var DEFAULT_ENDPOINT='https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec';
 
 // The endpoint receives complete fact finds — income, assets, debts, dependants,
@@ -1399,6 +1410,7 @@ function genSample(){
 // ---- session/state ----
 var SESSION=null;      // {email,name,role,unitKey,unit,code,scope}
 var ALL=[];            // all rows visible to this user (already role-scoped)
+var RAW_BY_ID={};      // id -> that row exactly as the server sent it (see continueCase)
 var SRC='sample';      // 'live' | 'sample'
 var LOAD_ERROR='';     // non-empty when the last refresh failed — surfaced, never papered over
 var FILTERS={range:'30',unit:'all',agent:'all',status:'all',search:''};
@@ -1664,6 +1676,199 @@ function openNewFactFind(){
   var url = FACTFIND_FORM_URL + '?new=1' + (SESSION.code ? '&agentCode=' + encodeURIComponent(SESSION.code) : '');
   window.open(url, '_blank');
 }
+
+/* ---- Opening a case from the dashboard -------------------------------------
+   Nothing on this page opened a fact find. The case tables had no link at all,
+   and the queue's "Open the full fact find form" sent a bare ?id=, which the
+   form refuses without a signed token. On 5 October an advisor who had
+   submitted two cases that came back as drafts had no way back into them, and
+   the branch manager could not read them either.
+
+   Two doors, because there are two jobs.
+
+   CONTINUE is the advisor's own case that is not with a manager: a draft, a
+   case sent back, a Specific Need Only file. The form lives on this site, so
+   it is handed the case the way its own "My drafts" list hands one over
+   (draftOpen in FFPROJECT.html): written into the form's slot on this device,
+   then the form opened. The case keeps its own id, so Send for Manager's Review
+   updates that case on the sheet instead of filing a second one. Nothing is
+   asked of the server.
+
+   OPEN is every other case, read-only. The form shows a case only to a link
+   carrying a signed token, and the two servers sign with different keys, so a
+   token is not the way in from here. This page already holds the case, sent to
+   it for whoever is signed in, so it hands the form that copy on this device
+   and the form opens it view-only (dashboardCopyOf in FFPROJECT.html).
+   Decisions stay in the approval queue.
+   --------------------------------------------------------------------------- */
+var FORM_SLOT='rrbranch_factfind_v3_0';   // FFPROJECT.html STORAGE_KEY
+var FORM_DRAFT_PTR='rrbranch_draft_id';   // FFPROJECT.html DRAFT_ID_KEY
+
+function isMine(r){
+  return !!(SESSION && SESSION.code) &&
+    String(r.agentCode||'').trim().toUpperCase()===String(SESSION.code).trim().toUpperCase();
+}
+// The advisor's to finish: not settled, and not sitting with a manager.
+function canContinue(r){
+  var s=String(r.status||'').toLowerCase();
+  if(!isMine(r) || !r.id || String(r.id).indexOf('tmp:')===0) return false;
+  if(/approv|declin|cancel|complet|signed/.test(s)) return false;
+  if(/review|branch_manager/.test(s)) return false;
+  return true;
+}
+function caseActCell(r){
+  if(!r.id || String(r.id).indexOf('tmp:')===0) return '';
+  var id=escapeHtml(r.id);
+  if(canContinue(r)){
+    var sentBack=String(r.status||'').toLowerCase().indexOf('chang')>-1;
+    return '<button type="button" class="rowAct go" data-id="'+id+'" onclick="continueCase(this.dataset.id)" '+
+      'title="Finish it, sign, and send it for review">'+(sentBack?'Fix &amp; resend':'Continue')+' &rarr;</button>';
+  }
+  return '<button type="button" class="rowAct" data-id="'+id+'" onclick="openCase(this.dataset.id,this)" '+
+    'title="Open the full fact find">Open</button>';
+}
+
+// Is there work in the form's slot that is not safe anywhere else? Mirrors
+// draftWorthSaving() in FFPROJECT.html.
+function slotName(f){ return String(f.clientName||f.fullName||f.adviceClientName||'').trim(); }
+function slotHasWork(f){
+  if(slotName(f)) return true;
+  return ['dob','idNumber','occupation','employer','monthlyIncome','monthlyIncomeTotal','monthlyExpenses',
+          'maritalStatus','spouseName','child1Name','rec1Rec','rec1Amt'].some(function(k){
+    return String(f[k]||'').trim()!=='';
+  });
+}
+// The slot holds a case the server already has, and nothing newer than it.
+function slotIsOnServer(slot){
+  var f=(slot && slot.fields)||{}, raw=f.submissionId && RAW_BY_ID[String(f.submissionId)];
+  if(!raw) return false;
+  var serverAt=Date.parse(raw.lastUpdated||raw.submittedAt||'')||0;
+  return (slot.ts||0)<=serverAt+60000;
+}
+async function pushSlotAsDraft(f){
+  var ep=getEndpoint(); if(!ep || !SESSION || !SESSION.token) return false;
+  var ptr=''; try{ ptr=localStorage.getItem(FORM_DRAFT_PTR)||''; }catch(e){}
+  try{
+    var res=await fetch(ep,{method:'POST',cache:'no-store',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({stage:'draft_save',token:SESSION.token,draftId:ptr,progress:'',
+                           data:Object.assign({},f,{status:'draft'})})});
+    var j=await res.json();
+    return !!(j && j.ok);
+  }catch(e){ return false; }
+}
+
+// The case as FFPROJECT.html's own loader would hydrate it: numbers as text
+// (the form calls .trim() on its fields), and a date the sheet turned into a
+// timestamp put back as the day it was, so a date box does not come up empty.
+var ISO_STAMP=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+function formFieldsOf(raw){
+  var out={};
+  Object.keys(raw).forEach(function(k){
+    if(k.charAt(0)==='_' || k==='unit' || k==='unitKey') return;   // the server's additions, not the case
+    var v=raw[k];
+    if(v===null || v===undefined) return;
+    if(typeof v==='number') v=String(v);
+    else if(typeof v==='string' && ISO_STAMP.test(v)){
+      var d=new Date(v);
+      if(!isNaN(d) && !d.getHours() && !d.getMinutes() && !d.getSeconds())
+        v=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    }
+    out[k]=v;
+  });
+  out.submissionId=String(raw.submissionId);
+  return out;
+}
+function formUrlFor(code, caseId){
+  return new URL(FACTFIND_FORM_URL+'?continue='+encodeURIComponent(caseId)+
+    (code?'&agentCode='+encodeURIComponent(code):''), location.href).href;
+}
+
+async function continueCase(id){
+  var raw=RAW_BY_ID[id], row=null;
+  for(var i=0;i<ALL.length;i++){ if(ALL[i].id===id){ row=ALL[i]; break; } }
+  if(!raw || !raw.submissionId || !row){
+    alert('That case is not loaded on this page. Refresh the dashboard and try again.'); return;
+  }
+  if(!canContinue(row)){
+    alert('Only the advisor who wrote a case can continue it, and only before it goes to a manager.'); return;
+  }
+  var url=formUrlFor(row.agentCode||SESSION.code, raw.submissionId);
+
+  var slot=null; try{ slot=JSON.parse(localStorage.getItem(FORM_SLOT)||'null'); }catch(e){ slot=null; }
+  var f=(slot && slot.fields)||{};
+  var serverAt=Date.parse(raw.lastUpdated||raw.submittedAt||'')||0;
+
+  // This device already has this very case, edited after the server last saw
+  // it. Open that copy; writing the server's over it would throw the edits away.
+  if(f.submissionId && String(f.submissionId)===String(raw.submissionId) && (slot.ts||0)>serverAt){
+    window.open(url,'_blank'); return;
+  }
+
+  // A different client's unsent work is in the form on this device. Never
+  // overwrite it unasked, and put it on the server first so it is not lost.
+  var w=null;
+  if(String(f.submissionId||'')!==String(raw.submissionId) && slotHasWork(f) && !slotIsOnServer(slot)){
+    var who=slotName(f)||'another client';
+    if(!confirm('The fact find on this device has '+who+' in it, not yet sent.\n\n'+
+                'Continuing '+(row.clientName||'this case')+' replaces it here. '+who+
+                ' is saved to your drafts on the branch server first, and opens again from "My drafts" in the form.\n\n'+
+                'Continue?')) return;
+    w=window.open('','_blank');          // opened now, while the tap still counts, or the browser blocks it
+    if(w){ try{ w.document.write('<title>Opening…</title><p style="font:15px system-ui,sans-serif;padding:24px;color:#334155">Saving '+escapeHtml(who)+' to your drafts…</p>'); }catch(e){} }
+    var saved=await pushSlotAsDraft(f);
+    if(!saved && !confirm(who+' could not be saved to the branch server just now.\n\n'+
+                          'Replace it on this device anyway? It will be lost.')){
+      if(w) try{ w.close(); }catch(e){}
+      return;
+    }
+  }
+
+  try{
+    localStorage.setItem(FORM_SLOT, JSON.stringify({fields:formFieldsOf(raw), sigs:{}, ts:Date.now()}));
+    // The form's autosave keeps one server draft per case, under the case's own
+    // id, and Send for Manager's Review clears it.
+    localStorage.setItem(FORM_DRAFT_PTR, String(raw.submissionId));
+  }catch(e){
+    if(w) try{ w.close(); }catch(e2){}
+    alert('This browser would not store the case, so the form cannot open it. Private browsing blocks this.');
+    return;
+  }
+  if(w) w.location.href=url; else window.open(url,'_blank');
+}
+
+// Read-only. The case is already on this page, sent by the server for whoever
+// is signed in, so it is handed to the form on this device rather than asked
+// for again: the form opens it view-only (dashboardCopyOf in FFPROJECT.html).
+// Nothing can be signed from that view, which is why it needs no token.
+var FORM_VIEW_PREFIX='rrbranch_dashview_';
+function clearCaseViews(maxAgeMs){
+  try{
+    for(var i=localStorage.length-1;i>=0;i--){
+      var k=localStorage.key(i);
+      if(!k || k.indexOf(FORM_VIEW_PREFIX)!==0) continue;
+      var at=0; try{ at=(JSON.parse(localStorage.getItem(k)||'{}')||{}).at||0; }catch(e){}
+      if(!maxAgeMs || Date.now()-at>maxAgeMs) localStorage.removeItem(k);
+    }
+  }catch(e){}
+}
+function openCase(id){
+  var raw=RAW_BY_ID[id];
+  if(!raw || !raw.submissionId){
+    alert('That case is not loaded on this page. Refresh the dashboard and try again.'); return;
+  }
+  clearCaseViews(SESSION_MAX_AGE_MS);    // client records do not pile up on a shared machine
+  try{
+    localStorage.setItem(FORM_VIEW_PREFIX+raw.submissionId,
+      JSON.stringify({data:formFieldsOf(raw), at:Date.now()}));
+  }catch(e){
+    alert('This browser would not store the case, so the form cannot open it. Private browsing blocks this.');
+    return;
+  }
+  window.open(new URL(FACTFIND_FORM_URL+'?id='+encodeURIComponent(raw.submissionId)+'&view=dash',
+                      location.href).href, '_blank');
+}
+
 function logout(){
   SESSION=null;
   document.getElementById('appView').classList.add('hide');
@@ -1676,7 +1881,8 @@ function logout(){
   document.getElementById('liErr').textContent='';
   document.getElementById('kpiGrid').innerHTML=''; document.getElementById('chartGrid').innerHTML=''; document.getElementById('execSummary').innerHTML='';
   document.getElementById('srcNote').textContent='';
-  ALL=[]; LOAD_ERROR=''; setRoster([], 'none');
+  ALL=[]; RAW_BY_ID={}; LOAD_ERROR=''; setRoster([], 'none');
+  clearCaseViews(0);   // the read-only copies Open handed to the form
   // Drop the shared identity handoff too — the fact find form reads it.
   try{ localStorage.removeItem('rrbSession'); }catch(e){}
   if(nameInput) nameInput.focus();
@@ -1709,7 +1915,14 @@ async function refreshData(){
       // the roster get it too. Leaving it here as well would have meant four
       // attempts on this one call and a two-minute wait before anyone was told.
       var j = await fetchJson(url);
-      if(j && j.ok && Array.isArray(j.rows)){ rows=j.rows.map(normalizeRow); SRC='live'; }
+      if(j && j.ok && Array.isArray(j.rows)){
+        // Keep each row exactly as the server sent it as well: Continue hands
+        // the form the case, and the form must get what the server holds, not
+        // the dashboard's translation of it.
+        RAW_BY_ID={};
+        rows=j.rows.map(function(raw){ var n=normalizeRow(raw); RAW_BY_ID[n.id]=raw; return n; });
+        SRC='live';
+      }
       else if(j && j.expired){ logout(); return; }
       else LOAD_ERROR=(j && j.error) ? j.error : 'The server returned no data.';
     }catch(e){
@@ -1798,6 +2011,21 @@ function statusGroup(s){
   if(/review/i.test(s)) return 'review';
   if(/declin/i.test(s)) return 'declined';
   return 'draft';
+}
+// A case's badge. The group sets the colour and every count on the page; the
+// words say what happened. "Draft" on a case its advisor had sent sent the
+// branch looking for a submission that had been made, so the cases that are
+// not drafts at all say what they are, and the status on file is in the tooltip.
+function statusBadge(r){
+  var g=statusGroup(r.status), s=String(r.status||'').toLowerCase();
+  var cls={approved:'b-approved',pending:'b-pending',review:'b-review',draft:'b-draft',declined:'b-decline'}[g];
+  var txt={approved:'Approved',pending:'Pending BM',review:'In review',draft:'Draft',declined:'Declined'}[g];
+  if(g==='draft'){
+    if(s.indexOf('chang')>-1) txt='Sent back';
+    else if(s.indexOf('advice')>-1) txt='Specific need';
+    else if(s.indexOf('cancel')>-1) txt='Cancelled';
+  }
+  return '<span class="badge '+cls+'" title="Status on file: '+escapeHtml(r.status||'none')+'">'+txt+'</span>';
 }
 // The agent's own form writes finalDecide as lowercase 'proceed'/'decline'
 // (FFPROJECT.html's radio values) — compare case-insensitively so every
@@ -2390,8 +2618,10 @@ function qDeep(r){
     kv('Sent back',ret)+
     (avgR?'<div class="qkv"><span class="lbl">Client rating</span><b><span class="qstars">'+stars(avgR)+'</span> '+
       avgR.toFixed(1)+' ('+rates.length+')</b></div>':kv('Client rating','no ratings yet'))+
-    '<div style="margin-top:8px"><a class="qopen" href="FFPROJECT.html?id='+encodeURIComponent(r.id)+
-      '" target="_blank" rel="noopener">Open the full fact find form &rarr;</a></div></div>';
+    // A bare ?id= is refused by the form; openCase hands it this page's copy
+    // of the case, read-only.
+    '<div style="margin-top:8px"><a class="qopen" href="#" data-id="'+escapeHtml(r.id)+
+      '" onclick="openCase(this.dataset.id,null);return false;">Open the full fact find form &rarr;</a></div></div>';
 
   var att='<div class="qsec wide"><h4>Your attestation — tick all four, then approve</h4><div class="qchk">'+
     '<label><input type="checkbox"><span>The client data is complete and accurate — identity, age and contact will stand up to underwriting.</span></label>'+
@@ -2796,7 +3026,20 @@ function renderQueue(){
           '</div>'
         : '';
       var need=qNum(r.insuranceNeed_calc);
-      var acts='<div class="qact">'+
+      // Nobody decides a case they wrote. A manager's own fact find routes to
+      // their own unit, so it lands in their own queue; it shows here, without
+      // the buttons. The review email's door refuses this on the server
+      // (rrbAuthoriseReview); the queue's door (rrbQueueDecide) does not check
+      // yet, so for now this page is the guard.
+      var own=isMine(r);
+      var acts=own
+        ? '<div class="qact"><span class="qown">Your own case &mdash; '+
+            (SESSION.scope && SESSION.scope.kind==='branch'
+              ? 'it cannot be decided by the advisor who wrote it.'
+              : 'the Branch Manager decides it.')+'</span>'+
+          '<button class="qb ghost" data-id="'+escapeHtml(r.id)+'" data-v="toggle">Full review &#9662;</button>'+
+          '</div>'
+        : '<div class="qact">'+
           '<button class="qb ok" data-id="'+escapeHtml(r.id)+'" data-v="approve">Approve</button>'+
           '<button class="qb back" data-id="'+escapeHtml(r.id)+'" data-v="return">Send back&hellip;</button>'+
           '<button class="qb decline" data-id="'+escapeHtml(r.id)+'" data-v="decline">Decline&hellip;</button>'+
@@ -2814,9 +3057,10 @@ function renderQueue(){
         (recl?'<div class="qrec">'+recl+'</div>':'')+
         (flags?'<div class="qflags">'+flags+'</div>':'')+
         heldChip+
-        '<div class="qpick">'+qPicks(r)+'</div>'+
-        '<textarea class="qnote" rows="2" placeholder="What needs to change before you can approve it? Goes to the advisor."></textarea>'+
-        qSignBlock(r)+
+        (own ? '' :
+          '<div class="qpick">'+qPicks(r)+'</div>'+
+          '<textarea class="qnote" rows="2" placeholder="What needs to change before you can approve it? Goes to the advisor."></textarea>'+
+          qSignBlock(r))+
         '<div class="qmsg" style="display:none"></div></div>'+
         acts+
         '<div class="qdet">'+qDeep(r)+'</div></div>';
@@ -3240,18 +3484,17 @@ function qualityHist(rows){
 function recentTable(rows){
   var sorted=rows.slice().sort(function(a,b){return new Date(b.submittedAt)-new Date(a.submittedAt);}).slice(0,25);
   var body=sorted.map(function(r){
-    var g=statusGroup(r.status); var b={approved:'b-approved',pending:'b-pending',review:'b-review',draft:'b-draft',declined:'b-decline'}[g];
-    var bl={approved:'Approved',pending:'Pending BM',review:'In review',draft:'Draft',declined:'Declined'}[g];
     return '<tr><td>'+new Date(r.submittedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+'</td>'+
       '<td>'+r.clientName+'</td><td>'+r.advisorName+'</td><td>'+r.unit+'</td>'+
-      '<td><span class="badge '+b+'">'+bl+'</span></td>'+
+      '<td>'+statusBadge(r)+'</td>'+
       '<td>'+(r.decision||'—')+'</td>'+
       '<td class="num">'+(r.quality||'—')+'</td>'+
       '<td class="num">'+(r.premium?money(r.premium):'—')+'</td>'+
-      '<td>'+(r.replacement?'<span class="badge b-decline">REPL</span>':'')+'</td></tr>';
+      '<td>'+(r.replacement?'<span class="badge b-decline">REPL</span>':'')+'</td>'+
+      '<td>'+caseActCell(r)+'</td></tr>';
   }).join('');
   return '<div class="card col-12"><h3>Recent fact finds</h3><div class="csub">Most recent 25 in the current view</div>'+
-    '<div style="overflow:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Agent</th><th>Unit</th><th>Status</th><th>Decision</th><th class="num">Qual</th><th class="num">Premium</th><th>Flag</th></tr></thead><tbody>'+(body||'<tr><td colspan="9" style="color:var(--muted)">No fact finds match the current filters.</td></tr>')+'</tbody></table></div></div>';
+    '<div style="overflow:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Agent</th><th>Unit</th><th>Status</th><th>Decision</th><th class="num">Qual</th><th class="num">Premium</th><th>Flag</th><th></th></tr></thead><tbody>'+(body||'<tr><td colspan="10" style="color:var(--muted)">No fact finds match the current filters.</td></tr>')+'</tbody></table></div></div>';
 }
 
 /* ---- AGENT PROFILE DRILL-DOWN ---- */
@@ -3318,8 +3561,8 @@ function openAgent(code){
       '<div><div class="am-sec-title">Case status</div>'+donut(toArr(stMap))+'</div>'+
     '</div>'+
     '<div class="am-sec-title">Recent fact finds</div>'+
-    '<div style="overflow:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Status</th><th>Decision</th><th class="num">Qual</th><th class="num">Premium</th></tr></thead><tbody>'+
-      recent.map(function(r){var g=statusGroup(r.status);var b={approved:'b-approved',pending:'b-pending',review:'b-review',draft:'b-draft',declined:'b-decline'}[g];var bl={approved:'Approved',pending:'Pending BM',review:'In review',draft:'Draft',declined:'Declined'}[g];return '<tr><td>'+new Date(r.submittedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+'</td><td>'+r.clientName+'</td><td><span class="badge '+b+'">'+bl+'</span></td><td>'+(r.decision||'—')+'</td><td class="num">'+(r.quality||'—')+'</td><td class="num">'+(r.premium?money(r.premium):'—')+'</td></tr>';}).join('')+
+    '<div style="overflow:auto"><table><thead><tr><th>Date</th><th>Client</th><th>Status</th><th>Decision</th><th class="num">Qual</th><th class="num">Premium</th><th></th></tr></thead><tbody>'+
+      recent.map(function(r){return '<tr><td>'+new Date(r.submittedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+'</td><td>'+r.clientName+'</td><td>'+statusBadge(r)+'</td><td>'+(r.decision||'—')+'</td><td class="num">'+(r.quality||'—')+'</td><td class="num">'+(r.premium?money(r.premium):'—')+'</td><td>'+caseActCell(r)+'</td></tr>';}).join('')+
     '</tbody></table></div>'+
     '<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" onclick="setF(\'agent\',\''+code+'\');closeAgent()">Filter dashboard to '+name.split(' ')[0]+'</button><button class="btn sm ghost" onclick="closeAgent()">Close</button></div>';
   document.getElementById('agentModal').classList.remove('hide');

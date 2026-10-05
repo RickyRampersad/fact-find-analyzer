@@ -4601,10 +4601,11 @@ function draftSession() {
   catch (e) { return null; }
 }
 
-/** Can this device save to the server at all? Needs a signed-in session. */
+/** Can this device save to the server at all? Needs a signed-in session.
+ *  Drafts go where the session was issued: sessionEndpoint(), not getEndpoint(). */
 function draftsAvailable() {
   const s = draftSession();
-  return !!(s && s.token && getEndpoint && getEndpoint());
+  return !!(s && s.token && sessionEndpoint());
 }
 
 function draftProgress() {
@@ -4674,7 +4675,7 @@ async function draftPush(loud) {
       // never lands on the drafts tab and quietly becomes a second queue.
       data: Object.assign({}, state, { status: 'draft' })
     };
-    const res = await fetch(getEndpoint(), {
+    const res = await fetch(sessionEndpoint(), {
       method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(body)
     });
@@ -4707,7 +4708,7 @@ window.addEventListener('pagehide', function () {
   if (!draftWorthSaving()) return;
   try {
     const s = draftSession();
-    navigator.sendBeacon(getEndpoint(), new Blob([JSON.stringify({
+    navigator.sendBeacon(sessionEndpoint(), new Blob([JSON.stringify({
       stage: 'draft_save', token: s.token, draftId: DRAFT_ID || '',
       progress: draftProgress(), data: Object.assign({}, state, { status: 'draft' })
     })], { type: 'text/plain;charset=utf-8' }));
@@ -4719,7 +4720,8 @@ async function draftList() {
   if (!draftsAvailable()) return [];
   try {
     const s = draftSession();
-    const url = getEndpoint() + (getEndpoint().includes('?') ? '&' : '?') +
+    const ep = sessionEndpoint();
+    const url = ep + (ep.includes('?') ? '&' : '?') +
       'action=draft_list&token=' + encodeURIComponent(s.token) + '&_=' + Date.now();
     const j = await (await fetch(url, { cache: 'no-store' })).json();
     return (j && j.ok && j.drafts) ? j.drafts : [];
@@ -4737,7 +4739,8 @@ async function draftList() {
  */
 async function draftOpen(id) {
   const s = draftSession();
-  const url = getEndpoint() + (getEndpoint().includes('?') ? '&' : '?') +
+  const ep = sessionEndpoint();
+  const url = ep + (ep.includes('?') ? '&' : '?') +
     'action=draft_open&id=' + encodeURIComponent(id) +
     '&token=' + encodeURIComponent(s.token) + '&_=' + Date.now();
   let j;
@@ -4870,7 +4873,8 @@ async function draftDelete(id, who) {
   if (!confirm('Delete the saved draft for "' + (who || 'this client') + '"?\n\n' +
                'This cannot be undone.')) return false;
   const s = draftSession();
-  const url = getEndpoint() + (getEndpoint().includes('?') ? '&' : '?') +
+  const ep = sessionEndpoint();
+  const url = ep + (ep.includes('?') ? '&' : '?') +
     'action=draft_delete&id=' + encodeURIComponent(id) +
     '&token=' + encodeURIComponent(s.token) + '&_=' + Date.now();
   try {
@@ -5004,6 +5008,29 @@ function getEndpoint() {
   }
   return CONFIG.endpoint || '';
 }
+
+// TWO SERVERS, TWO KEYS. Two Apps Script projects answer for this branch and
+// they do not share a signing key:
+//   CONFIG.endpoint (...XMoczA) is an older copy of the system. This form has
+//   always submitted there, and it signed the review link in every submission
+//   e-mail sent so far.
+//   CURRENT_ENDPOINT (...JsrAxxJ3dsQ) is RR Branch FF System, the project that
+//   is maintained. The dashboard signs people in there (since 5 October 2026),
+//   and the digest and the reminders are sent from there.
+// So the old copy refused a dashboard sign-in (drafts and the medical panel
+// answered "session expired"), and refused a link the current project e-mailed
+// as "altered". Anything carried on a dashboard sign-in now goes to the current
+// project; a case link is tried on the old copy and then the current one, and a
+// review goes back to whichever recognised the link (LOAD_EP).
+const CURRENT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec';
+function sessionEndpoint() {
+  // A local mock stands in for both while testing.
+  var ep = getEndpoint();
+  if (isDevHost() && /^http:\/\/(localhost|127\.0\.0\.1)/.test(ep)) return ep;
+  return CURRENT_ENDPOINT;
+}
+// The server that answered for the case on screen. Null until loadFromUrl.
+let LOAD_EP = null;
 
 function setEndpoint(url) {
   url = String(url || '').trim();
@@ -5949,6 +5976,54 @@ function buildClientReviewNoticeHtml() {
 // manager. renderFlowTracker() was a fourth, agent-only wording of the same
 // thing and has been removed rather than left to drift out of step with it.
 
+// The dashboard's read-only hand-over of one case (openCase in index.html).
+function dashboardCopyOf(id) {
+  try {
+    const h = JSON.parse(localStorage.getItem('rrbranch_dashview_' + id) || 'null');
+    return (h && h.data && typeof h.data === 'object') ? h : null;
+  } catch (e) { return null; }
+}
+
+// Ask for the case: the old copy first, as this form always has, then the
+// current project when the old one cannot verify the link's signature (see
+// CURRENT_ENDPOINT). Google sometimes answers with its own "unable to open the
+// file" page instead of running the script; a load changes nothing, so that is
+// asked again, twice, before moving on.
+async function ffLoadFromServers_(primary) {
+  const keyErr = o => !!(o && o.needToken && /altered|not valid/i.test(String(o.error || '')));
+  const tries = [primary];
+  if (LOAD_TOKEN && CURRENT_ENDPOINT && CURRENT_ENDPOINT !== primary &&
+      !/^http:\/\/(localhost|127\.0\.0\.1)/.test(primary)) tries.push(CURRENT_ENDPOINT);
+  const answers = [];
+  let lastErr = null, silent = 0;
+  for (const ep of tries) {
+    const url = ep + (ep.includes('?') ? '&' : '?') +
+                'action=ff_load&id=' + encodeURIComponent(LOAD_ID) +
+                (LOAD_TOKEN ? '&t=' + encodeURIComponent(LOAD_TOKEN) : '');
+    let out = null;
+    for (let i = 0; i < 3 && !out; i++) {
+      if (i) { showStatus('The server is busy, trying again…', true); await new Promise(r => setTimeout(r, 1500 * i)); }
+      try {
+        const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+        const txt = await res.text();
+        try { out = JSON.parse(txt); }
+        catch (pe) { lastErr = new Error('The branch server is busy right now. Try the link again in a minute.'); }
+      } catch (ne) { lastErr = ne; }
+    }
+    if (!out) { silent++; continue; }
+    if (out.ok) { LOAD_EP = ep; return out; }
+    answers.push(out);
+    if (!keyErr(out)) break;      // this server knows the link and said no; the other will not say yes
+  }
+  const known = answers.filter(o => !keyErr(o))[0];
+  if (known) return known;
+  // Every server that answered said "not our signature". If one never answered,
+  // it may well have been the one that signed it: say it was busy, not altered.
+  if (silent && lastErr) throw lastErr;
+  if (answers[0]) return answers[0];
+  throw lastErr || new Error('The branch server did not answer.');
+}
+
 async function loadFromUrl() {
   if (!LOAD_ID) return;
   const endpoint = getEndpoint();
@@ -5965,11 +6040,15 @@ async function loadFromUrl() {
     //
     // The signed token travels with the request; the server decides whether
     // this link may see the case at all, and in what role.
-    const url = endpoint + (endpoint.includes('?') ? '&' : '?') +
-                'action=ff_load&id=' + encodeURIComponent(LOAD_ID) +
-                (LOAD_TOKEN ? '&t=' + encodeURIComponent(LOAD_TOKEN) : '');
-    const res = await fetch(url, { method: 'GET' });
-    const out = await res.json();
+    //
+    // Opened read-only from the dashboard (its Open button, or the approval
+    // queue's "Open the full fact find form"): the dashboard already holds the
+    // case, sent to it by the server for whoever is signed in, and hands it
+    // over on this device. It opens view-only, so nothing can be signed from it
+    // and no token is involved. A link that carries a token always goes to the
+    // server.
+    const handed = LOAD_TOKEN ? null : dashboardCopyOf(LOAD_ID);
+    const out = handed ? { ok: true, data: handed.data } : await ffLoadFromServers_(endpoint);
     if (!out.ok || !out.data) throw new Error(out.error || 'Submission not found');
 
     // Record what the server authorised. applyMode() is NOT called yet — it
@@ -6026,6 +6105,14 @@ async function loadFromUrl() {
     // NOW re-derive the mode from the server's grant — after hydration, so the
     // reviewer's name survives into state rather than being cleared behind it.
     if (REVIEW_GRANT) applyMode();
+    // The view banner's stock words ("This Fact Find has been reviewed...") are
+    // untrue of most cases the dashboard opens: drafts, cases in review.
+    if (handed) {
+      const vb = document.querySelector('.mode-banner');
+      if (vb) vb.innerHTML = '<strong>Read-only.</strong> Opened from the dashboard' +
+        (handed.at ? ', as it stood at ' + new Date(handed.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '') +
+        '. Nothing here can be changed or signed; decisions are made in the dashboard&rsquo;s approval queue.';
+    }
     try { applyClientYesHold(); } catch (e) { console.warn('client-yes hold', e); }
 
     calc();
@@ -6344,8 +6431,9 @@ async function submitForm() {
   const result = document.getElementById('submitResult');
   result.innerHTML = '';
 
-  // Endpoint
-  let endpoint = getEndpoint();
+  // Endpoint. A review goes back to the server that verified its link: the
+  // other one holds a different key and would refuse it (see CURRENT_ENDPOINT).
+  let endpoint = (MODE === 'manager' && LOAD_EP) ? LOAD_EP : getEndpoint();
   if (!endpoint) {
     endpoint = prompt(
       'Paste the Apps Script Web App URL.\n\n' +
@@ -8234,7 +8322,8 @@ async function loadMedPanel() {
   MED_PANEL_STATE = 'loading';
   try {
     const s = (typeof draftSession === 'function') ? draftSession() : null;
-    const ep = (typeof getEndpoint === 'function') ? getEndpoint() : '';
+    // Sign-in authed, so it goes where the sign-in was issued.
+    const ep = (typeof sessionEndpoint === 'function') ? sessionEndpoint() : '';
     if (!s || !s.token || !ep) { MED_PANEL = []; MED_PANEL_STATE = 'done'; return MED_PANEL; }
     const url = ep + (ep.includes('?') ? '&' : '?') + 'action=med_panel&token=' +
                 encodeURIComponent(s.token) + '&_=' + Date.now();
@@ -13058,6 +13147,30 @@ function showContinuedDraftBanner() {
   document.body.insertBefore(b, document.body.firstChild);
 }
 
+// Opened by the dashboard's Continue (continue=<case id>): the advisor's own
+// case, put on this device by the dashboard. Say whose it is and where it ends,
+// because "the save to submit" is ten sections away and was not found.
+function showDashboardContinueBanner() {
+  let sid = '';
+  try { sid = new URLSearchParams(window.location.search).get('continue') || ''; } catch (e) {}
+  if (!sid || MODE !== 'agent' || String(state.submissionId || '') !== sid) return;
+  if (document.getElementById('dashContinueBanner')) return;
+  const who = state.clientName || state.fullName || state.adviceClientName || 'this client';
+  const advice = state.appType === 'advice';
+  const b = document.createElement('div');
+  b.id = 'dashContinueBanner';
+  b.style.cssText = 'background:#F0FDFA;border-bottom:2px solid #0D9488;color:#134E4A;' +
+    'padding:11px 16px;font-size:13.5px;line-height:1.5;display:flex;gap:12px;align-items:center;flex-wrap:wrap';
+  b.innerHTML = '<span>Continuing <strong>' + escapeHtml(who) + '</strong> from the dashboard. Finish it, sign it, ' +
+    'and press <strong>' + (advice ? 'Complete' : 'Send for Manager’s Review') + '</strong> in section 11. ' +
+    'It goes as the same case, not a new one.' +
+    (advice ? ' This is set as <strong>Specific Need Only</strong>, which does not go to a manager; ' +
+              'for a manager’s approval, choose Full Disclosure under Client’s Choice in section 1 first.' : '') +
+    '</span><button type="button" onclick="jumpToSection(11)" style="margin-left:auto;font:inherit;font-size:12.5px;' +
+    'background:#0D9488;color:#fff;border:0;padding:6px 13px;border-radius:7px;cursor:pointer">Go to section 11</button>';
+  document.body.insertBefore(b, document.body.firstChild);
+}
+
 function discardDraftAndRestart() {
   if (!confirm('Discard the saved draft and start a blank fact find?')) return;
   try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
@@ -13187,6 +13300,7 @@ function init() {
 
   // Apply mode based on URL params (agent / manager / view)
   applyMode();
+  try { showDashboardContinueBanner(); } catch (e) {}
 
   // If loading an existing submission via ?id=, fetch and populate
   if (LOAD_ID) {
@@ -17045,6 +17159,11 @@ function rrbRenderReadiness() {
     if (!raw) return { show:false };                                // nothing saved
     var p; try { p = JSON.parse(raw) || {}; } catch (e) { return { show:false }; }
     var f = p.fields || {};
+    // The dashboard's Continue put this case here a moment ago, on purpose.
+    try {
+      var cont = new URLSearchParams(search || '').get('continue');
+      if (cont && String(f.submissionId || '') === cont) return { show:false };
+    } catch (e) {}
     var name = String(f.clientName || f.fullName || f.adviceClientName || '').trim();
     var n = 0, k;
     for (k in f) {
