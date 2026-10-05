@@ -2218,7 +2218,13 @@ function flowStageOf(r) {
   if (st.indexOf('draft') > -1) return 0;
   if (st.indexOf('approv') > -1 || st.indexOf('declin') > -1) return 3;   // back with the agent
   if (st.indexOf('signed') > -1 || st.indexOf('complete') > -1) return 4;
-  return 1;                                                              // waiting on the manager
+  /* With the manager only once it has been submitted for review: the same
+     test the status badge and the approval queue use. Anything else is a
+     draft however it is spelled, and is waiting on nobody. Counting those
+     here put three of Akaash Kalladeen's unsubmitted drafts under "With the
+     manager" on 5 October, while the queue, rightly, had none of them. */
+  if (/review|branch_manager/.test(st)) return 1;                        // waiting on the manager
+  return 0;
 }
 
 function daysSince(v) {
