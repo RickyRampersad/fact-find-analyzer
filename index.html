@@ -1160,17 +1160,24 @@ async function liRunTest(btn, out){
 var FETCH_MS       = 30000;  // each attempt — wide enough for the slow tail
 var FETCH_TRIES    = 3;      // the tail can strike twice running
 var FETCH_PAUSE_MS = 1500;   // a breath, longer each time, so a recycling container is not hammered
+var LOGIN_MS       = 60000;  // a sign-in waits once, long: requests queued for 50s that morning
 
-async function fetchJson(url, ms, onRetry){
+// `again` lists the failures worth another try. Reads can retry a timeout;
+// a sign-in must not. A sign-in that timed out may still have reached the
+// server and been checked, and sending it again counted a second wrong code:
+// five in a few minutes locked Stephanie Rajkumar out on 5 October. Google's
+// busy page is the one failure that proves the script never ran.
+async function fetchJson(url, ms, onRetry, again){
   var last = null;
+  again = again || ['timeout', 'network', 'busy'];
   for (var i = 0; i < FETCH_TRIES; i++){
     try{
-      return await fetchOnce(url, i ? FETCH_MS : (ms || FETCH_MS));
+      return await fetchOnce(url, ms || FETCH_MS);
     }catch(e){
       // Only the failures a retry can actually fix. A 500, an HTML error page
       // from the script itself or a missing endpoint are real answers —
       // retrying hides them.
-      if(!(e && (e.kind === 'timeout' || e.kind === 'network' || e.kind === 'busy'))) throw e;
+      if(!(e && again.indexOf(e.kind) > -1)) throw e;
       last = e;
       if(i < FETCH_TRIES - 1){
         if(typeof onRetry === 'function'){ try{ onRetry(i + 1); }catch(x){} }
@@ -1505,8 +1512,10 @@ async function doLogin(ev){
   try{
     if(!ep) throw new Error('no-endpoint');
     var url=ep+(ep.indexOf('?')>-1?'&':'?')+'action=login&code='+encodeURIComponent(code)+'&pw='+encodeURIComponent(pass);
+    // One long wait, not repeats: a repeat can count as a second wrong code.
+    // Only Google's busy page, which means the script never ran, is retried.
     // Say so while it retries, so a slow server does not look like a hung page.
-    var j=await fetchJson(url, 0, function(){ btn.textContent='Still signing in — the server is slow…'; });
+    var j=await fetchJson(url, LOGIN_MS, function(){ btn.textContent='Still signing in — the server is slow…'; }, ['busy']);
     if(j && j.ok){
       // Identity, role and scope come from the server response — not from the
       // client-side roster — so a tampered page cannot widen its own access.
@@ -1576,8 +1585,10 @@ async function doLogin(ev){
     err.textContent =
         (e && e.message === 'no-endpoint')
           ? 'No data endpoint is configured, so sign-in is unavailable.'
-      : (kind === 'timeout' || kind === 'busy')
-          ? 'The branch server is running slowly right now. It was tried three times and did not answer — wait a minute and press Sign in again. This is the server, not your details.'
+      : (kind === 'busy')
+          ? 'The branch server is too busy to answer right now. It was tried three times — wait a few minutes and press Sign in again. This is the server, not your details.'
+      : (kind === 'timeout')
+          ? 'The branch server did not answer within a minute. Wait a few minutes and press Sign in once — pressing again and again can lock you out for an hour.'
       : (kind === 'network')
           ? 'Could not reach the branch server at all, on two attempts. Check the connection, then try again.'
       : (kind === 'status')

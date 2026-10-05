@@ -16,6 +16,11 @@
  *
  * Built 5 October 2026, when Stephanie Rajkumar (A12408) could not sign in on
  * factfind360.com and neither she nor Akaash could see one of her cases.
+ *
+ * rrbClearSignInLock, below it, lifts the hour-long lockout that five wrong
+ * access codes put on an advisor. It removes that one counter and nothing
+ * else. Run it once they have the right code, or they lock themselves out
+ * again.
  */
 
 var WCS_CODE   = 'A12408';   // the advisor's agent number
@@ -56,6 +61,10 @@ function rrbWhyCantSee() {
       var sheetOk = rrbCheckPassword_(me.email, String(me.pw).trim());
       say('   The stored code matches the code on the sheet: ' + (sheetOk ? 'yes' :
           'NO - the sheet was changed after the last sync. Run rrbSyncAccessPasswords.'));
+      if (sheetOk) {
+        say('   So sign-in accepts exactly the code in the Access code column of their row.');
+        say('   If they are refused, they are typing something else: give them that code.');
+      }
     }
     if (WCS_PW) {
       var typed = rrbCheckPassword_(me.email, String(WCS_PW));
@@ -67,7 +76,9 @@ function rrbWhyCantSee() {
       }
     }
     var tries = parseInt(CacheService.getScriptCache().get('rrb_pwtry_' + me.email) || '0', 10);
-    if (tries) say('   Wrong tries in the last hour: ' + tries + (tries >= 5 ? ' - LOCKED OUT for up to an hour' : ' (five locks them out for an hour)'));
+    if (tries) say('   Wrong tries in the last hour: ' + tries + (tries >= 5
+        ? ' - LOCKED OUT for up to an hour. Once they have the right code, run rrbClearSignInLock.'
+        : ' (five locks them out for an hour)'));
   }
   say('');
 
@@ -152,4 +163,22 @@ function rrbWhyCantSee() {
   say('sign out on the page and sign in again.');
   Logger.log(out.join('\n'));
   return out.join('\n');
+}
+
+/* Lifts the lockout on WCS_CODE: the count of wrong access codes rrbLogin
+   keeps for an hour against the email on their Access tab row. Removes that
+   one counter and nothing else. */
+function rrbClearSignInLock() {
+  var code = String(WCS_CODE || '').trim().toUpperCase();
+  var me = null;
+  try { me = rrbFindByCode_(code, ''); } catch (err) {}
+  if (!me) {
+    Logger.log('No active row on the Access tab with agent number %s and an email. Nothing changed.', code);
+    return;
+  }
+  var cache = CacheService.getScriptCache(), key = 'rrb_pwtry_' + me.email;
+  var before = parseInt(cache.get(key) || '0', 10);
+  cache.remove(key);
+  Logger.log('%s <%s>: %s wrong tries on record; cleared. They can sign in again now, with the code on their row.',
+             me.name, me.email, before);
 }
