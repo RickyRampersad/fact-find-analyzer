@@ -90,11 +90,13 @@ var FYR_OFF_BOARD = { A09088: 'Petra Chadee' };
    never a place among the advisors or in their count.
      code    the code its business is written under in Salesforce (the AGENT
              on its policies). Until it is filled in, the wall shows the broker
-             joining the board with no figures: it cannot see the business,
-             and it will not call that zero.
+             on its line, with the branch, and no figures: it cannot see the
+             business, and it will not call that zero.
      counts  true puts its business in the branch's totals.
-   Nautilus Insurance Brokers, asked for on 5 October 2026. On that day no
-   agent record and no policy in the branch's Salesforce carried the name. */
+   Nautilus Insurance Brokers, asked for on 5 October 2026. It is with the
+   branch, not joining it ("he's not joining, he is with us"), and the wall
+   says so. On that day no agent record and no policy in the branch's
+   Salesforce carried the name. */
 var FYR_BROKERS = [
   { name: 'Nautilus Insurance Brokers', code: '', counts: true }
 ];
@@ -825,7 +827,7 @@ function fyrCheck() {
   FYR_BROKERS.forEach(function (b) {
     if (!b || !b.name) return;
     say('Broker: ' + b.name + (fyrNorm_(b.code) ? ', code ' + fyrNorm_(b.code) + (b.counts !== false ? ', in the totals.' : ', not in the totals.')
-                                              : ', no code yet: on the wall as joining the board, with no figures.'));
+                                              : ', no code yet: on the wall with the branch, no figures until the code is set.'));
   });
   say('');
   var nq = Object.keys(FYR_QUOTAS).length;

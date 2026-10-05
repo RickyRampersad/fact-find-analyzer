@@ -1156,7 +1156,7 @@
              padding:.1em .65em; border-radius:2em; font-size:.74em; font-weight:800}
 #p18 .mbChip.yes{background:var(--gold); color:#221704}
 #p18 .mbChip.no{border:1px solid var(--line-2); color:var(--ink-3); font-weight:700}
-#p18 .mbChip.join{border:1px dashed rgba(45,212,191,.55); color:var(--teal); font-weight:700}
+#p18 .mbChip.dash{color:var(--ink-3); font-weight:700}
 #p18 .mbNum{text-align:right; font-variant-numeric:tabular-nums; color:var(--ink-3)}
 #p18 .mbNum.on{color:var(--ink); font-weight:700}
 #p18 .mbBar{height:.55em; border-radius:.28em; background:rgba(245,185,53,.10); overflow:hidden}
@@ -5967,13 +5967,13 @@ var PROD = {
     M.units.forEach(function(u){
       var ps = u.people || [], uOff = 0, uApi = 0, linked = 0;
       ps.forEach(function(p){ if(p.first) uOff++; uApi += Number(p.api) || 0; if(!u.broker || p.linked) linked++; });
-      /* A broker sits on a line of its own under the units. Until its code is
-         set the wall cannot see its business, and says so rather than
-         printing a zero. */
+      /* A broker sits on a line of its own under the units: with the branch,
+         not joining it. Until its code is set the wall cannot see its
+         business, and says so rather than printing a zero. */
       h.push(u.broker
         ? '<div class="mbU broker"><i></i>Broker<span>' +
             (linked ? (uOff ? 'off the mark' : 'not yet off the mark') + ' &middot; ' + money(uApi)
-                    : 'joining the board &middot; figures once it is linked in Salesforce') + '</span></div>'
+                    : 'with the branch &middot; figures show once linked in Salesforce') + '</span></div>'
         : '<div class="mbU"><i></i>' + esc(String(u.unit).split(' ')[0]) + '&rsquo;s unit' +
             '<span>' + uOff + ' of ' + ps.length + ' off the mark &middot; ' + money(uApi) + '</span></div>');
       ps.forEach(function(p){
@@ -5981,7 +5981,7 @@ var PROD = {
         var hot = (t[0] > 0 || t[1] > 0), dark = u.broker && !p.linked;
         h.push('<div class="mbR"><div class="mbN' + (isOff ? ' off' : '') + '" title="' + mbAttr(p.name) + '">' + esc(p.name) +
                (hot ? '<span class="mbToday">today</span>' : '') + '</div>' +
-               (dark ? '<span class="mbChip join" title="Its business shows once it is linked in Salesforce">Joining</span>'
+               (dark ? '<span class="mbChip dash" title="Its figures show once its business is linked in Salesforce">&mdash;</span>'
                 : isOff ? '<span class="mbChip yes" title="' + mbAttr('Off the mark ' + mbLong(p.first)) + '">&#10003; ' + mbShort(p.first) + '</span>'
                         : '<span class="mbChip no">Not yet</span>') +
                '<div class="mbNum' + (p.apps ? ' on' : '') + '">' + (dark ? '&mdash;' : (Math.round(p.apps) || 0)) + '</div>' +
