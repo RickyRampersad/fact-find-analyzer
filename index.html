@@ -2495,7 +2495,7 @@ function qPadInit(card){
     x.fillText(n, r.width/2, r.height/2-6);
     c.dataset.drawn='1'; if(hint) hint.style.display='none'; };
 }
-function qFire(card,id,v,note,atts,sig,signName){
+function qFire(card,id,v,note,atts,sig,signName,ov){
   var msg=card.querySelector('.qmsg');
   card.querySelectorAll('.qb').forEach(function(x){x.disabled=true;});
   var go=card.querySelector('.qsgo'); if(go) go.disabled=true;
@@ -2503,6 +2503,9 @@ function qFire(card,id,v,note,atts,sig,signName){
   var body={stage:'queue_decide',token:SESSION.token,id:id,v:v,note:note||''};
   if(atts) Object.keys(atts).forEach(function(k){ body[k]=atts[k]?'1':'0'; });
   if(sig){ body.sig=sig; body.signName=signName||''; }
+  // The branch manager's override of the client's Yes. The server honours it
+  // only for a branch-wide session and stamps who overrode it on the file.
+  if(ov) body.ov='1';
   fetch(getEndpoint(),{method:'POST',cache:'no-store',
         headers:{'Content-Type':'text/plain;charset=utf-8'},
         body:JSON.stringify(body)})
@@ -2510,6 +2513,22 @@ function qFire(card,id,v,note,atts,sig,signName){
       .then(function(j){
         if(!j||!j.ok){
           if(j&&j.already){ msg.textContent=j.error+' Refreshing…'; return refreshData(); }
+          /* WAITING ON THE CLIENT'S YES. The server says who may approve
+             without it: the branch manager alone. It always offered him the
+             override (canOverride) and this page never showed it, so the
+             one person allowed to decide had no way to. Asked for on 5
+             October 2026: "as the branch manager to override and approve". */
+          if(j&&j.waitingOnClient&&j.canOverride&&v==='approve'&&!ov){
+            msg.className='qmsg';
+            msg.innerHTML=escapeHtml(j.error)+
+              '<div style="margin-top:10px"><button class="qb qov" type="button">'+
+              'Approve anyway, as Branch Manager</button>'+
+              '<div style="font-size:12px;color:#64748B;margin-top:6px">Your name and the time go on the file as an override.</div></div>';
+            card.querySelectorAll('.qb').forEach(function(x){x.disabled=false;});
+            var g3=card.querySelector('.qsgo'); if(g3) g3.disabled=false;
+            msg.querySelector('.qov').onclick=function(){ qFire(card,id,v,note,atts,sig,signName,true); };
+            return;
+          }
           throw new Error((j&&j.error)||'Could not record the decision.');
         }
         var mine=ALL.filter(function(x){return x.id===id;})[0];
@@ -2524,7 +2543,8 @@ function qFire(card,id,v,note,atts,sig,signName){
         card.classList.add('done'); card.classList.remove('hot');
         var pane=card.querySelector('.qsign'); if(pane) pane.classList.remove('open');
         msg.textContent = j.status==='approved'
-          ? 'Approved and signed. Your signature is in the sign-off box, "I agree" is ticked in your name, the advisor has been emailed, and the client gets their approval letter.'
+          ? (ov ? 'Approved by you as Branch Manager, without the client\'s Yes — that override is on the file. ' : 'Approved and signed. ') +
+            'Your signature is in the sign-off box, "I agree" is ticked in your name, the advisor has been emailed, and the client gets their approval letter.'
           : j.status==='declined'
           ? 'Declined and signed. "I do not agree" is ticked, the case is closed, and the advisor has been told it is not going forward. Nothing went to the client.'
           : 'Sent back. The advisor has been emailed with your reasons.';
