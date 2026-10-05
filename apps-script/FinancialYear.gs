@@ -16,11 +16,13 @@
  *     branch's and still counts (FYR_STILL_COUNTED below). Their figures stay
  *     in the totals; the wall keeps their names off the rows, as it always has.
  *
- * THE MONTH BOARD
- *   · The same answer carries `month`: every active advisor, every working day
- *     of this month, and what each had picked up that day. The wall draws it
- *     as a square per advisor per day, gold on a day with business, beside a
- *     count of the working days gone and to go.
+ * THE MONTH BOARD (panel 19, "Off the mark")
+ *   · The same answer carries `month`: every active advisor at zero until
+ *     their first business of the year is picked up - new business or an
+ *     increase - and the date that happened, which is the day they got off
+ *     the mark. Beside each name, this month's apps and API.
+ *   · With it, the month as a clock (working days gone and to go) and the
+ *     quarter, with the branch's figures for today, the month and the quarter.
  *   · Weekends are not days on it; FYR_HOLIDAYS takes out public holidays.
  *
  * THE SETTLEMENT SIDE
@@ -173,13 +175,16 @@ function fyrNz_(t) { return (t && (t[0] || t[1])) ? [t[0], t[1]] : null; }
    business and increases, the same sources and columns sfBoardData_ reads. */
 function fyrFigures_(from) {
   var sess = sfLogin_();
+  /* MIN(date) is the day each advisor got off the mark this year. */
   var nb = sfQuery_(sess,
-    "SELECT AGENT__r.Agent__c code, SUM(App_Count__c) apps, SUM(Total_API__c) api " +
+    "SELECT AGENT__r.Agent__c code, SUM(App_Count__c) apps, SUM(Total_API__c) api, " +
+    "MIN(Production_Picked_up_Date__c) d " +
     "FROM CLIENT_PORTFOLIO__c WHERE Production_Picked_up_Date__c >= " + from +
     " GROUP BY AGENT__r.Agent__c");
   var inc = sfQuery_(sess,
     "SELECT Policy_Increases__r.AGENT__r.Agent__c code, " +
-    "SUM(App_Count_Inc__c) apps, SUM(Increase_API__c) api " +
+    "SUM(App_Count_Inc__c) apps, SUM(Increase_API__c) api, " +
+    "MIN(Increase_Production_Picked_Up_Date__c) d " +
     "FROM Policy_Increases__c WHERE Increase_Production_Picked_Up_Date__c >= " + from +
     " GROUP BY Policy_Increases__r.AGENT__r.Agent__c");
   var monNb = sfQuery_(sess,
@@ -194,35 +199,43 @@ function fyrFigures_(from) {
     "FROM Policy_Increases__c WHERE Increase_Production_Picked_Up_Date__c >= " + from +
     " GROUP BY Policy_Increases__r.AGENT__r.Agent__c, " +
     "CALENDAR_MONTH(Increase_Production_Picked_Up_Date__c)");
-  var y = {}, i = {};
+  var y = {}, i = {}, first = {};
   function put(map, r) {
     var c = fyrKey_(r.code);
     if (!c) return;
     fyrInto_(map[c] || (map[c] = [0, 0]), [r.apps, r.api]);
+    var d = String(r.d || '').slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d) && (Number(r.apps) > 0 || Number(r.api) > 0) &&
+        (!first[c] || d < first[c])) first[c] = d;
   }
   (nb || []).forEach(function (r) { put(y, r); });
   (inc || []).forEach(function (r) { put(y, r); put(i, r); });
-  return { y: y, inc: i, monNb: monNb || [], monInc: monInc || [] };
+  return { y: y, inc: i, first: first, monNb: monNb || [], monInc: monInc || [] };
 }
 
-/* The month board: every advisor on the wall, every working day of this
-   month, and what each put on the board that day - new business and
-   increases picked up, the same sources and columns as the rest of the board.
-   A square is gold on a day the advisor had business picked up. */
-function fyrMonth_(acc) {
+/* The month board, as the wall shows it: every advisor on the wall starting
+   the year at zero, with this month's apps and API, the year's, and the day
+   each got off the mark - their first business picked up this financial year.
+   New business and increases, the same sources and columns as the rest of
+   the board. Beside it, the month and the quarter as clocks. */
+function fyrMonth_(acc, fy) {
   var MN = ['January','February','March','April','May','June','July','August',
             'September','October','November','December'];
+  var pad = function (n) { return ('0' + n).slice(-2); };
+  var dayOf = function (yy, mm, dd) { return Date.UTC(yy, mm - 1, dd) / 864e5; };
   var today = Utilities.formatDate(new Date(), SF_TZ, 'yyyy-MM-dd');
-  var y = Number(today.slice(0, 4)), m = Number(today.slice(5, 7));
+  var y = Number(today.slice(0, 4)), m = Number(today.slice(5, 7)), d0 = Number(today.slice(8, 10));
   var ym = today.slice(0, 8), lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  var first = ym + '01', last = ym + ('0' + lastDay).slice(-2);
+  var first = ym + '01', last = ym + pad(lastDay);
   var days = [];
   for (var dd = 1; dd <= lastDay; dd++) {
-    var iso = ym + ('0' + dd).slice(-2);
+    var iso = ym + pad(dd);
     var wd = new Date(Date.UTC(y, m - 1, dd)).getUTCDay();
     if (wd === 0 || wd === 6 || FYR_HOLIDAYS.indexOf(iso) > -1) continue;
     days.push(iso);
   }
+  var from = fyrFrom_(new Date());
+  fy = fy || fyrFigures_(from);
 
   var sess = sfLogin_();
   var nb = sfQuery_(sess,
@@ -238,30 +251,47 @@ function fyrMonth_(acc) {
     " AND Increase_Production_Picked_Up_Date__c <= " + last +
     " GROUP BY Policy_Increases__r.AGENT__r.Agent__c, Increase_Production_Picked_Up_Date__c");
 
-  /* Business dated on a weekend or a holiday goes on the working day before
-   it (the first working day, at the start of a month), so it has a square. */
-  function square(iso) {
+  /* By day. Business dated on a weekend or a holiday counts on the working
+     day before it (the first working day, at the start of a month). */
+  function workday(iso) {
     if (days.indexOf(iso) > -1) return iso;
     var before = days.filter(function (x) { return x < iso; });
     return before.length ? before[before.length - 1] : days[0];
   }
-  /* Still-counted advisors go into the total and not onto a row; former
+  /* Still-counted advisors go into the totals and not onto a row; former
      advisors go into neither, as on the rest of the board. */
-  var per = {}, total = [0, 0];
+  var per = {}, total = [0, 0], todayAll = [0, 0];
   function add(r) {
     var c = fyrKey_(r.code), iso = String(r.d || '').slice(0, 10);
     if (!c || !/^\d{4}-\d{2}-\d{2}$/.test(iso) || !fyrCounted_(acc, c)) return;
-    var cell = [Number(r.apps) || 0, Number(r.api) || 0];
+    var cell = [Number(r.apps) || 0, Number(r.api) || 0], wd2 = workday(iso);
     fyrInto_(total, cell);
+    if (wd2 === today) fyrInto_(todayAll, cell);
     if (!fyrNamed_(acc, c)) return;
-    var p = per[c] || (per[c] = {}), sq = square(iso);
-    fyrInto_(p[sq] || (p[sq] = [0, 0]), cell);
+    var p = per[c] || (per[c] = {});
+    fyrInto_(p[wd2] || (p[wd2] = [0, 0]), cell);
   }
   (nb || []).forEach(add);
   (inc || []).forEach(add);
 
-  /* The Access tab's units, the head's first, everyone in a unit by name. */
-  var units = {}, order = [], people = 0, onBoard = 0, firstDay = '';
+  /* The quarter of the financial year we are in: its months, its calendar
+     days, and the production in it, from the year's month-by-month figures. */
+  var qi = Math.floor(((m - FYR_START_MONTH + 12) % 12) / 3);
+  var qM = [0, 1, 2].map(function (k) { return ((FYR_START_MONTH - 1 + qi * 3 + k) % 12) + 1; });
+  var qY0 = qM[0] > m ? y - 1 : y, qY2 = qY0 + (qM[2] < qM[0] ? 1 : 0);
+  var qTo = qY2 + '-' + pad(qM[2]) + '-' + pad(new Date(Date.UTC(qY2, qM[2], 0)).getUTCDate());
+  var qStart = dayOf(qY0, qM[0], 1);
+  var quarter = [0, 0];
+  function addQ(r) {
+    var c = fyrKey_(r.code), mm = Number(r.m);
+    if (c && fyrCounted_(acc, c) && qM.indexOf(mm) > -1) fyrInto_(quarter, [r.apps, r.api]);
+  }
+  (fy.monNb || []).forEach(addQ);
+  (fy.monInc || []).forEach(addQ);
+
+  /* Everyone on the Access tab's units, the head's unit first. Within a unit
+     the advisors with the most API this month lead; at zero, by name. */
+  var units = {}, order = [], people = 0, onMonth = 0, off = 0, firstDay = '', todayNames = [];
   Object.keys(acc).forEach(function (c) {
     var a = acc[c];
     if (!a.active) return;
@@ -269,37 +299,51 @@ function fyrMonth_(acc) {
     var cells = per[c] || {}, on = 0, sum = [0, 0];
     Object.keys(cells).forEach(function (k) {
       fyrInto_(sum, cells[k]);
-      if (cells[k][0] > 0 || cells[k][1] > 0) {
-        on++;
-        if (!firstDay || k < firstDay) firstDay = k;
-      }
+      if (cells[k][0] > 0 || cells[k][1] > 0) on++;
     });
+    var yr = (fy.y && fy.y[c]) || [0, 0];
+    var firstOn = (fy.first && fy.first[c]) || '';
+    if (!firstOn && (yr[0] > 0 || yr[1] > 0)) firstOn = from;     // on the board, date unknown
+    var t = cells[today] || [0, 0];
     people++;
-    if (on) onBoard++;
-    units[a.unit].push({ code: c, name: a.name, days: cells, on: on, apps: sum[0], api: sum[1] });
+    if (on) onMonth++;
+    if (firstOn) {
+      off++;
+      if (!firstDay || firstOn < firstDay) firstDay = firstOn;
+    }
+    if (t[0] > 0 || t[1] > 0) todayNames.push(a.name);
+    units[a.unit].push({ code: c, name: a.name, apps: sum[0], api: sum[1], on: on, days: cells,
+                         fy: [yr[0], yr[1]], first: firstOn, today: [t[0], t[1]] });
   });
   order.sort(function (a, b) {
     if (a === FYR_HEAD) return -1;
     if (b === FYR_HEAD) return 1;
     return a < b ? -1 : a > b ? 1 : 0;
   });
-  var byName = function (a, b) { return a.name < b.name ? -1 : a.name > b.name ? 1 : 0; };
+  var rank = function (a, b) {
+    return (b.api - a.api) || (b.apps - a.apps) || (b.fy[1] - a.fy[1]) ||
+           (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+  };
   var firstNames = [];
   order.forEach(function (u) {
-    units[u].sort(byName);
-    units[u].forEach(function (p) {
-      var c = p.days[firstDay];
-      if (firstDay && c && (c[0] > 0 || c[1] > 0)) firstNames.push(p.name);
-    });
+    units[u].sort(rank);
+    units[u].forEach(function (p) { if (firstDay && p.first === firstDay) firstNames.push(p.name); });
   });
 
-  var gone = days.filter(function (x) { return x < today; }).length;
   return {
     y: y, m: m, label: MN[m - 1], today: today, days: days,
-    gone: gone, workday: days.indexOf(today) > -1,
+    gone: days.filter(function (x) { return x < today; }).length,
+    workday: days.indexOf(today) > -1,
     firstOfYear: m === FYR_START_MONTH,
+    fyLabel: fyrLabel_(from), fyFrom: from,
+    q: { n: qi + 1, months: qM.map(function (k) { return MN[k - 1].slice(0, 3); }),
+         from: qY0 + '-' + pad(qM[0]) + '-01', to: qTo,
+         day: dayOf(y, m, d0) - qStart + 1,
+         days: dayOf(qY2, qM[2], new Date(Date.UTC(qY2, qM[2], 0)).getUTCDate()) - qStart + 1,
+         apps: quarter[0], api: quarter[1] },
     units: order.map(function (u) { return { unit: u, people: units[u] }; }),
-    total: { apps: total[0], api: total[1], people: people, on: onBoard },
+    total: { apps: total[0], api: total[1], people: people, on: onMonth, off: off,
+             today: todayAll, todayNames: todayNames },
     first: firstDay ? { day: firstDay, names: firstNames } : null
   };
 }
@@ -432,7 +476,7 @@ function fyrBoard_(d) {
   /* The month board travels with the board. If Salesforce will not give the
      days, the rest of the board still goes out and the wall skips that slide. */
   var month = null;
-  try { month = fyrMonth_(acc); }
+  try { month = fyrMonth_(acc, fy); }
   catch (errM) { diag.month = String(errM && errM.message || errM); }
   return { submitted: sub, agents: agents, diag: diag, month: month };
 }
@@ -684,9 +728,10 @@ function fyrCheck() {
   try {
     var fy = fyrFigures_(from);
     say('Salesforce: ' + Object.keys(fy.y).length + ' advisor(s) with production since ' + from + '.');
-    var mb = fyrMonth_(acc);
+    var mb = fyrMonth_(acc, fy);
     say('The ' + mb.label + ' board: ' + mb.days.length + ' working days, ' + mb.gone + ' gone; ' +
-        mb.total.on + ' of ' + mb.total.people + ' advisors on it so far.');
+        mb.total.off + ' of ' + mb.total.people + ' advisors off the mark in ' + mb.fyLabel +
+        '. Q' + mb.q.n + ' is ' + mb.q.months.join('-') + ', day ' + mb.q.day + ' of ' + mb.q.days + '.');
   } catch (err) {
     say('Salesforce did not answer: ' + (err && err.message || err));
   }

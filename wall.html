@@ -1096,13 +1096,16 @@
 }
 
 
-/* ═══ THE MONTH BOARD — panel 19 ═══════════════════════════════════════════
-   Every advisor, every working day of the month: a square each, gold on a day
-   the advisor had business picked up (new business or an increase). Beside
-   it, the month as a clock - working days gone and to go - and the week, the
-   month and the year in four tiles. Asked for on 5 October 2026, the first
-   week of FY27: "show how much days has gone by in October and motivate
-   persons to be on that board daily".
+/* ═══ OFF THE MARK — panel 19 ═══════════════════════════════════════════════
+   The month board for the new year. Every advisor starts FY27 at zero; the
+   first business picked up this year - new business or an increase - gets
+   them off the mark, and the date they did it is printed beside their name.
+   Beside the list, the month as a clock (working days gone and to go) and
+   the quarter. Asked for on 5 October 2026, the first week of FY27: "show
+   how much days has gone by in October and motivate persons to be on that
+   board daily", and then "stimulate persons to get off the mark". A first cut
+   drew a square per advisor per day; it did not say what it meant, so it
+   went, and the list says it in words.
    It draws the `month` block FinancialYear.gs sends with prodboard. Until a
    board arrives with one, the rotation steps over this panel, as it does over
    panel 18 without its day. */
@@ -1115,78 +1118,79 @@
 #p18 .mbHero b{font-size:3.6em; font-weight:800; letter-spacing:-.04em; line-height:.95}
 #p18 .mbHero span{font-size:.95em; font-weight:600; color:var(--ink-2)}
 #p18 .mbMeter{display:flex; gap:.18em; height:.7em; margin-top:.8em}
-#p18 .mbMeter i{flex:1; border-radius:.2em; background:rgba(245,185,53,.11)}
-#p18 .mbMeter i.past{background:rgba(147,167,196,.09)}
-#p18 .mbMeter i.today{background:var(--teal)}
+#p18 .mbMeter i{flex:1; border-radius:.2em; box-shadow:inset 0 0 0 1px rgba(147,167,196,.26)}
+#p18 .mbMeter i.past{background:rgba(147,167,196,.42); box-shadow:none}
+#p18 .mbMeter i.today{background:var(--teal); box-shadow:0 0 .6em rgba(0,207,234,.45)}
 #p18 .mbFoot{display:flex; justify-content:space-between; gap:1em; margin-top:.6em; font-size:.72em; color:var(--ink-2)}
 #p18 .mbFoot b{color:var(--ink)}
+#p18 .mbQ{margin-top:.75em; padding-top:.7em; border-top:1px solid var(--line); font-size:.72em; color:var(--ink-2)}
+#p18 .mbQ b{color:var(--ink)}
+#p18 .mbQbar{height:.42em; margin-top:.45em; border-radius:.21em; background:rgba(147,167,196,.12); overflow:hidden}
+#p18 .mbQbar i{display:block; height:100%; border-radius:.21em; background:linear-gradient(90deg,var(--teal-deep),var(--teal))}
 #p18 .mbTiles{display:grid; grid-template-columns:1fr 1fr; gap:.7em}
 #p18 .mbTiles .stat{padding:.7em .95em}
 #p18 .mbTiles .k{font-size:.62em}
 #p18 .mbTiles .val{font-size:2.15em; letter-spacing:-.02em}
 #p18 .mbTiles .s{font-size:.68em}
-#p18 .mbFirst{margin-top:auto; border:1px solid rgba(245,185,53,.35); border-radius:.75em; padding:.8em 1em;
-              font-size:.8em; line-height:1.4; color:var(--ink-2);
+#p18 .mbFirst{margin-top:auto; border:1px solid rgba(245,185,53,.35); border-radius:.75em; padding:.85em 1.1em;
               background:linear-gradient(90deg,rgba(245,185,53,.14),rgba(245,185,53,.04))}
-#p18 .mbFirst b{color:var(--ink)}
+#p18 .mbFk{font-size:.62em; letter-spacing:.2em; text-transform:uppercase; font-weight:800; color:var(--gold)}
+#p18 .mbFn{margin-top:.12em; font-size:1.9em; font-weight:800; letter-spacing:-.02em; line-height:1.12; color:var(--ink)}
+#p18 .mbFn.open{color:var(--gold)}
+#p18 .mbFn.many{font-size:1.3em}
+#p18 .mbFs{margin-top:.3em; font-size:.78em; line-height:1.4; color:var(--ink-2)}
+#p18 .mbFs b{color:var(--ink)}
 #p18 .mbCard{display:flex; flex-direction:column; min-height:0; min-width:0; padding:.85em 1.05em}
 #p18 .mbCap{display:flex; align-items:baseline; justify-content:space-between; gap:1em}
 #p18 .mbCap b{font-weight:800}
 #p18 .mbCap span{font-size:.68em; color:var(--ink-3)}
-#p18 .mbBoard{flex:1; min-height:0; overflow:auto; margin-top:.4em; font-size:.82em}
-#p18 .mbR{display:flex; align-items:center; height:1.82em; width:max-content; min-width:100%}
-#p18 .mbR.hd{height:2.4em; align-items:flex-end; padding-bottom:.3em}
-#p18 .mbN{flex:none; width:11.5em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-#p18 .mbDays{display:flex; flex:none}
-#p18 .mbWk{display:flex; gap:.28em; margin-right:.75em}
-#p18 .mbC{display:block; flex:none; width:1.42em; height:1.42em; border-radius:.3em; background:rgba(245,185,53,.11)}
-#p18 .mbC.past{background:rgba(147,167,196,.07)}
-#p18 .mbC.on{background:var(--gold)}
-#p18 .mbC.today{background:rgba(45,212,191,.13); box-shadow:inset 0 0 0 .1em rgba(45,212,191,.6)}
-#p18 .mbC.today.on{background:var(--gold); box-shadow:inset 0 0 0 .1em rgba(255,255,255,.6)}
-#p18 .mbH{display:flex; flex-direction:column; align-items:center; flex:none; width:1.42em; color:var(--ink-3); line-height:1.15}
-#p18 .mbH s{text-decoration:none; font-size:.62em; font-weight:700}
-#p18 .mbH em{font-style:normal; font-size:.78em; font-weight:700; color:var(--ink-2)}
-#p18 .mbH.past em{color:var(--ink-3)}
-#p18 .mbH.today s, #p18 .mbH.today em{color:var(--teal)}
-#p18 .mbT{flex:none; width:4.2em; text-align:right; color:var(--ink-3); font-variant-numeric:tabular-nums}
-#p18 .mbT.api{width:5.4em}
-#p18 .mbT.on{color:var(--ink); font-weight:700}
-#p18 .mbR.hd .mbT{font-size:.62em; letter-spacing:.12em; text-transform:uppercase; font-weight:800;
-                  width:6.8em; white-space:nowrap}
-#p18 .mbR.hd .mbT.api{width:8.7em}
+#p18 .mbBoard{flex:1; min-height:0; overflow:auto; margin-top:.35em; font-size:.84em}
+#p18 .mbR{display:grid; align-items:center; column-gap:1.1em; height:1.72em;
+          grid-template-columns:minmax(10.5em,1.35fr) 8.4em 3.4em 5.4em minmax(5em,2fr)}
+#p18 .mbR.hd{height:2em; align-items:end; padding-bottom:.3em; border-bottom:1px solid var(--line)}
+#p18 .mbR.hd span{font-size:.62em; letter-spacing:.12em; text-transform:uppercase; font-weight:800; color:var(--ink-3); white-space:nowrap}
+#p18 .mbR.hd .mbRt{text-align:right}
+#p18 .mbN{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+#p18 .mbN.off{font-weight:700}
+#p18 .mbChip{justify-self:start; display:inline-flex; align-items:center; gap:.35em; white-space:nowrap;
+             padding:.1em .65em; border-radius:2em; font-size:.74em; font-weight:800}
+#p18 .mbChip.yes{background:var(--gold); color:#221704}
+#p18 .mbChip.no{border:1px solid var(--line-2); color:var(--ink-3); font-weight:700}
+#p18 .mbNum{text-align:right; font-variant-numeric:tabular-nums; color:var(--ink-3)}
+#p18 .mbNum.on{color:var(--ink); font-weight:700}
+#p18 .mbBar{height:.55em; border-radius:.28em; background:rgba(245,185,53,.10); overflow:hidden}
+#p18 .mbBar i{display:block; height:100%; border-radius:.28em; background:var(--gold)}
+#p18 .mbToday{display:inline-block; margin-left:.5em; padding:.06em .5em; border-radius:2em; vertical-align:.12em;
+              font-size:.6em; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#04211D; background:var(--teal)}
 #p18 .mbU{display:flex; align-items:center; gap:.55em; height:2.3em; padding-top:.5em; font-size:.68em;
           letter-spacing:.14em; text-transform:uppercase; font-weight:800; color:var(--ink-2)}
 #p18 .mbU i{width:.32em; height:1.15em; border-radius:.16em; background:linear-gradient(var(--gold),var(--gold-deep))}
-#p18 .mbU span{color:var(--ink-3)}
-#p18 .mbKey{display:flex; flex-wrap:wrap; align-items:center; gap:.4em 1.3em; margin-top:.5em; padding-top:.55em;
-            border-top:1px solid var(--line); font-size:.66em; color:var(--ink-2)}
-#p18 .mbKey i{display:inline-block; width:1em; height:1em; border-radius:.25em; vertical-align:-.15em; margin-right:.45em}
-#p18 .mbKey .src{margin-left:auto; color:var(--ink-3)}
-/* A laptop: the left column narrows and the board's type steps down, so all
-   22 days and both totals stay on screen; a short screen tightens the rows. */
+#p18 .mbU span{color:var(--ink-3); letter-spacing:.06em; text-transform:none; font-weight:700}
+#p18 .mbKey{margin-top:.5em; padding-top:.55em; border-top:1px solid var(--line); font-size:.68em; line-height:1.45; color:var(--ink-2)}
+#p18 .mbKey b{color:var(--ink)}
+/* A laptop: the left column narrows and the list's type steps down; a short
+   screen tightens the rows, so every advisor stays on screen. */
 @media (min-width:1101px) and (max-width:1600px){
   #p18 .mbGrid{grid-template-columns:minmax(0,19.5em) minmax(0,1fr)}
   #p18 .mbHero b{font-size:3em}
-  #p18 .mbBoard{font-size:.74em}
+  #p18 .mbBoard{font-size:.78em}
 }
 @media (min-width:1101px) and (max-height:900px){
-  #p18 .mbR{height:1.52em}
-  #p18 .mbR.hd{height:2.2em}
-  #p18 .mbC{width:1.22em; height:1.22em}
-  #p18 .mbH{width:1.22em}
-  #p18 .mbU{height:1.9em; padding-top:.3em}
+  #p18 .mbR{height:1.42em}
+  #p18 .mbR.hd{height:1.8em}
+  #p18 .mbU{height:1.75em; padding-top:.25em}
   #p18 .mbTiles .stat{padding:.5em .85em}
   #p18 .mbTiles .val{font-size:1.85em}
   #p18 .mbClock{padding:.8em 1em}
+  #p18 .mbQ{margin-top:.5em; padding-top:.5em}
 }
 @media (max-width:1100px){
   #p18{overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding-bottom:7em}
   #p18 > *{flex:0 0 auto !important; min-height:auto !important}
   #p18 .mbGrid{grid-template-columns:minmax(0,1fr)}
   #p18 .mbBoard{overflow-x:auto; overflow-y:visible; overscroll-behavior-x:contain}
-  /* the days scroll under the names, so the names keep the card's colour */
-  #p18 .mbN{position:sticky; left:0; z-index:1; background:var(--panel)}
+  #p18 .mbR{grid-template-columns:minmax(8.5em,1fr) 7.4em 2.6em 4.6em; column-gap:.7em}
+  #p18 .mbBar{display:none}
 }
 
 
@@ -2526,9 +2530,9 @@
     <div class="pdnote" id="saidNote"></div>
   </section>
 
-  <!-- 19 · THE MONTH BOARD — every advisor, every working day of the month -->
+  <!-- 19 · OFF THE MARK — every advisor starts the year at zero -->
   <section class="panel" id="p18">
-    <div class="ptitle"><h1 id="t_p18"></h1><span class="tag">The month board</span></div>
+    <div class="ptitle"><h1 id="t_p18"></h1><span class="tag">Off the mark</span></div>
     <div class="mbGrid">
       <div class="mbLeft">
         <div class="card mbClock">
@@ -2536,28 +2540,24 @@
           <div class="mbHero"><b class="num" id="mbDay">&mdash;</b><span id="mbOf"></span></div>
           <div class="mbMeter" id="mbMeter"></div>
           <div class="mbFoot"><span id="mbGone"></span><span id="mbLeftN"></span></div>
+          <div class="mbQ"><span id="mbQ"></span><div class="mbQbar"><i id="mbQbar" style="width:0"></i></div></div>
         </div>
         <div class="mbTiles">
-          <div class="stat"><div class="k">This week</div><div class="val num" id="mbWk">&mdash;</div>
+          <div class="stat"><div class="k">Today</div><div class="val num" id="mbTd">&mdash;</div>
+            <div class="s" id="mbTdS">&nbsp;</div></div>
+          <div class="stat g"><div class="k">This week</div><div class="val num" id="mbWk">&mdash;</div>
             <div class="s" id="mbWkS">&nbsp;</div></div>
-          <div class="stat g"><div class="k" id="mbMoK">This month</div><div class="val num" id="mbMo">&mdash;</div>
+          <div class="stat"><div class="k" id="mbMoK">This month</div><div class="val num" id="mbMo">&mdash;</div>
             <div class="s" id="mbMoS">&nbsp;</div></div>
-          <div class="stat"><div class="k" id="mbFyK">This year</div><div class="val num" id="mbFy">&mdash;</div>
-            <div class="s" id="mbFyS">&nbsp;</div></div>
-          <div class="stat g"><div class="k">On the board</div><div class="val num" id="mbOn">&mdash;</div>
-            <div class="s" id="mbOnS">&nbsp;</div></div>
+          <div class="stat g"><div class="k" id="mbQK">This quarter</div><div class="val num" id="mbQv">&mdash;</div>
+            <div class="s" id="mbQS">&nbsp;</div></div>
         </div>
         <div class="mbFirst" id="mbFirst"></div>
       </div>
       <div class="card mbCard">
-        <div class="mbCap"><b id="mbCapT">The month board</b><span>one square for every advisor, every working day</span></div>
+        <div class="mbCap"><b id="mbCapT">Off the mark</b><span id="mbCapS"></span></div>
         <div class="mbBoard" id="mbBoard"></div>
-        <div class="mbKey">
-          <span><i style="background:var(--gold)"></i>business on the board that day</span>
-          <span><i style="background:rgba(45,212,191,.13);box-shadow:inset 0 0 0 .1em rgba(45,212,191,.6)"></i>today</span>
-          <span><i style="background:rgba(245,185,53,.11)"></i>still open</span>
-          <span class="src">Business = new business or an increase, picked up. From Salesforce.</span>
-        </div>
+        <div class="mbKey" id="mbKey"></div>
       </div>
     </div>
   </section>
@@ -5886,12 +5886,13 @@ var PROD = {
       '</Styles>'+W.join('')+'</Workbook>';
   }
 
-  /* ═══ THE MONTH BOARD (panel 19) ═══════════════════════════════════════
+  /* ═══ OFF THE MARK (panel 19) ══════════════════════════════════════════
      M is the `month` block from prodboard: the working days of the month,
-     the units as the Access tab has them, and per advisor the days with
-     business picked up, as {'yyyy-MM-dd': [apps, api]}. S is the board it
-     came with, for the week and the year. Nothing here is invented: a month
-     with nobody on it says so in the title, and the squares stay open. */
+     the quarter, the units as the Access tab has them and, per advisor, this
+     month's apps and API, the year's, the day they got off the mark (their
+     first business picked up this year) and today's. S is the board it came
+     with, for the week. Nothing here is invented: nobody off the mark says
+     so in the title, and a row at zero reads "Not yet". */
   var MB_WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   var MB_MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function mbParts(iso){
@@ -5899,25 +5900,23 @@ var PROD = {
     return { wd: d.getUTCDay(), d: +p[2], m: +p[1], t: d.getTime() };
   }
   function mbLong(iso){ var x = mbParts(iso); return MB_WD[x.wd] + ' ' + x.d + ' ' + MB_MO[x.m - 1]; }
+  function mbShort(iso){ var x = mbParts(iso); return x.d + ' ' + MB_MO[x.m - 1]; }
   function mbAttr(s){ return String(s).replace(/[&<>"]/g, function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
   function mbAnd(a){ return a.length < 3 ? a.join(' and ') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
-  function mbPickups(k){ k = Math.round(Number(k) || 0); return k + (k === 1 ? ' pickup' : ' pickups'); }
+  function mbApps(k){ k = Math.round(Number(k) || 0); return k + (k === 1 ? ' app' : ' apps'); }
   function paintMonth(M, S){
     if(!M || !M.days || !M.days.length || !M.units) return false;
     var days = M.days, n = days.length, today = M.today, gone = M.gone || 0;
-    var T = M.total || {}, on = T.on || 0, ppl = T.people || 0;
-    var fy = (S && S.yearLabel) || 'Year';
-    var tot = (S && S.total) || {}, w = tot.w || [0, 0], y = tot.y || [0, 0];
+    var T = M.total || {}, off = T.off || 0, ppl = T.people || 0;
+    var fy = M.fyLabel || (S && S.yearLabel) || 'the year', Q = M.q || null;
+    var w = (S && S.total && S.total.w) || [0, 0], td = T.today || [0, 0];
 
-    set('t_p18', on ? '<i>' + on + ' of ' + ppl + '</i> on the ' + esc(M.label) + ' board'
-                    : 'Everyone starts at <i>zero.</i>');
-    var tag = q('p18') && q('p18').querySelector('.tag');
-    if(tag) tag.textContent = 'The ' + M.label + ' board';
-    set('mbCapT', 'The ' + esc(M.label) + ' board');
+    set('t_p18', off ? '<i>' + off + ' of ' + ppl + '</i> off the mark in ' + esc(fy)
+                     : 'Everyone starts at <i>zero.</i>');
 
-    /* The clock. A weekday counts itself; on a weekend the days gone are the
-       count, and before the first working day it says when that is. */
+    /* The month as a clock. A weekday counts itself; on a weekend the days
+       gone are the count, and before the first working day it says when. */
     var dayNo = M.workday ? gone + 1 : gone, left = n - gone;
     set('mbMonth', esc(M.label));
     set('mbDay', dayNo ? 'Day ' + dayNo : 'Day 1');
@@ -5928,48 +5927,56 @@ var PROD = {
     set('mbGone', gone + ' gone');
     set('mbLeftN', left ? '<b>' + left + ' to go</b>' + (M.workday ? ', today included' : '')
                         : 'the month is done');
-
-    set('mbWk', money(w[1] || 0)); set('mbWkS', mbPickups(w[0]));
-    set('mbMoK', esc(M.label)); set('mbMo', money(T.api || 0)); set('mbMoS', mbPickups(T.apps));
-    set('mbFyK', esc(fy) + ' so far'); set('mbFy', money(y[1] || 0));
-    var fyDay = (S && S.yearFrom) ? Math.round((mbParts(today).t - mbParts(S.yearFrom).t) / 864e5) + 1 : 0;
-    set('mbFyS', fyDay > 0 ? 'day ' + fyDay + ' of the year' : '&nbsp;');
-    set('mbOn', on + ' of ' + ppl); set('mbOnS', 'advisors this month');
-
-    var whose = M.firstOfYear ? fy : M.label;
-    set('mbFirst', (M.first && M.first.names && M.first.names.length)
-      ? 'First on the ' + esc(whose) + ' board: <b>' + esc(mbAnd(M.first.names)) + '</b>, ' + mbLong(M.first.day) + '.'
-      : '<b>The first name on the ' + esc(whose) + ' board is still open.</b> Make it yours this week.');
-
-    /* The weeks, Monday to Friday, with a gap between them. */
-    var weeks = [], wkKey = null;
-    days.forEach(function(d){
-      var x = mbParts(d), mon = x.t - ((x.wd + 6) % 7) * 864e5;
-      if(mon !== wkKey){ weeks.push([]); wkKey = mon; }
-      weeks[weeks.length - 1].push(d);
-    });
-    function cols(fn){
-      return '<div class="mbDays">' + weeks.map(function(wk){
-        return '<div class="mbWk">' + wk.map(fn).join('') + '</div>';
-      }).join('') + '</div>';
+    if(Q){
+      set('mbQ', '<b>Q' + Q.n + ' ' + esc(fy) + '</b> &middot; ' + esc(Q.months[0] + '–' + Q.months[2]) +
+                 ' &middot; day ' + Q.day + ' of ' + Q.days + ', ends ' + mbShort(Q.to));
+      var qb = q('mbQbar'); if(qb) qb.style.width = Math.max(0, Math.min(100, Q.day / Q.days * 100)) + '%';
     }
-    var h = ['<div class="mbR hd"><div class="mbN"></div>' + cols(function(d){
-      var x = mbParts(d);
-      return '<span class="mbH' + (d < today ? ' past' : d === today ? ' today' : '') + '"><s>' +
-             'SMTWTFS'.charAt(x.wd) + '</s><em>' + x.d + '</em></span>';
-    }) + '<div class="mbT">Days on</div><div class="mbT api">' + esc(M.label) + '</div></div>'];
+
+    set('mbTd', money(td[1] || 0));
+    set('mbTdS', (T.todayNames && T.todayNames.length) ? esc(mbAnd(T.todayNames))
+               : (td[0] || td[1]) ? 'picked up today' : (M.workday ? 'nobody yet today' : 'not a working day'));
+    set('mbWk', money(w[1] || 0)); set('mbWkS', mbApps(w[0]));
+    set('mbMoK', esc(M.label)); set('mbMo', money(T.api || 0)); set('mbMoS', mbApps(T.apps));
+    if(Q){ set('mbQK', 'Q' + Q.n + ' ' + esc(fy)); set('mbQv', money(Q.api || 0)); set('mbQS', mbApps(Q.apps) + ' &middot; ends ' + mbShort(Q.to)); }
+
+    /* The first name of the year. The count of who is still to go sits after
+       a dot, never after the date: "Fri 2 Oct. 16 still to go" reads as the
+       16th. */
+    var F = (M.first && M.first.names && M.first.names.length) ? M.first : null;
+    set('mbFirst', '<div class="mbFk">First off the mark in ' + esc(fy) + '</div>' +
+      (F ? '<div class="mbFn' + (F.names.length > 1 ? ' many' : '') + '">' + esc(mbAnd(F.names)) + '</div>' +
+           '<div class="mbFs">' + mbLong(F.day) + ' &middot; ' +
+           (off < ppl ? '<b>' + (ppl - off) + '</b> still to get off the mark' : 'everyone is off the mark') + '</div>'
+         : '<div class="mbFn open">Still open</div>' +
+           '<div class="mbFs">Nobody is off the mark yet. Make it your name this week.</div>'));
+
+    set('mbCapT', 'Off the mark &middot; ' + off + ' of ' + ppl);
+    set('mbKey', '<b>Off the mark</b> is your first business picked up in ' + esc(fy) +
+                 ' &mdash; a new policy or an increase. The date on your name is the day it counted. ' +
+                 'Apps and API are ' + esc(M.label) + '&rsquo;s, new business and increases together, as picked up in Salesforce.');
+
+    /* The list: everyone, unit by unit, the most API this month first. */
+    var top = 0;
+    M.units.forEach(function(u){ (u.people || []).forEach(function(p){ top = Math.max(top, Number(p.api) || 0); }); });
+    set('mbCapS', esc(M.label) + '&rsquo;s apps and API' + (top ? ', highest first' : ' &middot; A to Z until the first business'));
+    var h = ['<div class="mbR hd"><span>Advisor</span><span>Off the mark</span><span class="mbRt">Apps</span>' +
+             '<span class="mbRt">API</span><span></span></div>'];
     M.units.forEach(function(u){
-      var ps = u.people || [];
-      h.push('<div class="mbU"><i></i>' + esc(String(u.unit).split(' ')[0]) + '&rsquo;s unit<span>' + ps.length + '</span></div>');
+      var ps = u.people || [], uOff = 0, uApi = 0;
+      ps.forEach(function(p){ if(p.first) uOff++; uApi += Number(p.api) || 0; });
+      h.push('<div class="mbU"><i></i>' + esc(String(u.unit).split(' ')[0]) + '&rsquo;s unit' +
+             '<span>' + uOff + ' of ' + ps.length + ' off the mark &middot; ' + money(uApi) + '</span></div>');
       ps.forEach(function(p){
-        h.push('<div class="mbR"><div class="mbN" title="' + mbAttr(p.name) + '">' + esc(p.name) + '</div>' + cols(function(d){
-          var c = p.days && p.days[d], hit = !!(c && (c[0] > 0 || c[1] > 0));
-          var cls = 'mbC' + (hit ? ' on' : d < today ? ' past' : '') + (d === today ? ' today' : '');
-          var says = hit ? money(c[1]) + (c[0] ? ' · ' + mbPickups(c[0]) : '')
-                         : d < today ? 'nothing picked up' : d === today ? 'today, still open' : 'still open';
-          return '<i class="' + cls + '" title="' + mbAttr(p.name + ' · ' + mbLong(d) + ' · ' + says) + '"></i>';
-        }) + '<div class="mbT' + (p.on ? ' on' : '') + '">' + (p.on || 0) + '</div>' +
-             '<div class="mbT api' + (p.api ? ' on' : '') + '">' + money(p.api || 0) + '</div></div>');
+        var isOff = !!p.first, t = p.today || [0, 0], api = Number(p.api) || 0;
+        var hot = (t[0] > 0 || t[1] > 0);
+        h.push('<div class="mbR"><div class="mbN' + (isOff ? ' off' : '') + '" title="' + mbAttr(p.name) + '">' + esc(p.name) +
+               (hot ? '<span class="mbToday">today</span>' : '') + '</div>' +
+               (isOff ? '<span class="mbChip yes" title="' + mbAttr('Off the mark ' + mbLong(p.first)) + '">&#10003; ' + mbShort(p.first) + '</span>'
+                      : '<span class="mbChip no">Not yet</span>') +
+               '<div class="mbNum' + (p.apps ? ' on' : '') + '">' + (Math.round(p.apps) || 0) + '</div>' +
+               '<div class="mbNum' + (api ? ' on' : '') + '">' + money(api) + '</div>' +
+               '<div class="mbBar"><i style="width:' + (top ? Math.max(api > 0 ? 2 : 0, api / top * 100) : 0) + '%"></i></div></div>');
       });
     });
     set('mbBoard', h.join(''));
