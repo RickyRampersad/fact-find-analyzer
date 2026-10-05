@@ -177,6 +177,20 @@ function fyrIndex_(from, y, m) {
   return -1;
 }
 
+/* The working day of the financial year: Mondays to Fridays from 1 October,
+   less FYR_HOLIDAYS. On a weekend or a holiday it is the count so far. On
+   Monday 5 October 2026 it is 3: Thursday 1, Friday 2, Monday 5. */
+function fyrWorkDay_(from, today) {
+  var p = function (s) { s = String(s); return Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10)); };
+  var n = 0, isDay = false;
+  for (var t = p(from), end = p(today); t <= end; t += 864e5) {
+    var d = new Date(t), wd = d.getUTCDay(), iso = d.toISOString().slice(0, 10);
+    if (wd === 0 || wd === 6 || FYR_HOLIDAYS.indexOf(iso) > -1) { isDay = false; continue; }
+    n++; isDay = true;
+  }
+  return { day: n, working: isDay };
+}
+
 /* ── who is on the wall ────────────────────────────────────────────────── */
 
 /* The Access tab: Email | Name | Agent Number | Password | Role | Unit | Active.
@@ -554,6 +568,10 @@ function fyrBoard_(d) {
   sub.series = series;
   sub.yearFrom = from;
   sub.yearLabel = fyrLabel_(from);
+  /* The day of the year, in working days, for the headline: "FY27, day 3". */
+  var wdy = fyrWorkDay_(from, Utilities.formatDate(new Date(), SF_TZ, 'yyyy-MM-dd'));
+  sub.fyDay = wdy.day;
+  sub.fyWorkday = wdy.working;
 
   /* The advisor list beside the board: everyone counted, placed as the Access
      tab has them, with the year counted the same way. */

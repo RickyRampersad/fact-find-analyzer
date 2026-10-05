@@ -6887,12 +6887,25 @@ var PROD = {
        teaches people to distrust the rest of the panel. Settled leads
        instead, which is what he asked to see at the top. */
     var bs = t._settled || 0;
+    /* THE NEW YEAR COUNTS ITS OWN DAYS. Once the feed counts from 1 October
+       it carries the working day of the year, and the headline leads with
+       it: "FY27, day 3", as the October board does. Asked for on 5 October
+       2026: "our new financial year starts from Oct 1st so today is day 3".
+       A year with nothing in it yet says so rather than printing zeros. */
+    var fyD = (S.yearLabel && S.fyDay) ? esc(S.yearLabel) + ', day ' + S.fyDay : '';
+    var wkTxt = 'week ' + (S.week || '');
     set('t_p12',
       (bs ? '<b>' + full(bs) + '</b> settled'
             + ((stlD && stlD.ytd && stlD.ytd.apps)
                 ? ' &middot; <b>' + n0(stlD.ytd.apps) + '</b> apps' : '')
-            + ' &nbsp;&nbsp;<span class="tSub">' + full(yy(t,1)) + ' submitted &middot; week '
-            + (S.week||'') + '</span>'
+            + ' &nbsp;&nbsp;<span class="tSub">' + full(yy(t,1)) + ' submitted &middot; '
+            + (fyD ? fyD + ' &middot; ' : '') + wkTxt + '</span>'
+        : fyD && !yy(t,1) && !yy(t,0)
+          ? '<b>' + fyD + '.</b> Everyone starts at <i>zero.</i>'
+            + ' &nbsp;&nbsp;<span class="tSub">' + wkTxt + ' &middot; nothing submitted yet this year</span>'
+        : fyD
+          ? '<b>' + full(yy(t,1)) + '</b> submitted &middot; <b>' + n0(yy(t,0)) + '</b> apps in ' + esc(S.yearLabel)
+            + ' &nbsp;&nbsp;<span class="tSub">day ' + S.fyDay + ' &middot; ' + wkTxt + '</span>'
         : 'Week ' + (S.week || '') + ' &middot; <b>' + n0(w(t,0)) + '</b> apps '
           + full(w(t,1)) + ' &middot; year to date <b>' + n0(yy(t,0)) + '</b> apps '
           + full(yy(t,1))));
