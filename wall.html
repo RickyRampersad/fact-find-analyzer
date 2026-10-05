@@ -1145,7 +1145,7 @@
 #p18 .mbCap b{font-weight:800}
 #p18 .mbCap span{font-size:.68em; color:var(--ink-3)}
 #p18 .mbBoard{flex:1; min-height:0; overflow:auto; margin-top:.35em; font-size:.84em}
-#p18 .mbR{display:grid; align-items:center; column-gap:1.1em; height:1.72em;
+#p18 .mbR{display:grid; align-items:center; column-gap:1.1em; height:1.66em;
           grid-template-columns:minmax(10.5em,1.35fr) 8.4em 3.4em 5.4em minmax(5em,2fr)}
 #p18 .mbR.hd{height:2em; align-items:end; padding-bottom:.3em; border-bottom:1px solid var(--line)}
 #p18 .mbR.hd span{font-size:.62em; letter-spacing:.12em; text-transform:uppercase; font-weight:800; color:var(--ink-3); white-space:nowrap}
@@ -1156,16 +1156,18 @@
              padding:.1em .65em; border-radius:2em; font-size:.74em; font-weight:800}
 #p18 .mbChip.yes{background:var(--gold); color:#221704}
 #p18 .mbChip.no{border:1px solid var(--line-2); color:var(--ink-3); font-weight:700}
+#p18 .mbChip.join{border:1px dashed rgba(45,212,191,.55); color:var(--teal); font-weight:700}
 #p18 .mbNum{text-align:right; font-variant-numeric:tabular-nums; color:var(--ink-3)}
 #p18 .mbNum.on{color:var(--ink); font-weight:700}
 #p18 .mbBar{height:.55em; border-radius:.28em; background:rgba(245,185,53,.10); overflow:hidden}
 #p18 .mbBar i{display:block; height:100%; border-radius:.28em; background:var(--gold)}
 #p18 .mbToday{display:inline-block; margin-left:.5em; padding:.06em .5em; border-radius:2em; vertical-align:.12em;
               font-size:.6em; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#04211D; background:var(--teal)}
-#p18 .mbU{display:flex; align-items:center; gap:.55em; height:2.3em; padding-top:.5em; font-size:.68em;
+#p18 .mbU{display:flex; align-items:center; gap:.55em; height:2.15em; padding-top:.45em; font-size:.68em;
           letter-spacing:.14em; text-transform:uppercase; font-weight:800; color:var(--ink-2)}
 #p18 .mbU i{width:.32em; height:1.15em; border-radius:.16em; background:linear-gradient(var(--gold),var(--gold-deep))}
 #p18 .mbU span{color:var(--ink-3); letter-spacing:.06em; text-transform:none; font-weight:700}
+#p18 .mbU.broker i{background:linear-gradient(var(--teal),var(--teal-deep))}
 #p18 .mbKey{margin-top:.5em; padding-top:.55em; border-top:1px solid var(--line); font-size:.68em; line-height:1.45; color:var(--ink-2)}
 #p18 .mbKey b{color:var(--ink)}
 /* A laptop: the left column narrows and the list's type steps down; a short
@@ -1176,9 +1178,9 @@
   #p18 .mbBoard{font-size:.78em}
 }
 @media (min-width:1101px) and (max-height:900px){
-  #p18 .mbR{height:1.42em}
+  #p18 .mbR{height:1.38em}
   #p18 .mbR.hd{height:1.8em}
-  #p18 .mbU{height:1.75em; padding-top:.25em}
+  #p18 .mbU{height:1.6em; padding-top:.2em}
   #p18 .mbTiles .stat{padding:.5em .85em}
   #p18 .mbTiles .val{font-size:1.85em}
   #p18 .mbClock{padding:.8em 1em}
@@ -5963,19 +5965,27 @@ var PROD = {
     var h = ['<div class="mbR hd"><span>Advisor</span><span>Off the mark</span><span class="mbRt">Apps</span>' +
              '<span class="mbRt">API</span><span></span></div>'];
     M.units.forEach(function(u){
-      var ps = u.people || [], uOff = 0, uApi = 0;
-      ps.forEach(function(p){ if(p.first) uOff++; uApi += Number(p.api) || 0; });
-      h.push('<div class="mbU"><i></i>' + esc(String(u.unit).split(' ')[0]) + '&rsquo;s unit' +
-             '<span>' + uOff + ' of ' + ps.length + ' off the mark &middot; ' + money(uApi) + '</span></div>');
+      var ps = u.people || [], uOff = 0, uApi = 0, linked = 0;
+      ps.forEach(function(p){ if(p.first) uOff++; uApi += Number(p.api) || 0; if(!u.broker || p.linked) linked++; });
+      /* A broker sits on a line of its own under the units. Until its code is
+         set the wall cannot see its business, and says so rather than
+         printing a zero. */
+      h.push(u.broker
+        ? '<div class="mbU broker"><i></i>Broker<span>' +
+            (linked ? (uOff ? 'off the mark' : 'not yet off the mark') + ' &middot; ' + money(uApi)
+                    : 'joining the board &middot; figures once it is linked in Salesforce') + '</span></div>'
+        : '<div class="mbU"><i></i>' + esc(String(u.unit).split(' ')[0]) + '&rsquo;s unit' +
+            '<span>' + uOff + ' of ' + ps.length + ' off the mark &middot; ' + money(uApi) + '</span></div>');
       ps.forEach(function(p){
         var isOff = !!p.first, t = p.today || [0, 0], api = Number(p.api) || 0;
-        var hot = (t[0] > 0 || t[1] > 0);
+        var hot = (t[0] > 0 || t[1] > 0), dark = u.broker && !p.linked;
         h.push('<div class="mbR"><div class="mbN' + (isOff ? ' off' : '') + '" title="' + mbAttr(p.name) + '">' + esc(p.name) +
                (hot ? '<span class="mbToday">today</span>' : '') + '</div>' +
-               (isOff ? '<span class="mbChip yes" title="' + mbAttr('Off the mark ' + mbLong(p.first)) + '">&#10003; ' + mbShort(p.first) + '</span>'
-                      : '<span class="mbChip no">Not yet</span>') +
-               '<div class="mbNum' + (p.apps ? ' on' : '') + '">' + (Math.round(p.apps) || 0) + '</div>' +
-               '<div class="mbNum' + (api ? ' on' : '') + '">' + money(api) + '</div>' +
+               (dark ? '<span class="mbChip join" title="Its business shows once it is linked in Salesforce">Joining</span>'
+                : isOff ? '<span class="mbChip yes" title="' + mbAttr('Off the mark ' + mbLong(p.first)) + '">&#10003; ' + mbShort(p.first) + '</span>'
+                        : '<span class="mbChip no">Not yet</span>') +
+               '<div class="mbNum' + (p.apps ? ' on' : '') + '">' + (dark ? '&mdash;' : (Math.round(p.apps) || 0)) + '</div>' +
+               '<div class="mbNum' + (api ? ' on' : '') + '">' + (dark ? '&mdash;' : money(api)) + '</div>' +
                '<div class="mbBar"><i style="width:' + (top ? Math.max(api > 0 ? 2 : 0, api / top * 100) : 0) + '%"></i></div></div>');
       });
     });

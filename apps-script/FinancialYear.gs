@@ -15,6 +15,12 @@
  *   · Javid and Aleema are Not Active but their production is still the
  *     branch's and still counts (FYR_STILL_COUNTED below). Their figures stay
  *     in the totals; the wall keeps their names off the rows, as it always has.
+ *   · Petra Chadee is part-time corporate and Active, so she keeps her
+ *     sign-in, but she is off the board (FYR_OFF_BOARD). Business she writes
+ *     still counts in the totals.
+ *   · The branch's broker, Nautilus Insurance Brokers, has a line of its own
+ *     under the units (FYR_BROKERS). Its figures appear once the code its
+ *     business is written under in Salesforce is filled in.
  *
  * THE MONTH BOARD (panel 19, "Off the mark")
  *   · The same answer carries `month`: every active advisor at zero until
@@ -72,6 +78,27 @@ var FYR_ACCESS_TAB   = 'Access';
    Their figures go into every total; the wall keeps their names off the rows. */
 var FYR_STILL_COUNTED = { A04020: 'Javid Ali', A04028: 'Aleema Mohammed-Ali' };
 
+/* Active on the Access tab, so they keep their sign-in, and kept off the
+   board. Petra is part-time corporate; taken off on 5 October 2026 ("just
+   remove Petra"). Business written under these codes still counts in the
+   totals, as Javid's and Aleema's does. Set someone Not Active on the Access
+   tab instead and they lose their sign-in as well. */
+var FYR_OFF_BOARD = { A09088: 'Petra Chadee' };
+
+/* BROKERS ATTACHED TO THE BRANCH. A broker gets a line of its own under the
+   units on the month board and a team of its own on the production board,
+   never a place among the advisors or in their count.
+     code    the code its business is written under in Salesforce (the AGENT
+             on its policies). Until it is filled in, the wall shows the broker
+             joining the board with no figures: it cannot see the business,
+             and it will not call that zero.
+     counts  true puts its business in the branch's totals.
+   Nautilus Insurance Brokers, asked for on 5 October 2026. On that day no
+   agent record and no policy in the branch's Salesforce carried the name. */
+var FYR_BROKERS = [
+  { name: 'Nautilus Insurance Brokers', code: '', counts: true }
+];
+
 /* FY27 QUOTAS - one line per advisor, from the FY27 Agent Level Details report:
        A13710: [quota, 'Band'],        e.g.  A13710: [200000, 'Year 2'],
    Leave it empty until the figures are given. Empty means the wall shows no
@@ -95,6 +122,23 @@ function fyrKey_(v) {
   var m = s.match(/^[AU]0*(\d{1,6})$/);
   return m ? 'A' + ('00000' + m[1]).slice(-5) : '';
 }
+
+/* Letters and digits, upper case: how a broker's code is compared. */
+function fyrNorm_(v) { return String(v == null ? '' : v).toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+
+/* BROKERn when a code is the one set for broker n, whatever shape it has. */
+function fyrBrokerKey_(v) {
+  var n = fyrNorm_(v), k = fyrKey_(v);
+  if (!n) return '';
+  for (var i = 0; i < FYR_BROKERS.length; i++) {
+    var b = FYR_BROKERS[i], bc = fyrNorm_(b && b.code);
+    if (bc && (n === bc || (k && k === fyrKey_(b.code)))) return 'BROKER' + i;
+  }
+  return '';
+}
+/* The key any code is counted under: a broker's, or an advisor's. */
+function fyrId_(v) { return fyrBrokerKey_(v) || fyrKey_(v); }
+function fyrBroker_(c) { var m = /^BROKER(\d+)$/.exec(String(c || '')); return m ? FYR_BROKERS[Number(m[1])] || null : null; }
 
 /* The first day of the year we are in, as Salesforce wants it. Built from the
    branch's own calendar rather than a Date at midnight, which reads as the
@@ -162,9 +206,14 @@ function fyrAccess_() {
   return out;
 }
 
-/* Named on the wall: active. Counted in its totals: active, or still counted. */
-function fyrNamed_(acc, c) { return !!(acc[c] && acc[c].active); }
-function fyrCounted_(acc, c) { return fyrNamed_(acc, c) || !!FYR_STILL_COUNTED[c]; }
+/* Named on the wall: active and not kept off the board. Counted in its
+   totals: active (named or not), still counted, or a broker that counts. */
+function fyrNamed_(acc, c) { return !!(acc[c] && acc[c].active) && !FYR_OFF_BOARD[c]; }
+function fyrCounted_(acc, c) {
+  var b = fyrBroker_(c);
+  if (b) return b.counts !== false;
+  return !!(acc[c] && acc[c].active) || !!FYR_STILL_COUNTED[c];
+}
 
 function fyrInto_(t, s) { if (s) { t[0] += Number(s[0]) || 0; t[1] += Number(s[1]) || 0; } }
 function fyrNz_(t) { return (t && (t[0] || t[1])) ? [t[0], t[1]] : null; }
@@ -201,7 +250,7 @@ function fyrFigures_(from) {
     "CALENDAR_MONTH(Increase_Production_Picked_Up_Date__c)");
   var y = {}, i = {}, first = {};
   function put(map, r) {
-    var c = fyrKey_(r.code);
+    var c = fyrId_(r.code);
     if (!c) return;
     fyrInto_(map[c] || (map[c] = [0, 0]), [r.apps, r.api]);
     var d = String(r.d || '').slice(0, 10);
@@ -258,16 +307,19 @@ function fyrMonth_(acc, fy) {
     var before = days.filter(function (x) { return x < iso; });
     return before.length ? before[before.length - 1] : days[0];
   }
-  /* Still-counted advisors go into the totals and not onto a row; former
-     advisors go into neither, as on the rest of the board. */
+  /* Still-counted and off-the-board advisors go into the totals and not onto
+     a row; former advisors go into neither, as on the rest of the board. A
+     broker has its own line, and is in the totals when it counts. */
   var per = {}, total = [0, 0], todayAll = [0, 0];
   function add(r) {
-    var c = fyrKey_(r.code), iso = String(r.d || '').slice(0, 10);
-    if (!c || !/^\d{4}-\d{2}-\d{2}$/.test(iso) || !fyrCounted_(acc, c)) return;
+    var c = fyrId_(r.code), iso = String(r.d || '').slice(0, 10);
+    if (!c || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
     var cell = [Number(r.apps) || 0, Number(r.api) || 0], wd2 = workday(iso);
-    fyrInto_(total, cell);
-    if (wd2 === today) fyrInto_(todayAll, cell);
-    if (!fyrNamed_(acc, c)) return;
+    if (fyrCounted_(acc, c)) {
+      fyrInto_(total, cell);
+      if (wd2 === today) fyrInto_(todayAll, cell);
+    }
+    if (!fyrNamed_(acc, c) && !fyrBroker_(c)) return;
     var p = per[c] || (per[c] = {});
     fyrInto_(p[wd2] || (p[wd2] = [0, 0]), cell);
   }
@@ -283,7 +335,7 @@ function fyrMonth_(acc, fy) {
   var qStart = dayOf(qY0, qM[0], 1);
   var quarter = [0, 0];
   function addQ(r) {
-    var c = fyrKey_(r.code), mm = Number(r.m);
+    var c = fyrId_(r.code), mm = Number(r.m);
     if (c && fyrCounted_(acc, c) && qM.indexOf(mm) > -1) fyrInto_(quarter, [r.apps, r.api]);
   }
   (fy.monNb || []).forEach(addQ);
@@ -294,7 +346,7 @@ function fyrMonth_(acc, fy) {
   var units = {}, order = [], people = 0, onMonth = 0, off = 0, firstDay = '', todayNames = [];
   Object.keys(acc).forEach(function (c) {
     var a = acc[c];
-    if (!a.active) return;
+    if (!fyrNamed_(acc, c)) return;
     if (!units[a.unit]) { units[a.unit] = []; order.push(a.unit); }
     var cells = per[c] || {}, on = 0, sum = [0, 0];
     Object.keys(cells).forEach(function (k) {
@@ -330,6 +382,28 @@ function fyrMonth_(acc, fy) {
     units[u].forEach(function (p) { if (firstDay && p.first === firstDay) firstNames.push(p.name); });
   });
 
+  /* The branch's brokers, on a line of their own after the units, outside the
+     advisors' count and the race to be first. One with no code yet goes out
+     unlinked and carries no figures. */
+  var brokers = [];
+  FYR_BROKERS.forEach(function (b, i) {
+    if (!b || !b.name) return;
+    var c = 'BROKER' + i, linked = !!fyrNorm_(b.code), counts = b.counts !== false;
+    var cells = linked ? (per[c] || {}) : {}, on = 0, sum = [0, 0];
+    Object.keys(cells).forEach(function (k) {
+      fyrInto_(sum, cells[k]);
+      if (cells[k][0] > 0 || cells[k][1] > 0) on++;
+    });
+    var yr = (linked && fy.y && fy.y[c]) || [0, 0];
+    var firstOn = (linked && fy.first && fy.first[c]) || '';
+    if (linked && !firstOn && (yr[0] > 0 || yr[1] > 0)) firstOn = from;
+    var t = cells[today] || [0, 0];
+    if (counts && (t[0] > 0 || t[1] > 0)) todayNames.push(b.name);
+    brokers.push({ code: linked ? fyrNorm_(b.code) : '', name: b.name, broker: true, linked: linked, counts: counts,
+                   apps: sum[0], api: sum[1], on: on, days: cells, fy: [yr[0], yr[1]], first: firstOn,
+                   today: [t[0], t[1]] });
+  });
+
   return {
     y: y, m: m, label: MN[m - 1], today: today, days: days,
     gone: days.filter(function (x) { return x < today; }).length,
@@ -341,7 +415,8 @@ function fyrMonth_(acc, fy) {
          day: dayOf(y, m, d0) - qStart + 1,
          days: dayOf(qY2, qM[2], new Date(Date.UTC(qY2, qM[2], 0)).getUTCDate()) - qStart + 1,
          apps: quarter[0], api: quarter[1] },
-    units: order.map(function (u) { return { unit: u, people: units[u] }; }),
+    units: order.map(function (u) { return { unit: u, people: units[u] }; })
+                .concat(brokers.length ? [{ unit: 'Broker', broker: true, people: brokers }] : []),
     total: { apps: total[0], api: total[1], people: people, on: onMonth, off: off,
              today: todayAll, todayNames: todayNames },
     first: firstDay ? { day: firstDay, names: firstNames } : null
@@ -361,7 +436,8 @@ function fyrBoard_(d) {
   var wk = {}, mo = {};
   (S.rows || []).forEach(function (r) {
     if (r.lvl !== 2) return;
-    var c = fyrKey_((String(r.label || '').match(/[AU]\s*\d{3,6}/i) || [''])[0]);
+    var c = fyrBrokerKey_(String(r.label || '').split(' - ')[0]) ||
+            fyrKey_((String(r.label || '').match(/[AU]\s*\d{3,6}/i) || [''])[0]);
     if (!c) return;
     if (r.w) fyrInto_(wk[c] || (wk[c] = [0, 0]), r.w);
     if (r.m) fyrInto_(mo[c] || (mo[c] = [0, 0]), r.m);
@@ -377,10 +453,17 @@ function fyrBoard_(d) {
     if (!teams[a.unit]) { teams[a.unit] = []; order.push(a.unit); }
     teams[a.unit].push(a);
   }
-  Object.keys(acc).forEach(function (c) { if (acc[c].active) { named++; seat(acc[c]); } });
+  Object.keys(acc).forEach(function (c) { if (fyrNamed_(acc, c)) { named++; seat(acc[c]); } });
   Object.keys(FYR_STILL_COUNTED).forEach(function (c) {
     if (fyrNamed_(acc, c)) return;                        // active again: already seated
     seat(acc[c] || { code: c, name: FYR_STILL_COUNTED[c], unit: FYR_HEAD });
+  });
+  /* Off the board: no row, but their figures stay in their team's totals. */
+  var extras = {};
+  Object.keys(FYR_OFF_BOARD).forEach(function (c) {
+    if (!(acc[c] && acc[c].active)) return;               // not active: a former advisor
+    var u = teams[acc[c].unit] ? acc[c].unit : FYR_HEAD;
+    (extras[u] = extras[u] || []).push(c);
   });
   /* The head's team first, the rest by name. The wall ranks them by what they
      have written once it is drawing. */
@@ -401,11 +484,31 @@ function fyrBoard_(d) {
       if (hadM) row.m = fyrNz_(m);
       return row;
     });
+    (extras[u] || []).forEach(function (c) {
+      fyrInto_(team.w, wk[c]); fyrInto_(team.m, mo[c]); fyrInto_(team.y, fy.y[c]);
+    });
     fyrInto_(top.w, team.w); fyrInto_(top.m, team.m); fyrInto_(top.y, team.y);
     if (!hadM) delete team.m;
     rows.push(team);
     kids.forEach(function (k) { rows.push(k); });
   });
+  /* Brokers with a code, as a team of their own after the units. Their
+     business is in the branch's total when they count. */
+  var bTeam = { lvl: 1, label: 'Brokers', w: [0, 0], m: [0, 0], y: [0, 0] }, bKids = [];
+  FYR_BROKERS.forEach(function (b, i) {
+    if (!b || !b.name || !fyrNorm_(b.code)) return;
+    var k = 'BROKER' + i, w = wk[k] || null, m = mo[k] || null, y = fy.y[k] || null;
+    if (b.counts !== false) { fyrInto_(bTeam.w, w); fyrInto_(bTeam.m, m); fyrInto_(bTeam.y, y); }
+    var row = { lvl: 2, label: fyrNorm_(b.code) + ' - ' + b.name, w: fyrNz_(w), y: fyrNz_(y), broker: true };
+    if (hadM) row.m = fyrNz_(m);
+    bKids.push(row);
+  });
+  if (bKids.length) {
+    fyrInto_(top.w, bTeam.w); fyrInto_(top.m, bTeam.m); fyrInto_(top.y, bTeam.y);
+    if (!hadM) delete bTeam.m;
+    rows.push(bTeam);
+    bKids.forEach(function (k) { rows.push(k); });
+  }
   if (!hadM) delete top.m;
 
   /* New business against increases, month by month from 1 October, for the
@@ -413,7 +516,7 @@ function fyrBoard_(d) {
   var MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var byM = {};
   function addM(r, isInc) {
-    var c = fyrKey_(r.code), m = Number(r.m);
+    var c = fyrId_(r.code), m = Number(r.m);
     if (!c || !fyrCounted_(acc, c) || !(m >= 1 && m <= 12)) return;
     var b = byM[m] || (byM[m] = { nb: 0, inc: 0, apps: 0 });
     if (isInc) b.inc += Number(r.api) || 0; else b.nb += Number(r.api) || 0;
@@ -454,11 +557,11 @@ function fyrBoard_(d) {
      tab has them, with the year counted the same way. */
   var agents = [];
   (d && d.agents || []).forEach(function (x) {
-    var c = fyrKey_(x.code);
-    if (!fyrCounted_(acc, c)) return;
+    var c = fyrId_(x.code), b = fyrBroker_(c);
+    if (!fyrCounted_(acc, c) || FYR_OFF_BOARD[c]) return;
     var a = acc[c] || {};
-    x.name = a.name || x.name;
-    x.unit = a.unit || FYR_HEAD;
+    x.name = (b && b.name) || a.name || x.name;
+    x.unit = b ? 'Brokers' : (a.unit || FYR_HEAD);
     x.y = fy.y[c] || [0, 0];
     x.inc = fy.inc[c] || [0, 0];
     agents.push(x);
@@ -470,6 +573,9 @@ function fyrBoard_(d) {
   diag.yearFrom = from;
   diag.active = named;
   diag.stillCounted = Object.keys(FYR_STILL_COUNTED);
+  diag.offTheBoard = Object.keys(FYR_OFF_BOARD);
+  diag.brokers = FYR_BROKERS.filter(function (b) { return b && b.name; })
+                            .map(function (b) { return { name: b.name, linked: !!fyrNorm_(b.code), counts: b.counts !== false }; });
   diag.units = order;
   diag.offBoard = gone;
 
@@ -596,11 +702,11 @@ function getSettlement(e) {
   for (var r = 1; r < values.length; r++) {
     var row = values[r];
     var raw = String(row[C] == null ? '' : row[C]).trim();
-    if (!/^[AU]\s*\d/i.test(raw)) { skipped++; continue; }   // totals row, blanks
+    if (!/^[AU]\s*\d/i.test(raw) && !fyrBrokerKey_(raw)) { skipped++; continue; }   // totals row, blanks
     var at = fyrIndex_(from, parseInt(row[M], 10), parseInt(row[N], 10));
     if (at < 0) continue;
 
-    var code = fyrKey_(raw);
+    var code = fyrId_(raw);
     var cnt = Number(row[K]) || 0;                               // the FLAG, netted
     var api = Number(String(row[L]).replace(/[^0-9.\-]/g, '')) || 0;
     var cov = Number(String(row[H]).replace(/[^0-9.\-]/g, '')) || 0;
@@ -621,7 +727,8 @@ function getSettlement(e) {
 
     var a = byAgent[code];
     if (!a) {
-      a = byAgent[code] = { code: code, name: (acc[code] && acc[code].name) || FYR_STILL_COUNTED[code] || code,
+      a = byAgent[code] = { code: code, name: (acc[code] && acc[code].name) || FYR_STILL_COUNTED[code] ||
+                                             (fyrBroker_(code) && fyrBroker_(code).name) || code,
                             apps: 0, api: 0, cover: 0, m: [] };
       for (var z = 0; z < 12; z++) a.m.push({ apps: 0, api: 0, cover: 0 });
     }
@@ -648,7 +755,7 @@ function getSettlement(e) {
      Persistency is the latest the branch has. */
   var pers = fyrPersistency_(), quotas = {}, qb = { quota: 0, settled: 0, agents: 0 };
   Object.keys(acc).forEach(function (c) {
-    if (!acc[c].active) return;
+    if (!fyrNamed_(acc, c)) return;
     var q = FYR_QUOTAS[c] || [], ps = pers[c] || {};
     var settled = byAgent[c] ? byAgent[c].api : 0;
     quotas[c] = { name: acc[c].name, type: q[1] || '', quota: Number(q[0]) || 0, settled: settled,
@@ -703,16 +810,23 @@ function fyrCheck() {
   var from = fyrFrom_(new Date());
   say('Financial year ' + fyrLabel_(from) + ': ' + from + ' to ' + fyrEnds_(from) + '.');
   say('');
-  var acc = fyrAccess_(), units = {}, off = [];
+  var acc = fyrAccess_(), units = {}, off = [], kept = [];
   Object.keys(acc).forEach(function (c) {
     var a = acc[c];
     if (!a.active) { off.push(a.name + (FYR_STILL_COUNTED[c] ? ' (still counted)' : '')); return; }
+    if (FYR_OFF_BOARD[c]) { kept.push(a.name); return; }
     (units[a.unit] = units[a.unit] || []).push(a.name);
   });
   Object.keys(units).sort().forEach(function (u) {
     say(u + ' (' + units[u].length + '): ' + units[u].join(', '));
   });
+  if (kept.length) say('Active, kept off the board, still counted (' + kept.length + '): ' + kept.join(', '));
   say('Not active (' + off.length + '): ' + off.join(', '));
+  FYR_BROKERS.forEach(function (b) {
+    if (!b || !b.name) return;
+    say('Broker: ' + b.name + (fyrNorm_(b.code) ? ', code ' + fyrNorm_(b.code) + (b.counts !== false ? ', in the totals.' : ', not in the totals.')
+                                              : ', no code yet: on the wall as joining the board, with no figures.'));
+  });
   say('');
   var nq = Object.keys(FYR_QUOTAS).length;
   say(nq ? nq + ' FY27 quota(s) entered.' : 'No FY27 quotas entered yet: the wall shows none.');
