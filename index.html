@@ -1109,7 +1109,7 @@ async function liRunTest(btn, out){
     btn.disabled = false; btn.textContent = 'Test the connection'; return;
   }
   var t0 = Date.now(), j = null, e = null;
-  try { j = await fetchJson(url + '?action=ping&_=' + t0, 25000); }
+  try { j = await fetchOnce(url + '?action=ping&_=' + t0, 25000); }
   catch (err2) { e = err2; }
   var secs = ((Date.now() - t0) / 1000).toFixed(1);
   if(j && j.success){
@@ -1121,6 +1121,10 @@ async function liRunTest(btn, out){
       '<br>Something between this device and Google is blocking the branch server. ' +
       'Try the same page on your phone using its own mobile data, <b>not</b> the office wifi. ' +
       'If it works there, the office network is the block and the branch office needs to know.';
+  } else if(e && e.kind === 'busy'){
+    out.innerHTML = '<b style="color:#B45309">Google could not start the branch server in time.</b>' +
+      '<br>That is the server being slow, not your connection. Wait a minute and press ' +
+      '<b>Sign in</b> again.';
   } else if(e && e.kind === 'timeout'){
     out.innerHTML = '<b style="color:#B45309">The server did not answer within 25 seconds.</b>' +
       '<br>It sleeps when it is not used and can take a moment to wake. Press this once more; ' +
@@ -1145,28 +1149,37 @@ async function liRunTest(btn, out){
 // The old behaviour was to give up at 20s and ask a person to press the button
 // again — making the human do the retry the code should do itself. So: the
 // first attempt gets room for the tail, and a timeout or a dead connection is
-// retried once, silently, before anyone is told anything.
-var FETCH_MS       = 30000;  // first attempt — wide enough for the slow tail
-var FETCH_RETRY_MS = 20000;  // second — whatever answers now is warm
-var FETCH_PAUSE_MS = 500;    // a breath, so a recycling container is not hammered
+// retried, silently, before anyone is told anything.
+//
+// 5 October 2026: the tail struck twice running. Stephanie Rajkumar's sign-in
+// timed out on both tries (30s, then 20s), and timed sign-in calls that
+// morning took anything from 3s to 27s. So every try now gets the full 30s,
+// there are three of them, and Google's own "Sorry, unable to open the file
+// at this time" page, which a request gets when Apps Script cannot start the
+// script in time, counts as one more slow answer rather than a final one.
+var FETCH_MS       = 30000;  // each attempt — wide enough for the slow tail
+var FETCH_TRIES    = 3;      // the tail can strike twice running
+var FETCH_PAUSE_MS = 1500;   // a breath, longer each time, so a recycling container is not hammered
 
-async function fetchJson(url, ms){
-  try{
-    return await fetchOnce(url, ms || FETCH_MS);
-  }catch(e){
-    // Only the two failures a retry can actually fix. A 500, an HTML error
-    // page or a missing endpoint are real answers — retrying hides them.
-    if(e && (e.kind === 'timeout' || e.kind === 'network')){
-      await new Promise(function(r){ setTimeout(r, FETCH_PAUSE_MS); });
-      try{
-        return await fetchOnce(url, FETCH_RETRY_MS);
-      }catch(e2){
-        if(e2) e2.retried = true;
-        throw e2;
+async function fetchJson(url, ms, onRetry){
+  var last = null;
+  for (var i = 0; i < FETCH_TRIES; i++){
+    try{
+      return await fetchOnce(url, i ? FETCH_MS : (ms || FETCH_MS));
+    }catch(e){
+      // Only the failures a retry can actually fix. A 500, an HTML error page
+      // from the script itself or a missing endpoint are real answers —
+      // retrying hides them.
+      if(!(e && (e.kind === 'timeout' || e.kind === 'network' || e.kind === 'busy'))) throw e;
+      last = e;
+      if(i < FETCH_TRIES - 1){
+        if(typeof onRetry === 'function'){ try{ onRetry(i + 1); }catch(x){} }
+        await new Promise(function(r){ setTimeout(r, FETCH_PAUSE_MS * (i + 1)); });
       }
     }
-    throw e;
   }
+  if(last) last.retried = true;
+  throw last;
 }
 
 async function fetchOnce(url,ms){
@@ -1194,8 +1207,12 @@ async function fetchOnce(url,ms){
   }
   clearTimeout(t);
   if(!res.ok){
+    var sent = '';
+    try{ sent = await res.text(); }catch(x){}
     var e2 = new Error('The branch server answered ' + res.status + ' ' + (res.statusText||'') + '.');
-    e2.kind = 'status';
+    // Google's "unable to open the file" page is Apps Script failing to start
+    // the script in time: the slow tail again, not a missing endpoint.
+    e2.kind = /unable to open the file/i.test(sent) ? 'busy' : 'status';
     throw e2;
   }
   var body = await res.text();
@@ -1488,7 +1505,8 @@ async function doLogin(ev){
   try{
     if(!ep) throw new Error('no-endpoint');
     var url=ep+(ep.indexOf('?')>-1?'&':'?')+'action=login&code='+encodeURIComponent(code)+'&pw='+encodeURIComponent(pass);
-    var j=await fetchJson(url);
+    // Say so while it retries, so a slow server does not look like a hung page.
+    var j=await fetchJson(url, 0, function(){ btn.textContent='Still signing in — the server is slow…'; });
     if(j && j.ok){
       // Identity, role and scope come from the server response — not from the
       // client-side roster — so a tampered page cannot widen its own access.
@@ -1558,8 +1576,8 @@ async function doLogin(ev){
     err.textContent =
         (e && e.message === 'no-endpoint')
           ? 'No data endpoint is configured, so sign-in is unavailable.'
-      : (kind === 'timeout')
-          ? 'The branch server is running slowly right now. It was tried twice and did not answer either time — wait a moment and press Sign in again.'
+      : (kind === 'timeout' || kind === 'busy')
+          ? 'The branch server is running slowly right now. It was tried three times and did not answer — wait a minute and press Sign in again. This is the server, not your details.'
       : (kind === 'network')
           ? 'Could not reach the branch server at all, on two attempts. Check the connection, then try again.'
       : (kind === 'status')
