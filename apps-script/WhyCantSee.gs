@@ -17,10 +17,15 @@
  * Built 5 October 2026, when Stephanie Rajkumar (A12408) could not sign in on
  * factfind360.com and neither she nor Akaash could see one of her cases.
  *
- * rrbClearSignInLock, below it, lifts the hour-long lockout that five wrong
- * access codes put on an advisor. It removes that one counter and nothing
- * else. Run it once they have the right code, or they lock themselves out
- * again.
+ * rrbUseCodeOnSheet makes the code SHOWN on the advisor's Access tab row the
+ * one sign-in accepts, for that one advisor, and lifts their lockout. Use it
+ * rather than rrbSyncAccessPasswords: that one re-reads every advisor's code
+ * from the sheet, and anyone whose working code was generated and emailed by
+ * rrbSetAllPasswords, never written on the sheet, would lose it.
+ *
+ * rrbClearSignInLock lifts the hour-long lockout that five wrong access codes
+ * put on an advisor. It removes that one counter and nothing else. Run it once
+ * they have the right code, or they lock themselves out again.
  */
 
 var WCS_CODE   = 'A12408';   // the advisor's agent number
@@ -53,22 +58,47 @@ function rrbWhyCantSee() {
   if (me) {
     var stored = PropertiesService.getScriptProperties().getProperty(RRB_PROP_PW + me.email);
     say('   Access code stored for ' + me.email + ': ' + (stored ? 'yes' :
-        'NO - run rrbSyncAccessPasswords, or they are refused whatever they type'));
+        'NO - they are refused whatever they type. Run rrbUseCodeOnSheet.'));
     if (!String(me.pw == null ? '' : me.pw).trim()) say('   Access code column is EMPTY on their row - nothing to sign in with.');
     if (stored && String(me.pw == null ? '' : me.pw).trim()) {
       /* The stored copy is a hash. Compare it with the sheet's code without
          printing either, so the log shows only whether they agree. */
       var sheetOk = rrbCheckPassword_(me.email, String(me.pw).trim());
       say('   The stored code matches the code on the sheet: ' + (sheetOk ? 'yes' :
-          'NO - the sheet was changed after the last sync. Run rrbSyncAccessPasswords.'));
+          'NO - sign-in holds a different code from the one on their row. Run rrbUseCodeOnSheet.'));
       if (sheetOk) {
         say('   So sign-in accepts exactly the code in the Access code column of their row.');
         say('   If they are refused, they are typing something else: give them that code.');
       }
     }
+    /* What the cell holds against what it shows. A code typed as 08 is held
+       as the number 8: the sheet can go on showing 08, but sign-in only ever
+       accepts what the cell holds. Neither is printed, only whether they
+       differ. */
+    try {
+      var ash = SpreadsheetApp.openById(RRB_ACCESS_SHEET_ID).getSheetByName(RRB_ACCESS_TAB);
+      var rng = ash.getDataRange(), av = rng.getValues(), ad = rng.getDisplayValues();
+      var ah = av[0].map(function (h) { return String(h).toLowerCase().trim(); });
+      var iC = ah.indexOf('agent number'), iP = ah.indexOf('password');
+      for (var ar = 1; iC > -1 && iP > -1 && ar < av.length; ar++) {
+        if (String(av[ar][iC]).trim().toUpperCase() !== code) continue;
+        var held = String(av[ar][iP] == null ? '' : av[ar][iP]).trim(), shown = String(ad[ar][iP] || '').trim();
+        if (typeof av[ar][iP] === 'number') say('   The access code cell holds a NUMBER, so a leading zero is lost.');
+        if (held !== shown) {
+          say('   The cell SHOWS ' + shown.length + ' character(s) but HOLDS ' + held.length + ' - sign-in accepts only what it holds.');
+          say('   Fix: run rrbUseCodeOnSheet - it makes the code as SHOWN the one that works. For the long run,');
+          say('   Format > Number > Plain text on the Access code column, so new codes keep their zeros.');
+        }
+      }
+    } catch (errA) { say('   (Could not compare the cell with what it shows: ' + errA.message + ')'); }
     if (WCS_PW) {
       var typed = rrbCheckPassword_(me.email, String(WCS_PW));
       say('   The code you typed above matches: ' + (typed ? 'yes' : 'NO - that is not their code'));
+      var bare = String(WCS_PW).replace(/^0+(?=\d)/, '');
+      if (!typed && bare !== String(WCS_PW) && rrbCheckPassword_(me.email, bare)) {
+        say('   But it DOES match without its leading zero: the sheet dropped the zero. Fix as above,');
+        say('   or tell them to type it without the zero for now.');
+      }
       if (typed) {
         var res = rrbLogin({ parameter: { code: code, pw: String(WCS_PW) } });
         say('   This version of the system signs them in: ' + (res.ok ? 'YES, as ' + res.role +
@@ -181,4 +211,35 @@ function rrbClearSignInLock() {
   cache.remove(key);
   Logger.log('%s <%s>: %s wrong tries on record; cleared. They can sign in again now, with the code on their row.',
              me.name, me.email, before);
+}
+
+/* Makes the code SHOWN on WCS_CODE's Access tab row the one sign-in accepts,
+   for that advisor alone, and lifts their lockout. Shown, not held: a code
+   typed as 08 is held as 8, and the person reading it off the sheet says 08.
+   Nobody else's code is touched. */
+function rrbUseCodeOnSheet() {
+  var code = String(WCS_CODE || '').trim().toUpperCase();
+  var me = null;
+  try { me = rrbFindByCode_(code, ''); } catch (err) {}
+  if (!me) {
+    Logger.log('No active row on the Access tab with agent number %s and an email. Nothing changed.', code);
+    return;
+  }
+  var sh = SpreadsheetApp.openById(RRB_ACCESS_SHEET_ID).getSheetByName(RRB_ACCESS_TAB);
+  var rng = sh.getDataRange(), v = rng.getValues(), shown = rng.getDisplayValues();
+  var h = v[0].map(function (x) { return String(x).toLowerCase().trim(); });
+  var iC = h.indexOf('agent number'), iP = h.indexOf('password'), pw = '';
+  for (var r = 1; iC > -1 && iP > -1 && r < v.length; r++) {
+    if (String(v[r][iC]).trim().toUpperCase() === code) { pw = String(shown[r][iP] || '').trim(); break; }
+  }
+  if (!pw) {
+    Logger.log('%s has no access code on their row. Type one in the Password column, then run this again.', me.name);
+    return;
+  }
+  var already = rrbCheckPassword_(me.email, pw);
+  if (!already) rrbSetPassword(me.email, pw);
+  CacheService.getScriptCache().remove('rrb_pwtry_' + me.email);
+  Logger.log('%s <%s>: sign-in %s the code shown on their row (%s characters). Lockout cleared. ' +
+             'They can sign in now with exactly that code.',
+             me.name, me.email, already ? 'already accepted' : 'now accepts', pw.length);
 }
