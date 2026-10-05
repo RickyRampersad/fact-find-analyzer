@@ -210,7 +210,7 @@ function rrbClearSignInLock() {
   var before = parseInt(cache.get(key) || '0', 10);
   cache.remove(key);
   Logger.log('%s <%s>: %s wrong tries on record; cleared. They can sign in again now, with the code on their row.',
-             me.name, me.email, before);
+             me.name, me.email, String(before));
 }
 
 /* Makes the code SHOWN on WCS_CODE's Access tab row the one sign-in accepts,
@@ -241,5 +241,5 @@ function rrbUseCodeOnSheet() {
   CacheService.getScriptCache().remove('rrb_pwtry_' + me.email);
   Logger.log('%s <%s>: sign-in %s the code shown on their row (%s characters). Lockout cleared. ' +
              'They can sign in now with exactly that code.',
-             me.name, me.email, already ? 'already accepted' : 'now accepts', pw.length);
+             me.name, me.email, already ? 'already accepted' : 'now accepts', String(pw.length));
 }
