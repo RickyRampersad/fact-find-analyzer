@@ -29,18 +29,36 @@
  *   4. The chase leaves out cases the branch has closed (Closed At) or
  *      declined, and names a client once where the same person was entered
  *      more than once.
+ *   5. In RR Branch FF System, the links point at this project's own web app.
+ *      RRB_EXEC_URL named a deployment (...XMoczA) that is not in this
+ *      project's list: it answers from an older copy of the code, without the
+ *      dead-link page (d40) or this file, so nothing deployed here reached the
+ *      buttons. The wall's deployment is this project's and public, so the
+ *      e-mails now use it. Another project pasting this file keeps its own.
  *
  * INSTALL (FixToday.gs comes out at the same time)
  *   1. Add a script file named SafeButtons and paste this in.
  *   2. Delete the file FixToday, then save.
- *   3. Deploy > Manage deployments > the web app whose URL ends ...XMoczA/exec >
- *      pencil > Version: New version > Deploy.
- *   4. Run safeButtonsCheck. It says whether the deployed version has the
- *      confirm step and who the chase would write to, and sends nothing.
+ *   3. Deploy > Manage deployments > the deployment safeButtonsCheck names
+ *      (in RR Branch FF System, the wall's: ...PJsrAxxJ3dsQ) > pencil >
+ *      Version: New version > Deploy.
+ *   4. Run safeButtonsCheck. It says whether that deployment has the confirm
+ *      step and who the chase would write to, and sends nothing.
  *   5. Run safeButtonsOn to put the 9:30 chase back.
  */
 
 var RRB_D44 = 'd44';
+
+/* 5. Where the e-mailed links go, in RR Branch FF System. */
+var RRB_D44_HOME = {
+  script: '1mlqf-zacKAgWmv6gn0azt6Px_b3DOiMWnsZyY8ZoS5e6rHGsOLfG7rg2',
+  exec: 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec'
+};
+try {
+  if (typeof RRB_EXEC_URL !== 'undefined' && ScriptApp.getScriptId() === RRB_D44_HOME.script) {
+    RRB_EXEC_URL = RRB_D44_HOME.exec;
+  }
+} catch (err) {}
 
 // What each button means, and what happens when it is confirmed.
 var RRB_D44_SAYS = {
@@ -195,26 +213,36 @@ var rrbD44_prevDoGet = (typeof doGet === 'function') ? doGet : null;
 if (rrbD44_prevDoGet) doGet = function (e) {                     // d44
   var a = (e && e.parameter && e.parameter.action) || '';
   if (a === 'safecheck') {
-    return ContentService.createTextOutput(JSON.stringify({ ok: true, safeButtons: RRB_D44 }))
+    return ContentService.createTextOutput(JSON.stringify({ ok: true, safeButtons: RRB_D44, links: rrbAppUrl_() }))
       .setMimeType(ContentService.MimeType.JSON);
   }
   return rrbD44_prevDoGet(e);
 };
 
-// Does the deployed version (the one the e-mailed links open) have the confirm step?
+// Does the deployed version the e-mailed links open have the confirm step, and
+// do its own pages send the button back to it?
 function rrbD44Live_() {
   var url = rrbAppUrl_();
-  if (!url) return { ok: false, why: 'there is no web app address' };
+  if (!url) return { ok: false, why: 'there is no web app address', dep: '' };
+  var dep = rrbD44Short_(url);
   try {
     var res = UrlFetchApp.fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + 'action=safecheck',
                                 { muteHttpExceptions: true, followRedirects: true });
     var j = null;
     try { j = JSON.parse(res.getContentText()); } catch (err) {}
-    if (j && j.safeButtons === RRB_D44) return { ok: true, why: url };
-    return { ok: false, why: 'the deployed version does not have the confirm step yet' };
+    if (j && j.safeButtons === RRB_D44 && j.links === url) return { ok: true, why: url, dep: dep };
+    return { ok: false, dep: dep, why: (j && j.safeButtons === RRB_D44)
+      ? 'deployment ' + dep + ' has an earlier copy of SafeButtons'
+      : 'deployment ' + dep + ' does not have the confirm step yet' };
   } catch (err) {
-    return { ok: false, why: 'the deployed version did not answer (' + (err && err.message || err) + ')' };
+    return { ok: false, dep: dep, why: 'deployment ' + dep + ' did not answer (' + (err && err.message || err) + ')' };
   }
+}
+
+// The last characters of a deployment address, as Manage deployments shows the ID.
+function rrbD44Short_(url) {
+  var m = String(url).match(/\/s\/([\w-]+)\/exec/);
+  return m ? '...' + m[1].slice(-12) : String(url);
 }
 
 /* 4. The 9:30 chase. The same e-mail as before, sent only when the check
@@ -336,8 +364,9 @@ function rrbD44Mine_() {
 function safeButtonsCheck() {
   var lines = [], say = function (s) { lines.push(s); console.log(s); };
   var live = rrbD44Live_();
-  say('1. The web app the e-mails open: ' + (live.ok ? 'has the confirm step.'
-      : 'NOT yet: ' + live.why + '. Deploy > Manage deployments > the web app whose URL ends ...XMoczA/exec > pencil > Version: New version > Deploy.'));
+  say('1. The web app the e-mails open (' + live.dep + '): ' + (live.ok ? 'has the confirm step.'
+      : 'NOT yet: ' + live.why + '. Deploy > Manage deployments > the deployment whose ID ends ' + live.dep.slice(3) +
+        ' > pencil > Version: New version > Deploy.'));
   var mine = rrbD44Mine_();
   say('2. This project: ' + (mine ? 'running SafeButtons.'
       : 'NOT running SafeButtons. If FixToday is still here, delete it and save. If not, drag SafeButtons to the bottom of the file list.'));
@@ -363,8 +392,8 @@ function safeButtonsOn() {
   }
   var live = rrbD44Live_();
   if (!live.ok) {
-    return say('Not switched on: ' + live.why + '. Deploy > Manage deployments > the web app whose URL ends ...XMoczA/exec > ' +
-               'pencil > Version: New version > Deploy, then run this again.');
+    return say('Not switched on: ' + live.why + '. Deploy > Manage deployments > the deployment whose ID ends ' +
+               live.dep.slice(3) + ' > pencil > Version: New version > Deploy, then run this again.');
   }
   ScriptApp.getProjectTriggers().forEach(function (t) {
     if (t.getHandlerFunction() === 'rrbChaseOpenCases') ScriptApp.deleteTrigger(t);
