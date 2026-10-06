@@ -1782,6 +1782,12 @@ function clientEmailOf(r){
   for(var i=0;i<keys.length;i++){ var v=qStr(r[keys[i]]); if(v.indexOf('@')>0) return v; }
   return '';
 }
+// Who is on it: support calls every bounced client from the morning list
+// (rrbCeMorningTask in ClientEmails.gs), and records each try.
+function bounceWho(tries){
+  return 'On support\u2019s morning list to call the client and confirm the address'+
+    (tries?' (tried '+tries+' time'+(tries===1?'':'s')+')':'')+'.';
+}
 // The address that bounced, while it is still the one on the case.
 function bouncedAddressOf(r){
   var b=qStr(r['Client Email Bounced Address']).toLowerCase();
@@ -1809,9 +1815,9 @@ function qEmailLine(r){
   var to=clientEmailOf(r), b=bouncedAddressOf(r), sent=qD(r.clientDraftSentAt), txt, cls;
   if(!to){ cls='none'; txt='No email address for the client on file'; }
   else if(b){
-    var bAt=qD(r['Client Email Bounced At']);
+    var bAt=qD(r['Client Email Bounced At']), tries=parseInt(qStr(r['Bounce Contact Attempts']),10)||0;
     cls='bounced'; txt='&#9888; Email bounced'+(bAt?' '+bAt.toLocaleDateString():'')+' &mdash; '+escapeHtml(b)+
-      '. The advisor has been asked to confirm the address.';
+      '. '+bounceWho(tries);
   }
   else if(sent){ cls='sent'; txt='Client emailed '+sent.toLocaleDateString(); }
   else { cls='none'; txt='No record of the client being emailed'; }
@@ -3629,8 +3635,8 @@ function recentTable(rows){
       '<td class="num">'+(r.quality||'—')+'</td>'+
       '<td class="num">'+(r.premium?money(r.premium):'—')+'</td>'+
       '<td>'+(r.replacement?'<span class="badge b-decline">REPL</span>':'')+
-        (bouncedAddressOf(r)?' <span class="badge b-decline" title="'+escapeHtml(bouncedAddressOf(r))+
-          ' bounced. The advisor has been asked to confirm the address.">BOUNCED</span>':'')+'</td>'+
+        (bouncedAddressOf(r)?' <span class="badge b-decline" title="'+escapeHtml(bouncedAddressOf(r))+' bounced. '+
+          bounceWho(parseInt(qStr(r['Bounce Contact Attempts']),10)||0)+'">BOUNCED</span>':'')+'</td>'+
       '<td>'+caseActCell(r)+'</td></tr>';
   }).join('');
   return '<div class="card col-12"><h3>Recent fact finds</h3><div class="csub">Most recent 25 in the current view</div>'+
