@@ -511,6 +511,11 @@
   .qsgo.kill{background:var(--danger);color:#fff}
   .qsgo:disabled{opacity:.55;cursor:default}
   .qsfoot{font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.5;text-align:center}
+  .qscwrap{margin:2px 0 12px}
+  .qsopt{font-weight:600;color:var(--muted);font-size:10.5px;text-transform:none;letter-spacing:0}
+  .qscomment{width:100%;box-sizing:border-box;background:#F8FAFC;color:var(--ink);border:1px solid var(--line);
+             border-radius:8px;padding:9px;font:inherit;font-size:12.5px;resize:vertical}
+  .qshint{font-size:10.5px;color:var(--muted);margin-top:4px;line-height:1.45}
   .qheld{font-size:11px;font-weight:700;color:var(--violet);margin-top:6px;
          background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.25);
          border-radius:7px;padding:5px 9px;display:inline-block}
@@ -2780,6 +2785,15 @@ function qSignBlock(r){
     '<div class="qsatt">'+QSIG_ATT.map(function(a){
       return '<label><input type="checkbox" data-att="'+a[0]+'"><span>'+a[1]+
         '</span><span class="tick">&#10003;</span></label>'; }).join('')+'</div>'+
+    // A manager approving had nowhere to write anything: the note box opens
+    // only for a send-back, a decline or a hold, though the server has always
+    // filed a note sent with an approval. Asked for on 6 October 2026, after
+    // a unit manager spoke to a client and wanted it on the case.
+    '<div class="qscwrap">'+
+      '<h5 style="margin:0 0 5px">Your comments <span class="qsopt">optional</span></h5>'+
+      '<textarea class="qscomment" rows="3" maxlength="2000" placeholder="Anything to note on this case, such as what you discussed with the client."></textarea>'+
+      '<div class="qshint">Goes on the fact find, in the Manager&rsquo;s Comments box for office use, and to the advisor with the approval. The client&rsquo;s approval email does not include it.</div>'+
+    '</div>'+
     '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">'+
       '<h5 style="margin:0">Your signature</h5>'+
       '<button type="button" class="qslink mute qsclear">Clear</button></div>'+
@@ -2867,6 +2881,22 @@ function qPadInit(card){
     x.fillText(n, r.width/2, r.height/2-6);
     c.dataset.drawn='1'; if(hint) hint.style.display='none'; };
 }
+/* Comments on a case that cannot be approved yet. The server files a note
+   only with a decision. The one thing it keeps without one is a hold's
+   reason, which the next hold overwrites and any decision from this queue
+   clears (rrbQueueDecide). So the comments ride on the hold's reason after
+   QKEEP, and every way out of the hold on this page carries them on: the
+   approve pane puts them back in its comments box, and a hold, send-back or
+   decline adds them after its own words. */
+var QKEEP='Manager’s comments: ', QWAIT='Waiting on the client’s Yes.';
+function qHoldParts(r){
+  var h=qStr(r&&r.caseHoldNote), i=h.indexOf(QKEEP);
+  return i<0 ? { reason:h, kept:'' }
+             : { reason:h.slice(0,i).trim(), kept:h.slice(i+QKEEP.length).trim() };
+}
+function qWithKept(text,kept){
+  return [qStr(text), kept ? QKEEP+kept : ''].filter(Boolean).join('\n\n');
+}
 function qFire(card,id,v,note,atts,sig,signName,ov){
   var msg=card.querySelector('.qmsg');
   card.querySelectorAll('.qb').forEach(function(x){x.disabled=true;});
@@ -2901,12 +2931,45 @@ function qFire(card,id,v,note,atts,sig,signName,ov){
             msg.querySelector('.qov').onclick=function(){ qFire(card,id,v,note,atts,sig,signName,true); };
             return;
           }
+          /* A unit manager cannot go past the client's Yes, and the server
+             files nothing when it refuses, so the comments just written would
+             go nowhere. Offer to keep them: a hold, with them as its reason,
+             is on the case today and needs no decision. */
+          if(j&&j.waitingOnClient&&!j.canOverride&&v==='approve'&&note){
+            msg.className='qmsg';
+            msg.innerHTML=escapeHtml(j.error)+
+              '<div style="margin-top:10px"><button class="qb qkeep" type="button">'+
+              'Keep my comments on the case</button>'+
+              '<div style="font-size:12px;color:#64748B;margin-top:6px">It goes on hold until the client confirms, '+
+              'with your comments as the reason. Nothing is approved and nothing is emailed.</div></div>';
+            card.querySelectorAll('.qb').forEach(function(x){x.disabled=false;});
+            var g4=card.querySelector('.qsgo'); if(g4) g4.disabled=false;
+            msg.querySelector('.qkeep').onclick=function(){
+              // Signed and dated, so comments from two managers stay apart, and
+              // nothing already on the hold is written over.
+              var hp=qHoldParts(ALL.filter(function(x){return x.id===id;})[0]);
+              var before=hp.kept;
+              // The approve pane already put the earlier comments in the box.
+              if(before&&note.indexOf(before)>-1) before='';
+              var signed=note+' ('+(SESSION.name||'Manager')+', '+
+                new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})+')';
+              var reason=!hp.reason ? QWAIT
+                : hp.reason.indexOf(QWAIT)===0 ? hp.reason
+                : QWAIT+' On hold before this: '+hp.reason;
+              card.dataset.kept='1';
+              qFire(card,id,'hold',qWithKept(reason,[before,signed].filter(Boolean).join('\n\n')));
+            };
+            return;
+          }
           throw new Error((j&&j.error)||'Could not record the decision.');
         }
         var mine=ALL.filter(function(x){return x.id===id;})[0];
         if(j.status==='held'){
           card.classList.add('held'); card.classList.remove('hot');
-          msg.textContent='On hold. The reason is on the file, and the daily reminder skips this case today.';
+          msg.textContent = card.dataset.kept
+            ? 'Your comments are on the case. It is on hold until the client confirms, and when it is approved they go in with the approval.'
+            : 'On hold. The reason is on the file, and the daily reminder skips this case today.';
+          delete card.dataset.kept;
           if(mine){ mine.caseHoldAt=new Date().toISOString(); mine.caseHoldBy=SESSION.name||''; mine.caseHoldNote=note||''; }
           delete card.dataset.armed;
           setTimeout(function(){ renderQueue(); },1400);
@@ -2925,6 +2988,7 @@ function qFire(card,id,v,note,atts,sig,signName,ov){
       })
       .catch(function(err){
         msg.className='qmsg err'; msg.textContent=err.message;
+        delete card.dataset.kept;
         card.querySelectorAll('.qb').forEach(function(x){x.disabled=false;});
         var g2=card.querySelector('.qsgo'); if(g2) g2.disabled=false;
       });
@@ -3294,6 +3358,28 @@ function renderQueue(){
           card.querySelector('.qstitle').textContent=approve
             ? 'Attest and sign' : 'Sign the decline';
           pane.querySelector('.qsatt').style.display=approve?'':'none';
+          // A decline's reason is the note box above; comments are for an approval.
+          var cw=pane.querySelector('.qscwrap'); if(cw) cw.style.display=approve?'':'none';
+          if(approve){
+            // Comments kept on a hold come back here, or the decision would
+            // clear them. So does anything typed in the note box after Hold…
+            // or Send back…, which used to go with the approval unseen.
+            var cbox0=pane.querySelector('.qscomment');
+            var row0=ALL.filter(function(x){return x.id===id;})[0];
+            var carry=[qHoldParts(row0).kept, noteEl.value.trim()].filter(Boolean);
+            if(cbox0&&carry.length) cbox0.value=[cbox0.value.trim()].concat(carry).filter(Boolean).join('\n\n');
+            if(noteEl.value.trim()){
+              noteEl.value=''; noteEl.classList.remove('open');
+              delete card.dataset.armed;
+              var pk=card.querySelector('.qpick'); if(pk) pk.classList.remove('open');
+              card.querySelectorAll('.qp.on').forEach(function(x){ x.classList.remove('on'); });
+              card.querySelectorAll('.qb').forEach(function(x){
+                if(x.dataset.v==='return')  x.innerHTML='Send back&hellip;';
+                if(x.dataset.v==='decline') x.innerHTML='Decline&hellip;';
+                if(x.dataset.v==='hold')    x.innerHTML='Hold&hellip;';
+              });
+            }
+          }
           if(approve&&det.classList.contains('open')){
             var deep=[].slice.call(card.querySelectorAll('.qchk input'));
             pane.querySelectorAll('.qsatt input').forEach(function(x,i){
@@ -3316,7 +3402,10 @@ function renderQueue(){
         }
         if(pane) return;
       }
-      qFire(card,id,v,noteEl.value.trim(),null,'','');
+      // A hold or a send-back from here would write over or clear comments
+      // kept on the hold, so they go on after this one's own words.
+      var kept1=qHoldParts(ALL.filter(function(x){return x.id===id;})[0]).kept;
+      qFire(card,id,v,qWithKept(noteEl.value.trim(),kept1),null,'','');
     };
   });
 
@@ -3347,7 +3436,14 @@ function renderQueue(){
       pane.querySelectorAll('.qsatt input').forEach(function(x){ atts[x.dataset.att]=x.checked; });
       var sig=padCanvas.toDataURL('image/png');
       var signName=card.querySelector('.qsname').value.trim()||SESSION.name||'';
-      qFire(card,id,v,noteEl.value.trim(),atts,sig,signName);
+      // An approval carries the comments box, where any kept comments were
+      // already put, and anything typed in the note box since. A decline
+      // carries its reason, and the kept comments after it.
+      var cbox=pane.querySelector('.qscomment');
+      var note=(v==='approve')
+        ? [cbox?cbox.value.trim():'', noteEl.value.trim()].filter(Boolean).join('\n\n')
+        : qWithKept(noteEl.value.trim(), qHoldParts(ALL.filter(function(x){return x.id===id;})[0]).kept);
+      qFire(card,id,v,note,atts,sig,signName);
     };
   });
 }
