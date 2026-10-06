@@ -558,6 +558,16 @@
   .rowActs{display:inline-flex;gap:6px;flex-wrap:nowrap}
   .qc.pulled{box-shadow:0 0 0 2px var(--teal)}
   .qpulled{font-size:11.5px;font-weight:700;color:var(--teal-deep);margin-top:6px}
+  /* Where the client's email stands, on every queue card. Its button is not a
+     .qb: those are decisions, and the decision handler reads a word it does
+     not know as a send-back. */
+  .qmail{margin-top:6px;font-size:11.5px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .qmail.sent{color:var(--teal-deep)}
+  .qmail.none{color:#B45309}
+  .qmail.bounced{color:var(--danger)}
+  .qresend{border-radius:7px;padding:4px 10px;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;
+           background:transparent;color:var(--teal-deep);border:1.5px solid rgba(13,148,136,.45);white-space:nowrap}
+  .qresend:disabled{opacity:.55;cursor:wait}
   .qempty{color:var(--muted);font-size:12.5px;padding:10px 0}
   @media (max-width:640px){
     .qc{grid-template-columns:auto minmax(0,1fr); gap:8px 10px}
@@ -1752,10 +1762,98 @@ function caseActCell(r){
   }
   var open='<button type="button" class="rowAct" data-id="'+id+'" onclick="openCase(this.dataset.id,this)" '+
     'title="Open the full fact find">Open</button>';
-  if(!canPull(r)) return open;
-  return '<span class="rowActs">'+open+'<button type="button" class="rowAct go" data-id="'+id+'" '+
+  if(canPull(r)) return '<span class="rowActs">'+open+'<button type="button" class="rowAct go" data-id="'+id+'" '+
     'onclick="pullIntoQueue(this.dataset.id)" title="Bring it into your approval queue to sign it off">Approve&hellip;</button></span>';
+  if(canResendLetter(r)) return '<span class="rowActs">'+open+'<button type="button" class="rowAct qresend" data-id="'+id+'" '+
+    'title="Send the client their approval letter again">Resend letter</button></span>';
+  return open;
 }
+
+/* ---- The client's email ---------------------------------------------------
+   On 5 October a case went in and its email to the client never left: the
+   account had used Google's daily allowance and the send failed quietly. The
+   client cannot confirm a draft they never received, so the case waits, and
+   nothing here said so. Each queue card now says where the client's email
+   stands and can send it again (ClientEmails.gs), and an address that bounced
+   is flagged until the advisor puts in the right one. */
+// The client's address as the server reads it (rrbClientEmail_), same order.
+function clientEmailOf(r){
+  var keys=['email','clientEmail','adviceClientEmail','clientEmailAddress'];
+  for(var i=0;i<keys.length;i++){ var v=qStr(r[keys[i]]); if(v.indexOf('@')>0) return v; }
+  return '';
+}
+// The address that bounced, while it is still the one on the case.
+function bouncedAddressOf(r){
+  var b=qStr(r['Client Email Bounced Address']).toLowerCase();
+  return (b && b===clientEmailOf(r).toLowerCase()) ? b : '';
+}
+function isManagerView(){
+  var k=SESSION && SESSION.scope && SESSION.scope.kind;
+  return !!k && k!=='agent' && k!=='staff';
+}
+// The draft (or advice copy) can go again: undecided, not sent back, and an
+// address that has not bounced.
+function canResendDraft(r){
+  var st=qStr(r.status).toLowerCase();
+  if(/approv|declin|cancel|chang|complet|signed/.test(st)) return false;
+  return isManagerView() && !!clientEmailOf(r) && !bouncedAddressOf(r);
+}
+// The approval letter can go again for a recent approval.
+function canResendLetter(r){
+  if(!isManagerView() || !/approv/i.test(qStr(r.status))) return false;
+  var at=qD(r.approvedAt);
+  if(!at || (NOW-at)>30*864e5) return false;
+  return !!clientEmailOf(r) && !bouncedAddressOf(r);
+}
+function qEmailLine(r){
+  var to=clientEmailOf(r), b=bouncedAddressOf(r), sent=qD(r.clientDraftSentAt), txt, cls;
+  if(!to){ cls='none'; txt='No email address for the client on file'; }
+  else if(b){
+    var bAt=qD(r['Client Email Bounced At']);
+    cls='bounced'; txt='&#9888; Email bounced'+(bAt?' '+bAt.toLocaleDateString():'')+' &mdash; '+escapeHtml(b)+
+      '. The advisor has been asked to confirm the address.';
+  }
+  else if(sent){ cls='sent'; txt='Client emailed '+sent.toLocaleDateString(); }
+  else { cls='none'; txt='No record of the client being emailed'; }
+  return '<div class="qmail '+cls+'"><span>'+txt+'</span>'+
+    (canResendDraft(r)?'<button type="button" class="qresend" data-id="'+escapeHtml(r.id)+'">Send to client again</button>':'')+
+    '</div>';
+}
+async function resendToClient(id, btn){
+  var r=null;
+  for(var i=0;i<ALL.length;i++){ if(ALL[i].id===id){ r=ALL[i]; break; } }
+  if(!r || !SESSION || !SESSION.token) return;
+  var approved=/approv/i.test(qStr(r.status));
+  if(!confirm('Send '+(r.clientName||'the client')+' '+(approved?'their approval letter':'their draft summary')+
+              ' again, at '+clientEmailOf(r)+'?'+(approved?'':'\n\nIt carries a fresh link for them to confirm.'))) return;
+  var was=btn.textContent, msg='', sentOk=false;
+  btn.disabled=true; btn.textContent='Sending…';
+  try{
+    var res=await fetch(getEndpoint(),{method:'POST',cache:'no-store',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({stage:'client_resend',token:SESSION.token,id:id})});
+    var j=await res.json();
+    if(j && j.expired){ logout(); return; }
+    if(j && j.ok){
+      sentOk=true;
+      msg='Sent to '+(j.to||'the client')+'.';
+      if(approved) r['Approval Mailed At']=j.at; else r.clientDraftSentAt=j.at;
+    }
+    // A server without ClientEmails.gs hands this post to the agent-submit
+    // door, which refuses it for having no agent code and does nothing else.
+    else if(j && /agent code required/i.test(j.error||'')) msg='Sending again needs the server update (ClientEmails.gs). Nothing was sent.';
+    else msg=(j && j.error) || 'The server did not say it was sent.';
+  }catch(e){ msg='Could not reach the branch server. Nothing was sent.'; }
+  btn.disabled=false; btn.textContent=was;
+  alert(msg);
+  if(sentOk) render();
+}
+document.addEventListener('click', function(ev){
+  var b=ev.target && ev.target.closest && ev.target.closest('.qresend');
+  if(!b || b.disabled) return;
+  ev.preventDefault(); ev.stopPropagation();
+  resendToClient(b.dataset.id, b);
+});
 
 // Is there work in the form's slot that is not safe anywhere else? Mirrors
 // draftWorthSaving() in FFPROJECT.html.
@@ -3085,6 +3183,7 @@ function renderQueue(){
         '<div class="qsub">'+escapeHtml(r.advisorName)+' · with '+escapeHtml(r.reviewerName||r.unit||'—')+
           ' · submitted '+new Date(r.submittedAt).toLocaleDateString()+
           (need?' · need '+money(need):'')+'</div>'+
+        qEmailLine(r)+
         fixChip+
         (recl?'<div class="qrec">'+recl+'</div>':'')+
         (flags?'<div class="qflags">'+flags+'</div>':'')+
@@ -3529,7 +3628,9 @@ function recentTable(rows){
       '<td>'+(r.decision||'—')+'</td>'+
       '<td class="num">'+(r.quality||'—')+'</td>'+
       '<td class="num">'+(r.premium?money(r.premium):'—')+'</td>'+
-      '<td>'+(r.replacement?'<span class="badge b-decline">REPL</span>':'')+'</td>'+
+      '<td>'+(r.replacement?'<span class="badge b-decline">REPL</span>':'')+
+        (bouncedAddressOf(r)?' <span class="badge b-decline" title="'+escapeHtml(bouncedAddressOf(r))+
+          ' bounced. The advisor has been asked to confirm the address.">BOUNCED</span>':'')+'</td>'+
       '<td>'+caseActCell(r)+'</td></tr>';
   }).join('');
   return '<div class="card col-12"><h3>Recent fact finds</h3><div class="csub">Most recent 25 in the current view</div>'+
