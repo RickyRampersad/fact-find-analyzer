@@ -176,6 +176,8 @@
   .stagesPeek span{font-size:13px; font-weight:700; color:var(--ink-2); border:1px solid var(--line-2); border-radius:999px; padding:7px 13px; background:rgba(10,20,38,.7)}
   .stagesPeek span i{font-style:normal; color:var(--gold); margin-right:6px; font-weight:850}
   .ctaRow{display:flex; flex-wrap:wrap; gap:12px; align-items:center}
+  .facts{max-width:820px; margin:-8px 0 26px; font-size:14px; color:var(--ink-3); line-height:1.6}
+  .facts b{color:var(--ink-2)}
   .privacy{display:flex; gap:12px; align-items:flex-start; margin-top:28px; max-width:640px; color:var(--ink-3); font-size:13.5px; line-height:1.55}
   .privacy svg{flex:none; width:20px; height:20px; color:var(--teal); margin-top:2px}
 
@@ -562,6 +564,7 @@
     <div id="rewardIntro"></div>
     <div id="fy26Wrap"></div>
     <div class="stagesPeek" id="stagesPeek"></div>
+    <p class="facts"><b>Why write it down.</b> Specific, difficult goals beat &ldquo;do your best&rdquo; (Locke and Latham, 2002). Tracking your progress moves a goal further, and more when it is written down and shared: 138 experiments, nearly 20,000 people (Harkin and colleagues, 2016). That is what the Friday check-in is.</p>
     <div class="ctaRow">
       <button class="btn gold" id="startBtn" type="button">Build my flight plan
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
@@ -599,7 +602,12 @@
               <div class="chips gold" data-one="why.title" data-opts="title"></div>
               <input class="inp" data-k="why.titleOther" maxlength="60" placeholder="Name it" style="margin-top:10px" id="titleOther" hidden></div>
           </div>
-          <p class="note" id="titleNote" hidden></p>
+          <div id="mdrtBox" hidden>
+            <p class="note" id="mdrtNote"></p>
+            <div class="f" style="margin-top:14px; max-width:420px"><span class="lab">Your first-year commission, January to September 2026<small>MDRT 2027 counts calendar 2026. Your commission statements show it.</small></span>
+              <label class="money"><input class="inp" data-k="why.mdrtSoFar" data-money inputmode="numeric" placeholder="0" aria-label="First-year commission January to September 2026"></label></div>
+            <p class="note" id="mdrtLeft" style="color:var(--ink-2)"></p>
+          </div>
         </div>
       </div>
 
@@ -618,7 +626,7 @@
             <label class="money"><input class="inp" data-k="budget.otherIncome" data-money inputmode="numeric" placeholder="0" aria-label="Other household income per month"></label></div>
           <div class="sub"><h3>Tax and one big thing</h3><p>So the income you aim for is what you keep.</p></div>
           <div class="row2">
-            <div class="f"><span class="lab">Tax on your commission<small>Your effective rate. Ask your accountant if you&rsquo;re not sure; 0 leaves it out.</small></span>
+            <div class="f"><span class="lab">Tax and NIS on your commission<small>Your effective rate, NIS included. Ask your accountant if you&rsquo;re not sure; 0 leaves it out.</small></span>
               <label class="pct"><input class="inp" data-k="budget.taxPct" inputmode="decimal" placeholder="0" aria-label="Tax rate"></label></div>
             <div class="f"><span class="lab">One big thing this year<small>A lump sum on top: the trip, the deposit, the car.</small></span>
               <label class="money"><input class="inp" data-k="budget.stretch" data-money inputmode="numeric" placeholder="0" aria-label="One big thing, total"></label>
@@ -697,9 +705,9 @@
             <div class="ratio"><div><b>Appointments for each fact find</b><small data-out="r2Txt"></small></div>
               <div class="stepper" data-step="ratios.apptPerFf" data-min="1" data-max="6" data-inc="0.5"><button type="button" aria-label="Fewer">&minus;</button><output></output><button type="button" aria-label="More">+</button></div></div>
             <div class="ratio"><div><b>Contacts for each appointment</b><small data-out="r3Txt"></small></div>
-              <div class="stepper" data-step="ratios.contactsPerAppt" data-min="1" data-max="15" data-inc="1"><button type="button" aria-label="Fewer">&minus;</button><output></output><button type="button" aria-label="More">+</button></div></div>
+              <div class="stepper" data-step="ratios.contactsPerAppt" data-min="1" data-max="15" data-inc="0.5"><button type="button" aria-label="Fewer">&minus;</button><output></output><button type="button" aria-label="More">+</button></div></div>
           </div>
-          <p class="note" id="ratioNote" style="margin-top:14px">Starting points, not branch figures. If you know your own from FY26, use them; your Friday check-ins will show you the real ones within a month.</p>
+          <p class="note" id="ratioNote" style="margin-top:14px">The starting points come from Al Granum&rsquo;s records, 25 years of one agency&rsquo;s prospects: about 10 qualified people contacted for 3 fact finds and 1 new client. Existing clients buy far more often: better than 60% at a review. Your own numbers beat any default, and your Friday check-ins will show them within six to eight weeks.</p>
         </div>
       </div>
 
@@ -724,16 +732,16 @@
             <input class="inp" data-k="work.prospecting" maxlength="160" placeholder="e.g. Mon and Wed 9 to 11am; Thursday evening calls"></label>
           <div class="sub"><h3>Your clients</h3><p>The book you already have is where the next sale is.</p></div>
           <div class="row2">
-            <label class="f"><span>Client reviews a month<small>Existing clients you&rsquo;ll sit with.</small></span>
+            <label class="f"><span>Client reviews a month<small>In Granum&rsquo;s records, better than 60% of reviews led to a sale.</small></span>
               <input class="inp" data-k="work.reviewsMonth" inputmode="numeric" placeholder="e.g. 8"></label>
             <label class="f"><span>Referrals a week<small>Names you&rsquo;ll ask for, and get.</small></span>
               <input class="inp" data-k="work.referralsWeek" inputmode="numeric" placeholder="e.g. 5"></label>
           </div>
           <div class="f" style="max-width:340px"><span class="lab">13-month persistency you&rsquo;ll hold<small>The share of this year&rsquo;s policies still in force after 13 months.</small></span>
-            <label class="pct"><input class="inp" data-k="work.persistency" inputmode="decimal" placeholder="e.g. 90" aria-label="13-month persistency"></label></div>
+            <label class="pct"><input class="inp" data-k="work.persistency" inputmode="decimal" placeholder="Your target" aria-label="13-month persistency"></label></div>
           <div class="sub"><h3>Getting better</h3><p>What you&rsquo;ll learn this year.</p></div>
           <div class="f"><div class="chips" data-multi="work.development" data-opts="dev"></div></div>
-          <label class="f"><span>Exactly what?</span><input class="inp" data-k="work.devText" maxlength="200" placeholder="e.g. Finish LOMA 280 by March"></label>
+          <label class="f"><span>Exactly what?</span><input class="inp" data-k="work.devText" maxlength="200" placeholder="e.g. FSCP course 2 by March; my 12 CPD hours by June"></label>
           <div class="sub"><h3>When it gets hard</h3><p>It will. Decide now.</p></div>
           <label class="f"><span>What is most likely to stop you?</span>
             <textarea class="inp" data-k="work.obstacle" maxlength="400" placeholder="e.g. Letting admin eat my prospecting mornings"></textarea></label>
@@ -771,6 +779,7 @@
           </div>
           <div class="qgrid" id="qgrid"></div>
           <p class="qsum" id="qsum"></p>
+          <p class="note" id="qMdrt" hidden style="margin-top:10px; color:var(--ink-2)"></p>
           <div class="sub"><h3>Your first 90 days</h3><p>Three things you&rsquo;ll have done by 31 December.</p></div>
           <input class="inp" data-k="first90.0" maxlength="160" placeholder="e.g. Book a review with every client I insured in FY26" style="margin-bottom:10px">
           <input class="inp" data-k="first90.1" maxlength="160" placeholder="e.g. A fact find on every case, every time" style="margin-bottom:10px">
@@ -908,8 +917,8 @@ var OPT = {
             'Seminars and events', 'Branch leads', 'Calling', 'Family and friends'],
   products: ['Life protection', 'Health', 'Critical illness', 'Savings and pensions', 'Education plans',
              'Mortgage protection', 'Business cover', 'Investment-linked'],
-  dev: ['A designation or course', 'Sales coaching', 'Product training', 'Digital and social media', 'Leadership',
-        'A conference', 'A mentor'],
+  dev: ['FSCP (TTAIFA)', 'LIMRA Master Financial Advisor', 'LOMA FLMI or ACS', 'My 12 CPD hours', 'Sales coaching',
+        'Product training', 'Digital and social media', 'Leadership (AIAM or CIAM)', 'A mentor'],
   support: ['Joint field work', 'Leads', 'Product help', 'Sales coaching', 'Admin help', 'Weekly accountability',
             'Marketing material']
 };
@@ -935,6 +944,14 @@ var CHECK = [
   ['reviews', 'Reviews', 'Client reviews held', null],
   ['booked', 'Booked ahead', 'In next week’s diary', null]
 ];
+
+/* MDRT 2027 for Trinidad and Tobago, from MDRT's own 2027 requirements
+   (Global version, dated 1 September 2026): counted on production from
+   1 January to 31 December 2026. Court of the Table is three times MDRT and
+   Top of the Table six. At least half must be protection business and only
+   business in force counts, which MDRT checks and this page does not. */
+var MDRT = { fyc: { 'MDRT': 353500, 'Court of the Table': 1060500, 'Top of the Table': 2121000 },
+             premium: { 'MDRT': 707000, 'Court of the Table': 2121000, 'Top of the Table': 4242000 } };
 
 /* ── state ─────────────────────────────────────────────────────────────── */
 var S = { session: null, ready: false, me: null, fy: null, last: {}, branch: FALLBACK, actual: { apps: 0, api: 0 },
@@ -1327,7 +1344,7 @@ function blankPlan() {
       lastApi: L.api || 0, apiChoice: 'budget', growthPct: 20, customApi: '',
       avgCase: L.avgCase || B.avgCase || FALLBACK.avgCase, avgCaseFrom: L.avgCase ? 'own' : 'branch', weeks: 46
     },
-    ratios: { ffPerApp: 2, apptPerFf: 2, contactsPerAppt: 4 },
+    ratios: { ffPerApp: 3, apptPerFf: 1, contactsPerAppt: 3.5 },
     work: { markets: [], niche: '', sources: [], products: [], fieldDays: 4, planningDay: 'Monday', prospecting: '',
             reviewsMonth: '', referralsWeek: '', persistency: '', development: [], devText: '', obstacle: '', obstaclePlan: '',
             support: [], supportText: '' },
@@ -1563,6 +1580,7 @@ function update() {
   qs.textContent = qsum === 100 ? 'Adds up to 100%.' : 'Adds up to ' + qsum + '%. It’ll be scaled to 100% when you file it.';
   qs.className = 'qsum' + (qsum === 100 ? '' : ' off');
   $('sigLine').textContent = P.signed.name || '';
+  paintMdrt(d);
   if (wi === 6) { renderFlightCard(d); renderRealCheck(); }
 }
 
@@ -1575,6 +1593,27 @@ function renderRealCheck() {
   box.innerHTML = '<div class="reward" style="margin:6px 0 4px">' + TROPHY + '<div><h3>' + (r.ok ? 'Realistic. <b>It counts for the reward.</b>' : 'Not realistic yet') + '</h3>' +
     '<p>' + (left ? 'The first ' + R.places + ' realistic plans are rewarded: ' + left + ' ' + (left === 1 ? 'place' : 'places') + ' still open.' : 'All ' + R.places + ' reward places are taken, but a realistic plan is still the one worth filing.') +
     (L ? '' : ' With no FY26 on file, the branch checks the last test when you file.') + '</p>' + rulesHtml(checks) + '</div></div>';
+}
+/* What the chosen MDRT title takes, and how much of it is still to do by 31 December. */
+function paintMdrt(d) {
+  var t = P.why.title, need = MDRT.fyc[t];
+  $('mdrtBox').hidden = !need;
+  $('qMdrt').hidden = true;
+  if (!need) return;
+  $('mdrtNote').innerHTML = esc(t) + ' 2027, Trinidad and Tobago: <b style="color:#fff">' + money(need) + '</b> of first-year commission, or ' +
+    money(MDRT.premium[t]) + ' of premium, on production from 1 January to 31 December 2026. At least half has to be protection business, ' +
+    'and only business still in force counts. January to September 2027 counts toward 2028, and MDRT has not published those figures yet. ' +
+    '<span style="color:var(--ink-3)">Source: MDRT 2027 requirements.</span>';
+  var so = num(P.why.mdrtSoFar), left = need - so;
+  var dl = Math.max(1, Math.round((utc(S.fy.from.slice(0, 4) + '-12-31') - utc(S.fy.today)) / 864e5) + 1), wk = Math.max(1, Math.ceil(dl / 7));
+  if (!so) { $('mdrtLeft').textContent = ''; return; }
+  if (left <= 0) { $('mdrtLeft').textContent = 'On commission you are there. Check MDRT\u2019s protection and in-force rules with the branch.'; return; }
+  var apiQ1 = Math.ceil(left / (d.rate / 100) / 1000) * 1000;
+  $('mdrtLeft').innerHTML = '<b style="color:#fff">' + money(left) + '</b> still to go by 31 December: about ' + money(Math.ceil(left / wk)) +
+    ' a week for the ' + wk + ' weeks left in 2026, or about ' + money(apiQ1) + ' of API at your FYC rate.';
+  $('qMdrt').hidden = false;
+  $('qMdrt').innerHTML = 'Going for ' + esc(t) + ' 2027: Q1 is the last quarter that counts for it. The ' + money(left) +
+    ' still to go is about <b style="color:#fff">' + money(apiQ1) + '</b> of API in Q1 at your rate; your Q1 is ' + money(d.q[0]) + '.';
 }
 function renderFlightCard(d) {
   d = d || derive(P);
