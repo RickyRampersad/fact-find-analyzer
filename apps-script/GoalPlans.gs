@@ -366,8 +366,26 @@ function goalReach_(code) {
   } catch (e) { return { last: 0, best: 0 }; }
 }
 
-/* The first realistic plans, in the order they became realistic. */
+/* The first realistic plans, in the order they became realistic. A plan with
+   no recorded moment - filed before this rule was installed, or while the
+   record could not be written - is tested now and placed by when it was last
+   saved, which is when it became the plan it is. */
 function goalRewarded_(fy, plans, ms) {
+  var reach = null, changed = false;
+  Object.keys(plans).forEach(function (c) {
+    var P = plans[c];
+    if (!P || !P.plan || (ms[c] && ms[c].real)) return;
+    if (!reach) {
+      reach = { people: {}, best: 0 };
+      try { var ly = goalLastYear_(); reach.people = ly.people;
+            Object.keys(ly.people).forEach(function (k) { reach.best = Math.max(reach.best, ly.people[k].api || 0); }); } catch (e) {}
+    }
+    if (goalRealistic_(P.plan, (reach.people[c] || {}).api || 0, reach.best).ok) {
+      (ms[c] || (ms[c] = {})).real = P.updatedAt || P.submittedAt || new Date().toISOString();
+      changed = true;
+    }
+  });
+  if (changed) goalMilestonesSave_(fy, ms);
   return Object.keys(ms).filter(function (c) { return ms[c].real && plans[c] && plans[c].plan; })
     .sort(function (a, b) { return ms[a].real < ms[b].real ? -1 : 1; })
     .slice(0, GOAL_REAL.places)
