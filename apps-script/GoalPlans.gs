@@ -787,4 +787,5 @@ function goalCheck() {
   var fy = goalFy_(new Date());
   say(true, fy.label + ' week ' + fy.week + ', ' + goalRoster_().length + ' advisors asked for a plan');
   say(String(doGet).indexOf('goalWall_') > -1, 'the branch wall can read the race');
+  say(typeof goalRewarded_ === 'function', 'the first ' + GOAL_REAL.places + ' realistic plans are rewarded (this is the 8 October evening version)');
 }
