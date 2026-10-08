@@ -30,7 +30,9 @@
   film, for the WhatsApp link: tap once, it plays with sound, and it ends on
   the door to /goals. The film is fy27-liftoff.mp4 beside this page; the
   poster and the WhatsApp card are the two JPGs with the same stem. All three
-  are built in tools/ outside the site from the film's own page.
+  are built in tools/ outside the site from the film's own page. The page
+  plays the 720p copy (about 2 Mbps, so it does not stall on a phone over
+  data); the 1080p copy is the download.
 -->
 <style>
   :root{ --ground:#05080F; --panel:#0D1524; --line:#1C2942; --line-2:#2A3B5E; --ink:#F3F7FD; --ink-2:#AFC0D8; --ink-3:#8296B6;
@@ -92,7 +94,7 @@
   <p style="margin:-6px 0 18px; color:var(--ink-2); font-size:clamp(15px,2.4vw,18px)">Watch Stephanie file hers, step by step, with sample figures. Then file yours.</p>
 
   <div class="vwrap" id="vwrap">
-    <video id="v" playsinline preload="metadata" poster="fy27-liftoff-poster.jpg">
+    <video id="v" playsinline preload="auto" poster="fy27-liftoff-poster.jpg">
       <source src="fy27-liftoff.mp4" type="video/mp4">
     </video>
     <div class="cover" id="cover" role="button" tabindex="0" aria-label="Play the film with sound"><div class="play"><i></i></div><small>Tap to play with sound</small></div>
@@ -113,7 +115,7 @@
     <div><b>The first three realistic flight plans are rewarded.</b><span>Built from your real budget, pays for it, within reach, and says how you&rsquo;ll work.</span></div>
   </div>
   <div class="cta"><a class="btn gold" href="goals.html">Build my flight plan &rarr;</a></div>
-  <div class="row" style="margin-top:12px"><a class="btn line" id="dl" href="fy27-liftoff.mp4" download="FY27-Flight-Plan.mp4">Download the film</a><button class="btn line" type="button" id="share">Share this film</button></div>
+  <div class="row" style="margin-top:12px"><a class="btn line" id="dl" href="fy27-liftoff-1080.mp4" download="FY27-Flight-Plan.mp4">Download the film (HD)</a><button class="btn line" type="button" id="share">Share this film</button></div>
   <p class="foot">factfind360.com/liftoff &middot; Ricky Rampersad Branch</p>
 </main>
 <div class="toast" id="toast" role="status"></div>
