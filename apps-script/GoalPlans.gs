@@ -44,6 +44,7 @@
 var GOAL_TAB_PLANS  = 'FY27 Goal Plans';
 var GOAL_TAB_CHECKS = 'FY27 Check-ins';
 var GOAL_TAB_HISTORY = 'FY27 Projections';
+var GOAL_TAB_FILM    = 'FY27 Film Views';      // one row per view, play, finish or download of the film
 var GOAL_FY_FROM    = '2026-10-01';          // used only if FinancialYear.gs is missing
 var GOAL_FY_LABEL   = 'FY27';
 var GOAL_TZ         = 'America/Port_of_Spain';
@@ -69,6 +70,7 @@ var GOAL_CHECK_COLS = ['Code', 'Name', 'Week', 'Week Of', 'Saved At', 'Contacts'
   'Win', 'In The Way', 'Help', 'Check-in JSON'];
 var GOAL_HISTORY_COLS = ['Week', 'Taken At', 'Advisors', 'Plans', 'Committed API', 'Committed FYC',
   'Picked Up', 'Plans By Today', 'Pace API', 'Pace FYC', 'Checked In Last Week'];
+var GOAL_FILM_COLS = ['Time', 'Event', 'Page', 'Referrer'];
 
 /* ── the doors ─────────────────────────────────────────────────────────── */
 
@@ -91,6 +93,8 @@ ffProcessAgentSubmit = function (data) {
 var GOAL_PREV_DOGET_ = (typeof doGet === 'function') ? doGet : null;
 if (GOAL_PREV_DOGET_) doGet = function (e) {
   var a = (e && e.parameter && e.parameter.action) || '';
+  /* The film's counter: no sign-in, no data about anyone, a row per event. */
+  if (a === 'goal_hit') { try { goalHit_(e); } catch (err) {} return _ffJson({ ok: true, v: 'goal1' }); }
   if (a === 'goal_me' || a === 'goal_team' || a === 'goal_view' || a === 'goal_board' || a === 'goal_wall') {
     var out;
     try {
@@ -337,6 +341,29 @@ function goalActual_(fy) {
   try { y = (fyrFigures_(fy.from) || {}).y || {}; } catch (e) { Logger.log('goalActual_: %s', e && e.message); }
   try { CacheService.getScriptCache().put('goal_fy_actual', JSON.stringify(y), 600); } catch (e) {}
   return y;
+}
+
+/* ── the film: views, plays, finishes, downloads ───────────────────────── */
+
+var GOAL_HIT_EVENTS = ['view', 'play', 'finish', 'download'];
+function goalHit_(e) {
+  var ev = String((e.parameter && e.parameter.ev) || '').toLowerCase();
+  if (GOAL_HIT_EVENTS.indexOf(ev) < 0) return;
+  var page = String((e.parameter && e.parameter.p) || '').slice(0, 120), ref = String((e.parameter && e.parameter.r) || '').slice(0, 200);
+  goalTab_(GOAL_TAB_FILM, GOAL_FILM_COLS).appendRow([new Date(), ev, page, ref]);
+}
+
+/* The totals, cached a minute: the deck and the Monday e-mail read them. */
+function goalFilmStats_() {
+  var cache = CacheService.getScriptCache(), hit = cache.get('goal_film');
+  if (hit) { try { return JSON.parse(hit); } catch (err) {} }
+  var out = { view: 0, play: 0, finish: 0, download: 0 };
+  var sh = SpreadsheetApp.openById(FF_SHEET_ID).getSheetByName(GOAL_TAB_FILM);
+  if (sh && sh.getLastRow() > 1) sh.getRange(2, 2, sh.getLastRow() - 1, 1).getValues().forEach(function (r) {
+    var k = String(r[0]).toLowerCase(); if (k in out) out[k]++;
+  });
+  try { cache.put('goal_film', JSON.stringify(out), 60); } catch (err) {}
+  return out;
 }
 
 /* ── realistic, and the first three ────────────────────────────────────── */
@@ -602,8 +629,11 @@ function goalTeam_(e) {
   if (!me) return RRB_EXPIRED;
   if (me.kind === 'agent' || me.kind === 'staff' || me.kind === 'guest') return { ok: false, error: 'The flight deck is for managers.' };
   var out = goalProjection_(me, new Date());
-  /* The weekly history is the branch's; a unit's own scope has none. */
-  if (me.kind === 'branch') { try { out.history = goalHistory_(); } catch (err) { out.history = []; } }
+  /* The weekly history and the film's counts are the branch's; a unit's own scope has neither. */
+  if (me.kind === 'branch') {
+    try { out.history = goalHistory_(); } catch (err) { out.history = []; }
+    try { out.film = goalFilmStats_(); } catch (err) {}
+  }
   return out;
 }
 
@@ -744,6 +774,7 @@ function goalDigest() {
     (P.rewarded && P.rewarded.length ? '<p style="margin:0 0 6px">First realistic plans, for the reward: <b>' +
       P.rewarded.map(function (x) { return x.place + '. ' + x.name; }).join(' &middot; ') + '</b>' +
       (P.rewarded.length < P.places ? ' (' + (P.places - P.rewarded.length) + ' still open)' : '') + '</p>' : '') +
+    (function () { try { var F = goalFilmStats_(); return F.view ? '<p style="margin:0 0 6px">The film: <b>' + F.view + '</b> views, <b>' + F.play + '</b> plays, <b>' + F.finish + '</b> watched to the end, <b>' + F.download + '</b> downloads.</p>' : ''; } catch (err) { return ''; } })() +
     '<p style="margin:0 0 6px"><b>' + T.plans + ' of ' + T.people + '</b> advisors have filed a plan.' +
       (missing.length ? ' Still to file: ' + missing.join(', ') + '.' : '') + '</p>' +
     '<p style="margin:0 0 6px">Picked up so far: <b>' + goalMoney_(T.actual) + '</b> against <b>' + goalMoney_(T.expected) +
@@ -769,7 +800,7 @@ function goalSetup() {
   });
   ScriptApp.newTrigger('goalDigest').timeBased().onWeekDay(ScriptApp.WeekDay[GOAL_DIGEST_AT.day])
     .atHour(GOAL_DIGEST_AT.hour).nearMinute(30).inTimezone(GOAL_TZ).create();
-  goalTab_(GOAL_TAB_PLANS, GOAL_PLAN_COLS); goalTab_(GOAL_TAB_CHECKS, GOAL_CHECK_COLS); goalTab_(GOAL_TAB_HISTORY, GOAL_HISTORY_COLS);
+  goalTab_(GOAL_TAB_PLANS, GOAL_PLAN_COLS); goalTab_(GOAL_TAB_CHECKS, GOAL_CHECK_COLS); goalTab_(GOAL_TAB_HISTORY, GOAL_HISTORY_COLS); goalTab_(GOAL_TAB_FILM, GOAL_FILM_COLS);
   /* String(), or Apps Script's Logger prints the hour as 7.0. */
   Logger.log('Flight plans: tabs ready; projections e-mail every %s about %s:30.', GOAL_DIGEST_AT.day, String(GOAL_DIGEST_AT.hour));
 }
@@ -787,5 +818,7 @@ function goalCheck() {
   var fy = goalFy_(new Date());
   say(true, fy.label + ' week ' + fy.week + ', ' + goalRoster_().length + ' advisors asked for a plan');
   say(String(doGet).indexOf('goalWall_') > -1, 'the branch wall can read the race');
-  say(typeof goalRewarded_ === 'function', 'the first ' + GOAL_REAL.places + ' realistic plans are rewarded (this is the 8 October evening version)');
+  say(typeof goalRewarded_ === 'function', 'the first ' + GOAL_REAL.places + ' realistic plans are rewarded');
+  try { var F = goalFilmStats_(); say(true, 'the film so far: ' + F.view + ' views, ' + F.play + ' plays, ' + F.finish + ' finishes, ' + F.download + ' downloads (this is the 9 October morning version)'); }
+  catch (e) { say(false, 'the film counter could not be read: ' + (e && e.message)); }
 }

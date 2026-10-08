@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#05080F">
-<title>35 seconds to liftoff · FY27 Flight Plan</title>
-<meta name="description" content="Your FY27 flight plan: how to file it, and how it goes on the branch wall. The first three realistic plans are rewarded.">
+<title>53 seconds to liftoff · FY27 Flight Plan</title>
+<meta name="description" content="Stephanie files her FY27 flight plan in 53 seconds: budget, API goal, the week, the wall. The first three realistic plans are rewarded.">
 <!-- The card WhatsApp draws when the link is pasted. -->
 <meta property="og:type" content="video.other">
 <meta property="og:site_name" content="Ricky Rampersad Branch">
-<meta property="og:title" content="35 seconds to liftoff">
-<meta property="og:description" content="Your FY27 flight plan: how to file it, and how it goes on the branch wall. The first three realistic plans are rewarded.">
+<meta property="og:title" content="53 seconds to liftoff">
+<meta property="og:description" content="Watch Stephanie file her FY27 flight plan: budget, API goal, the week, the wall. The first three realistic plans are rewarded.">
 <meta property="og:url" content="https://factfind360.com/liftoff">
 <meta property="og:image" content="https://factfind360.com/fy27-liftoff-og.jpg">
 <meta property="og:image:width" content="1200">
@@ -88,7 +88,8 @@
 <main>
   <div class="top"><img src="shield.svg" alt=""><div><b>FY27 Flight Plan</b><small>Ricky Rampersad Branch</small></div></div>
   <p class="eyebrow">FY27 · 1 October 2026 – 30 September 2027</p>
-  <h1>35 seconds to <span class="gold">liftoff.</span></h1>
+  <h1>53 seconds to <span class="gold">liftoff.</span></h1>
+  <p style="margin:-6px 0 18px; color:var(--ink-2); font-size:clamp(15px,2.4vw,18px)">Watch Stephanie file hers, step by step, with sample figures. Then file yours.</p>
 
   <div class="vwrap" id="vwrap">
     <video id="v" playsinline preload="metadata" poster="fy27-liftoff-poster.jpg">
@@ -103,7 +104,7 @@
   </div>
 
   <div class="steps">
-    <div class="step"><i>1</i><b>Sign in</b><span>Your agent number and your dashboard password, at factfind360.com/goals.</span></div>
+    <div class="step"><i>1</i><b>Sign in</b><span>At factfind360.com/goals, with your agent number, the way you sign in to the branch dashboard.</span></div>
     <div class="step"><i>2</i><b>Budget first</b><span>What your life costs. The page works out the API that pays for it and the week that gets you there.</span></div>
     <div class="step"><i>3</i><b>Sign it</b><span>Your name goes GO on the big screen, and your progress goes on the wall. Check in every Friday.</span></div>
   </div>
@@ -112,25 +113,38 @@
     <div><b>The first three realistic flight plans are rewarded.</b><span>Built from your real budget, pays for it, within reach, and says how you&rsquo;ll work.</span></div>
   </div>
   <div class="cta"><a class="btn gold" href="goals.html">Build my flight plan &rarr;</a></div>
-  <div class="row" style="margin-top:12px"><button class="btn line" type="button" id="share">Share this film</button></div>
+  <div class="row" style="margin-top:12px"><a class="btn line" id="dl" href="fy27-liftoff.mp4" download="FY27-Flight-Plan.mp4">Download the film</a><button class="btn line" type="button" id="share">Share this film</button></div>
   <p class="foot">factfind360.com/liftoff &middot; Ricky Rampersad Branch</p>
 </main>
 <div class="toast" id="toast" role="status"></div>
 <script>
 'use strict';
 var v = document.getElementById('v'), cover = document.getElementById('cover'), end = document.getElementById('end');
+/* Views, plays, finishes and downloads, counted on the branch's flight-plan
+   server (GoalPlans.gs, action goal_hit): a row per event, nothing about
+   who. Fire and forget; an older server answers "unknown action" and the
+   page carries on. */
+var HIT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec';
+var hits = {};
+function hit(ev) {
+  if (hits[ev]) return; hits[ev] = true;
+  try { (new Image()).src = HIT + '?action=goal_hit&ev=' + ev + '&p=' + encodeURIComponent(location.pathname) + '&r=' + encodeURIComponent((document.referrer || '').slice(0, 200)) + '&z=' + Date.now(); } catch (e) {}
+}
+hit('view');
+document.getElementById('dl').addEventListener('click', function () { hit('download'); });
 function play() {
+  hit('play');
   end.classList.remove('on'); cover.classList.add('off');
   v.muted = false; v.volume = 1; v.controls = true;
   var p = v.play(); if (p && p.catch) p.catch(function () { cover.classList.remove('off'); });
 }
 cover.addEventListener('click', play);
 cover.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); play(); } });
-v.addEventListener('ended', function () { end.classList.add('on'); });
+v.addEventListener('ended', function () { hit('finish'); end.classList.add('on'); });
 document.getElementById('again').addEventListener('click', function () { v.currentTime = 0; play(); });
 document.getElementById('share').addEventListener('click', function () {
-  var url = 'https://factfind360.com/liftoff', text = '35 seconds to liftoff: your FY27 flight plan, and how it goes on the wall. ' + url;
-  if (navigator.share) navigator.share({ title: '35 seconds to liftoff', text: text, url: url }).catch(function () {});
+  var url = 'https://factfind360.com/liftoff', text = '53 seconds to liftoff: watch Stephanie file her FY27 flight plan, then file yours. ' + url;
+  if (navigator.share) navigator.share({ title: '53 seconds to liftoff', text: text, url: url }).catch(function () {});
   else if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { toast('Link copied'); });
 });
 function toast(t) { var el = document.getElementById('toast'); el.textContent = t; el.classList.add('on'); setTimeout(function () { el.classList.remove('on'); }, 2200); }

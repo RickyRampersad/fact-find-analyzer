@@ -2221,6 +2221,7 @@ function renderDeck() {
             (pace === null ? 'A pace is called once a twentieth of the year has gone' : 'About ' + moneyShort(T.paceFyc) + ' FYC') + '</em></div>' +
           '<div><small>Checked in</small><b>' + T.checkedThis + ' <span style="font-size:.6em;color:var(--ink-3)">this week</span></b><em>' + T.checkedLast + ' last week' + (lyLine ? ' · ' + lyLine : '') + '</em></div>' +
         '</div>' +
+        (J.film && J.film.view ? '<p class="note" style="margin:14px 0 0">The film at factfind360.com/liftoff: <b style="color:#fff">' + J.film.view + '</b> views \u00b7 <b style="color:#fff">' + J.film.play + '</b> plays \u00b7 <b style="color:#fff">' + J.film.finish + '</b> watched to the end \u00b7 <b style="color:#fff">' + J.film.download + '</b> downloads.</p>' : '') +
         '<div class="actions"><button class="btn line sm" type="button" id="nudgeBtn">Copy a nudge for WhatsApp</button>' +
           '<button class="btn line sm" type="button" id="deckRefresh">Refresh</button></div></div>' +
       '<div class="card s5"><p class="eyebrow">Latest check-ins</p><h3>The week, added up</h3><div class="wk">' +
