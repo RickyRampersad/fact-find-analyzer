@@ -50,6 +50,17 @@ var GOAL_TZ         = 'America/Port_of_Spain';
 var GOAL_DIGEST_TO  = '';                    // blank: the branch manager in MAIL_CONFIG
 var GOAL_DIGEST_AT  = { day: 'MONDAY', hour: 7 };
 
+/* THE FIRST THREE REALISTIC PLANS ARE REWARDED - asked for on 8 October 2026.
+   Realistic, as the page tells every advisor before they start:
+     built from a real budget   at least minLines of the ten monthly lines
+     pays for that budget       the API goal covers the income it needs
+     within reach               no more than maxGrowth times their FY26 API, or,
+                                with no FY26, no more than the branch's best FY26
+     says how they will work    who they serve and where the business comes from
+   A plan's place is the moment it was first filed realistic; changed into one
+   that is not, it gives the place up. The branch manager decides the reward. */
+var GOAL_REAL = { minLines: 4, maxGrowth: 2, places: 3 };
+
 var GOAL_PLAN_COLS = ['Code', 'Name', 'Unit', 'Submitted At', 'Updated At', 'API Goal', 'FYC Goal',
   'Income Goal', 'Apps Goal', 'Contacts / wk', 'Appointments / wk', 'Fact finds / wk', 'Apps / wk',
   'Q1 API', 'Q2 API', 'Q3 API', 'Q4 API', 'Title Goal', 'Plan JSON'];
@@ -328,6 +339,41 @@ function goalActual_(fy) {
   return y;
 }
 
+/* ── realistic, and the first three ────────────────────────────────────── */
+
+function goalRealistic_(plan, lastApi, best) {
+  var d = goalDerive_(plan), b = plan.budget || {}, w = plan.work || {}, why = [];
+  var lines = ['housing', 'utilities', 'groceries', 'transport', 'children', 'insurance', 'debt', 'savings', 'leisure', 'other']
+    .filter(function (k) { return goalNum_(b[k]) > 0; }).length;
+  if (lines < GOAL_REAL.minLines) why.push('Fill in at least ' + GOAL_REAL.minLines + ' lines of your monthly budget.');
+  if (!d.api) why.push('Set an API goal.');
+  else if (d.shortfall > 0) why.push('Your API goal does not yet pay for the budget you entered.');
+  var cap = lastApi > 0 ? lastApi * GOAL_REAL.maxGrowth : (best || 0);
+  if (d.api && cap > 0 && d.api > cap) why.push(lastApi > 0
+    ? 'Your goal is more than ' + GOAL_REAL.maxGrowth + ' times your FY26 API. Bring it within reach.'
+    : 'Your goal is more than the branch\u2019s best FY26 year. Bring it within reach.');
+  if (!(w.markets || []).length || !(w.sources || []).length) why.push('Say who you serve and where your business will come from.');
+  return { ok: !why.length, why: why };
+}
+
+/* FY26 for one advisor, and the branch's best FY26 year, or nothing if
+   Salesforce cannot say - in which case "within reach" is not tested. */
+function goalReach_(code) {
+  try {
+    var ly = goalLastYear_(), best = 0;
+    Object.keys(ly.people).forEach(function (c) { best = Math.max(best, ly.people[c].api || 0); });
+    return { last: (ly.people[code] || {}).api || 0, best: best };
+  } catch (e) { return { last: 0, best: 0 }; }
+}
+
+/* The first realistic plans, in the order they became realistic. */
+function goalRewarded_(fy, plans, ms) {
+  return Object.keys(ms).filter(function (c) { return ms[c].real && plans[c] && plans[c].plan; })
+    .sort(function (a, b) { return ms[a].real < ms[b].real ? -1 : 1; })
+    .slice(0, GOAL_REAL.places)
+    .map(function (c, i) { return { place: i + 1, code: c, name: plans[c].name, at: ms[c].real }; });
+}
+
 /* ── the race ──────────────────────────────────────────────────────────── */
 
 /* Weeks in a row checked in, ending this week or last. */
@@ -406,6 +452,8 @@ function goalWall_(e) {
   var finishers = R.lanes.filter(function (p) { return p.done; }).map(function (p) { return { name: p.name, at: p.reachedAt }; });
   var out = { ok: true, fy: { label: fy.label, week: fy.week, today: fy.today, days: fy.days, gone: fy.gone },
               lanes: R.lanes, standby: R.standby, firstOff: firstOff, finishers: finishers,
+              rewarded: goalRewarded_(fy, plans, ms).map(function (x) { return { place: x.place, name: x.name, at: x.at }; }),
+              places: GOAL_REAL.places,
               totals: { people: R.lanes.length + R.standby.length, go: R.lanes.length, api: api, fyc: fyc } };
   try { cache.put('goal_wall', JSON.stringify(out), 60); } catch (err) {}
   return out;
@@ -432,8 +480,16 @@ function goalMe_(e) {
       if (at) race = { rank: at.rank, of: R.lanes.length, streak: at.streak };
     } catch (err) { Logger.log('goalMe_ race: %s', err && err.message); }
   }
+  var real = null, rw = [];
+  try { rw = goalRewarded_(fy, goalPlans_(), goalMilestones_(fy)); } catch (err) {}
+  if (plan) {
+    var reach = goalReach_(me.key), rq = goalRealistic_(plan, reach.last, reach.best);
+    var mine3 = rw.filter(function (x) { return x.code === me.key; })[0];
+    real = { ok: rq.ok, why: rq.why, place: mine3 ? mine3.place : 0, taken: rw.length, places: GOAL_REAL.places };
+  }
   return {
-    ok: true, race: race,
+    ok: true, race: race, real: real,
+    reward: { places: GOAL_REAL.places, taken: rw.length, maxGrowth: GOAL_REAL.maxGrowth, minLines: GOAL_REAL.minLines },
     me: { name: me.name, code: me.key, role: me.role, unit: me.unit, kind: me.kind },
     fy: fy, last: last, branch: branch,
     actual: { apps: act[0] || 0, api: Math.round(act[1] || 0) },
@@ -466,8 +522,14 @@ function goalSave_(data) {
       d.q[0], d.q[1], d.q[2], d.q[3], String((plan.why && plan.why.title) || ''), JSON.stringify(plan)];
     if (had) sh.getRange(had.row, 1, 1, row.length).setValues([row]);
     else sh.appendRow(row);
+    var fy = goalFy_(now), ms = goalMilestones_(fy), m = ms[me.key] || (ms[me.key] = {}), reach = goalReach_(me.key);
+    var real = goalRealistic_(plan, reach.last, reach.best);
+    if (real.ok && !m.real) { m.real = now.toISOString(); goalMilestonesSave_(fy, ms); }
+    else if (!real.ok && m.real) { delete m.real; goalMilestonesSave_(fy, ms); }
     try { CacheService.getScriptCache().removeAll(['goal_board', 'goal_wall']); } catch (e) {}
-    return { ok: true, plan: plan, first: !had, submittedAt: (had && had.submittedAt) || now.toISOString(),
+    var rw = goalRewarded_(fy, goalPlans_(), ms), mine2 = rw.filter(function (x) { return x.code === me.key; })[0];
+    return { ok: true, plan: plan, first: !had, real: { ok: real.ok, why: real.why, place: mine2 ? mine2.place : 0,
+             taken: rw.length, places: GOAL_REAL.places }, submittedAt: (had && had.submittedAt) || now.toISOString(),
              updatedAt: now.toISOString() };
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }
@@ -590,10 +652,17 @@ function goalProjection_(me, now) {
      production carried at its present rate, said only once a twentieth of
      the year has gone - a week in, a pace is noise. */
   var frac = fy.gone / fy.days, rate = T.api ? T.fyc / T.api : (ly.branch.rate || 48) / 100;
+  var ms = goalMilestones_(fy), reachLy = ly.people || {}, best = 0;
+  Object.keys(reachLy).forEach(function (c) { best = Math.max(best, reachLy[c].api || 0); });
+  people.forEach(function (p) {
+    var P = plans[p.code];
+    if (P && P.plan) { var q = goalRealistic_(P.plan, (reachLy[p.code] || {}).api || 0, best); p.real = { ok: q.ok, why: q.why }; }
+  });
   T.pace = frac >= 0.05 ? Math.round(T.actual / frac) : null;
   T.paceFyc = T.pace === null ? null : Math.round(T.pace * rate);
   T.actual = Math.round(T.actual); T.lastYear = Math.round(T.lastYear);
-  return { ok: true, fy: fy, people: people, totals: T, branchRate: ly.branch.rate, lastWeek: lastWeek };
+  return { ok: true, fy: fy, people: people, totals: T, branchRate: ly.branch.rate, lastWeek: lastWeek,
+           rewarded: goalRewarded_(fy, plans, ms), places: GOAL_REAL.places };
 }
 
 /* Launch control at the blastoff: who is GO, and the year the branch has
@@ -614,7 +683,9 @@ function goalBoard_(e) {
     return { code: r.code, name: r.name, unit: r.unit, go: !!d, at: P ? P.submittedAt : '' };
   });
   var out = { ok: true, fy: { label: fy.label, from: fy.from, week: fy.week }, people: people,
-              totals: { people: people.length, go: go, api: api, fyc: fyc, lastYear: Math.round(last) } };
+              totals: { people: people.length, go: go, api: api, fyc: fyc, lastYear: Math.round(last) },
+              rewarded: goalRewarded_(fy, plans, goalMilestones_(fy)).map(function (x) { return { place: x.place, name: x.name, at: x.at }; }),
+              places: GOAL_REAL.places };
   try { cache.put('goal_board', JSON.stringify(out), 20); } catch (err) {}
   return out;
 }
@@ -652,6 +723,9 @@ function goalDigest() {
     '<h2 style="margin:0 0 ' + (moved === null ? '14' : '4') + 'px;font-size:22px">Committed: ' + goalMoney_(T.api) + ' API &middot; ' + goalMoney_(T.fyc) + ' FYC</h2>' +
     (moved === null ? '' : '<p style="margin:0 0 14px;color:#475569">' + (moved > 0 ? 'Up ' + goalMoney_(moved) : moved < 0 ? 'Down ' + goalMoney_(-moved) : 'No change') +
       ' since ' + prev.week.replace(/^.*-W0?/, 'week ') + (prev.plans !== null ? ', when ' + prev.plans + ' plans were in' : '') + '.</p>') +
+    (P.rewarded && P.rewarded.length ? '<p style="margin:0 0 6px">First realistic plans, for the reward: <b>' +
+      P.rewarded.map(function (x) { return x.place + '. ' + x.name; }).join(' &middot; ') + '</b>' +
+      (P.rewarded.length < P.places ? ' (' + (P.places - P.rewarded.length) + ' still open)' : '') + '</p>' : '') +
     '<p style="margin:0 0 6px"><b>' + T.plans + ' of ' + T.people + '</b> advisors have filed a plan.' +
       (missing.length ? ' Still to file: ' + missing.join(', ') + '.' : '') + '</p>' +
     '<p style="margin:0 0 6px">Picked up so far: <b>' + goalMoney_(T.actual) + '</b> against <b>' + goalMoney_(T.expected) +
@@ -668,7 +742,7 @@ function goalDigest() {
     'The full flight deck: https://factfind360.com/goals</p></div>';
   MailApp.sendEmail({ to: to, subject: fy.label + ' week ' + fy.week + ' — committed ' + goalMoney_(T.api) + ' API, ' +
                       goalMoney_(T.fyc) + ' FYC; ' + T.plans + ' of ' + T.people + ' plans in', htmlBody: html, name: 'RR Branch Flight Deck' });
-  Logger.log('Sent to %s: %s plans, committed %s API', to, T.plans, goalMoney_(T.api));
+  Logger.log('Sent to %s: %s plans, committed %s API', to, String(T.plans), goalMoney_(T.api));
 }
 
 function goalSetup() {
@@ -678,7 +752,8 @@ function goalSetup() {
   ScriptApp.newTrigger('goalDigest').timeBased().onWeekDay(ScriptApp.WeekDay[GOAL_DIGEST_AT.day])
     .atHour(GOAL_DIGEST_AT.hour).nearMinute(30).inTimezone(GOAL_TZ).create();
   goalTab_(GOAL_TAB_PLANS, GOAL_PLAN_COLS); goalTab_(GOAL_TAB_CHECKS, GOAL_CHECK_COLS); goalTab_(GOAL_TAB_HISTORY, GOAL_HISTORY_COLS);
-  Logger.log('Flight plans: tabs ready; projections e-mail every %s about %s:30.', GOAL_DIGEST_AT.day, GOAL_DIGEST_AT.hour);
+  /* String(), or Apps Script's Logger prints the hour as 7.0. */
+  Logger.log('Flight plans: tabs ready; projections e-mail every %s about %s:30.', GOAL_DIGEST_AT.day, String(GOAL_DIGEST_AT.hour));
 }
 
 function goalCheck() {

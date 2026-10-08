@@ -179,6 +179,26 @@
   .privacy{display:flex; gap:12px; align-items:flex-start; margin-top:28px; max-width:640px; color:var(--ink-3); font-size:13.5px; line-height:1.55}
   .privacy svg{flex:none; width:20px; height:20px; color:var(--teal); margin-top:2px}
 
+  /* ── the reward: the first three realistic plans ─────────────────────── */
+  .reward{display:grid; grid-template-columns:auto minmax(0,1fr); gap:18px; align-items:start; max-width:820px; margin:26px 0 6px;
+    padding:20px 22px; border-radius:18px; border:1px solid rgba(245,185,53,.5);
+    background:radial-gradient(500px 220px at 0% 0%,rgba(245,185,53,.2),transparent 65%),linear-gradient(180deg,#151F33,#0C1528)}
+  .reward > svg{width:46px; height:46px; color:var(--gold); filter:drop-shadow(0 0 12px rgba(245,185,53,.45))}
+  .reward h3{font-size:20px; letter-spacing:-.015em}
+  .reward h3 b{color:var(--gold)}
+  .reward p{margin:6px 0 0; color:var(--ink-2); font-size:14.5px; line-height:1.55}
+  .reward ul{margin:10px 0 0; padding:0; list-style:none; display:grid; gap:6px}
+  .reward li{display:flex; gap:10px; font-size:14px; color:var(--ink-2); line-height:1.45}
+  .reward li b{color:var(--ink); white-space:nowrap}
+  .reward li i{flex:none; width:20px; height:20px; border-radius:50%; display:grid; place-items:center; font-style:normal; font-weight:900; font-size:12px;
+    background:rgba(245,185,53,.16); color:var(--gold); margin-top:1px}
+  .reward li.ok i{background:rgba(52,211,153,.18); color:var(--good)}
+  .reward li.no i{background:rgba(251,113,133,.16); color:var(--bad)}
+  .reward .places{display:inline-flex; gap:6px; margin-top:12px}
+  .reward .places span{font-size:12px; font-weight:850; letter-spacing:.08em; border-radius:999px; padding:5px 11px; border:1px solid rgba(245,185,53,.45); color:#FFE29A}
+  .reward .places span.gone{border-color:var(--line-2); color:var(--ink-3); text-decoration:line-through}
+  @media (max-width:520px){ .reward{grid-template-columns:1fr; gap:10px} .reward > svg{width:38px; height:38px} }
+
   /* ── the wizard ──────────────────────────────────────────────────────── */
   .wiz{max-width:760px; margin:0 auto}
   .rail{position:relative; margin:8px 0 26px}
@@ -539,6 +559,7 @@
       <h1>Your year needs a <span class="gold-txt">flight plan</span>.</h1>
       <p class="lede">Seven stages, about fifteen minutes. Start with what your life costs, work back to the API that pays for it, then decide how you&rsquo;ll work. File it, and every time you sign in you&rsquo;ll see exactly where you stand.</p>
     </div>
+    <div id="rewardIntro"></div>
     <div id="fy26Wrap"></div>
     <div class="stagesPeek" id="stagesPeek"></div>
     <div class="ctaRow">
@@ -764,6 +785,7 @@
           <p class="eyebrow gold">Stage 7 of 7 · Commit</p>
           <h2>Sign your flight plan</h2>
           <p class="lede">Read it once. Sign it. From then on it&rsquo;s the first thing you see when you sign in, and your API goal joins the race on the branch wall.</p>
+          <div id="realCheck"></div>
           <div class="sign">
             <label class="f"><span>Type your full name to sign</span>
               <input class="inp" data-k="signed.name" maxlength="80" autocomplete="name" id="sigInput"></label>
@@ -1026,6 +1048,24 @@ function fyFor(todayIso) {
            weekKey: label + '-W' + ('0' + week).slice(-2), weekOf: isoOf(Math.max(monT, f)), days: days, gone: gone, quarters: qs };
 }
 
+/* goalRealistic_ in GoalPlans.gs: the test for the first three rewarded plans. */
+var REAL = { minLines: 4, maxGrowth: 2, places: 3 };
+function realistic(p, lastApi, best, R) {
+  R = R || REAL;
+  var d = derive(p), b = p.budget || {}, w = p.work || {}, why = [];
+  var lines = ['housing', 'utilities', 'groceries', 'transport', 'children', 'insurance', 'debt', 'savings', 'leisure', 'other']
+    .filter(function (k) { return num(b[k]) > 0; }).length;
+  if (lines < R.minLines) why.push('Fill in at least ' + R.minLines + ' lines of your monthly budget.');
+  if (!d.api) why.push('Set an API goal.');
+  else if (d.shortfall > 0) why.push('Your API goal does not yet pay for the budget you entered.');
+  var cap = lastApi > 0 ? lastApi * R.maxGrowth : (best || 0);
+  if (d.api && cap > 0 && d.api > cap) why.push(lastApi > 0
+    ? 'Your goal is more than ' + R.maxGrowth + ' times your FY26 API. Bring it within reach.'
+    : 'Your goal is more than the branch\u2019s best FY26 year. Bring it within reach.');
+  if (!(w.markets || []).length || !(w.sources || []).length) why.push('Say who you serve and where your business will come from.');
+  return { ok: !why.length, why: why };
+}
+
 function expectedBy(d, fy) {
   var q = (d && d.q) || [0, 0, 0, 0], e = 0;
   fy.quarters.forEach(function (Q, i) { e += (q[i] || 0) * (Q.gone / Q.days); });
@@ -1149,6 +1189,8 @@ async function loadMe() {
     if (j && j.v === 'goal1' && j.ok) {
       S.ready = true; S.me = j.me; S.fy = j.fy; S.last = j.last || {}; S.branch = j.branch || FALLBACK;
       S.actual = j.actual || { apps: 0, api: 0 }; S.plan = j.plan || null; S.checkins = j.checkins || []; S.race = j.race || null;
+      S.real = j.real || null; S.reward = j.reward || null;
+      if (S.reward) { REAL.minLines = S.reward.minLines || REAL.minLines; REAL.maxGrowth = S.reward.maxGrowth || REAL.maxGrowth; REAL.places = S.reward.places || REAL.places; }
       S.submittedAt = j.submittedAt || ''; S.updatedAt = j.updatedAt || '';
     } else if (j && j.v === 'goal1') {
       S.ready = true; S.loadError = j.error || '';
@@ -1218,8 +1260,31 @@ function bannerHtml() {
     'on this phone and filed by itself the next time you open this page after the update.</div>';
 }
 
+var TROPHY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>';
+function placesHtml() {
+  var R = S.reward || { places: REAL.places, taken: 0 }, out = '';
+  for (var i = 1; i <= R.places; i++) out += '<span class="' + (i <= (R.taken || 0) ? 'gone' : '') + '">#' + i + (i <= (R.taken || 0) ? ' taken' : ' open') + '</span>';
+  return '<div class="places">' + out + '</div>';
+}
+function rulesHtml(checks) {
+  var rows = [
+    ['Built from your real budget:', 'at least ' + REAL.minLines + ' of the ten monthly lines.'],
+    ['It pays for that budget:', 'your API goal covers the income it needs.'],
+    ['Within reach:', 'no more than ' + REAL.maxGrowth + '\u00d7 your FY26 API, or the branch\u2019s best FY26 year if you\u2019re new.'],
+    ['Says how you\u2019ll work:', 'who you serve and where the business comes from.']
+  ];
+  return '<ul>' + rows.map(function (r, i) {
+    var st = checks ? checks[i] : null;
+    return '<li class="' + (st === true ? 'ok' : st === false ? 'no' : '') + '"><i>' + (st === true ? '&#10003;' : st === false ? '!' : i + 1) + '</i><span><b>' + r[0] + '</b> ' + r[1] + '</span></li>';
+  }).join('') + '</ul>';
+}
 function renderIntro() {
   $('introBanner').innerHTML = bannerHtml();
+  var R = S.reward || { places: REAL.places, taken: 0 }, left = Math.max(0, R.places - (R.taken || 0));
+  $('rewardIntro').innerHTML = '<div class="reward">' + TROPHY + '<div><h3>The first ' + R.places + ' <b>realistic</b> flight plans will be rewarded.</h3>' +
+    '<p>' + (left ? left + ' of ' + R.places + ' places still open. ' : 'All ' + R.places + ' places are taken. ') + 'The branch manager decides the reward. Realistic means:</p>' +
+    rulesHtml(null) + placesHtml() + '</div></div>';
   var L = S.last || {};
   if (L.api) {
     $('fy26Wrap').innerHTML = '<p class="eyebrow" style="margin-top:26px">Your FY26, 1 Oct 2025 – 30 Sep 2026</p><div class="fy26" style="margin-top:0">' +
@@ -1351,6 +1416,7 @@ document.addEventListener('input', function (ev) {
   if (el.dataset.k) {
     var v = el.type === 'checkbox' ? el.checked : el.value;
     if (el.hasAttribute('data-money')) v = String(el.value).trim() === '' ? '' : num(el.value);
+    if (el.dataset.k === 'signed.name') $('commitErr').textContent = '';
     if (el.dataset.k === 'production.fycRate') P.production.fycRateFrom = 'typed';
     if (el.dataset.k === 'production.avgCase') P.production.avgCaseFrom = 'typed';
     if (el.dataset.k === 'production.customApi') P.production.apiChoice = 'custom';
@@ -1497,9 +1563,19 @@ function update() {
   qs.textContent = qsum === 100 ? 'Adds up to 100%.' : 'Adds up to ' + qsum + '%. It’ll be scaled to 100% when you file it.';
   qs.className = 'qsum' + (qsum === 100 ? '' : ' off');
   $('sigLine').textContent = P.signed.name || '';
-  if (wi === 6) renderFlightCard(d);
+  if (wi === 6) { renderFlightCard(d); renderRealCheck(); }
 }
 
+/* The four tests, shown as they stand, on the stage where it is signed. */
+function renderRealCheck() {
+  var box = $('realCheck'); if (!box || !P) return;
+  var L = (S.last && S.last.api) || 0, r = realistic(P, L, 0, REAL), w = r.why.join(' ');
+  var checks = [!/at least \d+ lines/.test(w), !/Set an API goal|does not yet pay/.test(w), !/Bring it within reach/.test(w), !/who you serve/.test(w)];
+  var R = S.reward || { places: REAL.places, taken: 0 }, left = Math.max(0, R.places - (R.taken || 0));
+  box.innerHTML = '<div class="reward" style="margin:6px 0 4px">' + TROPHY + '<div><h3>' + (r.ok ? 'Realistic. <b>It counts for the reward.</b>' : 'Not realistic yet') + '</h3>' +
+    '<p>' + (left ? 'The first ' + R.places + ' realistic plans are rewarded: ' + left + ' ' + (left === 1 ? 'place' : 'places') + ' still open.' : 'All ' + R.places + ' reward places are taken, but a realistic plan is still the one worth filing.') +
+    (L ? '' : ' With no FY26 on file, the branch checks the last test when you file.') + '</p>' + rulesHtml(checks) + '</div></div>';
+}
 function renderFlightCard(d) {
   d = d || derive(P);
   var why = P.why, title = why.title === 'Something else' ? why.titleOther : why.title;
@@ -1560,6 +1636,7 @@ async function filePlan(plan) {
   if (j && j.expired) { signOut('Your sign-in expired before the plan was filed. Sign in again; your plan is kept on this phone.'); throw failure('expired', 'expired'); }
   if (j && j.ok) {
     S.plan = j.plan || plan; S.submittedAt = j.submittedAt || S.submittedAt; S.updatedAt = j.updatedAt || '';
+    if (j.real) { S.real = j.real; S.reward = Object.assign({}, S.reward || {}, { places: j.real.places, taken: j.real.taken }); }
     S.pendingLocal = false; store(qKey(), null); store(dKey(), null);
     return j;
   }
@@ -1580,7 +1657,8 @@ async function launch() {
   clearTimeout(draftT);
   btn.disabled = true; btn.textContent = 'Filing…';
   var queued = false;
-  try { await filePlan(plan); }
+  var filed = null;
+  try { filed = await filePlan(plan); }
   catch (e) {
     if (e.kind === 'expired') { store(qKey(), { plan: plan, at: Date.now() }); btn.disabled = false; return; }
     if (e.kind === 'refused') { err.textContent = e.message; btn.disabled = false; goStage(6, true); return; }
@@ -1589,7 +1667,7 @@ async function launch() {
   /* Filed, or safely queued: the wizard lets go of it, so no draft is written back. */
   P = null; editing = false;
   btn.disabled = false; btn.textContent = 'Launch';
-  playLaunch({ api: d.api, queued: queued, edit: wasFiled });
+  playLaunch({ api: d.api, queued: queued, edit: wasFiled, real: filed && filed.real });
 }
 
 /* ── the launch: countdown, lift-off, the number ───────────────────────── */
@@ -1603,6 +1681,9 @@ function playLaunch(o) {
   $('lcHead').textContent = o.edit ? 'Course corrected.' : 'You’re GO for ' + S.fy.label + '.';
   $('lcSub').textContent = o.queued
     ? 'The branch server isn’t taking plans yet. This one is kept here and files itself the next time you open this page.'
+    : o.real && o.real.ok && o.real.place ? 'Realistic, and one of the first ' + o.real.places + ': reward place ' + o.real.place + ' of ' + o.real.places + '. Check in every Friday and watch it move.'
+    : o.real && o.real.ok ? 'Realistic. Your goal is on the wall: check in every Friday and watch it move.'
+    : o.real ? 'Filed, but not realistic yet, so it does not count for the reward: ' + o.real.why[0] + ' Edit your plan to fix it.'
     : 'Your plan is with ' + (isMgr() ? 'the branch manager' : 'your manager and the branch manager') + '. Check in every Friday and watch it move.';
   card.classList.remove('on'); rocket.classList.remove('go'); rocket.style.transform = ''; count.textContent = ''; $('lcApi').textContent = 'TT$0';
   L.hidden = false; document.body.classList.add('launching');
@@ -1831,6 +1912,7 @@ function renderMC() {
           (title ? '<p class="soft" style="margin:14px 0 0">Going for <b style="color:#fff">' + esc(title) + '</b>' +
             (plan.why.word ? ' · Word for the year: <b style="color:var(--gold)">' + esc(plan.why.word) + '</b>' : '') + '</p>' : '') +
         '</div></div>' +
+      rewardMc() +
       '<div class="card s7"><div class="cardHead"><div><p class="eyebrow">This week · ' + esc(niceDate(fy.weekOf)) + '</p><h3>Your weekly engine</h3></div>' +
         '<button class="btn ' + (thisWk ? 'line' : 'gold') + ' sm" type="button" id="ciOpen">' + (thisWk ? 'Edit check-in' : 'Check in') + '</button></div>' +
         '<div class="wk">' + wkRows + '</div>' +
@@ -1870,6 +1952,20 @@ function renderMC() {
   $('editPlan').addEventListener('click', function () { openWizard(S.plan, 0); });
   $('printBtn').addEventListener('click', printPlan);
   if (isMgr() && S.ready) setTab(S.tab || 'me');
+}
+
+/* Where the plan stands for the reward: the place, or what is missing. */
+function rewardMc() {
+  var r = S.real, R = S.reward || { places: REAL.places, taken: 0 };
+  if (!r || S.pendingLocal) return '';
+  var left = Math.max(0, (R.places || 3) - (R.taken || 0));
+  if (r.ok && r.place) return '<div class="card s12 reward" style="margin:0;max-width:none">' + TROPHY + '<div><h3>Reward place <b>' + r.place + ' of ' + r.places +
+    '</b>.</h3><p>Yours is one of the first ' + r.places + ' realistic flight plans. Keep it realistic: a change that breaks one of the four tests gives the place up.</p></div></div>';
+  if (r.ok) return '';
+  return '<div class="card s12 reward" style="margin:0;max-width:none;border-color:rgba(251,113,133,.45)">' + TROPHY + '<div><h3>Not realistic yet' +
+    (left ? ', and ' + left + ' reward ' + (left === 1 ? 'place is' : 'places are') + ' still open' : '') + '.</h3><ul>' +
+    r.why.map(function (w) { return '<li class="no"><i>!</i><span>' + esc(w) + '</span></li>'; }).join('') + '</ul>' +
+    '<div class="actions" style="margin-top:12px"><button class="btn gold sm" type="button" onclick="openWizard(S.plan, 0)">Fix my plan</button></div></div></div>';
 }
 
 /* Cumulative plan through the four quarters, today, and where you are. */

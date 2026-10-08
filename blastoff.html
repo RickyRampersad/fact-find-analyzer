@@ -102,6 +102,20 @@
   .goc b{font-size:max(28px,6.2vh); color:#fff; font-weight:900; letter-spacing:-.03em; margin-right:.6vh; font-variant-numeric:tabular-nums}
   .goc b.bump{animation:bump .8s ease-out}
   @keyframes bump{30%{transform:scale(1.35); color:var(--go)}}
+  /* The first three realistic plans: three places that fill as they are won. */
+  .rw{margin:1.6vh auto 0; width:min(100%,44vh)}
+  .rw small{display:block; font-size:max(10px,1.35vh); font-weight:850; letter-spacing:.24em; text-transform:uppercase; color:var(--gold)}
+  .rw .slots{display:grid; grid-template-columns:1fr; gap:.7vh; margin-top:1vh}
+  .rw .slot{display:flex; align-items:center; gap:1.1vh; padding:.7vh 1.2vh; border-radius:1.3vh; border:1.5px dashed #2A3B5E; min-width:0; text-align:left}
+  .rw .slot i{flex:none; width:3.2vh; height:3.2vh; min-width:24px; min-height:24px; border-radius:50%; display:grid; place-items:center; font-style:normal;
+    font-weight:900; font-size:max(12px,1.8vh); color:var(--ink-3); border:1.5px solid #2A3B5E}
+  .rw .slot b{flex:1; min-width:0; font-size:max(12px,2vh); font-weight:800; color:var(--ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .rw .slot.won{border:1.5px solid rgba(245,185,53,.75); background:linear-gradient(180deg,rgba(245,185,53,.18),rgba(245,185,53,.04)); box-shadow:0 0 3vh rgba(245,185,53,.25)}
+  .rw .slot.won i{color:#1C1304; background:linear-gradient(180deg,#FFE08A,#E7A52A); border-color:transparent}
+  .rw .slot.won b{color:#fff}
+  .rw .slot.pop{animation:flip .9s cubic-bezier(.2,.8,.2,1)}
+  .shout.gold{border-color:rgba(245,185,53,.8); box-shadow:0 0 8vh rgba(245,185,53,.5)}
+  .shout.gold small{color:var(--gold)} .shout.gold b i{color:var(--gold)}
   .stage{position:relative; flex:1; width:100%; min-height:0}
   .tower{position:absolute; bottom:6vh; left:calc(50% + 8vh); width:4.6vh; height:58%; border:2px solid #22324F; border-bottom:0;
     background:repeating-linear-gradient(45deg,transparent 0 1.6vh,#1B2A45 1.6vh calc(1.6vh + 2px)),repeating-linear-gradient(-45deg,transparent 0 1.6vh,#1B2A45 1.6vh calc(1.6vh + 2px))}
@@ -230,6 +244,7 @@
     <section class="col pad" aria-label="Launch pad">
       <div class="tm"><small id="tmLabel">Countdown</small><b id="tm">READY</b></div>
       <div class="goc"><b id="goN">0</b>of <span id="goOf">0</span> advisors GO</div>
+      <div class="rw" id="rw" hidden><small>Rewarded &middot; the first three realistic plans</small><div class="slots" id="rwSlots"></div></div>
       <div class="stage">
         <div class="tower"></div>
         <div class="steam"><i></i><i></i><i></i></div>
@@ -299,7 +314,7 @@
 'use strict';
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec';
 var POLL_MS = 15000;
-var B = { session: null, board: null, go: {}, first: true, ready: false, armed: false, phase: 'board', at: null, queue: [], shouting: false };
+var B = { session: null, board: null, go: {}, won: {}, first: true, ready: false, armed: false, phase: 'board', at: null, queue: [], shouting: false };
 
 function $(id) { return document.getElementById(id); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -386,7 +401,8 @@ function take(j) {
   var goN = $('goN'), was = +goN.textContent;
   goN.textContent = T.go; $('goOf').textContent = T.people;
   if (!B.first && T.go > was) { goN.classList.remove('bump'); void goN.offsetWidth; goN.classList.add('bump'); }
-  fresh.forEach(function (p) { B.queue.push(p.name); });
+  fresh.forEach(function (p) { B.queue.push({ name: p.name }); });
+  paintReward(j, fresh);
   shoutNext();
   B.first = false;
 }
@@ -436,13 +452,30 @@ function paintUnits(people, fresh) {
   box.innerHTML = html;
 }
 
+/* The three reward places. A place newly won is announced after any GO. */
+function paintReward(j, fresh) {
+  var n = j.places || 3, won = j.rewarded || [], box = $('rwSlots'), slots = '';
+  $('rw').hidden = false;
+  for (var i = 1; i <= n; i++) {
+    var w = won.filter(function (x) { return x.place === i; })[0], key = w ? i + ':' + w.name : '';
+    var isNew = w && !B.first && !B.won[key];
+    if (w) B.won[key] = true;
+    slots += '<div class="slot' + (w ? ' won' : '') + (isNew ? ' pop' : '') + '"><i>' + i + '</i><b>' + (w ? esc(w.name) : 'Open') + '</b></div>';
+    if (isNew) B.queue.push({ name: w.name, place: i });
+  }
+  box.innerHTML = slots;
+}
+
 /* A name across the middle of the screen, one at a time. */
 function shoutNext() {
   if (B.shouting || !B.queue.length || B.phase !== 'board') return;
   B.shouting = true;
-  var name = B.queue.shift();
-  $('shoutName').innerHTML = esc(name) + ' is <i>GO</i>';
-  $('shout').classList.add('on');
+  var q = B.queue.shift();
+  var sh = $('shout');
+  sh.classList.toggle('gold', !!q.place);
+  sh.querySelector('small').textContent = q.place ? 'A realistic flight plan' : 'Flight plan filed';
+  $('shoutName').innerHTML = q.place ? esc(q.name) + ' takes reward place <i>' + q.place + '</i>' : esc(q.name) + ' is <i>GO</i>';
+  sh.classList.add('on');
   Sound.chime();
   setTimeout(function () { $('shout').classList.remove('on'); setTimeout(function () { B.shouting = false; shoutNext(); }, 600); }, 3600);
 }

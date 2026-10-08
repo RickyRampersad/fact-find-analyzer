@@ -1373,6 +1373,11 @@
 #p20 .rcOl li{display:flex; gap:.6em; align-items:baseline}
 #p20 .rcOl li b{color:var(--teal); font-weight:900; width:1.4em}
 #p20 .rcOl li span{color:var(--ink-3); font-size:.85em; margin-left:auto; white-space:nowrap}
+#p20 .rcOl li.open{color:var(--ink-3)}
+#p20 .rcOl li.open b{color:var(--ink-3)}
+#p20 .rcOff{border-left-color:var(--gold)}
+#p20 .rcOff .rcK{color:var(--gold)}
+#p20 .rcOl li b{color:var(--gold)}
 #p20 .rcFuel{padding:.85em 1.15em; margin-top:auto}
 #p20 .rcFuel .rcK{color:var(--ink-3)}
 #p20 .rcMid{margin-top:.12em; font-size:1.5em; font-weight:800; letter-spacing:-.03em}
@@ -6443,9 +6448,13 @@ var PROD = {
         (fin.length > 1 ? ' &middot; then ' + fin.slice(1, 3).map(function(f){ return '<b>' + esc(f.name) + '</b>'; }).join(', ') : '') + '</div>'
       : '<div class="rcK">Leading the race</div><div class="rcBig">' + esc(lead.name) + '</div><div class="rcS"><b>' +
         (lead.pct >= 10 ? Math.round(lead.pct) : lead.pct.toFixed(1)) + '%</b> of their own goal. First to 100% leads the branch.</div>');
-    var off = R.firstOff || [];
-    dpSet('rcOff', '<div class="rcK">First off the pad</div><ol class="rcOl">' + off.map(function(f, i){
-      return '<li><b>' + (i + 1) + '</b>' + esc(f.name) + '<span>' + esc(rcWhen(f.at)) + '</span></li>'; }).join('') + '</ol>');
+    /* The first three realistic plans are rewarded - asked for on 8 October 2026. */
+    var won = R.rewarded || [], places = R.places || 3, rows = [];
+    for(var k = 1; k <= places; k++){
+      var w = won.filter(function(x){ return x.place === k; })[0];
+      rows.push('<li' + (w ? '' : ' class="open"') + '><b>' + k + '</b>' + (w ? esc(w.name) + '<span>' + esc(rcWhen(w.at)) + '</span>' : 'Open &middot; file a realistic plan') + '</li>');
+    }
+    dpSet('rcOff', '<div class="rcK">Rewarded &middot; first ' + places + ' realistic plans</div><ol class="rcOl">' + rows.join('') + '</ol>');
     dpSet('rcFuel', '<div class="rcK">Committed for ' + esc(R.fy.label) + '</div><div class="rcMid num">' + rcK(T.api) + ' API</div>' +
       '<div class="rcS"><b>' + rcK(T.fyc) + '</b> FYC &middot; <b>' + (T.go || 0) + ' of ' + (T.people || 0) + '</b> flight plans filed</div>');
     dpSet('rcKey', 'Each lane runs to the advisor&rsquo;s <b>own FY27 API goal</b>, filed at factfind360.com/goals. Gold is what has been picked up, ' +
