@@ -464,7 +464,7 @@ function goalRace_(fy, plans, act, checks, ms) {
     var exp = d ? goalExpected_(d, fy) : 0;
     return {
       code: r.code, name: r.name, unit: r.unit, go: !!d, filedAt: P ? P.submittedAt : '',
-      goal: d ? d.api : 0, picked: picked, apps: apps,
+      goal: d ? d.api : 0, fyc: d ? d.fyc : 0, picked: picked, apps: apps,
       pct: d && d.api ? Math.round(picked / d.api * 1000) / 10 : 0,
       expPct: d && d.api ? Math.round(exp / d.api * 1000) / 10 : 0,
       onPlan: !!d && fy.week > 2 && exp >= 1000 && picked >= exp,
@@ -481,8 +481,11 @@ function goalRace_(fy, plans, act, checks, ms) {
     return String(a.filedAt) < String(b.filedAt) ? -1 : 1;
   });
   lanes.forEach(function (p, i) { p.rank = i + 1; });
+  /* The wall's liftoff board draws the unfilled too, with what they have
+     picked up: an advisor producing with no flight plan is the one the
+     board most wants to show. */
   return { lanes: lanes, standby: people.filter(function (p) { return !p.go; })
-    .map(function (p) { return { code: p.code, name: p.name, unit: p.unit }; })
+    .map(function (p) { return { code: p.code, name: p.name, unit: p.unit, picked: p.picked, apps: p.apps }; })
     .sort(function (a, b) { return a.name < b.name ? -1 : 1; }) };
 }
 
@@ -504,13 +507,28 @@ function goalWall_(e) {
     });
   });
   if (changed) goalMilestonesSave_(fy, ms);
-  var api = 0, fyc = 0;
-  R.lanes.forEach(function (p) { var P = plans[p.code]; if (P && P.plan) { var d = goalDerive_(P.plan); api += d.api; fyc += d.fyc; } });
+  /* What the filed plans ask of the branch, added up: the wall's live-goals
+     slide maps it onto the day, the week and the month, against what is
+     coming in. A day is a fifth of a week; a month a twelfth of the year. */
+  var api = 0, fyc = 0, ask = { apiWeek: 0, apiMonth: 0, apiDay: 0, appsWeek: 0, appsYear: 0, ffWeek: 0, apptWeek: 0, contactsWeek: 0 };
+  R.lanes.forEach(function (p) { var P = plans[p.code]; if (P && P.plan) { var d = goalDerive_(P.plan); api += d.api; fyc += d.fyc;
+    ask.apiWeek += d.api / d.weeks; ask.apiMonth += d.api / 12; ask.appsWeek += d.appsWeek; ask.appsYear += d.appsYear;
+    ask.ffWeek += d.ffWeek; ask.apptWeek += d.apptWeek; ask.contactsWeek += d.contactsWeek; } });
+  ask.apiDay = ask.apiWeek / 5;
+  Object.keys(ask).forEach(function (k) { ask[k] = Math.round(ask[k] * 10) / 10; });
+  /* This week's check-ins, added up: the activity the advisors have logged
+     against what the plans ask for. */
+  var wk = { n: 0, contacts: 0, appts: 0, ffs: 0, apps: 0, api: 0 };
+  checks.forEach(function (c) {
+    if (c.week !== fy.weekKey) return;
+    wk.n++;
+    ['contacts', 'appts', 'ffs', 'apps', 'api'].forEach(function (k) { wk[k] += Math.max(0, Math.round(goalNum_(c[k]))); });
+  });
   var firstOff = R.lanes.slice().sort(function (a, b) { return String(a.filedAt) < String(b.filedAt) ? -1 : 1; })
     .slice(0, 3).map(function (p) { return { name: p.name, at: p.filedAt }; });
   var finishers = R.lanes.filter(function (p) { return p.done; }).map(function (p) { return { name: p.name, at: p.reachedAt }; });
-  var out = { ok: true, fy: { label: fy.label, week: fy.week, today: fy.today, days: fy.days, gone: fy.gone },
-              lanes: R.lanes, standby: R.standby, firstOff: firstOff, finishers: finishers,
+  var out = { ok: true, fy: { label: fy.label, week: fy.week, weekOf: fy.weekOf, today: fy.today, days: fy.days, gone: fy.gone },
+              lanes: R.lanes, standby: R.standby, firstOff: firstOff, finishers: finishers, ask: ask, week: wk,
               rewarded: goalRewarded_(fy, plans, ms).map(function (x) { return { place: x.place, name: x.name, at: x.at }; }),
               places: GOAL_REAL.places,
               totals: { people: R.lanes.length + R.standby.length, go: R.lanes.length, api: api, fyc: fyc } };

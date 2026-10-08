@@ -1408,6 +1408,204 @@
   #p20 .rcHd > :nth-child(5),#p20 .rcHd > :nth-child(6),#p20 .rcL > :nth-child(5),#p20 .rcL > :nth-child(6){display:none}
 }
 
+/* ═══ LIVE GOALS — panel 22 ═══════════════════════════════════════════════
+   The flight plans as one live slide. Left: who has taken off and who is
+   still on the pad, by unit, with the three reward places. Right: what the
+   filed plans add up to every day, this week and this month - contacts,
+   appointments, fact finds, apps, API - against what is actually coming in:
+   fact finds filed (the fact-find feed), apps and API picked up (the month
+   board), activity checked in (the plans themselves). Asked for on 8 October
+   2026: "live and real goals that map what we do daily, weekly and monthly",
+   and "who took off by completing and who have not". */
+#p21 .lfGrid{flex:1; min-height:0; display:grid; gap:1em; grid-template-columns:minmax(0,30em) minmax(0,1fr)}
+#p21 .lfGrid > .card{display:flex; flex-direction:column; min-height:0; min-width:0; padding:.85em 1.1em}
+#p21 .lfK{font-size:.62em; letter-spacing:.2em; text-transform:uppercase; font-weight:800; color:var(--ink-3)}
+#p21 .lfHd{display:flex; justify-content:space-between; align-items:baseline; gap:1em; padding-bottom:.4em; border-bottom:2px solid #121A28}
+#p21 .lfHd .lfK{color:var(--gold); white-space:nowrap}
+#p21 .lfSub{font-size:.68em; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
+#p21 .lfSub b{color:var(--ink)}
+#p21 .lfTop{display:grid; grid-template-columns:auto minmax(0,1fr); gap:1em; align-items:center; padding:.65em 0 .45em}
+#p21 .lfRing{position:relative; width:6.6em; height:6.6em}
+#p21 .lfRing svg{width:100%; height:100%; transform:rotate(-90deg)}
+#p21 .lfRing circle{fill:none; stroke-width:9; stroke-linecap:round}
+#p21 .lfRing .tr{stroke:rgba(147,167,196,.16)}
+#p21 .lfRing .v{stroke:var(--teal); filter:drop-shadow(0 0 .25em rgba(45,212,191,.55))}
+#p21.on .lfRing .v{animation:lfRing 1.3s cubic-bezier(.2,.75,.3,1) .2s both}
+@keyframes lfRing{from{stroke-dasharray:0 100}}
+#p21 .lfRingTx{position:absolute; inset:0; display:grid; place-items:center; align-content:center; text-align:center; line-height:1}
+#p21 .lfRingTx b{display:block; font-size:1.75em; font-weight:800; letter-spacing:-.03em; color:var(--ink)}
+#p21 .lfRingTx span{display:block; margin-top:.2em; font-size:.5em; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+#p21 .lfUnits{display:flex; flex-direction:column; gap:.4em; min-width:0}
+#p21 .lfU{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.15em .6em; align-items:baseline; font-size:.72em}
+#p21 .lfU .nm{font-weight:750; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+#p21 .lfU .n{font-weight:800; color:var(--ink-2); white-space:nowrap; font-variant-numeric:tabular-nums}
+#p21 .lfU .n b{color:var(--teal)}
+#p21 .lfUb{grid-column:1 / -1; height:.45em; border-radius:.3em; background:rgba(147,167,196,.13); overflow:hidden}
+#p21 .lfUb i{display:block; height:100%; border-radius:.3em; background:linear-gradient(90deg,var(--teal-deep),var(--teal))}
+@keyframes lfGrow{from{width:0}}
+#p21.on .lfUb i{animation:lfGrow 1.1s cubic-bezier(.2,.75,.3,1) .3s both}
+#p21 .lfTiles{flex:1; min-height:0; overflow:hidden; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-rows:max-content; gap:.3em .4em; align-content:start; margin-top:.25em}
+#p21 .lfTiles.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (min-width:1101px) and (min-height:1000px){
+  #p21 .lfT{font-size:.84em; padding:.38em .6em}
+  #p21 .lfTiles{gap:.36em .45em}
+  #p22 .gvRows{font-size:.9em}
+  #p22 .gvR{height:2.3em; margin-top:.26em}
+}
+#p21 .lfT{display:flex; align-items:center; gap:.45em; min-width:0; padding:.3em .55em; border-radius:.5em; background:#0B1426; border:1px solid #1E2D4A; font-size:.74em}
+#p21 .lfT .lamp{flex:none; width:.6em; height:.6em; border-radius:50%; background:var(--amber); box-shadow:0 0 .5em rgba(251,191,36,.55)}
+#p21 .lfT .nm{flex:1; min-width:0; font-weight:750; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--ink-2)}
+#p21 .lfT .st{flex:none; font-size:.7em; font-weight:900; letter-spacing:.12em; text-transform:uppercase; color:var(--amber)}
+#p21 .lfT.go{background:linear-gradient(90deg,rgba(45,212,191,.2),rgba(45,212,191,.05)); border-color:rgba(45,212,191,.5)}
+#p21 .lfT.go .lamp{background:var(--teal); box-shadow:0 0 .7em var(--teal)}
+#p21 .lfT.go .nm{color:#fff}
+#p21 .lfT.go .st{color:var(--teal)}
+#p21 .lfT.go .st small{color:var(--ink-3); font-size:.85em; letter-spacing:.04em; margin-left:.35em; text-transform:none}
+#p21 .lfT.last .lamp{animation:lfPulse 1.4s ease-in-out infinite}
+@keyframes lfPulse{0%,100%{box-shadow:0 0 .4em var(--teal)} 50%{box-shadow:0 0 1.1em var(--teal), 0 0 1.6em rgba(45,212,191,.5)}}
+#p21.on .lfT{animation:rcIn .45s cubic-bezier(.2,.75,.3,1) var(--d,0s) both}
+#p21 .lfFoot{margin-top:.45em; padding-top:.4em; border-top:1px solid var(--line); font-size:.64em; color:var(--ink-2); line-height:1.45}
+#p21 .lfFoot b{color:var(--ink)}
+#p21 .lfFoot .gold{color:var(--gold); font-weight:800}
+#p21 .lfMap{flex:1; min-height:0; display:grid; grid-template-rows:repeat(3,minmax(0,1fr)) auto; gap:.55em; padding-top:.6em}
+#p21 .lfRow{display:grid; grid-template-columns:7.4em minmax(0,1fr); gap:1em; align-items:center; padding:.5em .95em; border-radius:.6em; background:#04070D; border:1px solid #121A28; min-height:0; overflow:hidden}
+#p21 .lfWhen{display:flex; flex-direction:column; gap:.1em; min-width:0}
+#p21 .lfWhen b{font-size:1.05em; font-weight:800; letter-spacing:.02em; text-transform:uppercase; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+#p21 .lfWhen span{font-size:.6em; color:var(--ink-3); font-weight:700}
+#p21 .lfBody{display:flex; flex-direction:column; gap:.3em; min-width:0}
+#p21 .lfAsk{display:flex; flex-wrap:wrap; gap:.2em 1em; font-size:.72em; color:var(--ink-2); line-height:1.3}
+#p21 .lfAsk span{white-space:nowrap}
+#p21 .lfAsk i{font-style:normal; color:var(--ink-3); font-size:.78em; text-transform:uppercase; letter-spacing:.1em; font-weight:800; margin-right:.3em}
+#p21 .lfAsk b{color:var(--gold); font-weight:800; font-variant-numeric:tabular-nums}
+#p21 .lfAsk.live b{color:var(--teal)}
+#p21 .lfAsk .lfNone{color:var(--gold); font-weight:700; white-space:normal}
+#p21 .lfLive{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.7em; align-items:center}
+#p21 .lfBar{position:relative; height:1em; border-radius:.3em; background:rgba(147,167,196,.13)}
+#p21 .lfBar i{position:absolute; left:0; top:0; bottom:0; border-radius:.3em; background:linear-gradient(90deg,var(--teal-deep),var(--teal))}
+#p21 .lfBar i.over{background:linear-gradient(90deg,var(--gold-deep),var(--gold))}
+#p21.on .lfBar i{animation:lfGrow 1.1s cubic-bezier(.2,.75,.3,1) .35s both}
+#p21 .lfBar em{position:absolute; top:-.25em; bottom:-.25em; width:2px; margin-left:-1px; background:#fff; opacity:.8; border-radius:1px}
+#p21 .lfNum{font-size:.78em; white-space:nowrap; font-variant-numeric:tabular-nums; color:var(--ink-2); text-align:right}
+#p21 .lfNum b{color:var(--ink); font-size:1.3em; font-weight:800}
+#p21 .lfNum b.teal{color:var(--teal)}
+#p21 .lfNum b.gold{color:var(--gold)}
+#p21 .lfYear{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.55em}
+#p21 .lfY{padding:.5em .8em; border-radius:.5em; background:#04070D; border:1px solid #121A28; min-width:0}
+#p21 .lfY .lfK{font-size:.54em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+#p21 .lfY b{display:block; margin-top:.1em; font-size:1.3em; font-weight:800; letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+#p21 .lfY span{display:block; font-size:.6em; color:var(--ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+#p21 .lfY.teal b{color:var(--teal)}
+#p21 .lfY.gold b{color:var(--gold)}
+#p21 .lfEmpty{font-size:.8em; color:var(--ink-2); padding:.8em .2em; line-height:1.5}
+#p21 .lfEmpty b{color:var(--gold)}
+@media (min-width:1101px) and (max-width:1600px){
+  #p21 .lfGrid{grid-template-columns:minmax(0,27em) minmax(0,1fr)}
+  #p21 .lfRing{width:5.6em; height:5.6em}
+}
+@media (min-width:1101px) and (max-height:900px){
+  #p21 .lfRing{width:5em; height:5em}
+  #p21 .lfRow{padding:.38em .8em}
+  #p21 .lfT{padding:.22em .5em; font-size:.68em}
+  #p21 .lfFoot{display:none}
+}
+@media (min-width:1101px) and (max-height:800px){
+  #p21 .lfT{font-size:.62em; padding:.18em .45em}
+  #p21 .lfAsk{font-size:.64em}
+  #p21 .lfMap{gap:.4em; padding-top:.4em}
+  #p21 .lfY b{font-size:1.1em}
+}
+@media (max-width:1100px){
+  #p21{overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding-bottom:7em}
+  #p21 > *{flex:0 0 auto !important; min-height:auto !important}
+  #p21 .lfGrid{grid-template-columns:minmax(0,1fr)}
+  #p21 .lfTiles,#p21 .lfTiles.c3{overflow:visible; grid-template-columns:repeat(2,minmax(0,1fr))}
+  #p21 .lfMap{grid-template-rows:none}
+  #p21 .lfYear{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #p21 .lfRow{grid-template-columns:minmax(0,1fr); gap:.3em}
+  #p21 .lfWhen{flex-direction:row; align-items:baseline; gap:.6em}
+}
+
+/* ═══ TO THE GOAL — panel 23 ═══════════════════════════════════════════════
+   Everyone who has produced this year, on one scale. The grey band is the
+   advisor's own FY27 API goal, the teal is what they have picked up, the
+   white mark is where their plan says they should be today. FYC is taken as
+   half of API, the branch's working average, as the branch manager asked on
+   8 October 2026 ("for the API we can average a 50% FYC"). An advisor
+   producing with no plan behind it is amber: that row is the slide's point. */
+#p22 .gvWrap{flex:1; min-height:0; display:grid; gap:1em; grid-template-columns:minmax(0,1fr) minmax(0,16em)}
+#p22 .gvWrap > .card{display:flex; flex-direction:column; min-height:0; min-width:0; padding:.85em 1.1em}
+#p22 .gvHd,#p22 .gvR,#p22 .gvGrid{display:grid; grid-template-columns:12.5em minmax(0,1fr) 12em; column-gap:.9em}
+#p22 .gvHd{align-items:end; padding-bottom:.3em; border-bottom:2px solid #121A28; font-size:.8em}
+#p22 .gvHd > span{font-size:.72em; letter-spacing:.14em; text-transform:uppercase; font-weight:800; color:var(--ink-3); white-space:nowrap}
+#p22 .gvHd .r{text-align:right}
+#p22 .gvAxis{position:relative; height:1.25em}
+#p22 .gvAxis span{position:absolute; top:0; transform:translateX(-50%); letter-spacing:0; text-transform:none; font-variant-numeric:tabular-nums; font-weight:700; color:var(--ink-3)}
+#p22 .gvRows{flex:1; min-height:0; overflow:hidden; position:relative; font-size:.8em}
+#p22 .gvGrid{position:absolute; inset:0; pointer-events:none}
+#p22 .gvGrid > div{grid-column:2; position:relative}
+#p22 .gvGrid i{position:absolute; top:0; bottom:0; width:1px; background:rgba(147,167,196,.14)}
+#p22 .gvR{align-items:center; height:2.1em; margin-top:.16em; border-radius:.3em; position:relative}
+#p22 .gvR.top{background:linear-gradient(90deg,rgba(45,212,191,.12),rgba(45,212,191,0) 70%)}
+#p22 .gvNm{font-weight:750; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-left:.4em; line-height:1.15}
+#p22 .gvNm small{display:none; font-size:.66em; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--amber)}
+#p22 .gvBar{position:relative; height:1.3em}
+#p22 .gvGoal{position:absolute; left:0; top:0; bottom:0; border-radius:.3em; background:rgba(147,167,196,.16); box-shadow:inset 0 0 0 1px rgba(147,167,196,.22)}
+#p22 .gvPick{position:absolute; left:0; top:.3em; bottom:.3em; border-radius:.25em; background:linear-gradient(90deg,var(--teal-deep),var(--teal))}
+#p22 .gvR.done .gvPick{background:linear-gradient(90deg,var(--gold-deep),var(--gold))}
+#p22 .gvR.none .gvPick{background:linear-gradient(90deg,#B45309,var(--amber))}
+#p22.on .gvPick{animation:lfGrow 1s cubic-bezier(.2,.75,.3,1) var(--d,0s) both}
+#p22 .gvExp{position:absolute; top:-.15em; bottom:-.15em; width:2px; margin-left:-1px; background:#fff; opacity:.8; border-radius:1px}
+#p22 .gvAm{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; font-size:.84em; color:var(--ink-2); line-height:1.15}
+#p22 .gvAm b{color:var(--ink); font-size:1.12em}
+#p22 .gvAm .pc{color:var(--teal); font-weight:800; margin-left:.25em}
+#p22 .gvR.done .gvAm .pc{color:var(--gold)}
+#p22 .gvAm .fy{display:block; font-size:.82em; color:var(--ink-3)}
+#p22 .gvAm .fy b{color:var(--ink-2); font-size:1em}
+#p22 .gvAm .fy.warn{color:var(--amber); font-weight:800; letter-spacing:.06em; text-transform:uppercase; font-size:.72em}
+#p22.on .gvR{animation:rcIn .45s cubic-bezier(.2,.75,.3,1) var(--d,0s) both}
+#p22 .gvMore{margin-top:.3em; font-size:.66em; color:var(--ink-3); font-weight:700}
+#p22 .gvKey{margin-top:.45em; padding-top:.45em; border-top:1px solid var(--line); font-size:.64em; line-height:1.45; color:var(--ink-2)}
+#p22 .gvKey b{color:var(--ink)}
+#p22 .gvSide{display:flex; flex-direction:column; gap:.8em; min-height:0}
+#p22 .gvS{padding:.85em 1.05em}
+#p22 .gvS .lfK{font-size:.62em; letter-spacing:.2em; text-transform:uppercase; font-weight:800; color:var(--ink-3)}
+#p22 .gvS b.big{display:block; margin-top:.12em; font-size:1.5em; font-weight:800; letter-spacing:-.03em; line-height:1.1; overflow:hidden; text-overflow:ellipsis}
+#p22 .gvS span{display:block; margin-top:.25em; font-size:.7em; color:var(--ink-2); line-height:1.4}
+#p22 .gvS span b{color:var(--ink)}
+#p22 .gvS.lead{border:1px solid rgba(45,212,191,.36)}
+#p22 .gvS.lead .lfK{color:var(--teal)}
+#p22 .gvS.fyc .lfK{color:var(--gold)}
+#p22 .gvS.fyc b.big{color:var(--gold)}
+#p22 .gvS.pace .lfK{color:var(--ink-2)}
+#p22 .gvS.pace b.big small{font-size:.5em; font-weight:700; color:var(--ink-3); letter-spacing:0}
+#p22 .gvS.pad{margin-top:auto; border-left:3px solid var(--amber)}
+#p22 .gvS.pad .lfK{color:var(--amber)}
+@media (min-width:1101px) and (max-width:1600px){
+  #p22 .gvWrap{grid-template-columns:minmax(0,1fr) minmax(0,13.5em)}
+  #p22 .gvHd,#p22 .gvR,#p22 .gvGrid{grid-template-columns:11em minmax(0,1fr) 10.5em}
+}
+@media (min-width:1101px) and (max-height:900px){
+  #p22 .gvR{height:1.85em; margin-top:.12em}
+  #p22 .gvS{padding:.65em .9em}
+  #p22 .gvS b.big{font-size:1.3em}
+}
+@media (min-width:1101px) and (max-height:800px){
+  #p22 .gvKey{display:none}
+  #p22 .gvR{height:1.7em; margin-top:.08em}
+  #p22 .gvRows,#p22 .gvHd{font-size:.72em}
+}
+@media (max-width:1100px){
+  #p22{overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding-bottom:7em}
+  #p22 > *{flex:0 0 auto !important; min-height:auto !important}
+  #p22 .gvWrap{grid-template-columns:minmax(0,1fr)}
+  #p22 .gvRows{overflow:visible}
+  #p22 .gvS.pad{margin-top:0}
+  #p22 .gvHd,#p22 .gvR,#p22 .gvGrid{grid-template-columns:minmax(0,6.5em) minmax(0,1fr) 5.6em; column-gap:.5em}
+  #p22 .gvAm .fy,#p22 .gvAm .of{display:none}
+  #p22 .gvAm b{font-size:1em}
+  #p22 .gvNm small{display:block}
+}
+
 
 /* ═══ SUBMITTED — the production report as it is circulated ════════════════
    Unit, then manager, then every agent with their code. Three levels that
@@ -2825,6 +3023,42 @@
       </div>
     </div>
   </section>
+
+  <!-- 22 · LIVE GOALS — who has taken off and who has not; what the filed plans ask of the branch every day, week and month, against what is coming in -->
+  <section class="panel" id="p21">
+    <div class="ptitle"><h1 id="t_p21"></h1><span class="tag">Live goals</span></div>
+    <div class="lfGrid">
+      <div class="card lfBoard">
+        <div class="lfHd"><span class="lfK">Who has taken off</span><span class="lfSub" id="lfLatest"></span></div>
+        <div class="lfTop"><div class="lfRing" id="lfRing"></div><div class="lfUnits" id="lfUnits"></div></div>
+        <div class="lfTiles" id="lfTiles"></div>
+        <div class="lfFoot" id="lfFoot"></div>
+      </div>
+      <div class="card lfLiveCard">
+        <div class="lfHd"><span class="lfK">What the plans ask of us &middot; live</span><span class="lfSub" id="lfAsOf"></span></div>
+        <div class="lfMap" id="lfMap"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 23 · TO THE GOAL — everyone who has produced, on one scale: their goal, what they have picked up, where they should be; FYC at half of API -->
+  <section class="panel" id="p22">
+    <div class="ptitle"><h1 id="t_p22"></h1><span class="tag">To the goal</span></div>
+    <div class="gvWrap">
+      <div class="card gvChart">
+        <div class="gvHd"><span>Advisor</span><span class="gvAxis" id="gvAxis"></span><span class="r">Picked up of goal &middot; FYC</span></div>
+        <div class="gvRows" id="gvRows"></div>
+        <div class="gvMore" id="gvMore" hidden></div>
+        <div class="gvKey" id="gvKey"></div>
+      </div>
+      <div class="gvSide">
+        <div class="card gvS lead" id="gvLead"></div>
+        <div class="card gvS fyc" id="gvFyc"></div>
+        <div class="card gvS pace" id="gvPace"></div>
+        <div class="card gvS pad" id="gvPad"></div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span><span class="tk" id="k13"></span><span class="tk" id="k14"></span><span class="tk" id="k15"></span><span class="tk" id="k16"></span></div>
@@ -2858,7 +3092,7 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec';
 var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
 
-var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 21;
+var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 23;
 var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 /* Calendar volume: one hue, dark to light. Validated as an ordinal ramp against
    this surface — monotone lightness, every step clear of the card behind it. */
@@ -3848,6 +4082,9 @@ function poll(){
                      queue:{pending:0,oldestDays:0,oldestWho:'',breaching:0},managers:[],
                      flags:{replacements:0,overCommitted:0,evidence:0},justIn:null};
       d = rrbScrubFeed_(d);
+      /* The live-goals slide reads the fact finds filed today and this week off this feed. */
+      window.__wallFeed = d;
+      if(typeof window.rrbRepaintLift_ === 'function') window.rrbRepaintLift_();
       lastGood=d; lastAt=Date.now(); render(d);
     })
     .catch(function(e){ console.warn('wall poll failed:', e.message); });
@@ -3915,9 +4152,12 @@ var monthReady = false;
    without it in the same way. Shift+0 reaches it. */
 var departReady = false;
 /* PANEL 21, the race, needs goal_wall from GoalPlans.gs and at least one
-   filed flight plan. Alt+1 reaches it. */
-var raceReady = false;
-function panelOff(i){ return (i === 17 && !dayReady) || (i === 18 && !monthReady) || (i === 19 && !departReady) || (i === 20 && !raceReady); }
+   filed flight plan. Alt+1 reaches it. PANEL 22, live goals, needs goal_wall
+   and a roster, filed or not (Alt+2). PANEL 23, to the goal, needs somebody
+   to have produced this year (Alt+3). */
+var raceReady = false, liftReady = false, goalReady = false;
+function panelOff(i){ return (i === 17 && !dayReady) || (i === 18 && !monthReady) || (i === 19 && !departReady) || (i === 20 && !raceReady) ||
+                             (i === 21 && !liftReady) || (i === 22 && !goalReady); }
 
 var rotateWait=null;
 function rotate(){
@@ -6462,12 +6702,203 @@ var PROD = {
       'First to the finish line leads the branch.');
     return true;
   }
-  /* What goal_wall sent decides whether panel 21 is in the rotation. */
+  /* ═══ LIVE GOALS (panel 22) and TO THE GOAL (panel 23) ═══════════════
+     Both draw from the goal_wall answer the race draws from. Asked for on
+     8 October 2026, the day the flight plans went out: "a new slide ... live
+     and real goals that map what we do daily, weekly and monthly", "who took
+     off by completing and who have not", and "compare to how they are going
+     so far for the ones that produced; for the API we can average a 50%
+     FYC". The month board (prodboard) supplies what has been picked up today,
+     this week and this month; the fact-find feed supplies the fact finds
+     filed; the plans supply what was asked for and what was checked in. */
+  var lastGoalWall = null, lastMonth = null;
+  function lfFirst(name){ return String(name || '').trim().split(/\s+/)[0] || ''; }
+  function lfMoney(n){
+    n = Math.round(+n || 0);
+    if(n >= 1e6) return 'TT$' + (n / 1e6).toFixed(n >= 1e7 ? 1 : 2).replace(/\.?0+$/, '') + 'm';
+    if(n >= 1e5) return 'TT$' + Math.round(n / 1e3) + 'k';
+    if(n >= 1e3) return 'TT$' + (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'k';
+    return 'TT$' + n;
+  }
+  function lfInt(n){ return Math.round(+n || 0).toLocaleString('en-US'); }
+  function lfDec(n){ n = +n || 0; return n >= 10 ? String(Math.round(n)) : n.toFixed(1).replace(/\.0$/, ''); }
+  function lfPctTxt(p){ p = +p || 0; return (p >= 10 ? Math.round(p) : Math.round(p * 10) / 10) + '%'; }
+  function lfNice(x){ if(!(x > 0)) return 1; var p = Math.pow(10, Math.floor(Math.log(x) / Math.LN10)), f = x / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p; }
+  function lfDow(iso){ var d = new Date(String(iso || '') + 'T12:00:00Z'); return isNaN(d) ? 0 : (d.getUTCDay() || 7); }
+  /* This week's pickups, Monday to today, off the month board's day-by-day figures. */
+  function lfWeekPicked(M){
+    if(!M || !M.units || !M.today) return null;
+    var t = new Date(M.today + 'T12:00:00Z'); if(isNaN(t)) return null;
+    var mon = new Date(t.getTime() - ((t.getUTCDay() || 7) - 1) * 864e5).toISOString().slice(0, 10), apps = 0, api = 0;
+    M.units.forEach(function(u){ (u.people || []).forEach(function(p){ var D = p.days || {}; Object.keys(D).forEach(function(d){
+      if(d >= mon && d <= M.today){ apps += +(D[d][0]) || 0; api += +(D[d][1]) || 0; } }); }); });
+    return { apps: apps, api: api, from: mon };
+  }
+  /* The year so far: the plans' own pickups where the server sends them for
+     everyone, the month board's year column where it does not yet. */
+  function lfYtd(R, M){
+    var L = R.lanes || [], S = R.standby || [], apps = 0, api = 0;
+    var known = S.every(function(p){ return typeof p.picked === 'number'; });
+    if(known){ L.concat(S).forEach(function(p){ apps += +p.apps || 0; api += +p.picked || 0; }); return { apps: apps, api: api }; }
+    if(M && M.units){ M.units.forEach(function(u){ (u.people || []).forEach(function(p){ var f = p.fy || [0, 0]; apps += +f[0] || 0; api += +f[1] || 0; }); }); return { apps: apps, api: api }; }
+    L.forEach(function(p){ apps += +p.apps || 0; api += +p.picked || 0; });
+    return { apps: apps, api: api };
+  }
+  function paintLift(R){
+    if(!R || !R.ok) return false;
+    var L = R.lanes || [], S = R.standby || [], T = R.totals || {}, people = L.length + S.length;
+    if(!people) return false;
+    var go = L.length, pct = Math.round(go / people * 100), M = lastMonth, F = window.__wallFeed || null, fy = R.fy || {};
+    dpSet('t_p21', go === 0 ? '<i>Nobody</i> has taken off yet &middot; ' + people + ' flight plans to file'
+      : go === people ? '<i>Everyone</i> has taken off &middot; ' + esc(fy.label || 'FY27') + ' is live'
+      : '<i>' + go + ' of ' + people + '</i> have taken off &middot; ' + (people - go) + ' still on the pad');
+    dpSet('lfRing', '<svg viewBox="0 0 100 100" aria-hidden="true"><circle class="tr" cx="50" cy="50" r="42" pathLength="100"></circle>' +
+      '<circle class="v" cx="50" cy="50" r="42" pathLength="100" style="stroke-dasharray:' + pct + ' 100"></circle></svg>' +
+      '<div class="lfRingTx"><b>' + go + '</b><span>of ' + people + ' GO</span></div>');
+    var units = {}, order = [];
+    function unit(p, went){ var u = p.unit || 'The branch'; if(!units[u]){ units[u] = { go: 0, n: 0 }; order.push(u); } units[u].n++; if(went) units[u].go++; }
+    L.forEach(function(p){ unit(p, true); }); S.forEach(function(p){ unit(p, false); });
+    order.sort(function(a, b){ var A = units[a], B = units[b]; return (B.go / B.n - A.go / A.n) || (B.go - A.go) || (a < b ? -1 : 1); });
+    dpSet('lfUnits', order.map(function(u){ var x = units[u];
+      return '<div class="lfU"><span class="nm">' + esc(lfFirst(u)) + '&rsquo;s unit</span><span class="n"><b>' + x.go + '</b> of ' + x.n + '</span>' +
+             '<span class="lfUb"><i style="width:' + Math.round(x.go / x.n * 100) + '%"></i></span></div>'; }).join(''));
+    var goList = L.slice().sort(function(a, b){ return String(a.filedAt) < String(b.filedAt) ? -1 : 1; });
+    var latest = goList[goList.length - 1];
+    var tilesEl = document.getElementById('lfTiles'); if(tilesEl) tilesEl.classList.toggle('c3', people > 24);
+    dpSet('lfTiles', goList.map(function(p, i){
+        return '<div class="lfT go' + (latest && p.code === latest.code && goList.length > 1 ? ' last' : '') + '" style="--d:' + (i * .03).toFixed(2) + 's">' +
+          '<span class="lamp"></span><span class="nm">' + esc(p.name) + '</span><span class="st">GO<small>' + rcOrd(i + 1) + '</small></span></div>'; })
+      .concat(S.slice().sort(function(a, b){ return a.name < b.name ? -1 : 1; }).map(function(p, i){
+        return '<div class="lfT" style="--d:' + ((goList.length + i) * .03).toFixed(2) + 's"><span class="lamp"></span><span class="nm">' + esc(p.name) + '</span><span class="st">on the pad</span></div>'; })).join(''));
+    var won = R.rewarded || [], places = R.places || 3, rw = [];
+    for(var k = 1; k <= places; k++){ var w = won.filter(function(x){ return x.place === k; })[0]; rw.push('<b>' + k + '</b> ' + (w ? esc(lfFirst(w.name)) : 'open')); }
+    dpSet('lfLatest', latest ? 'Latest to take off: <b>' + esc(latest.name) + '</b> &middot; ' + esc(rcWhen(latest.filedAt)) : 'First to file leads the board');
+    dpSet('lfFoot', '<span class="gold">Rewarded, the first ' + places + ' realistic plans:</span> ' + rw.join(' &middot; ') +
+      '<br>File yours at <b>factfind360.com/goals</b> &middot; the fact find opens once your plan is in.');
+    /* the map */
+    dpSet('lfAsOf', (fy.week ? 'Week <b>' + fy.week + '</b> of ' + esc(fy.label || 'FY27') : '') + (fy.today ? ' &middot; ' + esc(rcWhen(fy.today)) : ''));
+    var ask = R.ask || null, none = !go;
+    /* A server from before 8 October sends no asks; the money ones follow from the goals. */
+    if(!ask && go){ var gsum = 0; L.forEach(function(p){ gsum += +p.goal || 0; }); ask = { apiWeek: gsum / 46, apiMonth: gsum / 12, apiDay: gsum / 46 / 5 }; }
+    /* Nothing filed yet: the live figures still show, against no target, and every row says why. */
+    if(!ask) ask = { apiWeek: 0, apiMonth: 0, apiDay: 0 };
+    var NO_ASK = '<span class="lfNone">No plan filed yet &middot; the first one puts a target here</span>';
+    var tot = (M && M.total) || null, today = (tot && tot.today) || [0, 0], wp = lfWeekPicked(M), wk = R.week || null, ytd = lfYtd(R, M);
+    var ffT = F && F.today ? (+F.today.submitted || 0) : null, ffW = F && F.week ? (+F.week.submitted || 0) : null;
+    var dow = lfDow(fy.today || (M && M.today)), wkExp = dow >= 6 ? 100 : dow / 5 * 100;
+    var moExp = M && M.days && M.days.length ? Math.min(100, (+M.gone || 0) / M.days.length * 100) : 0;
+    var moLabel = (M && M.label) || 'This month';
+    function row(when, sub, askHtml, liveHtml, got, target, expPct){
+      var w = target > 0 ? Math.min(100, got / target * 100) : 0, over = target > 0 && got >= target;
+      return '<div class="lfRow"><div class="lfWhen"><b>' + when + '</b><span>' + sub + '</span></div><div class="lfBody">' +
+        '<div class="lfAsk">' + askHtml + '</div>' +
+        '<div class="lfLive"><span class="lfBar"><i class="' + (over ? 'over' : '') + '" style="width:' + w.toFixed(1) + '%"></i>' +
+          (expPct > 0 && expPct < 100 ? '<em style="left:' + expPct.toFixed(1) + '%"></em>' : '') + '</span>' +
+        '<span class="lfNum"><b class="' + (over ? 'gold' : 'teal') + '">' + lfMoney(got) + '</b>' + (target > 0 ? ' of ' + lfMoney(target) + ' API' : ' API picked up') + '</span></div>' +
+        '<div class="lfAsk live">' + liveHtml + '</div></div></div>';
+    }
+    function a(label, v){ return '<span><i>' + label + '</i><b>' + v + '</b></span>'; }
+    function n(x, one, many){ x = +x || 0; return x + ' ' + (x === 1 ? one : many); }
+    var has = typeof ask.ffWeek === 'number';
+    var dayAsk = (has ? a('Contacts', lfInt(ask.contactsWeek / 5)) + a('Appointments', lfInt(ask.apptWeek / 5)) + a('Fact finds', lfInt(ask.ffWeek / 5)) : '') + a('API', lfMoney(ask.apiDay));
+    var dayLive = (ffT === null ? '' : a('Filed today', n(ffT, 'fact find', 'fact finds'))) + (tot ? a('Picked up today', n(today[0], 'app', 'apps')) : '') +
+      (ffT === null && !tot ? '<span>Waiting on the day&rsquo;s figures</span>' : '');
+    var wkAsk = (has ? a('Contacts', lfInt(ask.contactsWeek)) + a('Appointments', lfInt(ask.apptWeek)) + a('Fact finds', lfInt(ask.ffWeek)) + a('Apps', lfDec(ask.appsWeek)) : '') + a('API', lfMoney(ask.apiWeek));
+    var wkLive = (ffW === null ? '' : a('Filed this week', n(ffW, 'fact find', 'fact finds'))) + (wp ? a('Picked up', n(wp.apps, 'app', 'apps')) : '') +
+      (wk && wk.n ? a('Checked in', wk.n) + a('Contacts logged', lfInt(wk.contacts)) + a('Appointments logged', lfInt(wk.appts)) : (has ? '<span>Nobody has checked in yet this week</span>' : ''));
+    var moAsk = (has ? a('Apps', lfDec(ask.appsWeek * 52 / 12)) : '') + a('API', lfMoney(ask.apiMonth));
+    var moLive = tot ? a('Picked up', n(tot.apps, 'app', 'apps')) + (M.days && M.days.length ? a('Working day', (+M.gone || 0) + ' of ' + M.days.length) : '') : '<span>Waiting on the month board</span>';
+    function tile(k, v, s, cls){ return '<div class="lfY ' + cls + '"><div class="lfK">' + k + '</div><b class="num">' + v + '</b><span>' + s + '</span></div>'; }
+    dpSet('lfMap',
+      row('Every day', 'what the plans add up to', none ? NO_ASK : dayAsk, dayLive, +today[1] || 0, ask.apiDay, 0) +
+      row('This week', 'Monday to today', none ? NO_ASK : wkAsk, wkLive, wp ? wp.api : 0, ask.apiWeek, wkExp) +
+      row(esc(moLabel), 'month to date', none ? NO_ASK : moAsk, moLive, tot ? (+tot.api || 0) : 0, ask.apiMonth, moExp) +
+      '<div class="lfYear">' +
+        tile('Committed API &middot; ' + esc(fy.label || 'FY27'), lfMoney(T.api), n(go, 'flight plan', 'flight plans'), 'gold') +
+        tile('Picked up so far', lfMoney(ytd.api), lfInt(ytd.apps) + ' apps &middot; ' + lfPctTxt(T.api ? ytd.api / T.api * 100 : 0) + ' of it', 'teal') +
+        tile('Committed FYC', lfMoney(T.fyc), 'as the plans work it out', '') +
+        tile('FYC so far', '&asymp; ' + lfMoney(ytd.api * .5), 'taken as half of API', 'gold') +
+      '</div>');
+    return true;
+  }
+  window.rrbRepaintLift_ = function(){ if(lastGoalWall){ try{ window.liftReady = !!paintLift(lastGoalWall); }catch(e){} } };
+  function paintGoal(R){
+    if(!R || !R.ok) return false;
+    var L = R.lanes || [], S = R.standby || [], T = R.totals || {};
+    var rows = L.filter(function(p){ return +p.picked > 0; }).map(function(p){
+        var goal = +p.goal || 0;
+        return { name: p.name, goal: goal, fyc: +p.fyc || Math.round(goal * .5), picked: +p.picked || 0, apps: +p.apps || 0,
+                 exp: goal * (+p.expPct || 0) / 100, pct: +p.pct || 0, done: !!p.done, plan: true }; })
+      .concat(S.filter(function(p){ return +p.picked > 0; }).map(function(p){
+        return { name: p.name, goal: 0, fyc: 0, picked: +p.picked || 0, apps: +p.apps || 0, exp: 0, pct: 0, done: false, plan: false }; }));
+    if(!rows.length) return false;
+    rows.sort(function(a, b){ return (b.picked - a.picked) || (a.name < b.name ? -1 : 1); });
+    var max = 0; rows.forEach(function(r){ max = Math.max(max, r.goal, r.picked, r.exp); });
+    var step = lfNice(max / 4), top = Math.max(step, Math.ceil(max / step - 1e-9) * step), ticks = [];
+    for(var v = 0; v <= top + step / 1e6; v += step) ticks.push(v);
+    dpSet('gvAxis', ticks.map(function(v, i){ var x = v / top * 100;
+      return '<span style="left:' + x.toFixed(1) + '%' + (i === 0 ? ';transform:none' : i === ticks.length - 1 ? ';transform:translateX(-100%)' : '') + '">' + (v ? lfMoney(v) : '0') + '</span>'; }).join(''));
+    var picked = 0, noPlan = [], planned = 0, expAll = 0, ahead = 0, nPlan = 0;
+    rows.forEach(function(r){ picked += r.picked; if(!r.plan) noPlan.push(r); });
+    L.forEach(function(p){ var goal = +p.goal || 0, e = goal * (+p.expPct || 0) / 100; nPlan++; planned += +p.picked || 0; expAll += e; if(e >= 1000 && (+p.picked || 0) >= e) ahead++; });
+    var lead = rows.filter(function(r){ return r.plan && r.goal > 0; }).sort(function(a, b){ return b.pct - a.pct; })[0];
+    dpSet('t_p22', lead ? '<i>' + esc(lead.name) + '</i> is furthest along their goal &middot; ' + rows.length + ' have produced'
+                        : '<i>' + rows.length + '</i> have produced &middot; none against a filed goal yet');
+    var html = '<div class="gvGrid"><div>' + ticks.slice(1).map(function(v){ return '<i style="left:' + (v / top * 100).toFixed(1) + '%"></i>'; }).join('') + '</div></div>' +
+      rows.map(function(r, i){
+        var g = r.goal / top * 100, w = Math.min(100, r.picked / top * 100), e = r.exp / top * 100;
+        return '<div class="gvR' + (i === 0 ? ' top' : '') + (r.done ? ' done' : '') + (r.plan ? '' : ' none') + '" style="--d:' + (i * .04).toFixed(2) + 's">' +
+          '<span class="gvNm">' + esc(r.name) + (r.plan ? '' : '<small>no flight plan</small>') + '</span>' +
+          '<span class="gvBar">' + (r.plan ? '<span class="gvGoal" style="width:' + g.toFixed(1) + '%"></span>' : '') +
+            '<span class="gvPick" style="width:' + w.toFixed(1) + '%"></span>' +
+            (r.plan && e > .5 && e < 100 ? '<span class="gvExp" style="left:' + e.toFixed(1) + '%"></span>' : '') + '</span>' +
+          '<span class="gvAm">' + (r.plan
+            ? '<b>' + lfMoney(r.picked) + '</b><span class="of"> of ' + lfMoney(r.goal) + '</span><span class="pc">' + lfPctTxt(r.pct) + '</span>' +
+              '<span class="fy">FYC &asymp; <b>' + lfMoney(r.picked * .5) + '</b> of ' + lfMoney(r.fyc) + '</span>'
+            : '<b>' + lfMoney(r.picked) + '</b><span class="of"> picked up</span><span class="fy warn">no flight plan filed</span>') + '</span></div>';
+      }).join('');
+    var changed = dpLast['gvRows'] !== html;
+    dpSet('gvRows', html);
+    dpSet('gvLead', lead
+      ? '<div class="lfK">' + (lead.done ? 'Goal reached' : 'Furthest along') + '</div><b class="big">' + esc(lead.name) + '</b>' +
+        '<span><b>' + lfPctTxt(lead.pct) + '</b> of their own goal &middot; ' + lfMoney(lead.picked) + ' of ' + lfMoney(lead.goal) + '</span>'
+      : '<div class="lfK">Furthest along</div><b class="big">Nobody yet</b><span>The first pickup against a filed goal takes this card.</span>');
+    dpSet('gvFyc', '<div class="lfK">FYC so far &middot; half of API</div><b class="big">&asymp; ' + lfMoney(picked * .5) + '</b>' +
+      '<span>on <b>' + lfMoney(picked) + '</b> picked up by ' + n(rows.length, 'advisor', 'advisors') + (T.fyc ? ' &middot; <b>' + lfMoney(T.fyc) + '</b> FYC committed' : '') + '</span>');
+    var fyW = R.fy || {};
+    dpSet('gvPace', expAll >= 1000
+      ? '<div class="lfK">Against the plans today</div><b class="big">' + lfMoney(planned) + ' <small>of</small> ' + lfMoney(expAll) + '</b>' +
+        '<span>where the ' + n(nPlan, 'plan says', 'plans say') + ' the branch should be by today &middot; <b>' + ahead + ' of ' + nPlan + '</b> at or ahead of their own line</span>'
+      : '<div class="lfK">Against the plans today</div><b class="big">Day ' + lfInt(fyW.gone || 0) + ' <small>of ' + lfInt(fyW.days || 365) + '</small></b>' +
+        '<span>The plans&rsquo; own pace line starts to count once the year is a few weeks in.</span>');
+    dpSet('gvPad', noPlan.length
+      ? '<div class="lfK">Producing with no flight plan</div><b class="big">' + noPlan.length + '</b>' +
+        '<span>' + noPlan.map(function(r){ return esc(r.name); }).join(', ') + ' &middot; <b>' + lfMoney(noPlan.reduce(function(a, r){ return a + r.picked; }, 0)) + '</b> between them, against no goal</span>'
+      : '<div class="lfK">Producing with no flight plan</div><b class="big">Nobody</b><span>Everyone who has produced has a goal on the board.</span>');
+    dpSet('gvKey', 'One scale for everyone. The <b>grey band</b> is the advisor&rsquo;s own ' + esc((R.fy || {}).label || 'FY27') + ' API goal; <b>teal</b> is what they have picked up, new business and increases as Salesforce counts it; ' +
+      'the <b>white mark</b> is where their plan says they should be today; <b>amber</b> is production with no plan behind it. FYC is taken as half of API.');
+    /* The rows that do not fit are counted, not scrolled: a wall is read, not swiped. */
+    var box = document.getElementById('gvRows'), more = document.getElementById('gvMore');
+    if(changed && box && more){
+      var hidden = 0, all = box.querySelectorAll('.gvR');
+      more.hidden = false; more.textContent = '+ 0 more';
+      for(var i = all.length - 1; i > 0 && box.scrollHeight > box.clientHeight + 1; i--){ all[i].parentNode.removeChild(all[i]); hidden++; }
+      if(hidden) more.textContent = '+ ' + hidden + ' more have produced'; else more.hidden = true;
+    }
+    function n(x, one, many){ x = +x || 0; return x + ' ' + (x === 1 ? one : many); }
+    return true;
+  }
+
+  /* What goal_wall sent decides whether panels 21, 22 and 23 are in the rotation. */
   function takeRace(j){
-    var ok = false;
+    var ok = false, lf = false, gv = false;
+    lastGoalWall = (j && j.v === 'goal1' && j.ok) ? j : null;
     try{ ok = !!(j && j.v === 'goal1' && paintRace(j)); }catch(e){ ok = false; }
-    window.raceReady = ok;
-    if(!ok && typeof panel !== 'undefined' && panel === 20 && typeof showPanel === 'function') showPanel(0);
+    try{ lf = !!(lastGoalWall && paintLift(lastGoalWall)); }catch(e){ lf = false; }
+    try{ gv = !!(lastGoalWall && paintGoal(lastGoalWall)); }catch(e){ gv = false; }
+    window.raceReady = ok; window.liftReady = lf; window.goalReady = gv;
+    if(typeof panel !== 'undefined' && typeof showPanel === 'function' &&
+       ((!ok && panel === 20) || (!lf && panel === 21) || (!gv && panel === 22))) showPanel(0);
   }
 
   /* What prodboard sent decides whether panels 19 and 20 are in the rotation. */
@@ -6477,6 +6908,9 @@ var PROD = {
     try{ dp = !!(j && j.month && paintDepartures(j.month, j.submitted)); }catch(e){ dp = false; }
     window.monthReady = ok;
     window.departReady = dp;
+    /* The live-goals slide reads today, this week and this month off the same month block. */
+    lastMonth = (j && j.month) || null;
+    if(lastGoalWall){ try{ window.liftReady = !!paintLift(lastGoalWall); }catch(e){} }
     if(typeof panel !== 'undefined' && typeof showPanel === 'function' &&
        ((!ok && panel === 18) || (!dp && panel === 19))) showPanel(0);
   }
