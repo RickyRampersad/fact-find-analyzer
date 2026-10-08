@@ -18,6 +18,9 @@
  *                       the plans commit the branch to, and the pace
  *   An advisor sees their own plan. A unit manager sees their units' plans,
  *   the branch manager every plan. goals.html says so before anyone starts.
+ *   The branch wall shows every advisor's API goal and their progress against
+ *   it - the race to finish first, asked for on 8 October 2026 - and nothing
+ *   else from a plan: no budget, no income, no written answer.
  *
  * WHERE THE OTHER NUMBERS COME FROM
  *   FY27 to date: fyrFigures_ (FinancialYear.gs) - production picked up,
@@ -77,11 +80,11 @@ ffProcessAgentSubmit = function (data) {
 var GOAL_PREV_DOGET_ = (typeof doGet === 'function') ? doGet : null;
 if (GOAL_PREV_DOGET_) doGet = function (e) {
   var a = (e && e.parameter && e.parameter.action) || '';
-  if (a === 'goal_me' || a === 'goal_team' || a === 'goal_view' || a === 'goal_board') {
+  if (a === 'goal_me' || a === 'goal_team' || a === 'goal_view' || a === 'goal_board' || a === 'goal_wall') {
     var out;
     try {
       out = a === 'goal_me' ? goalMe_(e) : a === 'goal_team' ? goalTeam_(e)
-          : a === 'goal_view' ? goalView_(e) : goalBoard_(e);
+          : a === 'goal_view' ? goalView_(e) : a === 'goal_wall' ? goalWall_(e) : goalBoard_(e);
     } catch (err) {
       Logger.log('%s failed: %s', a, (err && err.stack) || err);
       out = { ok: false, error: String((err && err.message) || err) };
@@ -325,6 +328,89 @@ function goalActual_(fy) {
   return y;
 }
 
+/* ── the race ──────────────────────────────────────────────────────────── */
+
+/* Weeks in a row checked in, ending this week or last. */
+function goalStreak_(checks, fy) {
+  var have = {};
+  (checks || []).forEach(function (c) { var m = String(c.week || '').match(/-W(\d+)$/); if (m) have[+m[1]] = true; });
+  var w = have[fy.week] ? fy.week : fy.week - 1, n = 0;
+  while (w >= 1 && have[w]) { n++; w--; }
+  return n;
+}
+
+/* When each advisor first reached a milestone, as the wall first saw it. Kept
+   in script properties: a few dates for each of eighteen people. */
+function goalMilestones_(fy) {
+  try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('goal_ms_' + fy.label) || '{}'); }
+  catch (e) { return {}; }
+}
+function goalMilestonesSave_(fy, ms) {
+  try { PropertiesService.getScriptProperties().setProperty('goal_ms_' + fy.label, JSON.stringify(ms)); }
+  catch (e) { Logger.log('goalMilestonesSave_: %s', e && e.message); }
+}
+
+/* Everyone with a plan, in race order: those who have finished, earliest
+   first; then the furthest along their own goal; then whoever filed first. */
+function goalRace_(fy, plans, act, checks, ms) {
+  var people = goalRoster_().map(function (r) {
+    var P = plans[r.code], d = P && P.plan ? goalDerive_(P.plan) : null, a = act[r.code] || [0, 0];
+    var picked = Math.round(a[1] || 0), apps = a[0] || 0, m = (ms && ms[r.code]) || {};
+    var exp = d ? goalExpected_(d, fy) : 0;
+    return {
+      code: r.code, name: r.name, unit: r.unit, go: !!d, filedAt: P ? P.submittedAt : '',
+      goal: d ? d.api : 0, picked: picked, apps: apps,
+      pct: d && d.api ? Math.round(picked / d.api * 1000) / 10 : 0,
+      expPct: d && d.api ? Math.round(exp / d.api * 1000) / 10 : 0,
+      onPlan: !!d && fy.week > 2 && exp >= 1000 && picked >= exp,
+      firstApp: apps >= 1, q1: !!d && d.q[0] > 0 && picked >= d.q[0],
+      half: !!d && d.api > 0 && picked >= d.api / 2, done: !!d && d.api > 0 && picked >= d.api,
+      streak: goalStreak_(checks.filter(function (c) { return c.code === r.code; }), fy),
+      reachedAt: m.goal || ''
+    };
+  });
+  var lanes = people.filter(function (p) { return p.go; }).sort(function (a, b) {
+    if (a.done !== b.done) return a.done ? -1 : 1;
+    if (a.done && a.reachedAt !== b.reachedAt) return String(a.reachedAt || '9') < String(b.reachedAt || '9') ? -1 : 1;
+    if (b.pct !== a.pct) return b.pct - a.pct;
+    return String(a.filedAt) < String(b.filedAt) ? -1 : 1;
+  });
+  lanes.forEach(function (p, i) { p.rank = i + 1; });
+  return { lanes: lanes, standby: people.filter(function (p) { return !p.go; })
+    .map(function (p) { return { code: p.code, name: p.name, unit: p.unit }; })
+    .sort(function (a, b) { return a.name < b.name ? -1 : 1; }) };
+}
+
+/* The branch wall. Opened by the screens the production board opens for -
+   the branch, a visitor pass, staff - and by managers; an advisor's own
+   sign-in sees their place in the race on their own page instead. */
+function goalWall_(e) {
+  var me = goalWho_(e.parameter.token);
+  if (!me) return RRB_EXPIRED;
+  if (me.kind === 'agent') return { ok: false, error: 'The race is on the branch wall.' };
+  var cache = CacheService.getScriptCache(), hit = cache.get('goal_wall');
+  if (hit) { try { return JSON.parse(hit); } catch (err) {} }
+  var fy = goalFy_(new Date()), plans = goalPlans_(), act = goalActual_(fy), checks = goalChecks_();
+  var ms = goalMilestones_(fy), R = goalRace_(fy, plans, act, checks, ms), now = new Date().toISOString(), changed = false;
+  R.lanes.forEach(function (p) {
+    var m = ms[p.code] || (ms[p.code] = {});
+    [['firstApp', p.firstApp], ['q1', p.q1], ['half', p.half], ['goal', p.done]].forEach(function (x) {
+      if (x[1] && !m[x[0]]) { m[x[0]] = now; changed = true; if (x[0] === 'goal') p.reachedAt = now; }
+    });
+  });
+  if (changed) goalMilestonesSave_(fy, ms);
+  var api = 0, fyc = 0;
+  R.lanes.forEach(function (p) { var P = plans[p.code]; if (P && P.plan) { var d = goalDerive_(P.plan); api += d.api; fyc += d.fyc; } });
+  var firstOff = R.lanes.slice().sort(function (a, b) { return String(a.filedAt) < String(b.filedAt) ? -1 : 1; })
+    .slice(0, 3).map(function (p) { return { name: p.name, at: p.filedAt }; });
+  var finishers = R.lanes.filter(function (p) { return p.done; }).map(function (p) { return { name: p.name, at: p.reachedAt }; });
+  var out = { ok: true, fy: { label: fy.label, week: fy.week, today: fy.today, days: fy.days, gone: fy.gone },
+              lanes: R.lanes, standby: R.standby, firstOff: firstOff, finishers: finishers,
+              totals: { people: R.lanes.length + R.standby.length, go: R.lanes.length, api: api, fyc: fyc } };
+  try { cache.put('goal_wall', JSON.stringify(out), 60); } catch (err) {}
+  return out;
+}
+
 /* ── the actions ───────────────────────────────────────────────────────── */
 
 function goalMe_(e) {
@@ -338,9 +424,16 @@ function goalMe_(e) {
   }
   var act = goalActual_(fy)[me.key] || [0, 0];
   var checks = goalChecks_(me.key).sort(function (a, b) { return a.week < b.week ? 1 : -1; }).slice(0, 12);
-  var plan = mine && mine.plan;
+  var plan = mine && mine.plan, race = null;
+  if (plan) {
+    try {
+      var R = goalRace_(fy, goalPlans_(), goalActual_(fy), goalChecks_(), goalMilestones_(fy));
+      var at = R.lanes.filter(function (p) { return p.code === me.key; })[0];
+      if (at) race = { rank: at.rank, of: R.lanes.length, streak: at.streak };
+    } catch (err) { Logger.log('goalMe_ race: %s', err && err.message); }
+  }
   return {
-    ok: true,
+    ok: true, race: race,
     me: { name: me.name, code: me.key, role: me.role, unit: me.unit, kind: me.kind },
     fy: fy, last: last, branch: branch,
     actual: { apps: act[0] || 0, api: Math.round(act[1] || 0) },
@@ -373,7 +466,7 @@ function goalSave_(data) {
       d.q[0], d.q[1], d.q[2], d.q[3], String((plan.why && plan.why.title) || ''), JSON.stringify(plan)];
     if (had) sh.getRange(had.row, 1, 1, row.length).setValues([row]);
     else sh.appendRow(row);
-    try { CacheService.getScriptCache().remove('goal_board'); } catch (e) {}
+    try { CacheService.getScriptCache().removeAll(['goal_board', 'goal_wall']); } catch (e) {}
     return { ok: true, plan: plan, first: !had, submittedAt: (had && had.submittedAt) || now.toISOString(),
              updatedAt: now.toISOString() };
   } finally { try { lock.releaseLock(); } catch (e) {} }
@@ -407,6 +500,7 @@ function goalCheckin_(data) {
       [].concat(c.help || []).join(', ').slice(0, 300) + (c.helpText ? ' — ' + String(c.helpText).slice(0, 500) : ''), s];
     if (had) sh.getRange(had._row, 1, 1, row.length).setValues([row]);
     else sh.appendRow(row);
+    try { CacheService.getScriptCache().remove('goal_wall'); } catch (e) {}
     return { ok: true, week: week, weekOf: weekOf, updated: !!had };
   } finally { try { lock.releaseLock(); } catch (e) {} }
 }
@@ -599,4 +693,5 @@ function goalCheck() {
   } catch (e) { say(false, 'FY26 could not be read: ' + (e && e.message)); }
   var fy = goalFy_(new Date());
   say(true, fy.label + ' week ' + fy.week + ', ' + goalRoster_().length + ' advisors asked for a plan');
+  say(String(doGet).indexOf('goalWall_') > -1, 'the branch wall can read the race');
 }

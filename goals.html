@@ -549,7 +549,7 @@
     </div>
     <div class="privacy">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.4 8.3-8 9-4.6-.7-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
-      <span>Who sees your plan: you, your unit manager and the branch manager. Nobody else. At the blastoff the big screen only shows that you&rsquo;re <b>GO</b>, never your numbers.</span>
+      <span>Your <b>API goal</b> and your progress against it go on the branch wall, in the race to finish first. Everything else in your plan &mdash; your budget, your income, your answers &mdash; is seen only by you, your unit manager and the branch manager. At the blastoff the big screen only shows that you&rsquo;re <b>GO</b>.</span>
     </div>
   </section>
 
@@ -763,7 +763,7 @@
         <div class="card" style="margin-top:16px">
           <p class="eyebrow gold">Stage 7 of 7 · Commit</p>
           <h2>Sign your flight plan</h2>
-          <p class="lede">Read it once. Sign it. From then on it&rsquo;s the first thing you see when you sign in.</p>
+          <p class="lede">Read it once. Sign it. From then on it&rsquo;s the first thing you see when you sign in, and your API goal joins the race on the branch wall.</p>
           <div class="sign">
             <label class="f"><span>Type your full name to sign</span>
               <input class="inp" data-k="signed.name" maxlength="80" autocomplete="name" id="sigInput"></label>
@@ -1148,7 +1148,7 @@ async function loadMe() {
     if (j && j.expired) { signOut('Your sign-in has expired. Sign in again.'); return; }
     if (j && j.v === 'goal1' && j.ok) {
       S.ready = true; S.me = j.me; S.fy = j.fy; S.last = j.last || {}; S.branch = j.branch || FALLBACK;
-      S.actual = j.actual || { apps: 0, api: 0 }; S.plan = j.plan || null; S.checkins = j.checkins || [];
+      S.actual = j.actual || { apps: 0, api: 0 }; S.plan = j.plan || null; S.checkins = j.checkins || []; S.race = j.race || null;
       S.submittedAt = j.submittedAt || ''; S.updatedAt = j.updatedAt || '';
     } else if (j && j.v === 'goal1') {
       S.ready = true; S.loadError = j.error || '';
@@ -1843,6 +1843,8 @@ function renderMC() {
       '<div class="card s8 traj"><p class="eyebrow">Trajectory</p><h3>The year, quarter by quarter</h3>' + trajectory(d, fy, act, exp) + '</div>' +
       '<div class="card s4"><p class="eyebrow">Streak</p><div class="streak"><b class="gold-txt">' + streak + '</b><span>' + plural(streak, 'week') +
         ' in a row checked in.' + (streak ? '' : '<br>Your first one starts it.') + '</span></div>' +
+        (S.race && S.race.rank ? '<p class="soft" style="margin:12px 0 0;font-size:14px">The race on the branch wall: <b style="color:#fff">' +
+          (S.race.rank === 1 ? 'you\u2019re leading' : '#' + S.race.rank + ' of ' + S.race.of) + '</b>.</p>' : '') +
         '<div class="badges">' + badges + '</div></div>' +
       '<div class="card s12"><div class="cardHead"><div><p class="eyebrow">Check-ins</p><h3>Week by week</h3></div></div>' + histHtml +
         '<div class="actions"><button class="btn line sm" type="button" id="editPlan">Edit plan</button>' +
