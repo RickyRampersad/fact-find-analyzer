@@ -62,6 +62,20 @@ var GOAL_DIGEST_AT  = { day: 'MONDAY', hour: 7 };
    that is not, it gives the place up. The branch manager decides the reward. */
 var GOAL_REAL = { minLines: 4, maxGrowth: 2, places: 3 };
 
+/* THE FACT FIND WAITS FOR THE FLIGHT PLAN - asked for on 9 October 2026, so
+   nobody puts it off. An advisor with no filed plan is shown the plan page
+   before they can start a fact find; the branch manager's sign-in, staff
+   and visitors are not. goalGateOff() lifts it without touching this file,
+   goalGateOn() puts it back. The form fails open: a slow or missing answer
+   never blocks a fact find. */
+var GOAL_GATE = { on: true, exempt: ['branch', 'staff', 'guest'] };
+function goalGateIs_() {
+  try { var p = PropertiesService.getScriptProperties().getProperty('goal_gate'); if (p === 'off') return false; if (p === 'on') return true; } catch (e) {}
+  return !!GOAL_GATE.on;
+}
+function goalGateOn() { PropertiesService.getScriptProperties().setProperty('goal_gate', 'on'); Logger.log('The fact find now waits for a filed flight plan.'); }
+function goalGateOff() { PropertiesService.getScriptProperties().setProperty('goal_gate', 'off'); Logger.log('The fact find no longer waits for a flight plan.'); }
+
 var GOAL_PLAN_COLS = ['Code', 'Name', 'Unit', 'Submitted At', 'Updated At', 'API Goal', 'FYC Goal',
   'Income Goal', 'Apps Goal', 'Contacts / wk', 'Appointments / wk', 'Fact finds / wk', 'Apps / wk',
   'Q1 API', 'Q2 API', 'Q3 API', 'Q4 API', 'Title Goal', 'Plan JSON'];
@@ -534,6 +548,7 @@ function goalMe_(e) {
   }
   return {
     ok: true, race: race, real: real,
+    gate: !plan && goalGateIs_() && GOAL_GATE.exempt.indexOf(me.kind) < 0,
     reward: { places: GOAL_REAL.places, taken: rw.length, maxGrowth: GOAL_REAL.maxGrowth, minLines: GOAL_REAL.minLines },
     me: { name: me.name, code: me.key, role: me.role, unit: me.unit, kind: me.kind },
     fy: fy, last: last, branch: branch,
@@ -819,6 +834,7 @@ function goalCheck() {
   say(true, fy.label + ' week ' + fy.week + ', ' + goalRoster_().length + ' advisors asked for a plan');
   say(String(doGet).indexOf('goalWall_') > -1, 'the branch wall can read the race');
   say(typeof goalRewarded_ === 'function', 'the first ' + GOAL_REAL.places + ' realistic plans are rewarded');
+  say(true, 'the fact find ' + (goalGateIs_() ? 'waits for a filed flight plan (goalGateOff lifts it)' : 'does not wait for a flight plan (goalGateOn puts that on)'));
   try { var F = goalFilmStats_(); say(true, 'the film so far: ' + F.view + ' views, ' + F.play + ' plays, ' + F.finish + ' finishes, ' + F.download + ' downloads (this is the 9 October morning version)'); }
   catch (e) { say(false, 'the film counter could not be read: ' + (e && e.message)); }
 }

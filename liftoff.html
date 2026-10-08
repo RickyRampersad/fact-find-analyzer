@@ -98,7 +98,7 @@
       <source src="fy27-liftoff.mp4" type="video/mp4">
     </video>
     <div class="cover" id="cover" role="button" tabindex="0" aria-label="Play the film with sound"><div class="play"><i></i></div><small>Tap to play with sound</small></div>
-    <div class="end" id="end"><div>
+    <div class="end" id="end"><canvas id="endFx" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas><div style="position:relative">
       <h2>Your name goes <span class="gold">GO</span>.</h2>
       <p>Fifteen minutes. Start with your own budget.</p>
       <div class="row"><a class="btn gold" href="goals.html">Build my flight plan</a><button class="btn line" type="button" id="again">Watch again</button></div>
@@ -121,6 +121,35 @@
 <div class="toast" id="toast" role="status"></div>
 <script>
 'use strict';
+/* Fireworks on a transparent canvas: bursts fade to nothing, the page stays
+   visible behind them. Still for anyone who asked for reduced motion. */
+function rrbFireworks(canvas, seconds, every) {
+  var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; if (still || !canvas) return function () {};
+  var x = canvas.getContext('2d'), D = Math.min(2, window.devicePixelRatio || 1), W, H, parts = [], t0 = performance.now(), last = 0, on = true;
+  var cols = ['#F5B935', '#FFE29A', '#2DD4BF', '#7FF3E3', '#FFFFFF', '#34D399', '#FB7185', '#A78BFA'];
+  function size() { W = canvas.width = canvas.clientWidth * D; H = canvas.height = canvas.clientHeight * D; } size();
+  function burst() {
+    var bx = W * (.12 + Math.random() * .76), by = H * (.1 + Math.random() * .45), col = cols[Math.floor(Math.random() * cols.length)];
+    var n = 70 + Math.random() * 50, sp = (2.6 + Math.random() * 2.6) * D, two = Math.random() < .35, col2 = cols[Math.floor(Math.random() * cols.length)];
+    for (var i = 0; i < n; i++) { var a = Math.random() * 6.283, v = sp * (.35 + Math.random() * .65);
+      parts.push({ x: bx, y: by, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 55 + Math.random() * 45, max: 100, col: two && i % 2 ? col2 : col, r: (1.1 + Math.random() * 1.7) * D }); }
+  }
+  (function frame(t) {
+    if (!on) return;
+    var age = (t - t0) / 1000;
+    if (t - last > (age < seconds ? every : every * 4)) { burst(); if (Math.random() < .3) burst(); last = t; }
+    x.globalCompositeOperation = 'destination-out'; x.fillStyle = 'rgba(0,0,0,.16)'; x.fillRect(0, 0, W, H);
+    x.globalCompositeOperation = 'lighter';
+    parts = parts.filter(function (p) { return p.life > 0; });
+    parts.forEach(function (p) { p.life--; p.x += p.vx; p.y += p.vy; p.vy += .045 * D; p.vx *= .985; p.vy *= .985;
+      x.globalAlpha = Math.max(0, p.life / p.max); x.fillStyle = p.col; x.beginPath(); x.arc(p.x, p.y, p.r, 0, 6.283); x.fill(); });
+    x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
+    requestAnimationFrame(frame);
+  })(t0);
+  window.addEventListener('resize', size);
+  return function () { on = false; };
+}
+
 var v = document.getElementById('v'), cover = document.getElementById('cover'), end = document.getElementById('end');
 /* Views, plays, finishes and downloads, counted on the branch's flight-plan
    server (GoalPlans.gs, action goal_hit): a row per event, nothing about
@@ -135,14 +164,15 @@ function hit(ev) {
 hit('view');
 document.getElementById('dl').addEventListener('click', function () { hit('download'); });
 function play() {
-  hit('play');
+  hit('play'); try { if (stopFw) { stopFw(); stopFw = null; } } catch (e) {}
   end.classList.remove('on'); cover.classList.add('off');
   v.muted = false; v.volume = 1; v.controls = true;
   var p = v.play(); if (p && p.catch) p.catch(function () { cover.classList.remove('off'); });
 }
 cover.addEventListener('click', play);
 cover.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); play(); } });
-v.addEventListener('ended', function () { hit('finish'); end.classList.add('on'); });
+var stopFw = null;
+v.addEventListener('ended', function () { hit('finish'); end.classList.add('on'); try { if (stopFw) stopFw(); stopFw = rrbFireworks(document.getElementById('endFx'), 10, 650); } catch (e) {} });
 document.getElementById('again').addEventListener('click', function () { v.currentTime = 0; play(); });
 document.getElementById('share').addEventListener('click', function () {
   var url = 'https://factfind360.com/liftoff', text = '53 seconds to liftoff: watch Stephanie file her FY27 flight plan, then file yours. ' + url;

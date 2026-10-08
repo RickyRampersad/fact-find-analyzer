@@ -887,7 +887,8 @@
     <h2 id="lcHead">You&rsquo;re GO for FY27.</h2>
     <div class="lcNum"><small>Your API goal</small><b class="gold-txt" id="lcApi">TT$0</b></div>
     <p id="lcSub"></p>
-    <button class="btn gold" id="lcGo" type="button">Enter Mission Control</button>
+    <div class="row" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center"><button class="btn gold" id="lcGo" type="button">Enter Mission Control</button>
+    <a class="btn line" id="lcBack" href="ffproject.html" hidden>Back to the fact find</a></div>
   </div>
 </div>
 
@@ -907,6 +908,9 @@ var SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;   // the server's token life
    advisor can change it, and the server gives each their own once it is in. */
 var FALLBACK = { rate: 48.1, avgCase: 10000 };
 
+/* Sent here by the fact find's gate: the launch offers the way back, and a
+   filed plan is remembered on this device so the form stops asking. */
+var FROM_FF = false; try { FROM_FF = new URLSearchParams(location.search).get('from') === 'ff'; } catch (e) {}
 var STAGES = ['Why', 'Budget', 'Income', 'Activity', 'How', 'Quarters', 'Commit'];
 var OPT = {
   'for': ['My family’s security', 'A home', 'Children’s education', 'Debt-free', 'Retirement', 'Travel',
@@ -1699,6 +1703,7 @@ async function filePlan(plan) {
   var j = await postJson({ stage: 'goal_save', token: S.session.token, plan: plan }, 60000);
   if (j && j.expired) { signOut('Your sign-in expired before the plan was filed. Sign in again; your plan is kept on this phone.'); throw failure('expired', 'expired'); }
   if (j && j.ok) {
+    try { if (S.me && S.me.code) localStorage.setItem('rrbGoalFiled:' + S.me.code, '1'); } catch (e) {}
     S.plan = j.plan || plan; S.submittedAt = j.submittedAt || S.submittedAt; S.updatedAt = j.updatedAt || '';
     if (j.real) { S.real = j.real; S.reward = Object.assign({}, S.reward || {}, { places: j.real.places, taken: j.real.taken }); }
     S.pendingLocal = false; store(qKey(), null); store(dKey(), null);
@@ -1750,6 +1755,7 @@ function playLaunch(o) {
     : o.real ? 'Filed, but not realistic yet, so it does not count for the reward: ' + o.real.why[0] + ' Edit your plan to fix it.'
     : 'Your plan is with ' + (isMgr() ? 'the branch manager' : 'your manager and the branch manager') + '. Check in every Friday and watch it move.';
   card.classList.remove('on'); rocket.classList.remove('go'); rocket.style.transform = ''; count.textContent = ''; $('lcApi').textContent = 'TT$0';
+  $('lcBack').hidden = !FROM_FF;
   L.hidden = false; document.body.classList.add('launching');
   if (still || o.edit) { finale(o); return; }
   var n = 3;
@@ -1772,7 +1778,7 @@ function finale(o) {
   card.classList.add('on');
   if (window.setWarp) setTimeout(function () { setWarp(0); }, 400);
   countUp($('lcApi'), o.api, 1400);
-  if (!still) { confetti(); Sound.chord(); }
+  if (!still) { confetti(); fireworks(); Sound.chord(); }
   setTimeout(function () { $('lcGo').focus(); }, 300);
 }
 $('lcGo').addEventListener('click', function () {
@@ -1813,8 +1819,9 @@ function fxRun() {
         gr.addColorStop(0, 'rgba(210,220,235,.55)'); gr.addColorStop(1, 'rgba(210,220,235,0)');
         k.x.fillStyle = gr; k.x.beginPath(); k.x.arc(p.x, p.y, p.r, 0, 6.283); k.x.fill();
       } else {
-        k.x.save(); k.x.translate(p.x, p.y); k.x.rotate(p.rot); k.x.fillStyle = p.col;
-        k.x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); k.x.restore();
+        if (p.kind === 'dot') { k.x.fillStyle = p.col; k.x.beginPath(); k.x.arc(p.x, p.y, p.r, 0, 6.283); k.x.fill(); }
+        else { k.x.save(); k.x.translate(p.x, p.y); k.x.rotate(p.rot); k.x.fillStyle = p.col;
+        k.x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); k.x.restore(); }
       }
     });
     k.x.globalAlpha = 1;
@@ -1829,6 +1836,19 @@ function smoke(ms) {
     fxRun();
     if (Date.now() - t0 < ms) setTimeout(puff, 60);
   })();
+}
+/* Fireworks over the launch card: six bursts, staggered, as round sparks with gravity. */
+function fireworks() {
+  var cols = ['#F5B935', '#FFE29A', '#2DD4BF', '#7FF3E3', '#FFFFFF', '#34D399', '#FB7185', '#A78BFA'];
+  for (var b = 0; b < 6; b++) {
+    (function (b) { setTimeout(function () {
+      if ($('launch').hidden) return;
+      var k2 = fxCanvas(), bx = k2.c.width * (.15 + Math.random() * .7), by = k2.c.height * (.08 + Math.random() * .3), col = cols[Math.floor(Math.random() * cols.length)];
+      for (var i = 0; i < 90; i++) { var a = Math.random() * 6.283, v = (2.5 + Math.random() * 3.5) * k2.D * (.4 + Math.random() * .6);
+        FX.parts.push({ kind: 'dot', x: bx, y: by, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: .05 * k2.D, drag: .985, r: (1.2 + Math.random() * 1.8) * k2.D, col: col, rot: 0, vr: 0, life: 70 + Math.random() * 40, max: 100, alpha: 1 }); }
+      fxRun();
+    }, 350 + b * 520); })(b);
+  }
 }
 function confetti() {
   var k = fxCanvas(), cols = ['#F5B935', '#FFE29A', '#2DD4BF', '#7FF3E3', '#FFFFFF', '#efc24b'];
@@ -1907,7 +1927,8 @@ function renderMC() {
   var daysLeft = Math.max(0, Math.round((utc(fy.to) - utc(fy.today)) / 864e5));
   $('mcEyebrow').textContent = fy.label + ' · Week ' + fy.week + ' · ' + daysLeft + ' days to go';
   $('mcTitle').textContent = 'Mission Control';
-  $('mcBanner').innerHTML = S.pendingLocal ? '<div class="banner"><b>Not filed yet.</b> Your plan is kept on this phone and goes to the branch ' +
+  if (FROM_FF && !S.pendingLocal) $('mcBanner').innerHTML = '<div class="banner teal"><b>Your plan is filed.</b> The fact find is open to you. <a href="ffproject.html" style="color:#fff;font-weight:800">Back to the fact find &rarr;</a></div>';
+  else $('mcBanner').innerHTML = S.pendingLocal ? '<div class="banner"><b>Not filed yet.</b> Your plan is kept on this phone and goes to the branch ' +
     'the next time this page reaches the server' + (S.ready ? '' : ' after its update') + '. Open it again tomorrow.</div>' : (S.offline ? bannerHtml() : '');
   $('mcTabs').hidden = !isMgr() || !S.ready;
   if ($('mcTabs').hidden) { $('tabMe').hidden = false; $('tabDeck').hidden = true; }

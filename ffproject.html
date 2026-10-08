@@ -17237,5 +17237,88 @@ function rrbRenderReadiness() {
 })();
 </script>
 <!-- ===== end New-Client Guard ===== -->
+<!-- THE FACT FIND WAITS FOR THE FLIGHT PLAN. Asked for on 9 October 2026, the
+     day the branch was sent its FY27 flight plans, "to ensure this is done
+     before they do anything as they may procrastinate" - the fact find only,
+     not the dashboard. An agent who signs in with no filed plan sees this
+     over the form and one button, to the plan page. The server decides
+     (goal_me's gate: the branch manager, staff and visitors are exempt, and
+     goalGateOff lifts it); this only asks. It fails open: a server that is
+     slow, old or down never blocks a fact find, and once a plan is seen
+     filed this device stops asking. Managers reviewing a case and read-only
+     views are never gated. -->
+<div id="ffGate" hidden style="position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:20px;background:radial-gradient(900px 500px at 50% 110%,rgba(245,185,53,.16),transparent 60%),rgba(4,8,16,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#F3F7FD">
+  <canvas id="ffGateFx" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
+  <div style="position:relative;width:min(94vw,520px);background:linear-gradient(180deg,#111C31,#0B1427);border:1px solid rgba(245,185,53,.5);border-radius:24px;padding:32px 28px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.6)">
+    <img src="shield.svg" alt="" style="height:60px;filter:drop-shadow(0 0 20px rgba(45,212,191,.45))">
+    <p style="margin:14px 0 6px;font-size:11.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#F5B935">FY27 has begun &middot; new year, new habits</p>
+    <h2 style="margin:0;font-size:28px;font-weight:900;letter-spacing:-.02em;line-height:1.1">Your flight plan comes first.</h2>
+    <p style="margin:12px 0 20px;color:#AFC0D8;font-size:15px;line-height:1.5">Fifteen minutes: your budget, the API that pays for it, and the week that gets you there. The fact find opens the moment it&rsquo;s filed. Anything typed here is kept as a draft.</p>
+    <a id="ffGateGo" href="goals.html?from=ff" style="display:block;border-radius:999px;padding:16px 24px;font-weight:800;font-size:16px;color:#1C1304;text-decoration:none;background:linear-gradient(180deg,#FBD064,#E7A52A);box-shadow:0 10px 28px rgba(245,185,53,.3)">Build my flight plan &rarr;</a>
+    <p style="margin:14px 0 0;font-size:12.5px;color:#8296B6">The first three realistic plans are rewarded.</p>
+  </div>
+</div>
+<script>
+/* Fireworks on a transparent canvas: bursts fade to nothing, the page stays
+   visible behind them. Still for anyone who asked for reduced motion. */
+function rrbFireworks(canvas, seconds, every) {
+  var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; if (still || !canvas) return function () {};
+  var x = canvas.getContext('2d'), D = Math.min(2, window.devicePixelRatio || 1), W, H, parts = [], t0 = performance.now(), last = 0, on = true;
+  var cols = ['#F5B935', '#FFE29A', '#2DD4BF', '#7FF3E3', '#FFFFFF', '#34D399', '#FB7185', '#A78BFA'];
+  function size() { W = canvas.width = canvas.clientWidth * D; H = canvas.height = canvas.clientHeight * D; } size();
+  function burst() {
+    var bx = W * (.12 + Math.random() * .76), by = H * (.1 + Math.random() * .45), col = cols[Math.floor(Math.random() * cols.length)];
+    var n = 70 + Math.random() * 50, sp = (2.6 + Math.random() * 2.6) * D, two = Math.random() < .35, col2 = cols[Math.floor(Math.random() * cols.length)];
+    for (var i = 0; i < n; i++) { var a = Math.random() * 6.283, v = sp * (.35 + Math.random() * .65);
+      parts.push({ x: bx, y: by, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 55 + Math.random() * 45, max: 100, col: two && i % 2 ? col2 : col, r: (1.1 + Math.random() * 1.7) * D }); }
+  }
+  (function frame(t) {
+    if (!on) return;
+    var age = (t - t0) / 1000;
+    if (t - last > (age < seconds ? every : every * 4)) { burst(); if (Math.random() < .3) burst(); last = t; }
+    x.globalCompositeOperation = 'destination-out'; x.fillStyle = 'rgba(0,0,0,.16)'; x.fillRect(0, 0, W, H);
+    x.globalCompositeOperation = 'lighter';
+    parts = parts.filter(function (p) { return p.life > 0; });
+    parts.forEach(function (p) { p.life--; p.x += p.vx; p.y += p.vy; p.vy += .045 * D; p.vx *= .985; p.vy *= .985;
+      x.globalAlpha = Math.max(0, p.life / p.max); x.fillStyle = p.col; x.beginPath(); x.arc(p.x, p.y, p.r, 0, 6.283); x.fill(); });
+    x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
+    requestAnimationFrame(frame);
+  })(t0);
+  window.addEventListener('resize', size);
+  return function () { on = false; };
+}
+
+(function () {
+  function check() {
+    try {
+      if (typeof MODE === 'undefined' || MODE !== 'agent') return;
+      var s = null; try { s = JSON.parse(localStorage.getItem('rrbSession') || 'null'); } catch (e) {}
+      if (!s || !s.token || !s.code) return;
+      var code = String(s.code).toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (localStorage.getItem('rrbGoalFiled:' + code)) return;              // seen filed on this device
+      var q = null; try { q = JSON.parse(localStorage.getItem('rrbGoalQueue:' + code) || 'null'); } catch (e) {}
+      if (q && q.plan) return;                                                 // written, waiting for the server
+      var ep = (typeof sessionEndpoint === 'function' && sessionEndpoint()) || '';
+      if (!ep) return;
+      var ctrl = new AbortController(), t = setTimeout(function () { ctrl.abort(); }, 25000);
+      fetch(ep + '?action=goal_me&token=' + encodeURIComponent(s.token) + '&_=' + Date.now(), { redirect: 'follow', signal: ctrl.signal })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          clearTimeout(t);
+          if (!j || j.v !== 'goal1' || !j.ok) return;                         // old server, or nothing to go on: fail open
+          if (j.plan) { try { localStorage.setItem('rrbGoalFiled:' + code, '1'); } catch (e) {} return; }
+          if (j.gate === true && MODE === 'agent') {
+            var g = document.getElementById('ffGate'); g.hidden = false;
+            try { rrbFireworks(document.getElementById('ffGateFx'), 14, 700); } catch (e) {}
+            try { document.getElementById('ffGateGo').focus(); } catch (e) {}
+          }
+        })
+        .catch(function () { clearTimeout(t); });
+    } catch (e) {}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(check, 1200); });
+  else setTimeout(check, 1200);
+})();
+</script>
 </body>
 </html>
