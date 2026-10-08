@@ -260,6 +260,20 @@
   .tooltip b{color:#7dd3c8}
 
   .src-note{font-size:11px;color:var(--muted);margin-top:14px;text-align:center}
+
+  /* FY27 flight plan: the first thing an advisor sees after signing in. */
+  .fp{display:flex;align-items:center;gap:16px;margin:0 0 16px;padding:16px 18px;border-radius:16px;color:#F3F7FD;
+    background:radial-gradient(500px 200px at 100% 0%,rgba(245,185,53,.22),transparent 60%),linear-gradient(135deg,#0B1427,#111C31 60%,#0F2A33);
+    box-shadow:0 10px 30px rgba(15,23,42,.18);text-decoration:none}
+  .fp svg{flex:none;width:40px;height:40px}
+  .fp .fpt{flex:1;min-width:0}
+  .fp .fpt small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#F5B935}
+  .fp .fpt b{display:block;font-size:16.5px;font-weight:800;margin-top:2px;letter-spacing:-.01em}
+  .fp .fpt span{display:block;font-size:13.5px;color:#AFC0D8;margin-top:2px}
+  .fp .fpbar{height:6px;border-radius:6px;background:#22314F;overflow:hidden;margin-top:8px;max-width:420px}
+  .fp .fpbar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#2DD4BF,#F5B935)}
+  .fp .fpgo{flex:none;font-weight:800;font-size:14px;color:#1C1304;background:linear-gradient(180deg,#FBD064,#E7A52A);border-radius:999px;padding:11px 18px;white-space:nowrap}
+  @media(max-width:640px){ .fp{flex-wrap:wrap} .fp .fpgo{width:100%;text-align:center} }
   .src-live{color:var(--teal-deep);font-weight:700}
   .src-sample{color:var(--amber);font-weight:700}
 
@@ -961,6 +975,7 @@
 
   <div class="wrap">
     <div class="filters no-print" id="filterBar"></div>
+    <div id="flightPlan" class="no-print"></div>
     <div id="execSummary"></div>
     <div id="queueCard"></div>
     <div id="prospectCard"></div>
@@ -1644,6 +1659,45 @@ async function enterApp(who){
   document.getElementById('whoName').textContent=SESSION.name;
   document.getElementById('whoRole').textContent=SESSION.role+(SESSION.scope.kind==='unit'?' \u00b7 '+UNIT[SESSION.scope.unitKey]:'');
   await refreshData();
+  paintFlightPlan();
+}
+
+/* FY27 FLIGHT PLANS (goals.html, GoalPlans.gs).
+   Asked for on 8 October 2026: every advisor's goals for the year, "so based
+   on their inputs they will see it reflected in front of them when they log
+   in". This is that: one line under the filters, their goal against what has
+   been picked up, or the way in if there is no plan yet. It asks the server
+   once per sign-in and never holds up the dashboard; a server without
+   GoalPlans.gs still gets the link, because the plan page keeps a plan on the
+   phone until filing opens. */
+async function paintFlightPlan(){
+  var box=document.getElementById('flightPlan');
+  if(!box || !SESSION) return;
+  var j=null, ep=getEndpoint();
+  try{ if(ep && SESSION.token) j=await fetchOnce(ep+(ep.indexOf('?')>-1?'&':'?')+'action=goal_me&token='+encodeURIComponent(SESSION.token), 30000); }catch(e){}
+  if(!SESSION) return;
+  var rocket='<svg viewBox="0 0 64 150" aria-hidden="true"><path d="M22 96 Q32 130 42 96 Z" fill="#F5B935"/>'+
+    '<path d="M32 4 C47 19 51 42 48 72 L48 92 L16 92 L16 72 C13 42 17 19 32 4 Z" fill="#fff"/><path d="M32 4 C40 12 44.5 22 46.5 33 L17.5 33 C19.5 22 24 12 32 4 Z" fill="#2DD4BF"/>'+
+    '<circle cx="32" cy="52" r="8" fill="#0D1524" stroke="#2DD4BF" stroke-width="3"/><path d="M16 66 L3 88 L3 97 L16 90 Z" fill="#F5B935"/><path d="M48 66 L61 88 L61 97 L48 90 Z" fill="#F5B935"/></svg>';
+  var money=function(n){ return 'TT$'+String(Math.round(+n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,','); };
+  var ok=j && j.v==='goal1' && j.ok;
+  var fy=(ok && j.fy) || null, wk=fy ? 'FY27 · week '+fy.week : 'FY27';
+  var html;
+  if(ok && j.plan && j.plan.derived && j.plan.derived.api){
+    var api=j.plan.derived.api, got=Math.round((j.actual||{}).api||0), pct=Math.min(100, got/api*100);
+    html='<a class="fp" href="goals.html">'+rocket+'<div class="fpt"><small>'+wk+' · your flight plan</small>'+
+      '<b>'+money(got)+' of '+money(api)+' API picked up</b><span>'+(pct<1&&got? '&lt;1' : Math.round(pct))+'% of your goal. Check in every Friday.</span>'+
+      '<div class="fpbar"><i style="width:'+Math.max(1.5,pct).toFixed(1)+'%"></i></div></div><span class="fpgo">Mission Control</span></a>';
+  } else if(ok && !j.plan){
+    html='<a class="fp" href="goals.html">'+rocket+'<div class="fpt"><small>'+wk+' · flight plans are open</small>'+
+      '<b>Your FY27 flight plan isn\u2019t filed yet</b><span>Your budget first, then the API it takes and how you\u2019ll work. About fifteen minutes.</span></div>'+
+      '<span class="fpgo">Build my flight plan</span></a>';
+  } else {
+    html='<a class="fp" href="goals.html">'+rocket+'<div class="fpt"><small>FY27 · flight plans are open</small>'+
+      '<b>Build your FY27 flight plan</b><span>Your budget first, then the API it takes and how you\u2019ll work.</span></div>'+
+      '<span class="fpgo">Open</span></a>';
+  }
+  box.innerHTML=html;
 }
 
 // SIGNING IN ONCE PER VISIT WAS NOT THE INTENT.
@@ -2018,6 +2072,7 @@ function logout(){
   if(nameInput) nameInput.value='';
   document.getElementById('liErr').textContent='';
   document.getElementById('kpiGrid').innerHTML=''; document.getElementById('chartGrid').innerHTML=''; document.getElementById('execSummary').innerHTML='';
+  document.getElementById('flightPlan').innerHTML='';
   document.getElementById('srcNote').textContent='';
   ALL=[]; RAW_BY_ID={}; QUEUE_PULLED={}; LOAD_ERROR=''; setRoster([], 'none');
   clearCaseViews(0);   // the read-only copies Open handed to the form

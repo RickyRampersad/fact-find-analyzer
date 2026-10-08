@@ -218,3 +218,36 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "no-referrer"
     Cache-Control = "no-store"
+
+# FY27 FLIGHT PLANS. goals.html shows an advisor their own household budget,
+# income goal and weekly check-ins, and a manager every advisor's in scope;
+# blastoff.html puts the branch's committed totals and the roster on a shared
+# screen. Same class of content as the dashboard, so the same no-store, on
+# both spellings of each URL.
+[[headers]]
+  for = "/goals"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/goals.html"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/blastoff"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/blastoff.html"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
