@@ -516,6 +516,7 @@
 </head>
 <body>
 <canvas id="stars" aria-hidden="true"></canvas>
+<canvas id="heroFx" aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>
 
 <header class="top">
   <img src="shield.svg" alt="">
@@ -1325,8 +1326,31 @@ function rulesHtml(checks) {
     return '<li class="' + (st === true ? 'ok' : st === false ? 'no' : '') + '"><i>' + (st === true ? '&#10003;' : st === false ? '!' : i + 1) + '</i><span><b>' + r[0] + '</b> ' + r[1] + '</span></li>';
   }).join('') + '</ul>';
 }
+/* FY27 has begun: fireworks the first time the intro paints in a visit. */
+var heroFxDone = false;
+function heroFireworks() {
+  if (heroFxDone || still) return; heroFxDone = true;
+  var c = $('heroFx'), x = c.getContext('2d'), D = Math.min(2, window.devicePixelRatio || 1), parts = [], t0 = performance.now(), last = 0;
+  var cols = ['#F5B935', '#FFE29A', '#2DD4BF', '#7FF3E3', '#FFFFFF', '#34D399', '#FB7185', '#A78BFA'];
+  function size() { c.width = innerWidth * D; c.height = innerHeight * D; } size();
+  function burst() { var bx = c.width * (.12 + Math.random() * .76), by = c.height * (.08 + Math.random() * .4), col = cols[Math.floor(Math.random() * cols.length)];
+    for (var i = 0; i < 80 + Math.random() * 40; i++) { var a = Math.random() * 6.283, v = (2.6 + Math.random() * 2.6) * D * (.35 + Math.random() * .65);
+      parts.push({ x: bx, y: by, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 55 + Math.random() * 45, max: 100, col: col, r: (1.1 + Math.random() * 1.7) * D }); } }
+  (function frame(t) {
+    var age = (t - t0) / 1000;
+    if (age < 9 && t - last > 600) { burst(); if (Math.random() < .3) burst(); last = t; }
+    x.globalCompositeOperation = 'destination-out'; x.fillStyle = 'rgba(0,0,0,.16)'; x.fillRect(0, 0, c.width, c.height);
+    x.globalCompositeOperation = 'lighter';
+    parts = parts.filter(function (p) { return p.life > 0; });
+    parts.forEach(function (p) { p.life--; p.x += p.vx; p.y += p.vy; p.vy += .045 * D; p.vx *= .985; p.vy *= .985;
+      x.globalAlpha = Math.max(0, p.life / p.max); x.fillStyle = p.col; x.beginPath(); x.arc(p.x, p.y, p.r, 0, 6.283); x.fill(); });
+    x.globalAlpha = 1; x.globalCompositeOperation = 'source-over';
+    if (age < 12 || parts.length) requestAnimationFrame(frame); else x.clearRect(0, 0, c.width, c.height);
+  })(t0);
+}
 function renderIntro() {
   $('introBanner').innerHTML = bannerHtml();
+  heroFireworks();
   var R = S.reward || { places: REAL.places, taken: 0 }, left = Math.max(0, R.places - (R.taken || 0));
   $('rewardIntro').innerHTML = '<div class="reward">' + TROPHY + '<div><h3>The first ' + R.places + ' <b>realistic</b> flight plans will be rewarded.</h3>' +
     '<p>' + (left ? left + ' of ' + R.places + ' places still open. ' : 'All ' + R.places + ' places are taken. ') + 'The branch manager decides the reward. Realistic means:</p>' +

@@ -87,6 +87,7 @@
 </head>
 <body>
 <canvas id="stars" aria-hidden="true"></canvas>
+<canvas id="heroFx" aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>
 <main>
   <div class="top"><img src="shield.svg" alt=""><div><b>FY27 Flight Plan</b><small>Ricky Rampersad Branch</small></div></div>
   <p class="eyebrow">FY27 · 1 October 2026 – 30 September 2027</p>
@@ -162,6 +163,8 @@ function hit(ev) {
   try { (new Image()).src = HIT + '?action=goal_hit&ev=' + ev + '&p=' + encodeURIComponent(location.pathname) + '&r=' + encodeURIComponent((document.referrer || '').slice(0, 200)) + '&z=' + Date.now(); } catch (e) {}
 }
 hit('view');
+/* FY27 has begun: fireworks on arrival, for the first ten seconds. */
+try { rrbFireworks(document.getElementById('heroFx'), 10, 600); } catch (e) {}
 document.getElementById('dl').addEventListener('click', function () { hit('download'); });
 function play() {
   hit('play'); try { if (stopFw) { stopFw(); stopFw = null; } } catch (e) {}
