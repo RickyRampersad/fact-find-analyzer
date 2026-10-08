@@ -1195,6 +1195,126 @@
   #p18 .mbBar{display:none}
 }
 
+/* ═══ DEPARTURES (panel 20) ═══════════════════════════════════════════════
+   Asked for on 8 October 2026, the first full week of FY27: "a surprise slide
+   for the wall … agent should have taken off". The year as a departures
+   board. The flight is the agent code; an advisor departs the day their first
+   business of the year is picked up, a new policy or an increase. Everyone
+   else is boarding, and on the last working day of the week, on final call.
+   It draws the same `month` block as panel 19 and is stepped over without it.
+   The flap seam is in the background, under the letters: drawn on top, it
+   struck through every name on the board. */
+#p19{--dp-flap:linear-gradient(#1B2436 0 calc(50% - .5px), #04070D calc(50% - .5px) calc(50% + .5px), #141B2A calc(50% + .5px) 100%);
+     --dp-flap-sp:linear-gradient(#111827 0 calc(50% - .5px), #04070D calc(50% - .5px) calc(50% + .5px), #0D1320 calc(50% + .5px) 100%)}
+#p19 .dpGrid{flex:1; min-height:0; display:grid; gap:1em; grid-template-columns:minmax(0,21em) minmax(0,1fr)}
+#p19 .dpLeft{display:flex; flex-direction:column; gap:.8em; min-height:0}
+#p19 .dpWeek{padding:1em 1.15em}
+#p19 .dpLab{font-size:.62em; letter-spacing:.2em; text-transform:uppercase; font-weight:800; color:var(--ink-3)}
+#p19 .dpBig{margin-top:.15em; font-size:3em; font-weight:800; letter-spacing:-.04em; line-height:1}
+#p19 .dpSub{margin-top:.35em; font-size:.78em; color:var(--ink-2)}
+#p19 .dpSub b{color:var(--ink)}
+#p19 .dpRace{margin-top:.8em; padding-top:.7em; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:.55em}
+#p19 .dpRace:empty{display:none}
+#p19 .dpRl{display:flex; justify-content:space-between; align-items:baseline; gap:.8em; font-size:.72em; color:var(--ink-2)}
+#p19 .dpRl b{color:var(--ink)}
+#p19 .dpRb{height:.45em; margin-top:.3em; border-radius:.23em; background:rgba(147,167,196,.13); overflow:hidden}
+#p19 .dpRb i{display:block; height:100%; border-radius:.23em; background:linear-gradient(90deg,var(--gold-deep),var(--gold))}
+#p19 .dpRu + .dpRu .dpRb i{background:linear-gradient(90deg,var(--teal-deep),var(--teal))}
+#p19 .dpGap{font-size:.68em; color:var(--ink-3)}
+#p19 .dpToday{padding:.85em 1.15em; border-left:3px solid var(--teal)}
+#p19 .dpMid{margin-top:.1em; font-size:2.1em; font-weight:800; letter-spacing:-.03em; line-height:1.05}
+#p19 .dpGap b{color:var(--gold)}
+#p19 #dpFirst{margin-top:auto}
+#p19 .dpCall{border:1px solid rgba(245,185,53,.36); border-radius:.75em; padding:.8em 1.1em;
+             background:linear-gradient(90deg,rgba(245,185,53,.14),rgba(245,185,53,.03))}
+#p19 .dpCall.t{border-color:rgba(45,212,191,.34); background:linear-gradient(90deg,rgba(45,212,191,.12),rgba(45,212,191,.02))}
+#p19 .dpCall:empty{display:none}
+#p19 .dpCk{font-size:.62em; letter-spacing:.2em; text-transform:uppercase; font-weight:800; color:var(--gold)}
+#p19 .dpCall.t .dpCk{color:var(--teal)}
+#p19 .dpCn{margin-top:.12em; font-size:1.6em; font-weight:800; letter-spacing:-.02em; line-height:1.12; color:var(--gold)}
+#p19 .dpCall.t .dpCn{color:var(--ink)}
+#p19 .dpCn.many{font-size:1.15em}
+#p19 .dpCs{margin-top:.25em; font-size:.75em; color:var(--ink-2)}
+#p19 .dpBoard{display:flex; flex-direction:column; min-height:0; min-width:0; padding:.85em 1.05em; background:#04070D}
+#p19 .dpHead{display:flex; align-items:center; gap:.7em; padding-bottom:.55em; border-bottom:2px solid #121A28}
+#p19 .dpHead svg{width:1.6em; height:1.6em; fill:var(--gold); flex:none}
+#p19 .dpTtl{font-size:1.45em; font-weight:800; letter-spacing:.16em; color:var(--gold); line-height:1}
+#p19 .dpFy{margin-top:.35em; font-size:.6em; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+#p19 .dpClk{margin-left:auto; display:flex; align-items:center; gap:.55em; font-size:.66em; font-weight:800; letter-spacing:.12em; color:var(--ink-2)}
+#p19 .dpRows{flex:1; min-height:0; overflow:auto; font-size:.8em}
+#p19 .dpR{display:grid; align-items:center; column-gap:.55em; height:1.78em; margin-top:.16em;
+          grid-template-columns:7.3em 7.3em minmax(8em,1fr) 7.3em 4.8em 7.6em}
+#p19 .dpR.hd{height:auto; margin-top:.5em; padding-bottom:.25em; font-size:.8em}
+#p19 .dpR.hd span{font-size:.72em; letter-spacing:.14em; text-transform:uppercase; font-weight:800; color:var(--ink-3); white-space:nowrap}
+#p19 .dpR .dpRt{text-align:right}
+#p19 .dpT{display:flex; gap:.12em}
+#p19 .dpT i{display:grid; place-items:center; width:1.08em; height:1.5em; border-radius:.17em; font-style:normal;
+            font-weight:800; color:#E8EEF8; background:var(--dp-flap)}
+#p19 .dpT i.sp{background:var(--dp-flap-sp)}
+#p19 .dpT.c i{width:1.3em; height:1.8em; font-size:1.3em; color:var(--gold)}
+#p19 .dpS{display:flex; align-items:center; height:1.5em; padding:0 .6em; border-radius:.17em; background:var(--dp-flap);
+          font-weight:800; letter-spacing:.07em; color:#E8EEF8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+#p19 .dpS.api{justify-content:flex-end; font-variant-numeric:tabular-nums; letter-spacing:.03em; color:var(--ink-3)}
+#p19 .dpR.dep .dpS.nm,#p19 .dpR.dep .dpT.t i{color:#FFE7A8}
+#p19 .dpR.dep .dpS.api{color:var(--gold)}
+#p19 .dpSt{display:flex; align-items:center; justify-content:center; gap:.35em; height:1.5em; border-radius:.22em;
+           font-size:.78em; font-weight:800; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap}
+#p19 .dpSt.dep{color:#1E1404; background:linear-gradient(90deg,var(--gold),var(--gold-deep))}
+#p19 .dpSt.dep svg{width:1.1em; height:1.1em; fill:#1E1404}
+#p19 .dpSt.call{color:var(--teal); border:1.5px solid rgba(45,212,191,.55); background:rgba(45,212,191,.06)}
+#p19 .dpSt.board{color:var(--ink-2); border:1.5px solid var(--line-2)}
+#p19 .dpSep{display:flex; align-items:center; gap:.8em; margin:.6em 0 .1em; font-size:.62em; font-weight:800;
+            letter-spacing:.16em; text-transform:uppercase; color:var(--teal)}
+#p19 .dpSep::before,#p19 .dpSep::after{content:""; flex:1; height:1px; background:rgba(45,212,191,.28)}
+#p19 .dpSep.board{color:var(--ink-3)}
+#p19 .dpSep.board::before,#p19 .dpSep.board::after{background:var(--line)}
+#p19 .dpKey{margin-top:.5em; padding-top:.55em; border-top:1px solid var(--line); font-size:.68em; line-height:1.45; color:var(--ink-2)}
+#p19 .dpKey b{color:var(--ink)}
+/* It flips in each time it comes round, row by row, and final call breathes. */
+@keyframes dpFlip{from{transform:perspective(20em) rotateX(-90deg); opacity:.15} to{transform:none; opacity:1}}
+@keyframes dpPulse{0%,100%{box-shadow:0 0 0 0 rgba(45,212,191,0)} 50%{box-shadow:0 0 .9em .05em rgba(45,212,191,.35)}}
+#p19.on .dpT i,#p19.on .dpS,#p19.on .dpSt{animation:dpFlip .55s cubic-bezier(.2,.75,.3,1) var(--d,0s) both}
+#p19.on .dpSt.call{animation:dpFlip .55s cubic-bezier(.2,.75,.3,1) var(--d,0s) both, dpPulse 2.4s ease-in-out 2s infinite}
+@media (min-width:1101px) and (max-width:1600px){
+  #p19 .dpGrid{grid-template-columns:minmax(0,17.5em) minmax(0,1fr)}
+  #p19 .dpRows,#p19 .dpR.hd{font-size:.74em}
+  #p19 .dpBig{font-size:2.5em}
+}
+@media (min-width:1101px) and (max-height:900px){
+  #p19 .dpR{height:1.6em; margin-top:.1em}
+  #p19 .dpWeek{padding:.8em 1em}
+  #p19 .dpToday{padding:.6em 1em}
+  #p19 .dpMid{font-size:1.7em}
+  #p19 .dpCall{padding:.6em 1em}
+  #p19 .dpCn{font-size:1.35em}
+}
+/* A laptop or a 720p screen: the footnote goes and the rows tighten again,
+   so all eighteen stay on screen. */
+@media (min-width:1101px) and (max-height:800px){
+  #p19 .dpKey{display:none}
+  #p19 .dpHead{padding-bottom:.35em}
+  #p19 .dpTtl{font-size:1.25em}
+  #p19 .dpR{height:1.52em; margin-top:.07em}
+  #p19 .dpSep{margin:.35em 0 0}
+  #p19 .dpRace{margin-top:.55em; padding-top:.5em; gap:.4em}
+}
+@media (min-width:1101px) and (max-height:740px){
+  #p19 .dpRows,#p19 .dpR.hd{font-size:.68em}
+  #p19 .dpToday{display:none}
+}
+@media (max-width:1100px){
+  #p19{overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding-bottom:7em}
+  #p19 > *{flex:0 0 auto !important; min-height:auto !important}
+  #p19 .dpGrid{grid-template-columns:minmax(0,1fr)}
+  #p19 #dpFirst{margin-top:0}
+  #p19 .dpRows{overflow:visible}
+  /* A phone keeps the name, the API and the status; the dates, flights and
+     units fold away, or the names would not fit. */
+  #p19 .dpR{grid-template-columns:minmax(0,1fr) 4.6em 7em; column-gap:.4em}
+  #p19 .dpR > :nth-child(1),#p19 .dpR > :nth-child(2),#p19 .dpR > :nth-child(4){display:none}
+  #p19 .dpS.nm{letter-spacing:.03em}
+}
+
 
 /* ═══ SUBMITTED — the production report as it is circulated ════════════════
    Unit, then manager, then every agent with their code. Three levels that
@@ -2563,6 +2683,38 @@
       </div>
     </div>
   </section>
+
+  <!-- 20 · DEPARTURES — who has taken off in the year, as a split-flap board -->
+  <section class="panel" id="p19">
+    <div class="ptitle"><h1 id="t_p19"></h1><span class="tag">Departures</span></div>
+    <div class="dpGrid">
+      <div class="dpLeft">
+        <div class="card dpWeek">
+          <div class="dpLab" id="dpWkK">This week</div>
+          <div class="dpBig num" id="dpWk">&mdash;</div>
+          <div class="dpSub" id="dpWkS">&nbsp;</div>
+          <div class="dpRace" id="dpRace"></div>
+        </div>
+        <div class="card dpToday">
+          <div class="dpLab" id="dpTdK">Picked up today</div>
+          <div class="dpMid num" id="dpTd">&mdash;</div>
+          <div class="dpSub" id="dpTdS">&nbsp;</div>
+        </div>
+        <div class="dpCall" id="dpFirst"></div>
+        <div class="dpCall t" id="dpLift"></div>
+      </div>
+      <div class="card dpBoard">
+        <div class="dpHead">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 19h19v2h-19v-2zm19.57-9.36c-.21-.8-1.04-1.28-1.84-1.06L14.92 10l-6.9-6.43-1.93.51 4.14 7.17-4.97 1.33-1.97-1.54-1.45.39 2.59 4.49L21 11.49c.81-.23 1.28-1.05 1.07-1.85z"/></svg>
+          <div><div class="dpTtl">DEPARTURES</div><div class="dpFy" id="dpFy"></div></div>
+          <div class="dpClk"><span id="dpDate"></span><span class="dpT c" id="dpClock"></span></div>
+        </div>
+        <div class="dpR hd"><span>Departs</span><span>Flight</span><span>Advisor</span><span class="dpU">Unit</span><span class="dpRt">API TT$</span><span>Status</span></div>
+        <div class="dpRows" id="dpRows"></div>
+        <div class="dpKey" id="dpKey"></div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <div class="ticks"><span class="tk" id="k0"></span><span class="tk" id="k1"></span><span class="tk" id="k2"></span><span class="tk" id="k3"></span><span class="tk" id="k4"></span><span class="tk" id="k5"></span><span class="tk" id="k6"></span><span class="tk" id="k7"></span><span class="tk" id="k8"></span><span class="tk" id="k9"></span><span class="tk" id="k10"></span><span class="tk" id="k11"></span><span class="tk" id="k12"></span><span class="tk" id="k13"></span><span class="tk" id="k14"></span><span class="tk" id="k15"></span><span class="tk" id="k16"></span></div>
@@ -2596,7 +2748,7 @@
 var ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec';
 var WALL_KEY = '8ef87867eacb4812b455fb3124dde161';
 
-var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 19;
+var POLL_MS = 40000, ROTATE_MS = 15000, STALE_MS = 150000, PANELS = 20;
 var DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 /* Calendar volume: one hue, dark to light. Validated as an ordinal ramp against
    this surface — monotone lightness, every step clear of the card behind it. */
@@ -3649,7 +3801,10 @@ var dayReady = false;
    prodboard, which needs FinancialYear.gs deployed and a signed-in wall. Shift+9
    reaches it on purpose. */
 var monthReady = false;
-function panelOff(i){ return (i === 17 && !dayReady) || (i === 18 && !monthReady); }
+/* PANEL 20, Departures, draws the same `month` block, and is stepped over
+   without it in the same way. Shift+0 reaches it. */
+var departReady = false;
+function panelOff(i){ return (i === 17 && !dayReady) || (i === 18 && !monthReady) || (i === 19 && !departReady); }
 
 var rotateWait=null;
 function rotate(){
@@ -5992,12 +6147,160 @@ var PROD = {
     set('mbBoard', h.join(''));
     return true;
   }
-  /* What prodboard sent decides whether panel 19 is in the rotation. */
+
+  /* ═══ DEPARTURES (panel 20) ═══════════════════════════════════════════
+     The month block again, as a departures board: who has taken off in the
+     year, the day each did, and everyone still boarding. See the CSS note
+     at #p19 for why it exists. */
+  /* Days the branch closes the week early. Everyone still boarding goes on
+     final call, as they do on a Friday. 8 October 2026: "tomorrow we will be
+     out". */
+  var DP_LAST_DAYS = ['2026-10-08'];
+  function dpPlus(iso, n){ return new Date(mbParts(iso).t + n * 864e5).toISOString().slice(0, 10); }
+  /* The last working day of the week: a Friday, a day listed above, or a day
+     whose remaining weekdays this month are all holidays. */
+  function dpLastOfWeek(M){
+    if(!M.workday) return false;
+    if(DP_LAST_DAYS.indexOf(M.today) > -1) return true;
+    var wd = mbParts(M.today).wd;
+    if(wd === 5) return true;
+    for(var k = wd + 1; k <= 5; k++){
+      var iso = dpPlus(M.today, k - wd);
+      if(iso.slice(0, 7) !== M.today.slice(0, 7)) return false;   // next month: cannot see it, assume working
+      if(M.days.indexOf(iso) > -1) return false;
+    }
+    return true;
+  }
+  /* The week of the year, counted from the first Monday on or after the day
+     the year began: 5 October 2026 is week 1 of FY27. */
+  function dpWeekNo(M){
+    if(!M.fyFrom) return 0;
+    var f = mbParts(M.fyFrom), t = mbParts(M.today);
+    var mon1 = f.t + ((8 - (f.wd || 7)) % 7) * 864e5, monT = t.t - (((t.wd || 7) - 1) * 864e5);
+    return Math.max(1, Math.floor((monT - mon1) / (7 * 864e5)) + 1);
+  }
+  function dpTiles(s, d0, cls){
+    return '<span class="dpT' + (cls ? ' ' + cls : '') + '">' + String(s).split('').map(function(c, i){
+      return '<i' + (c === ' ' ? ' class="sp"' : '') + ' style="--d:' + (d0 + i * .025).toFixed(3) + 's">' +
+             (c === ' ' ? '' : esc(c)) + '</i>';
+    }).join('') + '</span>';
+  }
+  var DP_PLANE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 19h19v2h-19v-2zm19.57-9.36c-.21-.8-1.04-1.28-1.84-1.06L14.92 10l-6.9-6.43-1.93.51 4.14 7.17-4.97 1.33-1.97-1.54-1.45.39 2.59 4.49L21 11.49c.81-.23 1.28-1.05 1.07-1.85z"/></svg>';
+  /* Written only when it changed. The board flips in each time it comes
+     round; a poll landing while it is on screen with the same figures must
+     not flip it again. */
+  var dpLast = {};
+  function dpSet(id, html){ if(dpLast[id] === html) return; dpLast[id] = html; set(id, html); }
+  function paintDepartures(M, S){
+    if(!M || !M.units || !M.today || !M.days) return false;
+    var all = [];
+    M.units.forEach(function(u){
+      (u.people || []).forEach(function(p){
+        /* A broker joins the board once its business can be seen. */
+        if(u.broker && !p.linked) return;
+        all.push({ p: p, unit: u.broker ? 'Broker' : String(u.unit).split(' ')[0] });
+      });
+    });
+    if(!all.length) return false;
+    var fyApi = function(x){ return Number(x.p.fy && x.p.fy[1]) || 0; };
+    var fyApps = function(x){ return Math.round(Number(x.p.fy && x.p.fy[0]) || 0); };
+    var up = all.filter(function(x){ return !!x.p.first; });
+    var wait = all.filter(function(x){ return !x.p.first; });
+    up.sort(function(a, b){
+      return a.p.first < b.p.first ? -1 : a.p.first > b.p.first ? 1 :
+             (fyApi(b) - fyApi(a)) || (a.p.name < b.p.name ? -1 : 1);
+    });
+    wait.sort(function(a, b){ return a.p.name < b.p.name ? -1 : 1; });
+    var fy = M.fyLabel || 'the year', wk = dpWeekNo(M), last = dpLastOfWeek(M);
+    var n = up.length, of = all.length;
+
+    dpSet('t_p19', !n ? 'Everyone is <i>boarding.</i>'
+               : n === of ? 'Everyone has <i>taken off.</i>'
+               : '<i>' + n + ' of ' + of + '</i> ' + (n === 1 ? 'has' : 'have') + ' taken off in ' + esc(fy));
+
+    /* The week, and the race between the units over the year. */
+    var w = (S && S.total && S.total.w) || [0, 0];
+    dpSet('dpWkK', 'Week ' + wk + ' &middot; the branch');
+    dpSet('dpWk', money(w[1] || 0));
+    dpSet('dpWkS', mbApps(w[0]) + ' this week &middot; <b>' + n + ' of ' + of + '</b> off the ground');
+    var units = {}, order = [];
+    all.forEach(function(x){
+      if(x.unit === 'Broker') return;
+      if(!units[x.unit]){ units[x.unit] = { api: 0, n: 0 }; order.push(x.unit); }
+      units[x.unit].api += fyApi(x);
+      if(x.p.first) units[x.unit].n++;
+    });
+    order.sort(function(a, b){ return units[b].api - units[a].api; });
+    var topU = order.length ? units[order[0]].api : 0;
+    dpSet('dpRace', order.length < 2 ? '' : order.map(function(u){
+      var U = units[u];
+      return '<div class="dpRu"><div class="dpRl"><b>' + esc(u) + '&rsquo;s unit</b><span>' + money(U.api) + ' &middot; ' +
+             U.n + ' took off</span></div><div class="dpRb"><i style="width:' +
+             (topU ? Math.max(U.api > 0 ? 2 : 0, U.api / topU * 100) : 0) + '%"></i></div></div>';
+    }).join('') + (topU ? '<div class="dpGap"><b>' + money(units[order[0]].api - units[order[1]].api) +
+                          '</b> between the units in ' + esc(fy) + '</div>' : ''));
+
+    /* Today, while the pickups are coming in. */
+    var td = (M.total && M.total.today) || [0, 0], tn = (M.total && M.total.todayNames) || [];
+    dpSet('dpTdK', 'Picked up today &middot; ' + mbLong(M.today));
+    dpSet('dpTd', money(td[1] || 0));
+    dpSet('dpTdS', tn.length ? esc(mbAnd(tn)) : (M.workday ? 'nothing picked up yet today' : 'not a working day'));
+
+    /* The first of the year, and the biggest so far. */
+    var F = (M.first && M.first.names && M.first.names.length) ? M.first : null;
+    dpSet('dpFirst', '<div class="dpCk">First wheels up</div>' +
+      (F ? '<div class="dpCn' + (F.names.length > 1 ? ' many' : '') + '">' + esc(mbAnd(F.names)) + '</div>' +
+           '<div class="dpCs">' + mbLong(F.day) + '</div>'
+         : '<div class="dpCn">Still open</div><div class="dpCs">Nobody has taken off yet. Make it your name.</div>'));
+    var lift = null;
+    up.forEach(function(x){ if(!lift || fyApi(x) > fyApi(lift) || (fyApi(x) === fyApi(lift) && fyApps(x) > fyApps(lift))) lift = x; });
+    dpSet('dpLift', lift && fyApi(lift) > 0 ? '<div class="dpCk">Biggest lift</div><div class="dpCn">' + esc(lift.p.name) + '</div>' +
+      '<div class="dpCs">' + mbApps(fyApps(lift)) + ' &middot; ' + money(fyApi(lift)) +
+      (lift.p.first === M.today ? ' &middot; today' : ' &middot; ' + esc(fy) + ' to date') + '</div>' : '');
+
+    /* The board. */
+    var now = new Date(), hhmm = '';
+    try{ hhmm = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Port_of_Spain' }); }
+    catch(e){ hhmm = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2); }
+    var t = mbParts(M.today);
+    dpSet('dpFy', esc(fy) + ' &middot; Week ' + wk + ' &middot; ' + n + ' of ' + of + ' took off');
+    dpSet('dpDate', (MB_WD[t.wd] + ' ' + ('0' + t.d).slice(-2) + ' ' + MB_MO[t.m - 1]).toUpperCase());
+    dpSet('dpClock', dpTiles(hhmm, .1, 'c').replace(/^<span class="dpT c">|<\/span>$/g, ''));
+    var row = 0;
+    function line(x, dep){
+      var d0 = .15 + (row++) * .05, p = x.p;
+      var when = dep ? (function(){ var f = mbParts(p.first); return ('0' + f.d).slice(-2) + ' ' + MB_MO[f.m - 1].toUpperCase(); })()
+                     : (M.workday ? 'TODAY ' : '      ');
+      var st = dep ? '<span class="dpSt dep" style="--d:' + (d0 + .3).toFixed(3) + 's">' + DP_PLANE + 'Departed</span>'
+                   : '<span class="dpSt ' + (last ? 'call' : 'board') + '" style="--d:' + (d0 + .3).toFixed(3) + 's">' +
+                     (last ? 'Final call' : 'Boarding') + '</span>';
+      return '<div class="dpR' + (dep ? ' dep' : '') + '">' + dpTiles(when, d0, 't') + dpTiles(String(p.code || '').slice(0, 6), d0 + .05) +
+        '<span class="dpS nm" style="--d:' + (d0 + .1).toFixed(3) + 's" title="' + mbAttr(p.name) + '">' + esc(String(p.name).toUpperCase()) + '</span>' +
+        dpTiles((x.unit.toUpperCase() + '      ').slice(0, 6), d0 + .15) +
+        '<span class="dpS api" style="--d:' + (d0 + .2).toFixed(3) + 's">' +
+          (dep && fyApi(x) ? Math.round(fyApi(x)).toLocaleString('en-US') : '&mdash;') + '</span>' + st + '</div>';
+    }
+    var h = up.map(function(x){ return line(x, true); });
+    if(wait.length){
+      h.push('<div class="dpSep' + (last ? '' : ' board') + '">' +
+             (last ? 'Final call &middot; the week closes today' : 'Boarding &middot; your first pickup is your take-off') + '</div>');
+      wait.forEach(function(x){ h.push(line(x, false)); });
+    }
+    dpSet('dpRows', h.join(''));
+    dpSet('dpKey', '<b>Departed</b> is your first business picked up in ' + esc(fy) + ', a new policy or an increase, ' +
+                 'on the day it counted. The flight is your agent code; API is ' + esc(fy) + ' to date, as picked up in Salesforce.');
+    return true;
+  }
+
+  /* What prodboard sent decides whether panels 19 and 20 are in the rotation. */
   function takeMonth(j){
-    var ok = false;
+    var ok = false, dp = false;
     try{ ok = !!(j && j.month && paintMonth(j.month, j.submitted)); }catch(e){ ok = false; }
+    try{ dp = !!(j && j.month && paintDepartures(j.month, j.submitted)); }catch(e){ dp = false; }
     window.monthReady = ok;
-    if(!ok && typeof panel !== 'undefined' && panel === 18 && typeof showPanel === 'function') showPanel(0);
+    window.departReady = dp;
+    if(typeof panel !== 'undefined' && typeof showPanel === 'function' &&
+       ((!ok && panel === 18) || (!dp && panel === 19))) showPanel(0);
   }
 
   function paint(){
