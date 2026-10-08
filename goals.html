@@ -570,6 +570,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
       <button class="btn line" id="resumeBtn" type="button" hidden></button>
       <button class="btn line" id="freshBtn" type="button" hidden>Start again</button>
+      <a class="btn line" href="liftoff.html">Watch the film · 35s</a>
     </div>
     <div class="privacy">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.4 8.3-8 9-4.6-.7-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
@@ -1093,22 +1094,36 @@ function expectedBy(d, fy) {
 /* ── the server ────────────────────────────────────────────────────────── */
 function failure(kind, msg) { var e = new Error(msg); e.kind = kind; return e; }
 
-async function getJson(params, ms) {
+/* Google's "unable to open the file" page came back for about one request
+   in three on the morning of 9 October 2026, the morning the branch was sent
+   the link. It means the script never ran, so a request that met it is safe
+   to send again - the dashboard has retried it for months. Three tries, with
+   a pause that grows. */
+var RETRY_KINDS = ['busy', 'network', 'timeout'];
+async function getJson(params, ms, onRetry) {
   var url = ENDPOINT + '?' + new URLSearchParams(params).toString();
-  for (var i = 0; i < 2; i++) {
+  for (var i = 0; ; i++) {
     try { return await once(url, { method: 'GET', redirect: 'follow' }, ms); }
     catch (e) {
-      /* One more try for the failures a second try can fix; a cold Apps
-         Script often answers the second call in a third of the time. */
-      if (i === 0 && (e.kind === 'network' || e.kind === 'busy')) { await new Promise(function (r) { setTimeout(r, 1500); }); continue; }
-      throw e;
+      if (i >= 2 || RETRY_KINDS.indexOf(e.kind) < 0) throw e;
+      if (onRetry) { try { onRetry(i + 1); } catch (x) {} }
+      await new Promise(function (r) { setTimeout(r, 1500 * (i + 1)); });
     }
   }
 }
-function postJson(body, ms) {
-  /* text/plain, so the browser sends no preflight Apps Script cannot answer. */
-  return once(ENDPOINT, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                          body: JSON.stringify(body) }, ms);
+/* A POST that met Google's busy page never reached the script either, so
+   that one failure is sent again; a timeout is not, in case it did. */
+async function postJson(body, ms) {
+  for (var i = 0; ; i++) {
+    try {
+      /* text/plain, so the browser sends no preflight Apps Script cannot answer. */
+      return await once(ENDPOINT, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                                    body: JSON.stringify(body) }, ms);
+    } catch (e) {
+      if (i >= 2 || e.kind !== 'busy') throw e;
+      await new Promise(function (r) { setTimeout(r, 2000 * (i + 1)); });
+    }
+  }
 }
 async function once(url, opts, ms) {
   var ctrl = new AbortController(), t = setTimeout(function () { ctrl.abort(); }, ms || 45000), res, body;
@@ -1140,9 +1155,18 @@ $('signForm').addEventListener('submit', async function (ev) {
   if (!code || !pw) { err.textContent = 'Both, please.'; return; }
   btn.disabled = true; btn.textContent = 'Signing in…'; err.textContent = '';
   try {
-    /* One long wait rather than repeats: a repeat can count as a second wrong password. */
-    var j = await once(ENDPOINT + '?action=login&code=' + encodeURIComponent(code) + '&pw=' + encodeURIComponent(pw),
-                       { method: 'GET', redirect: 'follow' }, 60000);
+    /* One long wait rather than repeats: a repeat can count as a second
+       wrong password. Google's busy page is the one answer worth another
+       go, because the script never ran and nothing was counted. */
+    var url = ENDPOINT + '?action=login&code=' + encodeURIComponent(code) + '&pw=' + encodeURIComponent(pw), j = null;
+    for (var i = 0; ; i++) {
+      try { j = await once(url, { method: 'GET', redirect: 'follow' }, 45000); break; }
+      catch (e1) {
+        if (i >= 2 || (e1.kind !== 'busy' && e1.kind !== 'network')) throw e1;
+        btn.textContent = 'Still signing in — the server is slow…';
+        await new Promise(function (r) { setTimeout(r, 2500 * (i + 1)); });
+      }
+    }
     if (j && j.ok) {
       var s = { code: j.code || code, name: j.name || '', email: j.email || '', role: j.role || '', unit: j.unit || '',
                 unitKey: j.unitKey || '', scope: j.scope || null, token: j.token || '', at: Date.now() };
@@ -1155,7 +1179,7 @@ $('signForm').addEventListener('submit', async function (ev) {
     }
   } catch (e) {
     err.textContent = e.kind === 'timeout' ? 'The branch server did not answer within a minute. Wait a moment and press Sign in once.'
-                    : e.kind === 'busy' ? 'The branch server is busy. Try again in a few minutes. Nothing is wrong with your details.'
+                    : e.kind === 'busy' ? 'The branch server was busy on three tries. Wait a minute and press Sign in once. Nothing is wrong with your details.'
                     : e.message;
   } finally { btn.disabled = false; btn.textContent = 'Sign in'; }
 });
@@ -1201,7 +1225,8 @@ async function enter() {
 async function loadMe() {
   S.ready = false; S.offline = false; S.loadError = '';
   try {
-    var j = await getJson({ action: 'goal_me', token: S.session.token }, 45000);
+    var j = await getJson({ action: 'goal_me', token: S.session.token }, 45000,
+      function (n) { if ($('loadMsg')) $('loadMsg').textContent = 'The branch server is busy; trying again (' + (n + 1) + ' of 3)…'; });
     if (j && j.expired) { signOut('Your sign-in has expired. Sign in again.'); return; }
     if (j && j.v === 'goal1' && j.ok) {
       S.ready = true; S.me = j.me; S.fy = j.fy; S.last = j.last || {}; S.branch = j.branch || FALLBACK;

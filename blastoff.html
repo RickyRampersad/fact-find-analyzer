@@ -332,16 +332,31 @@ var stillMq = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)')
 function still() { return !!(stillMq && stillMq.matches); }
 
 /* ── the server ── */
-async function getJson(params, ms) {
+async function getOnce(params, ms) {
   var ctrl = new AbortController(), t = setTimeout(function () { ctrl.abort(); }, ms || 30000);
   try {
     var res = await fetch(ENDPOINT + '?' + new URLSearchParams(params).toString(), { redirect: 'follow', signal: ctrl.signal });
     var body = await res.text();
-    try { return JSON.parse(body); } catch (e) { var er = new Error('The branch server replied with a page instead of data.'); er.kind = 'notjson'; throw er; }
+    try { return JSON.parse(body); }
+    catch (e) {
+      /* Google's own "unable to open the file" page: the script never ran. */
+      var er = new Error(/unable to open the file/i.test(body) ? 'The branch server is busy.' : 'The branch server replied with a page instead of data.');
+      er.kind = /unable to open the file/i.test(body) ? 'busy' : 'notjson'; throw er;
+    }
   } catch (e) {
     if (e.kind) throw e;
     var err = new Error(e && e.name === 'AbortError' ? 'The branch server did not answer.' : 'Could not reach the branch server.'); err.kind = 'network'; throw err;
   } finally { clearTimeout(t); }
+}
+/* Three tries on Google's busy page or a dropped connection, with a pause that grows. */
+async function getJson(params, ms) {
+  for (var i = 0; ; i++) {
+    try { return await getOnce(params, ms); }
+    catch (e) {
+      if (i >= 2 || (e.kind !== 'busy' && e.kind !== 'network')) throw e;
+      await new Promise(function (r) { setTimeout(r, 2000 * (i + 1)); });
+    }
+  }
 }
 
 function readSession() {

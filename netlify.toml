@@ -251,3 +251,10 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "no-referrer"
     Cache-Control = "no-store"
+
+# The FY27 flight plan film lives at /liftoff; /video is the address people
+# will type. The film carries no client data, so it stays cacheable.
+[[redirects]]
+  from = "/video"
+  to = "/liftoff"
+  status = 301
