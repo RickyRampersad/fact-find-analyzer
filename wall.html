@@ -4590,6 +4590,19 @@ $('p'+panel).classList.add('on'); if($('k'+panel)) $('k'+panel).classList.add('o
      sat empty until something moved - and the first thing anybody wants
      from it is which panel they are looking at right now. */
   showPanel(panel);
+  /* ?slide=22 opens that slide and holds it, counting from 1 as the slide
+     label does. The flight deck on the plan page links here, so a manager who
+     taps "Live goals" lands on Live goals and stays on it, instead of
+     watching it rotate away fifteen seconds later. Resume, the arrows and the
+     dots work as ever. Asked for on 12 October 2026: "can I see the wall from
+     the goals, the branch manager view". */
+  (function slideFromAddress(){
+    var n = NaN;
+    try{ n = parseInt(new URLSearchParams(location.search).get('slide'), 10); }catch(e){}
+    if(!(n >= 1 && n <= PANELS)) return;
+    showPanel(n - 1);
+    if(!paused) hold.click();
+  })();
 
   document.addEventListener('keydown',function(e){
     if(e.target && /input|textarea/i.test(e.target.tagName)) return;
@@ -6656,6 +6669,10 @@ var PROD = {
   function rcOrd(n){ return n + (n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'); }
   function rcWhen(iso){
     if(!iso) return '';
+    /* A bare date is a day in Trinidad, not midnight in London: read as UTC
+       midnight it lands on the evening before here, and slide 22's corner
+       said "7 Oct" on the 8th. Noon UTC is the same day in Port of Spain. */
+    if(/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) iso = iso + 'T12:00:00Z';
     var d = new Date(iso); if(isNaN(d)) return '';
     return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', timeZone:'America/Port_of_Spain' });
   }
