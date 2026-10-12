@@ -17247,6 +17247,14 @@ function rrbRenderReadiness() {
      slow, old or down never blocks a fact find, and once a plan is seen
      filed this device stops asking. Managers reviewing a case and read-only
      views are never gated. -->
+<!-- The hidden attribute must win. The box below carries display:grid inline,
+     and an inline display beats the browser's own [hidden]{display:none} - so
+     from 8 to 12 October this overlay covered the fact find for EVERYONE, plan
+     or no plan, whatever the server said: the "hidden" flag was set and the
+     box was drawn anyway. Reported on 12 October 2026 by an advisor whose
+     plan was filed and who still could not reach his client's fact find. An
+     !important rule outranks the inline style, so hidden now means hidden. -->
+<style>#ffGate[hidden]{display:none !important}</style>
 <div id="ffGate" hidden style="position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:20px;background:radial-gradient(900px 500px at 50% 110%,rgba(245,185,53,.16),transparent 60%),rgba(4,8,16,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#F3F7FD">
   <canvas id="ffGateFx" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></canvas>
   <div style="position:relative;width:min(94vw,520px);background:linear-gradient(180deg,#111C31,#0B1427);border:1px solid rgba(245,185,53,.5);border-radius:24px;padding:32px 28px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.6)">
