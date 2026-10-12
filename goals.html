@@ -2268,7 +2268,7 @@ function renderDeck() {
           '<div><small>Checked in</small><b>' + T.checkedThis + ' <span style="font-size:.6em;color:var(--ink-3)">this week</span></b><em>' + T.checkedLast + ' last week' + (lyLine ? ' · ' + lyLine : '') + '</em></div>' +
         '</div>' +
         (J.film && J.film.view ? '<p class="note" style="margin:14px 0 0">The film at factfind360.com/liftoff: <b style="color:#fff">' + J.film.view + '</b> views \u00b7 <b style="color:#fff">' + J.film.play + '</b> plays \u00b7 <b style="color:#fff">' + J.film.finish + '</b> watched to the end \u00b7 <b style="color:#fff">' + J.film.download + '</b> downloads.</p>' : '') +
-        '<div class="actions"><button class="btn line sm" type="button" id="nudgeBtn">Copy a nudge for WhatsApp</button>' +
+        '<div class="actions"><button class="btn line sm" type="button" id="nudgeBtn">Copy a nudge for WhatsApp, with who is still on the pad</button>' +
           '<button class="btn line sm" type="button" id="deckRefresh">Refresh</button></div></div>' +
       /* The wall's goal slides, one tap away: each opens the wall on that slide
          and holds it. Same sign-in, so nothing to type. Asked for on 12 October 2026. */
@@ -2314,12 +2314,21 @@ function trend(h) {
     '</svg>';
 }
 
-function copyNudge(J) {
+/* The nudge names who is still on the pad - the same names the wall shows in
+   amber - so the branch manager can paste the actual list into the group.
+   Asked for on 12 October 2026: "I want the actual names". */
+function nudgeText(J) {
   var T = J.totals;
-  var msg = '*' + T.plans + ' of ' + T.people + ' flight plans are in.*\n\n' +
+  var pad = (J.people || []).filter(function (p) { return !p.go; }).map(function (p) { return p.name; })
+    .sort(function (a, b) { return a < b ? -1 : 1; });
+  return '*' + T.plans + ' of ' + T.people + ' flight plans are in.*\n\n' +
     J.fy.label + ' is ' + J.fy.week + ' ' + plural(J.fy.week, 'week') + ' old. The plans filed so far commit us to ' + moneyShort(T.api) + ' of API.\n\n' +
+    (pad.length ? 'Still on the pad: ' + pad.join(', ') + '.\n\n' : '') +
     'Yours takes fifteen minutes and starts with your own budget, not a quota: factfind360.com/goals\n\n' +
     'Reply GO when yours is filed.';
+}
+function copyNudge(J) {
+  var msg = nudgeText(J);
   var done = function () { toast('Copied. Paste it into the group.'); };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(done, function () { prompt('Copy this:', msg); });
   else prompt('Copy this:', msg);
