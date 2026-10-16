@@ -1644,6 +1644,24 @@
   }
   .pf-page:last-child { page-break-after: auto; }
 
+  /* ONE PAGE OF THE FORM TO ONE SHEET. The Guardian form is six Letter pages,
+     612 x 792pt inside 0.5in margins (540 x 720pt, 720 x 960 CSS px), each
+     with its footer at the foot of the sheet. A form page here is that sheet:
+     its body, then its footer pushed to the bottom however little it holds.
+     A page holding more than a sheet is scaled to fit (--pf-fit, measured in
+     pf_fitSheets_) rather than left to spill its footer onto a sheet of its
+     own - which is what turned the six pages into nine on Letter and eleven
+     from an iPhone on A4, beside a statement saying page for page. */
+  .pf-typo { font-family: 'Poppins', 'Helvetica Neue', Arial, sans-serif; font-size: 9.5pt;
+             line-height: 1.35; color: #111; background: #fff; }
+  .pf-sheet { display: flex; flex-direction: column; box-sizing: border-box; }
+  .pf-sheet > .pf-sheet-body { flex: 1 0 auto; }
+  .pf-sheet > .pf-footer { flex: 0 0 auto; }
+  body.preview-open .pf-sheet, .pf-stage .pf-sheet { min-height: 956px; }
+  @media print {
+    #printLayout .pf-sheet { zoom: var(--pf-fit, 1); min-height: calc(253mm / var(--pf-fit, 1)); }
+  }
+
   /* Compact Guardian logo header repeated at the top of pages 2+ (page 1 has the
      full letterhead). Keeps the branding on every page of the compliance document. */
   .pf-miniheader {
@@ -2282,7 +2300,7 @@ const RAI_MASCOT = `<svg class="rai-avatar" viewBox="0 0 64 64" xmlns="http://ww
               title="Your saved drafts, from any device">My drafts</button>
       <button class="btn btn-ghost" onclick="newClient()" title="Clear everything and start a fresh client">+ New Client</button>
       <button class="btn btn-ghost" onclick="openPreview()" title="Preview as the official Guardian form">Preview</button>
-      <button class="btn btn-primary" onclick="pfPrint()" title="Print or save as PDF">Print / PDF</button>
+      <button class="btn btn-primary" data-pf-pdf onclick="pfPrint()" title="The fact find as a PDF: Letter, one page of the Guardian form to each sheet, as the original">Download PDF</button>
       <!-- Signing out has to be reachable from here. An agent finishing a fact
            find on a shared machine should not have to find their way back to
            the dashboard to end their session, and the draft on this device is
@@ -14198,7 +14216,7 @@ function ffJourneyHtml(stage, audience, meta) {
     </div>
     <div class="preview-toolbar-actions">
       <button class="preview-toolbar-btn btn-refresh" onclick="buildPrintLayout()" title="Re-read current form data">↻ Refresh</button>
-      <button class="preview-toolbar-btn btn-print" onclick="pfPrint()">Print / PDF</button>
+      <button class="preview-toolbar-btn btn-print" data-pf-pdf onclick="pfPrint()" title="Letter, one page of the Guardian form to each sheet, as the original">Download PDF</button>
       <button class="preview-toolbar-btn" onclick="closePreview()">Close (Esc)</button>
     </div>
   </div>
@@ -14481,7 +14499,108 @@ function pf_imagesReady_(root, ms) {
     new Promise(function (r) { setTimeout(r, ms); })
   ]);
 }
+/* PDF, ONE PAGE OF THE FORM TO EACH SHEET, ON ANY DEVICE.
+   The browser's own print cannot be made to do this everywhere. An iPhone
+   prints on A4 inside its own margins and footer and ignores the page size the
+   form asks for; the six Guardian pages came out as eleven sheets there. So
+   the button builds the PDF itself: Letter, the form's 0.5in margins, each
+   form page drawn onto one sheet (scaled down if it holds more), the branch
+   pages after it cut between lines rather than through them. The text is an
+   image at twice screen resolution, as in the copies the branch e-mails.
+   Without the PDF library it falls back to the browser's print. */
+var PF_PDF_BUSY = false;
+function pf_blankRow_(canvas, from, to) {
+  // The lowest row between from and to with (almost) nothing on it - a table's
+  // vertical rules are allowed through - so the cut falls between lines.
+  try {
+    var w = canvas.width, h = to - from;
+    if (h <= 0) return to;
+    var d = canvas.getContext('2d').getImageData(0, from, w, h).data, allow = Math.max(6, Math.round(w * 0.012));
+    for (var r = h - 1; r >= 0; r--) {
+      var ink = 0;
+      for (var x = 0, o = r * w * 4; x < w; x++, o += 4) {
+        if (d[o] < 235 || d[o + 1] < 235 || d[o + 2] < 235) { if (++ink > allow) break; }
+      }
+      if (ink <= allow) return from + r;
+    }
+  } catch (e) {}
+  return to;
+}
+async function pf_pdf_() {
+  if (PF_PDF_BUSY) return;
+  PF_PDF_BUSY = true;
+  var btns = [].slice.call(document.querySelectorAll('[data-pf-pdf]'));
+  btns.forEach(function (b) { b.disabled = true; b.setAttribute('data-label', b.textContent); b.textContent = 'Building PDF…'; });
+  var stage = null;
+  try {
+    try { await Promise.race([pf_inlineSigs_(), new Promise(function (r) { setTimeout(r, 4000); })]); } catch (e) {}
+    try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
+    buildPrintLayout();
+    var root = document.getElementById('printLayout');
+    var pages = root ? [].slice.call(root.querySelectorAll('.pf-page')) : [];
+    if (!pages.length) throw new Error('the print layout is empty');
+    var IW = 540, IH = 720, M = 36;    // pt: Letter, inside the form's 0.5in margins
+    var LETTER = { unit: 'pt', format: 'letter', orientation: 'portrait' };
+    var pdf = await html2pdf().set({ margin: 0, jsPDF: LETTER }).from('<div></div>', 'string').toPdf().get('pdf');
+    stage = document.createElement('div');
+    stage.style.cssText = 'position:absolute;left:-10000px;top:0;width:720px;visibility:hidden;pointer-events:none';
+    document.body.appendChild(stage);
+    for (var i = 0; i < pages.length; i++) {
+      try { showStatus('Building the PDF · page ' + (i + 1) + ' of ' + pages.length + '…', true); } catch (e) {}
+      var wrap = document.createElement('div');
+      wrap.className = 'pf-stage pf-typo';
+      var el = pages[i].cloneNode(true);
+      el.style.pageBreakAfter = 'auto';
+      wrap.appendChild(el);
+      // Its height first: a phone will not draw a canvas much over 16 million
+      // pixels, so a long branch page is drawn at a lower resolution.
+      stage.innerHTML = ''; stage.appendChild(wrap.cloneNode(true));
+      var hpx = stage.firstChild.getBoundingClientRect().height || PF_SHEET_PX;
+      var scale = Math.max(1, Math.min(2, Math.sqrt(14e6 / (720 * hpx))));
+      var canvas = await html2pdf().set({ margin: M, jsPDF: LETTER,
+          html2canvas: { scale: scale, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0, logging: false } })
+        .from(wrap).toCanvas().get('canvas');
+      var pxPerPt = canvas.width / IW;
+      if (el.classList.contains('pf-sheet')) {
+        var w = IW, h = canvas.height / pxPerPt;
+        if (h > IH) { w = IW * IH / h; h = IH; }
+        pdf.addPage('letter', 'portrait');
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.88), 'JPEG', M + (IW - w) / 2, M, w, h);
+      } else {
+        var sliceH = Math.floor(IH * pxPerPt), y = 0;
+        while (y < canvas.height - 2) {
+          var cut = Math.min(canvas.height, y + sliceH);
+          if (cut < canvas.height) cut = pf_blankRow_(canvas, y + Math.floor(sliceH * 0.7), cut);
+          var part = document.createElement('canvas');
+          part.width = canvas.width; part.height = cut - y;
+          part.getContext('2d').drawImage(canvas, 0, y, canvas.width, cut - y, 0, 0, canvas.width, cut - y);
+          pdf.addPage('letter', 'portrait');
+          pdf.addImage(part.toDataURL('image/jpeg', 0.88), 'JPEG', M, M, IW, (cut - y) / pxPerPt);
+          y = cut;
+        }
+      }
+    }
+    pdf.deletePage(1);                 // the blank page the library starts with
+    var who = String(state.fullName || state.clientName || state.adviceClientName || 'Client')
+      .replace(/[^A-Za-z0-9 _-]/g, '').replace(/\s+/g, ' ').trim() || 'Client';
+    pdf.setProperties({ title: 'Confidential Fact Find - ' + who });
+    pdf.save('Confidential Fact Find - ' + who + '.pdf');
+    try { showStatus('PDF saved · one page of the form to each sheet', true); } catch (e) {}
+  } catch (e) {
+    console.error('PDF build failed', e);
+    try { showStatus('Could not build the PDF (' + e.message + '). Opening the print dialog instead.', false); } catch (e2) {}
+    pf_nativePrint_();
+  } finally {
+    if (stage && stage.parentNode) stage.parentNode.removeChild(stage);
+    btns.forEach(function (b) { b.disabled = false; b.textContent = b.getAttribute('data-label') || 'Download PDF'; });
+    PF_PDF_BUSY = false;
+  }
+}
 function pfPrint() {
+  if (typeof html2pdf !== 'undefined') { pf_pdf_(); return; }
+  pf_nativePrint_();
+}
+function pf_nativePrint_() {
   if (!pf_sigsPending_()) {
     try { buildPrintLayout(); } catch (e) { console.error(e); }
     window.print();
@@ -14639,7 +14758,7 @@ function buildPrintLayout() {
   var html = '';
 
   // ─────── PAGE 1: Title + Notice + App Type + Advisor Sig ───────
-  html += '<div class="pf-page">';
+  html += '<div class="pf-page pf-sheet"><div class="pf-sheet-body">';
   html += '<div class="pf-letterhead">';
   html += '<div class="pf-letterhead-left pf-letterhead-logo">' + pf_guardianLogo() + '</div>';
   html += '<div class="pf-letterhead-right">';
@@ -14719,13 +14838,13 @@ function buildPrintLayout() {
   html += '</div>';
   html += '</div>';
 
-  html += pf_pageFooter(1);
+  html += '</div>' + pf_pageFooter(1);   // the body, then the foot of the sheet
   html += '</div>'; // end page 1
 
   // ─────── PAGE 2: Know Your Client ───────
   // Full needs-analysis pages (2-4) are suppressed in advice-only mode.
   if (!adviceOnly) {
-  html += '<div class="pf-page">';
+  html += '<div class="pf-page pf-sheet"><div class="pf-sheet-body">';
   html += pf_miniHeader();
   html += '<div class="pf-h2">Know Your Client</div>';
 
@@ -14875,11 +14994,11 @@ function buildPrintLayout() {
   }
   html += '</tbody></table>';
 
-  html += pf_pageFooter(2);
+  html += '</div>' + pf_pageFooter(2);   // the body, then the foot of the sheet
   html += '</div>'; // end page 2
 
   // ─────── PAGE 3: Cash Flow + Budget + Assets/Liabilities ───────
-  html += '<div class="pf-page">';
+  html += '<div class="pf-page pf-sheet"><div class="pf-sheet-body">';
   html += pf_miniHeader();
   html += '<div class="pf-h2">Cash Flow and Budget</div>';
   html += '<div style="font-size:8.5pt; margin-bottom:2mm; font-style:italic">This information helps to ascertain the affordability of the recommendation(s) and plan(s) for your financial need(s).</div>';
@@ -14950,11 +15069,11 @@ function buildPrintLayout() {
 
   html += '</div>'; // end twocol
 
-  html += pf_pageFooter(3);
+  html += '</div>' + pf_pageFooter(3);   // the body, then the foot of the sheet
   html += '</div>'; // end page 3
 
   // ─────── PAGE 4: Needs + Retirement + Future Needs + Medical ───────
-  html += '<div class="pf-page">';
+  html += '<div class="pf-page pf-sheet"><div class="pf-sheet-body">';
   html += pf_miniHeader();
   html += '<div class="pf-twocol">';
 
@@ -15034,12 +15153,12 @@ function buildPrintLayout() {
   }
   html += '</tbody></table>';
 
-  html += pf_pageFooter(4);
+  html += '</div>' + pf_pageFooter(4);   // the body, then the foot of the sheet
   html += '</div>'; // end page 4
   } // end if(!adviceOnly) — pages 2-4 hidden in advice-only mode
 
   // ─────── PAGE 5: Notes + Recommendations + Decision ───────
-  html += '<div class="pf-page">';
+  html += '<div class="pf-page pf-sheet"><div class="pf-sheet-body">';
   html += pf_miniHeader();
 
   // In advice-only mode pages 2-4 are suppressed, so capture the client's
@@ -15163,11 +15282,11 @@ function buildPrintLayout() {
   html += '<div style="margin-top:3mm; font-size:9pt">Would this/these policies replace any Life Insurance/Critical Illness coverage you have now? &nbsp;';
   html += pf_chk(repYes) + ' Yes&nbsp;&nbsp;&nbsp;' + pf_chk(!repYes) + ' No</div>';
 
-  html += pf_pageFooter(5);
+  html += '</div>' + pf_pageFooter(5);   // the body, then the foot of the sheet
   html += '</div>'; // end page 5
 
   // ─────── PAGE 6: Acknowledgement + Sigs + Manager Block ───────
-  html += '<div class="pf-page">';
+  html += '<div class="pf-page pf-sheet"><div class="pf-sheet-body">';
   html += pf_miniHeader();
   html += '<div class="pf-h2">Acknowledgement</div>';
   html += '<div><strong>Client&rsquo;s Declaration:</strong></div>';
@@ -15261,7 +15380,7 @@ function buildPrintLayout() {
           '</td></tr>';
   html += '</table>';
 
-  html += pf_pageFooter(6);
+  html += '</div>' + pf_pageFooter(6);   // the body, then the foot of the sheet
   html += '</div>'; // end page 6
 
   // ─────── REPLACEMENT DISCLOSURE: the Central Bank's prescribed form ───────
@@ -15283,9 +15402,39 @@ function buildPrintLayout() {
      lands here, and swapping in identical markup throws away signature
      images that have loaded for new ones that have not, a moment before the
      browser takes its picture of the page. */
-  if (root.__pfHtml === html && root.innerHTML) return;
-  root.__pfHtml = html;
-  root.innerHTML = html;
+  if (!(root.__pfHtml === html && root.innerHTML)) {
+    root.__pfHtml = html;
+    root.innerHTML = html;
+  }
+  // Every build, not only a changed one: the first may have been measured
+  // before the page's own font arrived, and Poppins sets wider than the
+  // fallback, so a page that fitted then may not now.
+  try { pf_fitSheets_(root); } catch (e) { console.warn('sheet fit', e); }
+}
+
+/* How much of a sheet each form page needs, measured at the form's own text
+   width (540pt = 720px) and recorded as --pf-fit for the print: 1 when it
+   fits, less when it holds more than a sheet. Floored at 0.7 - smaller than
+   that and it is better to spill than to print what nobody can read. */
+var PF_SHEET_PX = 956;            // 253mm: a Letter sheet inside 0.5in margins, less a hair
+function pf_fitSheets_(root) {
+  var sheets = root ? [].slice.call(root.querySelectorAll('.pf-sheet')) : [];
+  if (!sheets.length) return;
+  var stage = document.createElement('div');
+  stage.className = 'pf-typo';
+  stage.style.cssText = 'position:absolute;left:-10000px;top:0;width:720px;visibility:hidden;pointer-events:none';
+  document.body.appendChild(stage);
+  try {
+    sheets.forEach(function (sh) {
+      var c = sh.cloneNode(true);
+      c.style.minHeight = '0';
+      stage.appendChild(c);
+      var h = c.getBoundingClientRect().height;
+      var fit = (h > PF_SHEET_PX) ? Math.max(0.7, PF_SHEET_PX / h) : 1;
+      sh.style.setProperty('--pf-fit', fit.toFixed(4));
+      stage.removeChild(c);
+    });
+  } finally { document.body.removeChild(stage); }
 }
 
 // RR Branch Addendum — spouse needs analysis + extended recommendations.
@@ -16653,10 +16802,11 @@ function pf_displacedDetail(s) {
   html += '<div style="border:1pt solid #0D9488; background:#F0FDFA; border-radius:2mm; ' +
           'padding:3mm 4mm; margin-bottom:5mm; font-size:8.5pt; line-height:1.5; color:#334155">' +
           '<strong style="font-size:9.5pt; color:#0F766E">Status of this addendum</strong><br>' +
-          'Pages 1&ndash;6 are the Guardian Life <em>Confidential Fact Find Form, Version 3.0 (June 2025)</em>, ' +
-          'reproduced without alteration &mdash; same sections, same order, same fields. Where a section did ' +
-          'not apply to this client it is printed <strong>blank rather than removed</strong>, so the document ' +
-          'matches the published form page for page.<br><br>' +
+          'Pages 1&ndash;6 are the Guardian Life <em>Confidential Fact Find Form, Version 3.0 (June 2025)</em>: ' +
+          'the same sections in the same order with the same fields, one page of the form to each sheet, as ' +
+          'published. Where a section did not apply to this client it is printed <strong>blank rather than ' +
+          'removed</strong>. The only additions are the lines under each signature saying how it was made ' +
+          '(the form was signed electronically) and the reviewer&rsquo;s record in the office box.<br><br>' +
           'This addendum is <strong>separate RR Branch material</strong>. It records supplementary analysis and ' +
           'the branch review that supports the advice; it forms <strong>no part of the Guardian form</strong> and ' +
           'amends nothing on it. It is retained with the file as the branch\'s own working record.' +
