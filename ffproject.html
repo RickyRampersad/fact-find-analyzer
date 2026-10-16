@@ -1838,11 +1838,18 @@
     position: relative;
   }
   .pf-sig-img {
+    display: block;
+    max-height: 12mm;
+    max-width: 70%;
+  }
+  /* On a ruled signature line the mark sits on the rule. Anywhere else it
+     stays in the flow: absolute with no positioned box around it is placed
+     against the first page, which is where the manager's signature landed -
+     the bottom corner of page 1 - the first time these images loaded. */
+  .pf-sig-line .pf-sig-img {
     position: absolute;
     bottom: 0.5mm;
     left: 4mm;
-    max-height: 12mm;
-    max-width: 70%;
   }
   .pf-sig-cap { font-size: 8pt; color: #333; padding-top: 1mm; }
   .pf-sig-date { font-size: 9pt; margin-top: 2mm; }
@@ -2275,7 +2282,7 @@ const RAI_MASCOT = `<svg class="rai-avatar" viewBox="0 0 64 64" xmlns="http://ww
               title="Your saved drafts, from any device">My drafts</button>
       <button class="btn btn-ghost" onclick="newClient()" title="Clear everything and start a fresh client">+ New Client</button>
       <button class="btn btn-ghost" onclick="openPreview()" title="Preview as the official Guardian form">Preview</button>
-      <button class="btn btn-primary" onclick="window.print()" title="Print or save as PDF">Print / PDF</button>
+      <button class="btn btn-primary" onclick="pfPrint()" title="Print or save as PDF">Print / PDF</button>
       <!-- Signing out has to be reachable from here. An agent finishing a fact
            find on a shared machine should not have to find their way back to
            the dashboard to end their session, and the draft on this device is
@@ -6135,6 +6142,10 @@ async function loadFromUrl() {
     if (window.BM_ROLE) { renderBmDmSummary(); onBmOverrideChange(); }
 
     showStatus('Loaded · ' + (state.clientName || 'submission'), true);
+    // Read the saved signatures in now, so a print never has to wait on them.
+    // Then lay the print out once with them in it, so a print from the browser's
+    // own menu finds the marks already on the page rather than starting them.
+    if (typeof pf_inlineSigs_ === 'function') pf_inlineSigs_().then(function () { try { buildPrintLayout(); } catch (e) {} });
   } catch (e) {
     showStatus('Load failed: ' + e.message, false);
     console.error(e);
@@ -12265,8 +12276,10 @@ function composeNotes() {
     const a = el ? el.value.trim() : (state[item.id] || '').trim();
     if (el) state[item.id] = el.value;
     if (a) {
-      // strip HTML tags from the question for the plain-text note
-      const qPlain = item.q.replace(/<[^>]+>/g, '');
+      // strip HTML tags from the question for the plain-text note, and turn
+      // its entities into the characters they stand for: the note is plain
+      // text, and &rsquo; left in it printed as "doesn&rsquo;t".
+      const qPlain = (function (h) { const t = document.createElement('textarea'); t.innerHTML = h.replace(/<[^>]+>/g, ''); return t.value; })(item.q);
       parts.push(qPlain + '\n' + a);
     }
   });
@@ -13814,7 +13827,12 @@ function computeConductChecks() {
   // 10. Signed.
   (function () {
     const sigs = (typeof signatures === 'object' && signatures) ? signatures : {};
-    if (!sigs.advisor) {
+    /* A case opened from the server has no pad drawing: the advisor's
+       signature is the file they signed at submission, on the row as
+       advisorSigUrl. Looking only at the pad flagged every reopened case as
+       unsigned on the page an inspector reads. */
+    const onFile = String((typeof state === 'object' && state && state.advisorSigUrl) || '').trim();
+    if (!sigs.advisor && !onFile) {
       add('signature', 'Adviser has signed', 'action',
         'The adviser signature block is empty.',
         'Sign before submitting. An unsigned fact find is not a record of advice.');
@@ -14180,7 +14198,7 @@ function ffJourneyHtml(stage, audience, meta) {
     </div>
     <div class="preview-toolbar-actions">
       <button class="preview-toolbar-btn btn-refresh" onclick="buildPrintLayout()" title="Re-read current form data">↻ Refresh</button>
-      <button class="preview-toolbar-btn btn-print" onclick="window.print()">Print / PDF</button>
+      <button class="preview-toolbar-btn btn-print" onclick="pfPrint()">Print / PDF</button>
       <button class="preview-toolbar-btn" onclick="closePreview()">Close (Esc)</button>
     </div>
   </div>
@@ -14357,7 +14375,17 @@ function pf_chk(checked) {
    loaded back from the server was invisible. The image form of the same
    file is uc?export=view&id=<id>, which answers with the bytes. Rewriting
    it here fixes every record already on the sheet, with nobody re-signing
-   anything. */
+   anything.
+
+   AND THEN DRIVE CLOSED THAT DOOR TOO. By October 2026 both uc?export=view
+   and drive.usercontent.google.com answer 403 and an HTML page whenever the
+   request is an image embedded on another site (Sec-Fetch-Site: cross-site),
+   which is exactly what this form is. Every saved signature printed blank
+   again: client, advisor and manager, on every case opened from the
+   dashboard. Reported 15 October 2026 by an advisor who needed the signed
+   copy for M-Files and got empty boxes. The same file from
+   lh3.googleusercontent.com/d/<id> answers 200 image/png to that request,
+   with Access-Control-Allow-Origin: *, so it can be shown, and read in. */
 /* injected: stand-in styling */
 function pf_sigStyleOnce_() {
   if (document.getElementById('pfSigTypedCss')) return;
@@ -14383,7 +14411,86 @@ function pf_sigSrc(u) {
   if (!u || u.indexOf('data:') === 0) return u;
   var m = u.match(/drive\.google\.com\/file\/d\/([^/?#]+)/) ||
           u.match(/[?&]id=([^&#]+)/);
-  return m ? 'https://drive.google.com/uc?export=view&id=' + m[1] : u;
+  return m ? 'https://lh3.googleusercontent.com/d/' + m[1] : u;
+}
+
+/* Notes are plain text. The prompt questions were compiled into them with
+   their HTML entities still in, so every note saved before this carries a
+   literal "&rsquo;" - which then printed, escaped, as exactly that. The
+   compiler now writes the character; this mends the notes already on file,
+   for the entities those questions used. Nobody types "&rsquo;" into a note. */
+function pf_noteEntities_(v) {
+  return String(v || '').replace(/&rsquo;/g, '\u2019').replace(/&lsquo;/g, '\u2018')
+                        .replace(/&mdash;/g, '\u2014').replace(/&ndash;/g, '\u2013');
+}
+
+/* THE PRINT MUST NOT WAIT ON THE NETWORK.
+   beforeprint rebuilds the layout and the browser takes its snapshot straight
+   after, so an <img> made there is still loading when the page is printed. It
+   prints blank, and the typed name that onerror would put in its place comes
+   too late to be printed as well. So the saved signatures are read in once,
+   as soon as a case is loaded, and kept here as data: URLs. pf_sig prints
+   those, and the print carries them whatever the network is doing. */
+var PF_SIG_INLINE = {};          // image URL -> data: URL
+var PF_SIG_READING = null;       // the read in progress, if there is one
+var PF_SIG_SEQ = 0;              // stand-in ids, numbered per build so a rebuild is identical
+function pf_sigUrls_() {
+  var st = (typeof state !== 'undefined') ? state : {};
+  return ['advisorSigUrl', 'dmSigUrl', 'bmSigUrl', 'managerSigUrl', 'clientSigUrl']
+    .map(function (k) { return pf_sigSrc(st[k]); })
+    .filter(function (u, i, a) { return u && u.indexOf('data:') !== 0 && a.indexOf(u) === i; });
+}
+function pf_sigsPending_() {
+  return pf_sigUrls_().some(function (u) { return !PF_SIG_INLINE[u]; }) && !!PF_SIG_READING;
+}
+function pf_inlineSigs_() {
+  if (PF_SIG_READING) return PF_SIG_READING;
+  var todo = pf_sigUrls_().filter(function (u) { return !PF_SIG_INLINE[u]; });
+  if (!todo.length || typeof fetch !== 'function') return Promise.resolve(0);
+  var got = 0;
+  PF_SIG_READING = Promise.all(todo.map(function (u) {
+    return fetch(u, { mode: 'cors', credentials: 'omit' })
+      .then(function (r) {
+        var ct = r.headers.get('content-type') || '';
+        if (!r.ok || !/^image\//i.test(ct)) throw new Error(r.status + ' ' + ct);
+        return r.blob();
+      })
+      .then(function (b) {
+        return new Promise(function (res, rej) {
+          var fr = new FileReader();
+          fr.onload = function () { res(fr.result); }; fr.onerror = function () { rej(fr.error); };
+          fr.readAsDataURL(b);
+        });
+      })
+      .then(function (d) { PF_SIG_INLINE[u] = d; got++; })
+      .catch(function (e) { console.warn('Signature not read in; the print will ask for it directly:', u, e); });
+  })).then(function () { PF_SIG_READING = null; return got; });
+  return PF_SIG_READING;
+}
+/* Print / PDF. With the signatures already read in (the usual case, since
+   that starts as the case loads) this prints at once, inside the tap. Only
+   while they are still arriving does it wait, a few seconds at most, rather
+   than print the boxes empty. */
+function pf_imagesReady_(root, ms) {
+  var imgs = root ? [].slice.call(root.querySelectorAll('img')) : [];
+  return Promise.race([
+    Promise.all(imgs.map(function (i) {
+      return (i.complete && i.naturalWidth) ? null :
+        new Promise(function (r) { i.addEventListener('load', r, { once: true }); i.addEventListener('error', r, { once: true }); });
+    })),
+    new Promise(function (r) { setTimeout(r, ms); })
+  ]);
+}
+function pfPrint() {
+  if (!pf_sigsPending_()) {
+    try { buildPrintLayout(); } catch (e) { console.error(e); }
+    window.print();
+    return;
+  }
+  try { showStatus('Fetching the signatures for the print…', true); } catch (e) {}
+  Promise.race([pf_inlineSigs_(), new Promise(function (r) { setTimeout(r, 4000); })])
+    .then(function () { try { buildPrintLayout(); } catch (e) { console.error(e); } return pf_imagesReady_(document.getElementById('printLayout'), 2500); })
+    .then(function () { window.print(); });
 }
 
 function pf_sig(role, fallbackName) {
@@ -14413,6 +14520,7 @@ function pf_sig(role, fallbackName) {
   }
 
   var src = dataUrl || pf_sigSrc(serverUrl);
+  if (src && PF_SIG_INLINE[src]) src = PF_SIG_INLINE[src];
 
   /* NEVER FAIL SILENTLY AGAIN. The old handler was onerror="display:none",
      so a signature that would not load was deleted from the page and the line
@@ -14434,7 +14542,7 @@ function pf_sig(role, fallbackName) {
   var stand = typed ? '<span class=\'pf-sig-typed\'>' + typed + '</span>' : '';
   if (!src) return stand;
 
-  var id = 'sg' + Math.random().toString(36).slice(2, 9);
+  var id = 'pfsg' + (++PF_SIG_SEQ);
   return '<img class="pf-sig-img" src="' + pf$(src) + '" alt="' + role + ' signature"' +
          (stand ? ' onerror="this.style.display=\'none\';var n=document.getElementById(\'' + id +
                   '\'); if(n) n.style.display=\'inline-flex\';"' :
@@ -14491,6 +14599,7 @@ function pf_pageFooter(n) {
 function buildPrintLayout() {
   var root = document.getElementById('printLayout');
   if (!root) return;
+  PF_SIG_SEQ = 0;
   // Run calc() so every computed total is current in the DOM before we read it.
   try { if (typeof calc === 'function') calc(); } catch (e) {}
   var s = (typeof state !== 'undefined') ? Object.assign({}, state) : {};
@@ -14942,7 +15051,7 @@ function buildPrintLayout() {
 
   html += '<div class="pf-h2">Notes</div>';
   html += '<div style="font-size:8.5pt; font-style:italic; margin-bottom:1.5mm">Agent&rsquo;s notes &amp; product rationale (reasons for the recommendation)</div>';
-  html += '<div style="border:0.5pt solid #555; min-height:30mm; padding:3mm; font-size:9pt; white-space:pre-wrap; overflow-wrap:break-word; word-break:break-word">' + pf$(s.notes || '') + '</div>';
+  html += '<div style="border:0.5pt solid #555; min-height:30mm; padding:3mm; font-size:9pt; white-space:pre-wrap; overflow-wrap:break-word; word-break:break-word">' + pf$(pf_noteEntities_(s.notes || '')) + '</div>';
 
   html += '<div class="pf-h2">Recommendations</div>';
   html += '<table class="pf-table pf-table-fixed"><thead><tr>';
@@ -15164,6 +15273,12 @@ function buildPrintLayout() {
   // Last page. An advisor can tear it off and put it on the table.
   html += pf_productNeedGrid(s);
 
+  /* Nothing changed since the last build: leave the page alone. beforeprint
+     lands here, and swapping in identical markup throws away signature
+     images that have loaded for new ones that have not, a moment before the
+     browser takes its picture of the page. */
+  if (root.__pfHtml === html && root.innerHTML) return;
+  root.__pfHtml = html;
   root.innerHTML = html;
 }
 
@@ -16278,12 +16393,12 @@ function pf_buildReplacementDisclosure(s) {
   h += '<table style="width:100%;border-collapse:collapse;font-size:8pt;margin-top:4mm">' +
        '<tr>' +
        '<td style="width:38%;padding-right:6mm;vertical-align:bottom">' +
-         '<div style="border-bottom:0.6pt solid #000;height:11mm">' + pf_clientSig_() + '</div>' +
+         '<div style="border-bottom:0.6pt solid #000;height:11mm;display:flex;align-items:flex-end">' + pf_clientSig_() + '</div>' +
          '<div style="margin-top:0.8mm">Policyholder&rsquo;s signature</div>' +
          '<div>Date: ' + BLANK + '</div>' +
        '</td>' +
        '<td style="width:38%;padding-right:6mm;vertical-align:bottom">' +
-         '<div style="border-bottom:0.6pt solid #000;height:11mm">' + pf_sig('advisor', s.advisorName) + '</div>' +
+         '<div style="border-bottom:0.6pt solid #000;height:11mm;display:flex;align-items:flex-end">' + pf_sig('advisor', s.advisorName) + '</div>' +
          '<div style="margin-top:0.8mm">Witnessed by agent, broker or sales representative</div>' +
          '<div>' + (s.advisorName ? pf$(s.advisorName) : BLANK) +
            (s.agentCode ? ' &middot; ' + pf$(s.agentCode) : '') + '</div>' +
@@ -16566,7 +16681,10 @@ function pf_displacedDetail(s) {
       html += '<div style="margin-top:3mm; font-size:8.5pt; color:#0F766E; font-weight:600">&#10004; Client information &amp; needs verified &nbsp;&nbsp; &#10004; Affordability &amp; ratios reviewed &nbsp;&nbsp; &#10004; Recommendation confirmed suitable &nbsp;&nbsp; &#10004; Compliance disclosures checked</div>';
     }
     html += '<div style="margin-top:5mm; display:flex; justify-content:space-between; align-items:flex-end">';
-    html += '<div>' + (signatures.manager ? '<img src="' + signatures.manager + '" style="height:13mm; max-width:52mm">' : '<div style="height:13mm"></div>') + '<div style="font-size:8pt; color:#555; border-top:0.6pt solid #999; padding-top:1mm; width:52mm">' + pf$(_mgrName) + ' &middot; Direct Manager</div></div>';
+    /* The mark made in this browser, or the one on file. This read only the
+       pad, so on every case opened from the dashboard the endorsement line
+       printed empty above the manager's name. */
+    html += '<div><div style="height:13mm; display:flex; align-items:flex-end">' + pf_sig('manager', '') + '</div>' + '<div style="font-size:8pt; color:#555; border-top:0.6pt solid #999; padding-top:1mm; width:52mm">' + pf$(_mgrName) + ' &middot; Direct Manager</div></div>';
     html += '<div style="font-size:8.5pt; color:#555">Date: ' + pf_dateStr(s.mgrSigDate) + '</div>';
     html += '</div></div>';
   }
