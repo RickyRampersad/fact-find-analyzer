@@ -510,8 +510,14 @@ function goalWall_(e) {
   /* What the filed plans ask of the branch, added up: the wall's live-goals
      slide maps it onto the day, the week and the month, against what is
      coming in. A day is a fifth of a week; a month a twelfth of the year. */
-  var api = 0, fyc = 0, ask = { apiWeek: 0, apiMonth: 0, apiDay: 0, appsWeek: 0, appsYear: 0, ffWeek: 0, apptWeek: 0, contactsWeek: 0 };
+  /* The income goals go out as the branch's total only, and only once five
+     plans or more make it up. goals.html tells every advisor their income is
+     seen by them, their unit manager and the branch manager, and this answer
+     reaches every wall screen, a visitor's pass included. Slide 13 sets the
+     branch's earnings against it; no lane carries a person's income goal. */
+  var api = 0, fyc = 0, income = 0, incomeN = 0, ask = { apiWeek: 0, apiMonth: 0, apiDay: 0, appsWeek: 0, appsYear: 0, ffWeek: 0, apptWeek: 0, contactsWeek: 0 };
   R.lanes.forEach(function (p) { var P = plans[p.code]; if (P && P.plan) { var d = goalDerive_(P.plan); api += d.api; fyc += d.fyc;
+    if (d.income > 0) { income += d.income; incomeN++; }
     ask.apiWeek += d.api / d.weeks; ask.apiMonth += d.api / 12; ask.appsWeek += d.appsWeek; ask.appsYear += d.appsYear;
     ask.ffWeek += d.ffWeek; ask.apptWeek += d.apptWeek; ask.contactsWeek += d.contactsWeek; } });
   ask.apiDay = ask.apiWeek / 5;
@@ -531,7 +537,8 @@ function goalWall_(e) {
               lanes: R.lanes, standby: R.standby, firstOff: firstOff, finishers: finishers, ask: ask, week: wk,
               rewarded: goalRewarded_(fy, plans, ms).map(function (x) { return { place: x.place, name: x.name, at: x.at }; }),
               places: GOAL_REAL.places,
-              totals: { people: R.lanes.length + R.standby.length, go: R.lanes.length, api: api, fyc: fyc } };
+              totals: { people: R.lanes.length + R.standby.length, go: R.lanes.length, api: api, fyc: fyc,
+                        income: incomeN >= 5 ? Math.round(income) : 0 } };
   try { cache.put('goal_wall', JSON.stringify(out), 60); } catch (err) {}
   return out;
 }

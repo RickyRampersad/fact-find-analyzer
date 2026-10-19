@@ -2090,7 +2090,7 @@
      the whole row between them and left it 23px wide, so on a 1280 laptop
      every advisor on the board read as three letters and an ellipsis. The
      numbers give way to the name now, not the other way round. */
-  .sbR{display:grid; grid-template-columns:minmax(7em,1fr) minmax(1.3em,1.6em) minmax(1.35em,1.9em) minmax(1.3em,1.6em) minmax(1.35em,1.9em) minmax(1.3em,1.6em) minmax(1.95em,2.3em) repeat(3,minmax(1.35em,1.55em)) minmax(1.55em,1.8em);
+  .sbR{display:grid; grid-template-columns:minmax(7em,1fr) minmax(1.3em,1.6em) minmax(1.35em,1.9em) minmax(1.3em,1.6em) minmax(1.35em,1.9em) minmax(1.3em,1.6em) minmax(1.95em,2.3em) minmax(1.6em,1.9em) repeat(2,minmax(1.75em,2.05em)) minmax(1.55em,1.8em);
     gap:.2em; align-items:center; padding:0 .3em;
     border-bottom:1px solid rgba(255,255,255,.045)}
   .sbR .l{font-size:.655em; font-weight:600; white-space:nowrap; overflow:hidden;
@@ -2168,16 +2168,16 @@
     /* .sbUnits .sbR, not .sbR: the 1500px rule sits later in the sheet and
        would win on equal footing. */
     .sbUnits .sbR{grid-template-columns:minmax(6.6em,1fr) repeat(2,minmax(1.5em,1.85em)) repeat(2,minmax(1.5em,1.9em))
-      minmax(2.45em,2.55em) minmax(2em,2.35em) repeat(3,minmax(1.45em,1.6em)) minmax(1.95em,2.2em)}
+      minmax(2.45em,2.55em) minmax(2em,2.35em) minmax(1.75em,1.95em) repeat(2,minmax(1.85em,2.1em)) minmax(1.95em,2.2em)}
   }
-  /* Under 1500px the five-year column steps out so the stars can come in
-     without cutting anybody's name to initials. Two and three year are what
-     a branch acts on this quarter, and the wall itself shows all four. */
+  /* Under 1500px the goal's amount steps out so the stars can stay without
+     cutting anybody's name to initials. The two shares carry the meaning, and
+     the amount is in each share's title for anyone close enough to hover. */
   @media (max-width:1500px){
-    .sbR .c.pc5, .sbR .pc5{display:none}
-    .sbR.hdg .grp.pc{grid-column:span 2}
+    .sbR .c.gGoal{display:none}
+    #p12 .sbR.hdg .grp.gGrp{grid-column:span 2}
     .sbR.mhd .c{font-size:.52em}
-    .sbR{grid-template-columns:minmax(6em,1fr) minmax(1.25em,1.5em) minmax(1.3em,1.8em) minmax(1.25em,1.5em) minmax(1.3em,1.8em) minmax(1.25em,1.5em) minmax(1.8em,2.15em) repeat(2,minmax(1.35em,1.55em)) minmax(1.55em,1.8em)}
+    .sbR{grid-template-columns:minmax(6em,1fr) minmax(1.25em,1.5em) minmax(1.3em,1.8em) minmax(1.25em,1.5em) minmax(1.3em,1.8em) minmax(1.25em,1.5em) minmax(1.8em,2.15em) repeat(2,minmax(1.7em,1.95em)) minmax(1.55em,1.8em)}
   }
   @media (max-height:860px){
     .sbR .l{font-size:.57em}
@@ -2195,7 +2195,7 @@
     #p12 .tkr{height:1.5em}
     .sbR .l{font-size:.54em}
     .sbR .c{font-size:.47em}
-    .sbR .c.pc{font-size:.43em}
+    .sbR .c.gPct,.sbR .c.gGoal{font-size:.45em}
     .sbR.mhd .l{font-size:.52em}
     .sbR.mhd .c{font-size:.5em}
     .sbR.hd .c{font-size:.42em; letter-spacing:.02em}
@@ -2220,14 +2220,87 @@
     border-bottom-color:rgba(245,185,53,.45)}
   #sbRosterCap .capStar{color:var(--gold)}
   .sbUnits .sbR{padding-top:var(--rowPad,0px); padding-bottom:var(--rowPad,0px)}
-  .sbR .c.pc{position:static; width:auto; height:auto; border-radius:0;
-    animation:none; font-variant-numeric:tabular-nums; font-weight:800}
-  .sbR .c.pc.pOk{color:#34D399}
-  .sbR .c.pc.pMid{color:var(--amber)}
-  .sbR .c.pc.pLow{color:var(--red)}
-  .sbR.hd .c.pc{color:var(--ink-3); font-weight:700}
-  .sbR.hdg .grp.pc{grid-column:span 3; color:#8FD8C4;
-    border-bottom-color:rgba(52,211,153,.45)}
+  /* GOAL · FY27, where persistency was (19 October 2026). The advisor's own
+     flight plan: the API goal, the share of it settled since 1 October, and
+     what they have earned on it, FYC taken as half of settled API as slide
+     23 says. The share carries a bar with a white tick where their own plan
+     says they should be by today.
+
+     IN MOTION, each time the slide comes round (s13Play): armed at nought
+     while the slide is off (gArm); then the rows rise into place, the bars
+     fill while their figures count up, the tick pings once a bar has run
+     past it, and a flag lands beside anyone past their goal, whose bar
+     keeps a slow gold shine. gIntro holds the one-off parts for three and a
+     half seconds. A repaint under the eye shows the figures as they are. */
+  .sbR .c.gGoal{font-weight:800; color:var(--ink-2); white-space:nowrap}
+  .sbR .c.gGoal.gNo{color:var(--ink-3); font-weight:600; text-align:center}
+  /* The bar sits in the gap under the figure, not under padding of its own:
+     a taller cell made every row taller and pushed the month chart into the
+     footer of a full wall. */
+  .sbR .c.gPct{position:relative; font-weight:800; white-space:nowrap; color:var(--ink-2)}
+  .sbR .c.gPct.gNo{color:var(--ink-3); font-weight:600; text-align:center}
+  .sbR .c b.gN{font-weight:inherit}
+  .sbR .c.gPct .gBar{position:absolute; left:.15em; right:0; bottom:-.24em; height:.26em;
+    border-radius:.3em; background:rgba(148,163,184,.24); overflow:visible}
+  .sbR .c.gPct .gBar i{position:absolute; left:0; top:0; bottom:0; width:var(--w,0%);
+    border-radius:.3em; background:linear-gradient(90deg,#0D9488,#34D399);
+    box-shadow:0 0 .4em rgba(52,211,153,.45);
+    transition:width 1.25s cubic-bezier(.2,.8,.2,1) var(--d,0s)}
+  .sbR .c.gPct.gInc .gBar i{background:linear-gradient(90deg,#C98A12,#F5B935); box-shadow:0 0 .4em rgba(245,185,53,.45)}
+  .sbR .c.gPct .gBar u{position:absolute; top:-.12em; bottom:-.12em; width:.14em;
+    left:var(--x,0%); background:#fff; opacity:.8; border-radius:.1em}
+  #p12.gArm .sbR .c.gPct .gBar i{width:0 !important; transition:none}
+  #p12.gArm [data-cu]{visibility:hidden}
+  .sbR .c.gPct.gAhead{color:#34D399}
+  .sbR .c.gPct.gDone{color:var(--gold)}
+  .sbR .c.gPct.gDone .gBar i{background:linear-gradient(90deg,#E0A21E,#FFF1B8 45%,#F5B935 60%,#E0A21E);
+    background-size:220% 100%; box-shadow:0 0 .55em rgba(245,185,53,.8)}
+  #p12.on .sbR .c.gPct.gDone .gBar i{animation:gShine 2.8s linear 1.9s infinite}
+  @keyframes gShine{from{background-position:120% 0} to{background-position:-120% 0}}
+  .sbR .c.gPct.gNone{color:var(--ink-3)}
+  .sbR .c.gPct.gInc.gAhead{color:#FBD064}
+  .sbR .c.gErn{color:#FBD064; font-weight:800}
+  .sbR .l .gFlag{font-style:normal; display:inline-block; margin-left:.35em; font-size:.9em}
+  #p12.gIntro .sbR .l .gFlag{animation:gPop .8s cubic-bezier(.3,1.7,.5,1) both;
+    animation-delay:calc(var(--rd,0s) + 1.35s)}
+  @keyframes gPop{from{opacity:0; transform:scale(.15) rotate(-40deg)}}
+  #p12.gIntro .sbR .c.gPct.gAhead .gBar u,#p12.gIntro .sbR .c.gPct.gDone .gBar u{
+    animation:gPing .8s ease-out both; animation-delay:calc(var(--d,0s) + .75s)}
+  @keyframes gPing{40%{transform:scaleY(2.3); opacity:1; box-shadow:0 0 .5em #fff}}
+  #p12.gIntro .sbUnit .sbR.a,#p12.gIntro .sbUnit .sbR.mhd{animation:sbRise .6s cubic-bezier(.2,.8,.2,1) both;
+    animation-delay:var(--rd,0s)}
+  @keyframes sbRise{from{opacity:0; transform:translateY(.6em)}}
+  /* Before the year's settled figures arrive a goal is not measured: a dot
+     that breathes, never a 0% that reads as nothing settled. */
+  .sbR .c.gWait{color:var(--ink-3); font-weight:600; text-align:center}
+  #p12.on .sbR .c.gWait,#p12.on .sbTile.gl.gWait i{animation:gBreathe 1.8s ease-in-out infinite}
+  @keyframes gBreathe{50%{opacity:.35}}
+  .sbTile.gl.gWait b{color:var(--ink-2)}
+  #sbRosterCap .capWait{color:var(--ink-3)}
+  .sbR.hd .c.gGoal,.sbR.hd .c.gPct{color:var(--ink-3); font-weight:700; letter-spacing:0}
+  .sbR.hdg .grp.gGrp{grid-column:span 3; color:var(--gold);
+    border-bottom-color:rgba(245,185,53,.45)}
+  /* The branch's best in each column, which the caption has promised in gold
+     since the panel was rebuilt and nothing was drawing. */
+  .sbR .c.hi{color:#FFE9B0; background:rgba(245,185,53,.22); border-radius:.3em;
+    box-shadow:0 0 0 1px rgba(245,185,53,.45)}
+  #p12.on .sbR .c.hi{animation:gGlow 2.6s ease-in-out 1.3s 2}
+  @keyframes gGlow{50%{box-shadow:0 0 .6em rgba(245,185,53,.85), 0 0 0 1px rgba(245,185,53,.8)}}
+  /* The line above the board: the key, then the race, taking turns. */
+  #sbRosterCap{min-width:0; overflow:hidden}
+  #sbRosterCap .capRot{display:inline-grid; justify-items:end; max-width:100%; vertical-align:bottom}
+  #sbRosterCap .capI{grid-area:1/1; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    opacity:0; transform:translateY(.8em); transition:opacity .5s ease, transform .5s cubic-bezier(.2,.8,.2,1)}
+  #sbRosterCap .capI.on{opacity:1; transform:none}
+  #sbRosterCap .capI:not([data-k="key"]){color:#FFE9B0; font-weight:700}
+  #sbRosterCap .capI:not([data-k="key"]) b{color:var(--gold)}
+  @media (prefers-reduced-motion:reduce){
+    #p12 .sbR .c.gPct .gBar i{transition:none}
+    #p12.on .sbR .c.hi,#p12.on .sbR .c.gWait,#p12.on .sbTile.gl.gWait i,
+    #p12.on .sbR .c.gPct.gDone .gBar i,#p12.gIntro .sbR .l .gFlag,#p12.gIntro .sbR .c.gPct .gBar u,
+    #p12.gIntro .sbUnit .sbR{animation:none}
+    #sbRosterCap .capI{transition:none; transform:none}
+  }
   .sbR.hdg .grp.s1{grid-column:span 2; color:var(--teal-deep);
     border-bottom-color:rgba(13,148,136,.5)}
   .sbR.mhd .c.s,.sbR.br .c.s{color:#6EE7B7}
@@ -2250,6 +2323,59 @@
   .sbR.a.hot .l{color:#fff; font-weight:700}
   .sbR.a.hot .c{color:var(--gold)}
   .sbStrip{display:grid; grid-template-columns:repeat(4,1fr); gap:.5em; margin-top:.4em; flex:none}
+  .sbStrip.g5{grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,1.3fr)}
+  /* Under 1500px five tiles are narrower than four were, and the app counts
+     were cut to "146 a…". There the count moves up beside the caption and the
+     figure keeps the tile's whole width; the tiles stay two lines tall. */
+  @media (max-width:1500px){
+    .sbStrip.g5 .sbTile:not(.gl){position:relative}
+    .sbStrip.g5 .sbTile:not(.gl) .tv i{position:absolute; top:.55em; right:1.35em; margin:0}
+    .sbStrip.g5 .sbTile:not(.gl) span{padding-right:4.3em; letter-spacing:.03em}
+    .sbStrip.g5 .sbTile.gl span{letter-spacing:.03em}
+    .sbTile.gl .gx{display:none}
+  }
+  .sbTile.gl .gx{font-style:normal}
+  .sbTile.gl{position:relative; overflow:hidden; background:linear-gradient(100deg,rgba(245,185,53,.2),rgba(45,212,191,.12));
+    border-color:rgba(245,185,53,.45)}
+  .sbTile.gl span{color:var(--gold)}
+  .sbTile.gl b{color:#FFE29A}
+  .sbTile.gl i{color:#FBD064}
+  /* Two faces in one place, so the tile stays the height of the four beside
+     it: the API goals, then the income goals, eleven seconds a turn. */
+  .sbTile.gl .glf{display:grid; min-width:0}
+  .sbTile.gl .glf > .tv{grid-area:1/1}
+  .sbTile.gl.two .f2,.sbTile.gl.two .gt.g2{opacity:0}
+  #p12.on .sbTile.gl.two .f1{animation:glA 11s ease-in-out 3.4s infinite}
+  #p12.on .sbTile.gl.two .f2{animation:glB 11s ease-in-out 3.4s infinite}
+  #p12.on .sbTile.gl.two .gt.g1{animation:glAo 11s ease-in-out 3.4s infinite}
+  #p12.on .sbTile.gl.two .gt.g2{animation:glBo 11s ease-in-out 3.4s infinite}
+  @keyframes glA{0%,44%{opacity:1; transform:none} 50%,94%{opacity:0; transform:translateY(-.45em)} 100%{opacity:1; transform:none}}
+  @keyframes glB{0%,44%{opacity:0; transform:translateY(.45em)} 50%,94%{opacity:1; transform:none} 100%{opacity:0; transform:translateY(.45em)}}
+  @keyframes glAo{0%,44%{opacity:1} 50%,94%{opacity:0} 100%{opacity:1}}
+  @keyframes glBo{0%,44%{opacity:0} 50%,94%{opacity:1} 100%{opacity:0}}
+  /* The bar runs along the tile's foot, inside its padding: no extra line. */
+  .sbTile.gl .gt{position:absolute; left:.7em; right:.7em; bottom:.1em; height:.2em; border-radius:.2em;
+    background:rgba(148,163,184,.22)}
+  .sbTile.gl .gt i{position:absolute; left:0; top:0; bottom:0; width:var(--w,0%); border-radius:.2em;
+    background:linear-gradient(90deg,#0D9488,#34D399,#F5B935); box-shadow:0 0 .45em rgba(52,211,153,.5);
+    transition:width 1.6s cubic-bezier(.2,.8,.2,1) .35s}
+  .sbTile.gl .gt.g2 i{background:linear-gradient(90deg,#C98A12,#F5B935,#FFE29A); box-shadow:0 0 .45em rgba(245,185,53,.55)}
+  .sbTile.gl .gt u{position:absolute; top:-.16em; bottom:-.16em; width:.16em; left:var(--x,0%);
+    background:#fff; opacity:.85; border-radius:.1em}
+  #p12.gArm .sbTile.gl .gt i{width:0 !important; transition:none}
+  /* A light passes over the tile every few seconds once its bar has filled:
+     the eye finds the goals first. */
+  .sbTile.gl::after{content:''; position:absolute; top:0; bottom:0; left:-45%; width:32%; opacity:0;
+    background:linear-gradient(100deg,transparent,rgba(255,236,170,.22),transparent);
+    transform:skewX(-18deg); pointer-events:none}
+  #p12.on .sbTile.gl:not(.gWait)::after{animation:gSweep 6s ease-in-out 2.2s infinite}
+  @keyframes gSweep{0%{left:-45%; opacity:0} 6%{opacity:1} 28%{left:125%; opacity:0} 100%{left:125%; opacity:0}}
+  @media (prefers-reduced-motion:reduce){
+    #p12 .sbTile.gl .gt i{transition:none}
+    #p12.on .sbTile.gl::after,#p12.on .sbTile.gl.two .f1,#p12.on .sbTile.gl.two .gt.g1{animation:none}
+    #p12.on .sbTile.gl.two .f2,#p12.on .sbTile.gl.two .gt.g2{animation:none; display:none}
+  }
+  .sbP .pmeta .gOf{color:#FBD064}
   .sbTile{display:flex; flex-direction:column; gap:.1em; padding:.28em .7em; border-radius:.55em;
     background:rgba(255,255,255,.045); border:1px solid var(--line); min-width:0; overflow:hidden;
     white-space:nowrap}
@@ -2264,7 +2390,7 @@
   .sbTile.wk span{color:var(--gold)} .sbTile.wk b{color:var(--gold)}
   .sbTile.set{background:rgba(45,212,191,.12); border-color:rgba(45,212,191,.35)}
   .sbTile.set span{color:var(--teal)} .sbTile.set b{color:#6EE7B7}
-  @media (max-width:1100px){ .sbStrip{grid-template-columns:1fr 1fr} }
+  @media (max-width:1100px){ .sbStrip,.sbStrip.g5{grid-template-columns:1fr 1fr} .sbStrip.g5 .sbTile.gl{grid-column:1 / -1} }
   .sbR.br{background:rgba(45,212,191,.13); border-radius:.55em; border:none;
     margin-top:.45em; padding:.35em .3em}
   .sbR.br .l{font-weight:800; letter-spacing:.1em; font-size:.8em; color:var(--teal)}
@@ -6913,6 +7039,8 @@ var PROD = {
     try{ ok = !!(j && j.v === 'goal1' && paintRace(j)); }catch(e){ ok = false; }
     try{ lf = !!(lastGoalWall && paintLift(lastGoalWall)); }catch(e){ lf = false; }
     try{ gv = !!(lastGoalWall && paintGoal(lastGoalWall)); }catch(e){ gv = false; }
+    /* Slide 13 measures every advisor against this same answer. */
+    try{ if(SUB_LAST) paintSubmitted(SUB_LAST); }catch(e){}
     window.raceReady = ok; window.liftReady = lf; window.goalReady = gv;
     if(typeof panel !== 'undefined' && typeof showPanel === 'function' &&
        ((!ok && panel === 20) || (!lf && panel === 21) || (!gv && panel === 22))) showPanel(0);
@@ -7384,9 +7512,18 @@ var PROD = {
     var STLM = {}, STLA = {};
     if(typeof STL !== 'undefined' && STL.data && STL.data.matrix)
       STL.data.matrix.forEach(function(x){ STLM[x.code] = x.api||0; STLA[x.code] = x.apps||0; });
+    /* THE SETTLED SIDE IS THIS YEAR'S, OR IT WAITS. The table above is FY26
+       as at 31 August. On an FY27 board it is last year's money, and until
+       19 October 2026 it stood under "Settled" for up to ten minutes after
+       every start of the wall: TT$5.35M settled, two weeks into a new year.
+       Once the production feed names its year, a settled figure is shown
+       only when the settlement feed names the same year (both come from
+       fyrLabel_ in FinancialYear.gs); until it answers the cells wait. */
+    var STL_NOW = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
+    var SET_OK = !S.yearLabel || !!(STL_NOW && STL_NOW.fyLabel && STL_NOW.fyLabel === S.yearLabel);
     /* Settled app counts come from the settlement feed alone — the agent
        export carries API, not cases. Blank until that feed has answered. */
-    function settledAppsFor(label){ var v = STLA[codeOf(label)]; return v || 0; }
+    function settledAppsFor(label){ if(!SET_OK) return 0; var v = STLA[codeOf(label)]; return v || 0; }
     function codeOf(label){
       var m2 = String(label||'').toUpperCase().replace(/[^A-Z0-9]/g,'').match(/^[AU]?0*(\d+)/);
       return m2 ? ('A' + ('00000' + m2[1]).slice(-5)) : '';
@@ -7414,10 +7551,125 @@ var PROD = {
        or joined after it was drawn. Show what they settled and leave the
        quota blank; a red triangle against a person with no quota is a lie. */
     function settledFor(label){
+      if(!SET_OK) return 0;
       var x = qrow(label);
       return x ? (x.settled||0) : (STLM[codeOf(label)]||0);
     }
     function typeFor(label){ var x = qrow(label); return x ? (x.type||'') : ''; }
+
+    /* GOAL · FY27, WHERE PERSISTENCY WAS. Asked for on 19 October 2026: "I'm
+       removing the persistency … the goals they did under the fact find …
+       each of their goals measured against the settled API and the income
+       goals compared to what they would have earned". The goal is the
+       advisor's own FY27 flight plan, from goal_wall, the answer slides 21 to
+       23 draw. It is measured on the settled figure in the column beside it,
+       which counts from 1 October, so a row never sets one number against
+       another the reader cannot see. Earned is FYC taken as half of settled
+       API, the branch's working average (8 October) and the rule slide 23
+       states. Somebody with no plan has no goal, and the cell says so with a
+       dash rather than a 0% that reads as a plan going nowhere. The pace
+       tick is where their own quarters say they should be by today (expPct).
+
+       EACH PERSON'S INCOME GOAL STAYS OFF THE WALL. goals.html promises every
+       advisor that their API goal and their progress go on the wall and that
+       "your budget, your income, your answers" are seen only by them, their
+       unit manager and the branch manager; the income goal is their household
+       budget grossed up. A share of it beside the API goal gives the figure
+       away by arithmetic, so goal_wall sends the branch's total, never a
+       person's, and the strip sets the branch's earnings against that total.
+       Each row shows what the advisor has earned in TT$. Should the branch
+       manager tell the advisors and put their income goals on the wall, a
+       lane that carries income turns the third column into the share of it
+       (HAS_INC) with nothing else to change here.
+
+       The share waits until the settlement feed names the goals' own year:
+       before it answers, or from a build still counting another year, a goal
+       is never measured against the wrong year's money (GOAL_LIVE). */
+    var GW = (lastGoalWall && lastGoalWall.lanes) ? lastGoalWall : null;
+    var GOALS = {}, GBYNAME = {};
+    if(GW) GW.lanes.forEach(function(l){
+      if(!l || !(l.goal > 0)) return;
+      if(l.code) GOALS[l.code] = l;
+      var nm = String(l.name||'').toUpperCase().replace(/[^A-Z]/g,'');
+      if(nm) GBYNAME[nm] = l;
+    });
+    var GFY = (GW && GW.fy && GW.fy.label) || S.yearLabel || 'FY27';
+    var GOAL_LIVE = !!(GW && SET_OK && STL_NOW && STL_NOW.fyLabel === GFY);
+    var HAS_INC = !!(GW && GW.lanes.some(function(l){ return l && l.income > 0; }));
+    var FYC_SHARE = 0.5;
+    function goalSetFor(label){ return GOAL_LIVE ? settledFor(label) : 0; }
+    function goalOf(label){
+      var g = GOALS[codeOf(label)];
+      if(g) return g;
+      var nm = String(label||'').replace(/^[A-Z]?\d+\s*-\s*/i,'').toUpperCase().replace(/[^A-Z]/g,'');
+      return (nm && GBYNAME[nm]) || null;
+    }
+    function gPctTxt(p){ return (p >= 10 || p === 0 ? String(Math.round(p)) : p.toFixed(1).replace(/\.0$/, '')) + '%'; }
+    /* The share of a goal, with its bar and the pace tick. */
+    var G_WAIT = 'reading the ' + GFY + ' settled figures';
+    function gCell(done, goal, pace, cls, on, d, title){
+      if(!(goal > 0)) return '<div class="c gPct' + cls + '"></div>';
+      if(!GOAL_LIVE) return '<div class="c gPct gWait' + cls + '" title="' + G_WAIT + '">&middot;</div>';
+      var pct = done / goal * 100, w2 = Math.max(0, Math.min(100, pct)), x = Math.max(0, Math.min(100, pace || 0));
+      var st = pct >= 100 ? ' gDone' : (pct > 0 && pct >= (pace || 0)) ? ' gAhead' : pct > 0 ? '' : ' gNone';
+      /* data-cu: the figure counts up from nought while its bar fills, each
+         time the slide comes round (s13Play). The painted text is the last
+         frame, so a screen that never animates shows exactly this. */
+      return '<div class="c gPct' + cls + st + (on ? ' hi' : '') + '" title="' + esc(title || '') + '" style="--w:'
+        + w2.toFixed(1) + '%;--x:' + x.toFixed(1) + '%;--d:' + (d || 0).toFixed(2) + 's">'
+        + '<b class="gN" data-cu="' + pct.toFixed(2) + '" data-fmt="pct" data-cd="' + (d || 0).toFixed(2) + '">'
+        + gPctTxt(pct) + '</b>'
+        + '<span class="gBar"><i></i>' + (x > 0 && x < 100 ? '<u></u>' : '') + '</span></div>';
+    }
+    /* The bar fills just behind its row's rise (ri, set as the rows are
+       drawn), so both columns fill top to bottom together. */
+    function goalCells(r, hi){
+      var g = r._goal || 0, d = Math.min(1.5, 0.3 + Math.max(0, ri - 1) * 0.045);
+      /* No plan: the dash sits under "To goal", the one goal column every
+         screen shows (the amount steps out under 1500px). */
+      if(!g) return '<div class="c gGoal gNo"></div>'
+                  + (r.lvl === 2 ? '<div class="c gPct gNo" title="no ' + GFY + ' flight plan filed">&mdash;</div>'
+                                 : '<div class="c gPct"></div>')
+                  + '<div class="c gErn"></div>';
+      var set = r._goalSet || 0;
+      var out = '<div class="c gGoal">' + col(g) + '</div>'
+        + gCell(set, g, r._pace, '', hi && r === bGa, d,
+                full(set) + ' settled of a ' + full(g) + ' API goal');
+      if(HAS_INC) out += gCell(r._incEarn || 0, r._inc || 0, r._pace, ' gInc', hi && r === bGi, d + 0.1,
+                full(r._incEarn || 0) + ' earned of a ' + full(r._inc || 0) + ' income goal');
+      else out += '<div class="c gErn' + (GOAL_LIVE ? '' : ' gWait') + '" title="'
+                + (GOAL_LIVE ? 'FYC taken as half of settled API' : G_WAIT) + '">'
+                + (GOAL_LIVE && set
+                    ? '<b class="gN" data-cu="' + Math.round(set * FYC_SHARE) + '" data-fmt="k" data-cd="'
+                      + (d + 0.1).toFixed(2) + '">' + col(set * FYC_SHARE) + '</b>'
+                    : '&middot;') + '</div>';
+      return out;
+    }
+    /* Past their own goal, on settled business: the flag beside the name. */
+    function goalDone(label){
+      var g2 = goalOf(label);
+      return !!(GOAL_LIVE && g2 && g2.goal > 0 && goalSetFor(label) >= g2.goal);
+    }
+    /* The goal figures a row carries: an advisor's own plan, or a team's
+       planners added up, with the pace weighted by each goal. */
+    function goalFill(r, rows2){
+      r._goal = 0; r._goalSet = 0; r._inc = 0; r._incEarn = 0;
+      var pw = 0;
+      rows2.forEach(function(x){
+        if(elsewhere(x.label)) return;
+        var g2 = goalOf(x.label); if(!g2 || !(g2.goal > 0)) return;
+        var s2 = goalSetFor(x.label);
+        r._goal += g2.goal; r._goalSet += s2; pw += g2.goal * (g2.expPct || 0);
+        if(g2.income > 0){ r._inc += g2.income; r._incEarn += s2 * FYC_SHARE; }
+      });
+      r._pace = r._goal ? pw / r._goal : 0;
+    }
+    /* One gold cell per goal column too: the furthest along their API goal,
+       and the furthest along their income goal. */
+    var bGa = best(function(r){ var g2 = goalOf(r.label); return g2 && g2.goal > 0 ? goalSetFor(r.label) / g2.goal : 0; });
+    var bGi = HAS_INC ? best(function(r){ var g2 = goalOf(r.label);
+      return g2 && g2.income > 0 ? goalSetFor(r.label) * FYC_SHARE / g2.income : 0; }) : null;
+
     /* WHAT CLIENTS SAID, BESIDE WHAT THE ADVISOR WROTE. An average is shown
        only once a client has rated an advisor at least twice — one five and
        one two is not a 3.5 service record, it is two clients — and a low
@@ -7461,9 +7713,8 @@ var PROD = {
        the settlement build and that build is not deployed yet, so the feed
        still answers with the old empty shape. quotaFor and the table behind
        it stay exactly where they are; putting the two columns back is
-       uncommenting pctCell into cells(). Persistency has the space in the
-       meantime, and it is the better use of it: it says whether what was
-       written stayed on the books. */
+       uncommenting pctCell into cells(). The space went to persistency, and
+       on 19 October 2026 to each advisor's own goal (above). */
     function quotaPct(api, quota){
       if(!quota) return '<div class="c q"></div>';
       var pct = api / quota * 100;
@@ -7471,32 +7722,6 @@ var PROD = {
       var mark = pct >= 100 ? '\u25B2' : pct >= 75 ? '\u25B3' : '\u25BC';
       return '<div class="c q' + cls + '"><i>' + mark + '</i>' + Math.round(pct) + '%</div>';
     }
-    /* Life business is only sold once it stays sold. Under 80% is where a
-       branch starts losing what it wrote, so the colours break there and
-       again at 90 rather than at round numbers that mean nothing. */
-    /* The class is pc, not p. The wall already has a .p — the drifting
-       particles behind the panels — at position:absolute and .7em square,
-       and every persistency cell picked it up and collapsed to eight pixels
-       wide inside a fifty pixel column. One letter, and the numbers vanish. */
-    function persCell(v, cls2){
-      if(v === null || v === undefined || v === '') return '<div class="c pc"></div>';
-      var n2 = Number(v);
-      var c2 = n2 >= 90 ? ' pOk' : n2 >= 80 ? ' pMid' : ' pLow';
-      return '<div class="c pc' + c2 + (cls2||'') + '">' + Math.round(n2) + '</div>';
-    }
-    /* A team's persistency is its people's, weighted by what each settled —
-       an advisor on 700k of business moves the branch's book, one on 10k
-       does not, and a plain average would let the small book hide the big. */
-    function persOf(rows2, key){
-      var num = 0, den = 0;
-      rows2.forEach(function(r2){
-        var x = qrow(r2.label); if(!x || x[key] === undefined || x[key] === null) return;
-        var wgt = (x.settled || 0) || 1;
-        num += x[key] * wgt; den += wgt;
-      });
-      return den ? num / den : null;
-    }
-
     function cells(r, hi){
       function c(txt, on, cls){
         return '<div class="c'+(cls||'')+(on?' hi':'')+'">'+txt+'</div>';
@@ -7514,34 +7739,32 @@ var PROD = {
       var set = r._settled || 0, setA = r._settledApps || 0;
       out += c(setA ? n0(setA) : '&middot;', false, ' s ap');
       out += c(set ? col(set) : '&middot;', false, ' s');
-      /* Persistency is an advisor's own book. A team's is not a figure the
-         branch acts on — the branch manager asked for no tally — so the team
-         and branch rows leave those three cells empty. */
-      if(r.lvl !== 2) return out + '<div class="c pc"></div><div class="c pc"></div>'
-                                 + '<div class="c pc pc5"></div><div class="c st"></div>';
-      return out + persCell(r._p2) + persCell(r._p3) + persCell(r._p5, ' pc5') + starCell(r);
+      /* A team's goal is its planners' goals added up, measured on what
+         those same people settled. The stars stay an advisor's own. */
+      if(r.lvl !== 2) return out + goalCells(r, false) + '<div class="c st"></div>';
+      return out + goalCells(r, hi) + starCell(r);
     }
     /* WHICH YEAR EACH SIDE IS. Once the feed counts from 1 October it says so
        (yearLabel, FY27), and the settled side names its own year from the
        settlement board until that rolls over too. Two columns both headed
        "year" would put this year's first week beside last year's whole. */
-    var stlD = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
     var subYr = S.yearLabel ? esc(S.yearLabel) : 'year';
-    var setYr = (S.yearLabel && stlD && stlD.fyEndsOn)
-      ? 'FY' + esc(String(stlD.fyEndsOn).slice(2, 4)) : 'year';
+    /* The settled side shows the board's own year or waits for it (SET_OK),
+       so it is named for that year. */
+    var setYr = subYr;
     function head(){
       return '<div class="sbR hdg"><div class="l"></div>'
         + '<div class="grp">Submitted &mdash; week</div>'
         + '<div class="grp">Submitted &mdash; ' + subYr + '</div>'
         + '<div class="grp s1">Settled &mdash; ' + setYr + '</div>'
-        + '<div class="grp pc">Persistency %</div>'
+        + '<div class="grp gGrp">Goal &mdash; ' + esc(GFY) + '</div>'
         + '<div class="grp st">Client</div></div>'
         + '<div class="sbR hd"><div class="l">Advisor</div>'
         + '<div class="c ap">Apps</div><div class="c">API</div>'
         + '<div class="c ap">Apps</div><div class="c">API</div>'
         + '<div class="c s ap">Apps</div><div class="c s">API</div>'
-        + '<div class="c pc">2y</div><div class="c pc">3y</div>'
-        + '<div class="c pc pc5">5y</div>'
+        + '<div class="c gGoal">API</div><div class="c gPct">To goal</div>'
+        + '<div class="c gPct">' + (HAS_INC ? 'Income' : 'FYC') + '</div>'
         + '<div class="c st">\u2605</div></div>';
     }
 
@@ -7634,7 +7857,12 @@ var PROD = {
 
     var branchApi = yy(S.total||{},1) || 1;
     box.style.gridTemplateColumns = '';
+    /* Each row's place in its column, for the rise-in when the slide comes
+       round: the two columns rise together, top to bottom. */
+    var ri = 0;
+    function rd(){ return ' style="--rd:' + (Math.min(26, ri++) * 0.028).toFixed(3) + 's"'; }
     box.innerHTML = colOf.map(function(col){
+      ri = 0;
       return '<div class="sbUnit">' + head() + col.map(function(tm){
         var mr = tm.row, n = tm.ags.filter(function(x){ return !elsewhere(x.label); }).length;
         var api = yy(mr,1) || tm.ags.reduce(function(a,c){ return a+yy(c,1); },0);
@@ -7646,7 +7874,8 @@ var PROD = {
           mr._quota   = tm.ags.reduce(function(a2,c2){ return a2 + quotaFor(c2.label); }, 0);
           mr._settled = tm.ags.reduce(function(a2,c2){ return a2 + settledFor(c2.label); }, 0);
           mr._settledApps = tm.ags.reduce(function(a2,c2){ return a2 + settledAppsFor(c2.label); }, 0);
-          h += '<div class="sbR mhd"><div class="l"><b>' + esc(mr.label) + '</b>'
+          goalFill(mr, tm.ags);
+          h += '<div class="sbR mhd"' + rd() + '><div class="l"><b>' + esc(mr.label) + '</b>'
              + (tm.under ? '<u title="reports to ' + esc(tm.under) + '">\u21B3 '
                            + esc(String(tm.under).split(' ')[0]) + '</u>' : '')
              + '<i>' + n + '</i></div>' + cells(mr,false) + '</div>';
@@ -7657,10 +7886,10 @@ var PROD = {
           a._quota = quotaFor(a.label);
           a._settled = settledFor(a.label);
           a._settledApps = settledAppsFor(a.label);
-          var ax = qrow(a.label);
-          a._p2 = ax ? ax.p2 : null; a._p3 = ax ? ax.p3 : null; a._p5 = ax ? ax.p5 : null;
-          h += '<div class="sbR a' + hot + '"><div class="l"><span>'
+          goalFill(a, [a]);
+          h += '<div class="sbR a' + hot + '"' + rd() + '><div class="l"><span>'
              + esc(subShort(a.label)) + '</span>'
+             + (goalDone(a.label) ? '<em class="gFlag" title="past the ' + GFY + ' goal on settled business">🏁</em>' : '')
              + (typeFor(a.label) ? '<u title="' + esc(typeFor(a.label)) + '">'
                                    + esc(bandShort(typeFor(a.label))) + '</u>' : '')
              + '</div>' + cells(a,true) + '</div>';
@@ -7679,14 +7908,14 @@ var PROD = {
       var qb = (typeof STL !== 'undefined' && STL.data && STL.data.quotaBranch)
                || SUB_QUOTA_BRANCH_FALLBACK;
       t._quota   = qb ? qb.quota   : 0;
-      t._settled = qb ? qb.settled : 0;
+      t._settled = (SET_OK && qb) ? qb.settled : 0;
       /* THE BRANCH LINE IS A STRIP, NOT A ROW. A total under each column
          answered "what do the columns add up to"; the branch manager reads
          this line for one thing first — what the branch wrote this week —
          and then the month, the year, and what has actually settled. Four
          tiles, the week lit, the settled tile carrying its app count, which
          the old row had no column for. */
-      var setApps = (stlD2 && stlD2.ytd) ? (stlD2.ytd.apps||0) : 0;
+      var setApps = (SET_OK && stlD2 && stlD2.ytd) ? (stlD2.ytd.apps||0) : 0;
       /* The caption sits above the figures rather than beside them. On one
          row the numbers won and the captions were cut to "YEAR T…" and
          "SETTLE…", which is the one place on the panel a word cannot be
@@ -7697,7 +7926,53 @@ var PROD = {
           + '<i>' + (apps === null ? '' : n0(apps) + ' app' + (apps===1?'':'s')) + '</i></div></div>';
       }
       var hasMo = !!(t.m && (t.m[0] || t.m[1]));
-      bt.innerHTML = '<div class="sbStrip">'
+      /* THE BRANCH AGAINST ITS OWN PLANS, the same height as the four tiles
+         beside it: a third line on it pushed the month chart into the footer
+         of a full wall. Two faces take turns. First every filed FY27 goal
+         added up, against what those same advisors have settled since
+         1 October, the bar along its foot and the white tick where their
+         quarters say the branch should be by today. Then what the branch has
+         earned (FYC at half of settled) against the income goals the plans
+         add up to. A total of many plans tells nobody what one advisor
+         planned to earn, so it is a share only once five plans or more make
+         it up, and the FYC earned in TT$ until then. */
+      var gTile = '';
+      if(GW){
+        var GB = { goal: 0, set: 0, inc: 0, earn: 0, pace: 0, n: 0 };
+        GW.lanes.forEach(function(l){
+          if(!l || !(l.goal > 0) || elsewhere(l.code)) return;
+          var s2 = goalSetFor(l.code || l.name);
+          GB.n++; GB.goal += l.goal; GB.set += s2; GB.pace += l.goal * (l.expPct || 0);
+          if(l.income > 0){ GB.inc += l.income; GB.earn += s2 * FYC_SHARE; }
+        });
+        /* The server's total, when the lanes carry no income of their own. */
+        if(!GB.inc && GW.totals && GW.totals.income > 0){ GB.inc = GW.totals.income; GB.earn = GB.set * FYC_SHARE; }
+        if(GB.n < 5) GB.inc = 0;
+        var gCap = '<span>Goals &middot; ' + esc(GFY) + ' &middot; ' + GB.n + ' plan' + (GB.n === 1 ? '' : 's') + '</span>';
+        if(GB.goal && !GOAL_LIVE){
+          gTile = '<div class="sbTile gl gWait" title="' + G_WAIT + '">' + gCap
+            + '<div class="tv"><b>' + money(GB.goal) + '</b><i>reading settled&hellip;</i></div></div>';
+        } else if(GB.goal){
+          var gp = GB.set / GB.goal * 100, gx = Math.min(100, GB.pace / GB.goal);
+          var earn = GB.inc ? GB.earn : GB.set * FYC_SHARE, ip = GB.inc ? earn / GB.inc * 100 : 0;
+          gTile = '<div class="sbTile gl two" title="' + esc(gPctTxt(gp) + ' of ' + full(GB.goal) + ' in API goals settled ('
+              + full(GB.set) + ') · FYC earned ' + full(earn) + ', half of settled'
+              + (GB.inc ? ', ' + gPctTxt(ip) + ' of ' + full(GB.inc) + ' in income goals' : '')) + '">' + gCap
+            + '<div class="glf">'
+            + '<div class="tv f1"><b data-cu="' + gp.toFixed(2) + '" data-fmt="pct" data-cd="0.35">' + gPctTxt(gp) + '</b>'
+            + '<i>' + money(GB.set) + ' of ' + money(GB.goal) + '</i></div>'
+            + (GB.inc
+                ? '<div class="tv f2"><b>' + gPctTxt(ip) + '</b><i><em class="gx">FYC ' + money(earn) + ' </em>of '
+                  + money(GB.inc) + ' income</i></div>'
+                : '<div class="tv f2"><b>' + money(earn) + '</b><i>FYC earned</i></div>')
+            + '</div>'
+            + '<div class="gt g1" style="--w:' + Math.min(100, gp).toFixed(1) + '%;--x:' + gx.toFixed(1) + '%"><i></i>'
+            + (gx > 0 && gx < 100 ? '<u></u>' : '') + '</div>'
+            + (GB.inc ? '<div class="gt g2" style="--w:' + Math.min(100, ip).toFixed(1) + '%"><i></i></div>' : '')
+            + '</div>';
+        }
+      }
+      bt.innerHTML = '<div class="sbStrip' + (gTile ? ' g5' : '') + '">'
         + tile(' wk', 'This week', w(t,0), w(t,1))
         + tile('', S.monthLabel ? esc(String(S.monthLabel).slice(0,3)) + ' to date' : 'Month to date',
                hasMo ? mo(t,0) : null, hasMo ? mo(t,1) : null)
@@ -7707,6 +7982,7 @@ var PROD = {
            "FY27 to date" and "Settled · FY26" are the same lengths as the
            captions they replace. */
         + tile(' set', 'Settled &middot; ' + setYr, setApps || null, t._settled || null)
+        + gTile
         + '</div>';
     }
 
@@ -7760,13 +8036,14 @@ var PROD = {
            actually settled, how much of it stayed on the books, and the cover
            they placed. The name comes down a size to make room — it was the
            largest thing on the panel and it did not need to be. */
-        var zx = qrow(z.r.label);
-        var zSet = zx ? (zx.settled||0) : 0;
-        var zP2  = zx && zx.p2 !== undefined && zx.p2 !== null ? Math.round(zx.p2) : null;
+        var zSet = settledFor(z.r.label);
+        var zg = goalOf(z.r.label);
         var meta = '<span>' + money(yy(z.r,1)) + ' year</span>';
         if(zSet) meta += '<span class="set">' + money(zSet) + ' settled</span>';
-        if(zP2 !== null) meta += '<span class="' + (zP2>=90?'pOk':zP2>=80?'pMid':'pLow')
-                               + '">' + zP2 + '% kept</span>';
+        /* As short as the "% kept" it replaces, so the block does not grow a
+           line: the goal itself is on the advisor's row. */
+        if(zg && zg.goal > 0 && GOAL_LIVE) meta += '<span class="gOf" title="of a ' + money(zg.goal) + ' ' + esc(GFY) + ' goal">'
+                                    + gPctTxt(goalSetFor(z.r.label) / zg.goal * 100) + ' of goal</span>';
         if(cov) meta += '<span class="cov">' + money(cov) + ' cover</span>';
         /* What they sold this week, by product, from the feed's weekly mix.
            A name and a figure says who; the products say what the branch's
@@ -7792,17 +8069,68 @@ var PROD = {
       : '<div style="padding:1.4em .3em;color:var(--ink-3);font-size:.8em">'
         + 'Nobody has submitted yet this week. The board is open.</div>';
     }
-    /* Persistency does not come from the same place as everything else on
-       this panel and it does not move with it, so the panel says so rather
-       than letting a figure from last month sit next to this week's and look
-       like it was taken at the same time. */
+    /* What the goal columns are measured on, said once under the heading,
+       and taking turns with the race itself. "Can a wall have more motion to
+       motivate", 19 October 2026: the line names whoever is past their goal,
+       who leads the race, how many plans are ahead of today's pace and who is
+       past halfway. Only what somebody has done goes on it: nobody is named
+       for being behind. The interval after paintSubmitted moves it on. */
     var rc = q('sbRosterCap');
     var rb = RATE_LIVE ? ((RATE.data && RATE.data.branch) || null) : null;
-    if(rc) rc.innerHTML = 'gold marks the branch\u2019s best &middot; persistency as at 31 August'
+    var capKey = 'gold marks the branch’s best &middot; goals are the ' + esc(GFY) + ' flight plans, '
+      + 'against settled since 1 Oct &middot; '
+      + (HAS_INC ? 'income is the FYC earned, half of settled, against each plan’s income goal'
+                 : 'FYC earned is half of settled')
+      + (GW && !GOAL_LIVE ? ' &middot; <span class="capWait">' + G_WAIT + '&hellip;</span>' : '')
       + (rb && rb.n
-          ? ' &middot; <b class="capStar">' + rb.avg.toFixed(1) + '\u2605</b> from '
+          ? ' &middot; <b class="capStar">' + rb.avg.toFixed(1) + '★</b> from '
             + rb.n + ' client' + (rb.n === 1 ? '' : 's')
           : '');
+    function goalCalls(){
+      if(!GOAL_LIVE || !GW) return [];
+      var P = [];
+      ag.forEach(function(r){
+        var g2 = goalOf(r.label); if(!g2 || !(g2.goal > 0)) return;
+        P.push({ name: subShort(r.label), pct: goalSetFor(r.label) / g2.goal * 100, pace: g2.expPct || 0 });
+      });
+      if(!P.length) return [];
+      P.sort(function(a, b){ return b.pct - a.pct || (a.name < b.name ? -1 : 1); });
+      /* First names, unless two planners share one. */
+      var firsts = {}, clash = false;
+      P.forEach(function(p){ var f = String(p.name).split(' ')[0].toUpperCase(); if(firsts[f]) clash = true; firsts[f] = 1; });
+      function first(p){ return esc(clash ? p.name : String(p.name).split(' ')[0]); }
+      function some(list){
+        return list.slice(0, 3).map(first).join(', ') + (list.length > 3 ? ' and ' + (list.length - 3) + ' more' : '');
+      }
+      var out = [];
+      var done = P.filter(function(p){ return p.pct >= 100; }), rest = P.filter(function(p){ return p.pct < 100; });
+      done.slice(0, 3).forEach(function(p){
+        out.push({ k: 'done ' + p.name, h: '🏁 <b>' + esc(p.name) + '</b> is past the ' + esc(GFY)
+                  + ' goal: <b>' + gPctTxt(p.pct) + '</b> settled' });
+      });
+      if(rest.length && rest[0].pct > 0)
+        out.push({ k: 'lead', h: done.length
+          ? '🚀 Next to the line: <b>' + esc(rest[0].name) + '</b>, <b>' + gPctTxt(rest[0].pct) + '</b> settled'
+          : '🚀 <b>' + esc(rest[0].name) + '</b> leads the race to goal: <b>' + gPctTxt(rest[0].pct) + '</b> settled' });
+      var ahead = P.filter(function(p){ return p.pct > 0 && p.pct >= p.pace; }).length;
+      if(ahead) out.push({ k: 'ahead', h: '▲ <b>' + ahead + ' of ' + P.length + '</b> plan'
+                  + (P.length === 1 ? ' is' : 's are') + ' ahead of today’s pace' });
+      var half = P.filter(function(p){ return p.pct >= 50 && p.pct < 100; });
+      var qtr = P.filter(function(p){ return p.pct >= 25 && p.pct < 50; });
+      if(half.length) out.push({ k: 'half', h: '⭐ Past halfway: <b>' + some(half) + '</b>' });
+      else if(qtr.length) out.push({ k: 'qtr', h: '⭐ Past a quarter of the goal: <b>' + some(qtr) + '</b>' });
+      return out;
+    }
+    if(rc){
+      var items = [{ k: 'key', h: capKey }].concat(goalCalls());
+      var was = rc.querySelector('.capI.on'), wasK = was ? was.getAttribute('data-k') : '';
+      var at = 0;
+      items.forEach(function(it, i){ if(it.k === wasK) at = i; });
+      rc.innerHTML = items.length < 2 ? capKey
+        : '<span class="capRot">' + items.map(function(it, i){
+            return '<span class="capI' + (i === at ? ' on' : '') + '" data-k="' + esc(it.k) + '">' + it.h + '</span>';
+          }).join('') + '</span>';
+    }
     var wc = q('sbWeekCap');
     if(wc) wc.innerHTML = 'This week &mdash; top three<em>week ' + esc(String(S.week||'')) + '</em>';
 
@@ -7827,7 +8155,7 @@ var PROD = {
     var fyD = (S.yearLabel && S.fyDay) ? esc(S.yearLabel) + ', day ' + S.fyDay : '';
     var wkTxt = 'week ' + (S.week || '');
     set('t_p12',
-      (bs ? '<b>' + full(bs) + '</b> settled'
+      (bs ? '<b data-cu="' + Math.round(bs) + '" data-fmt="tt">' + full(bs) + '</b> settled'
             + ((stlD && stlD.ytd && stlD.ytd.apps)
                 ? ' &middot; <b>' + n0(stlD.ytd.apps) + '</b> apps' : '')
             + ' &nbsp;&nbsp;<span class="tSub">' + full(yy(t,1)) + ' submitted &middot; '
@@ -7887,8 +8215,110 @@ var PROD = {
       box.style.setProperty('--rowPad', pad + 'px');
       while(pad > 0 && extent() > box.clientHeight){ pad--; box.style.setProperty('--rowPad', pad + 'px'); }
     })();
+    s13Play();
     return true;
   }
+
+  /* SLIDE 13 COMES ROUND IN MOTION. Asked for on 19 October 2026: "can a
+     wall have more motion to motivate". Each time the slide comes on, the
+     rows rise into place, every goal bar fills from nought while its figure
+     counts up, the headline's settled figure counts up, the pace tick pings
+     once a bar has passed it, and a flag lands beside anyone past their own
+     goal. It plays once per showing: the slide is armed (gArm, everything
+     at nought) while it is off, and the first paint after it comes on plays
+     it. The wall repaints the slide within 700ms of showing it, and again
+     when a feed lands; a repaint while it is on screen shows the figures as
+     they are and never replays under the eye. prefers-reduced-motion skips
+     all of it. */
+  var S13 = { t: 0, arm: 0, net: 0, was: false };
+  (function(){
+    var p = q('p12'); if(!p) return;
+    if(!window.MutationObserver) return;           // no observer, no arming: the slide just shows
+    if(s13Calm()) return;                          // reduced motion: nothing to arm, nothing hidden
+    p.classList.add('gArm');
+    S13.was = p.classList.contains('on');
+    new MutationObserver(function(){
+      var on = p.classList.contains('on');
+      if(on === S13.was) return;                   // our own gArm and gIntro changes
+      S13.was = on;
+      clearTimeout(S13.arm); clearTimeout(S13.net);
+      if(on){
+        /* The wall repaints a slide it has just shown; should that not come,
+           the figures are never left hidden. */
+        S13.net = setTimeout(function(){
+          if(!p.classList.contains('on') || !p.classList.contains('gArm')) return;
+          if(!p.querySelector('#pdRoster .sbR')) return;   // nothing painted yet: the first paint plays it
+          s13Play();
+        }, 1500);
+        return;
+      }
+      /* Armed once the slide has faded out (.6s), not while it is fading. */
+      S13.arm = setTimeout(function(){
+        if(p.classList.contains('on')) return;
+        p.classList.add('gArm');
+        p.classList.remove('gIntro');
+      }, 750);
+    }).observe(p, { attributes: true, attributeFilter: ['class'] });
+  })();
+  function s13Calm(){
+    try{ return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; }
+  }
+  function s13Play(){
+    var p = q('p12');
+    if(!p || !p.classList.contains('on') || !p.classList.contains('gArm')) return;
+    if(!p.querySelector('#pdRoster .sbR')) return;
+    if(s13Calm()){ p.classList.remove('gArm'); return; }
+    p.classList.add('gIntro');
+    void p.offsetWidth;                       // the bars are drawn at nought first
+    requestAnimationFrame(function(){
+      p.classList.remove('gArm');
+      s13Count(p);
+      clearTimeout(S13.t);
+      S13.t = setTimeout(function(){ p.classList.remove('gIntro'); }, 3600);
+    });
+  }
+  /* Every [data-cu] figure on the slide counts from nought to what is
+     painted, after its own delay (data-cd, seconds), and ends on the painted
+     text exactly. */
+  function s13Count(root){
+    function k(v){
+      v = Number(v) || 0;
+      if(Math.abs(v) >= 1e6) return (v/1e6).toFixed(1) + 'M';
+      if(Math.abs(v) >= 1000) return Math.round(v/1000).toLocaleString('en-US') + 'k';
+      return Math.round(v).toLocaleString('en-US');
+    }
+    function fmt(v, f){
+      if(f === 'pct') return (v >= 10 || v === 0 ? String(Math.round(v)) : v.toFixed(1).replace(/\.0$/, '')) + '%';
+      if(f === 'tt')  return 'TT$' + Math.round(v).toLocaleString('en-US');
+      return k(v);
+    }
+    var t0 = performance.now(), DUR = 1150;
+    root.querySelectorAll('[data-cu]').forEach(function(el){
+      var to = parseFloat(el.getAttribute('data-cu')) || 0;
+      if(!(to > 0)) return;
+      var f = el.getAttribute('data-fmt') || 'k', d = (parseFloat(el.getAttribute('data-cd')) || 0) * 1000;
+      var end = el.textContent;
+      el.textContent = fmt(0, f);
+      (function step(now){
+        var x = (now - t0 - d) / DUR;
+        if(!el.isConnected) return;
+        if(x >= 1){ el.textContent = end; return; }
+        if(x > 0) el.textContent = fmt(to * (1 - Math.pow(1 - x, 3)), f);
+        requestAnimationFrame(step);
+      })(t0);
+    });
+  }
+  /* The line above the board takes its next turn every five seconds while
+     the slide is up, and stands still while the wall is held. */
+  setInterval(function(){
+    var p = q('p12'); if(!p || !p.classList.contains('on')) return;
+    var tk = q('tkrApi'); if(tk && tk.classList.contains('hold')) return;
+    var items = p.querySelectorAll('#sbRosterCap .capI'); if(items.length < 2) return;
+    var at = 0;
+    items.forEach(function(x, i){ if(x.classList.contains('on')) at = i; });
+    items[at].classList.remove('on');
+    items[(at + 1) % items.length].classList.add('on');
+  }, 5000);
 
   /* THE QUOTA AND PERSISTENCY TABLE, CARRIED BY THE WALL ITSELF.
      The settlement feed sends the same table once the settle8 build is
@@ -8646,7 +9076,11 @@ var PROD = {
              two boards can never disagree. The feed takes ten seconds and lands
              after the roster has painted; redrawing only the chart left the
              settled tile reading "apps" with nothing before it. The whole panel
-             repaints on arrival. */
+             repaints on arrival, with the payload stored first: until 19
+             October 2026 it was stored after the repaint, so slide 13 drew the
+             answer before last, and after a start of the wall nothing at all,
+             for ten minutes. */
+          STL.data = j;
           try {
             if(typeof paintSubmitted === 'function' && typeof SUB_LAST !== 'undefined' && SUB_LAST)
               paintSubmitted(SUB_LAST);
