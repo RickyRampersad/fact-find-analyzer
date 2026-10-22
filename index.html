@@ -712,7 +712,7 @@
     <details class="pulse-table">
       <summary>See the weekly figures as a table</summary>
       <div class="pulse-table-wrap"><table id="pulseTable"><caption class="sr-only">
-        Weekly needs found, cover recommended, annualised premium and cover sold since 1 July 2026
+        Weekly fact finds, needs found, annualised premium and cover sold since 1 July 2026
       </caption></table></div>
     </details>
   </div>
@@ -4461,6 +4461,7 @@ if(DEMO_MODE){
     if (n >= 1e3) return 'TT$' + Math.round(n / 1e3) + 'k';
     return 'TT$' + Math.round(n);
   }
+  function count(n) { return Math.round(Number(n) || 0).toLocaleString('en-US'); }
   function wkLabel(iso) {
     var d = new Date(iso + 'T00:00:00Z');
     if (isNaN(d)) return iso;
@@ -4500,12 +4501,18 @@ if(DEMO_MODE){
   }
 
   var TILES = [
+    /* FACT FINDS COMPLETED, where "Cover recommended" was (22 October 2026).
+       The server's cover total read TT$341M against TT$182M of need found,
+       nearly twice the need: the pattern the house notes put down to health,
+       PA-DI and annuity sums being counted as life cover. It goes back on
+       this page once the server is shown to count life sums assured alone;
+       the weekly figure is still in the answer (w.cover), only not shown. */
+    { key: 'factFinds', colour: PULSE_TEAL,  label: 'Fact finds completed',
+      sub: 'Each one a household\u2019s finances and needs worked through with an advisor.',
+      fmt: count, total: function (t) { return count(t.factFinds); } },
     { key: 'need',      colour: PULSE_TEAL,  label: 'Need found',
       sub: 'The protection gap these families were carrying, priced.',
       fmt: money, total: function (t) { return money(t.need); } },
-    { key: 'cover',     colour: PULSE_TEAL,  label: 'Cover recommended',
-      sub: 'What the advisors put forward against that need, with a written reason.',
-      fmt: money, total: function (t) { return money(t.cover); } },
     { key: 'api',       colour: PULSE_TEAL,  label: 'API recommended',
       sub: 'Annualised premium on what was recommended.',
       fmt: money, total: function (t) { return money(t.api); } },
@@ -4568,31 +4575,77 @@ if(DEMO_MODE){
     var tbl = document.getElementById('pulseTable');
     if (tbl) {
       tbl.innerHTML = '<thead><tr><th>Week beginning</th><th>Fact finds</th>' +
-        '<th>Need found</th><th>Cover rec.</th><th>API rec.</th><th>Cover sold</th></tr></thead><tbody>' +
+        '<th>Need found</th><th>API rec.</th><th>Cover sold</th></tr></thead><tbody>' +
         weeks.map(function (w) {
           return '<tr><td>' + wkLabel(w.w) + '</td><td>' + w.factFinds + '</td><td>' +
-            money(w.need) + '</td><td>' + money(w.cover) + '</td><td>' +
+            money(w.need) + '</td><td>' +
             money(w.api) + '</td><td>' + money(w.soldCover) + '</td></tr>';
         }).join('') + '</tbody>';
     }
   }
 
-  function load() {
-    var ep = (typeof getEndpoint === 'function') ? getEndpoint() : '';
-    if (!ep) { fail('No branch endpoint is configured on this page.'); return; }
-    fetch(ep + (ep.indexOf('?') > -1 ? '&' : '?') + 'action=pulse&_=' + Date.now(),
-          { cache: 'no-store' })
+  /* THE FIGURES APPEAR AT ONCE, AND STAY UP WHEN THE SERVER STUMBLES.
+     22 October 2026, with a seminar looking at the site. The branch server
+     took 3 to 7 seconds to answer pulse, 23 when it recalculated, and about
+     one call in five came back as a Google error page, which left a visitor
+     reading "could not be reached just now" instead of the branch's work.
+
+     So the page paints the newest figures it already has: this browser's
+     last live answer, else pulse-snapshot.json, the branch's own answer saved
+     beside the page. Then it asks the server, up to three times, and swaps
+     the live figures in when they land. Nothing is estimated: every figure
+     on screen came from the branch's sheet, and the line under the heading
+     says when it was read. */
+  var LS_KEY = 'rrbPulseLast', shownAt = '';
+  function show(p, how) {
+    if (!p || !p.ok || !p.weeks || !p.weeks.length) return false;
+    if (shownAt && String(p.asAt || '') < shownAt) return false;   // never go back in time
+    render(p);
+    shownAt = String(p.asAt || '');
+    var asAt = document.getElementById('pulseAsAt');
+    if (asAt && how === 'saved') asAt.textContent += ' · checking for newer figures…';
+    return true;
+  }
+  function settle() {
+    /* The live answer did not come: what is on screen stands, labelled with
+       when it was read, and no error replaces it. */
+    var asAt = document.getElementById('pulseAsAt');
+    if (asAt) asAt.textContent = asAt.textContent.replace(/ · checking for newer figures…$/, '');
+  }
+  function live(ep, tries) {
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, 25000) : 0;
+    return fetch(ep + (ep.indexOf('?') > -1 ? '&' : '?') + 'action=pulse&_=' + Date.now(),
+                 ctl ? { cache: 'no-store', signal: ctl.signal } : { cache: 'no-store' })
       .then(function (r) { return r.json(); })
       .then(function (j) {
+        clearTimeout(timer);
         if (!j || !j.ok) throw new Error((j && j.message) || 'unavailable');
-        render(j);
+        try { localStorage.setItem(LS_KEY, JSON.stringify(j)); } catch (e) {}
+        if (!show(j, 'live')) settle();
       })
       .catch(function () {
+        clearTimeout(timer);
+        if (tries > 1) return new Promise(function (ok) { setTimeout(ok, tries === 3 ? 2000 : 5000); })
+                                .then(function () { return live(ep, tries - 1); });
+        if (shownAt) { settle(); return; }
         // Never invent figures to fill the gap. An honest empty state beats a
         // number nobody can trace back to a case.
         fail('These figures are read live from the branch and could not be ' +
              'reached just now. Nothing here is estimated.');
       });
+  }
+  function load() {
+    var ep = (typeof getEndpoint === 'function') ? getEndpoint() : '';
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) {}
+    show(saved, 'saved');
+    var snap = fetch('pulse-snapshot.json', { cache: 'no-cache' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { show(j, 'saved'); })
+      .catch(function () {});
+    if (!ep) { snap.then(function () { if (!shownAt) fail('No branch endpoint is configured on this page.'); }); return; }
+    live(ep, 3);
   }
   function fail(msg) {
     var g = document.getElementById('pulseGrid');

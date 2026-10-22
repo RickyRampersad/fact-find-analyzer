@@ -2578,22 +2578,14 @@
     <input id="wgPw" type="password" autocomplete="current-password" placeholder="Your access code">
     <button id="wgGo" type="button">Sign in</button>
     <div class="err" id="wgErr" role="alert"></div>
-    <div class="gsplit"><span>or</span></div>
-    <button id="wgGuest" type="button" class="ghost">Visiting? Get a code by email</button>
-    <div id="wgGuestBox" hidden>
-      <label for="wgEmail">Your email</label>
-      <input id="wgEmail" type="email" autocomplete="email" placeholder="you@company.com"
-             spellcheck="false">
-      <button id="wgSend" type="button">Send me a code</button>
-      <div id="wgCodeBox" hidden>
-        <label for="wgOtp">Code from your email</label>
-        <input id="wgOtp" type="text" inputmode="numeric" autocomplete="one-time-code"
-               placeholder="6 digits" maxlength="6" spellcheck="false">
-        <button id="wgOtpGo" type="button">View the wall</button>
-      </div>
-      <div class="err" id="wgGErr" role="alert"></div>
-      <div class="ghint">A visitor pass shows the whole board for two hours. Codes go only to addresses the branch allows.</div>
-    </div>
+    <!-- NO VISITOR DOOR. "Visiting? Get a code by email" sat here: any address
+         could ask for a code and see the whole board, production by advisor,
+         for two hours (GUEST_DOMAINS open on the server since 29 Aug 2026).
+         Taken off on 22 October 2026, at the branch manager's word, during a
+         seminar where many people were looking at the site: "dont allow them
+         to log in, only see the site and what we do". The script below skips
+         the missing buttons. To shut it on the server as well, put a domain
+         in GUEST_DOMAINS in RRBranchGuestAccess.gs. -->
   </div>
 </div>
 
