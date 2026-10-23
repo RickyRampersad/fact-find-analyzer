@@ -12,8 +12,14 @@ This repository is the site. Every file in the root is served at the root:
 | `insights.html` | `/insights` | The older manager dashboard and approval queue |
 | `walkthrough.html` | `/walkthrough` | The guided tour, shareable without signing in |
 | `wall.html` | `/wall` | Branch wall board |
-| `tour-poster-v19.jpg` | | Still frame behind the play button on the home page |
-| `factfind360-tour-v19.mp4` | | The 5m12s walkthrough video, 21.9 MB |
+| `try.html` | `/try` | The guest page: the practice fact find and the sample dashboard |
+| `factfind360-film-v20.mp4` | | The 90-second film, first on `/walkthrough` and behind the home page card |
+| `film-poster-v20.jpg` | | Its still frame, on the home page card and in link previews |
+| `factfind360-walkthrough-v20.mp4` | | The full 5m29s walkthrough, second on `/walkthrough`, with chapters |
+| `tour-poster-v20.jpg` | | Its still frame |
+
+`factfind360-tour-v19.mp4` and `tour-poster-v19.jpg` are the previous cut. They
+stay so that links already sent still play.
 
 `insights.html` and `wall.html` are not linked from the home page. Nothing on
 screen will tell you if they go missing, so do not delete a file just because
