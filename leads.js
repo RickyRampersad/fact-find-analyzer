@@ -130,9 +130,12 @@
 
   /* ── RENDER ──────────────────────────────────────────────────────────── */
   function leadCard(L, i){
-    var h = hrs(L.at), w = waitText(h);
-    var s = buildScript(L), q = qualifyBlock(L);
     var called = (L.calls||[]).length;
+    /* Once a call is logged the clock reads "since last": time since the latest
+       call, not since the lead came in (which kept a lead rung an hour ago red). */
+    var lastCall = (L.calls||[]).reduce(function(m, c){ var t = Date.parse(c && c.at); return isNaN(t) ? m : Math.max(m, t); }, 0);
+    var h = hrs(called && lastCall ? new Date(lastCall).toISOString() : L.at), w = waitText(h);
+    var s = buildScript(L), q = qualifyBlock(L);
     var cls = called ? '' : (h!=null && h>=48 ? 'cold' : h!=null && h>=24 ? 'old' : '');
     var waMsg = firstName(L.name) + ', ' + (L.advisor||'') + ' here from Guardian Life — '
               + 'you asked me to call about ' + (String(L.wants||'').split('|')[0]||'').trim().toLowerCase()
