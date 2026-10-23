@@ -10932,7 +10932,12 @@ function computeIntelligence(c) {
   }
 
   // 7 ── PREMIUM AFFORDABILITY (budget vs surplus)
-  const annualSurplus = annualIncome - annualExpenses;
+  /* Household income against household expenses, like the Surplus Ratio above.
+     This used the client's own income against the whole household's spending,
+     so a two-income household read as "NEGATIVE cash flow" on the lapse-risk
+     check (and lost its premium target) while its surplus ratio said healthy.
+     With one income the two figures are the same, so nothing changes there. */
+  const annualSurplus = householdAnnualInc - annualExpenses;
 
   // 7a ── PREMIUM BURDEN (proposed premium vs household monthly surplus)
   // Rebuilt: this tile powers the manager "Lapse risk — premium burden" flag
@@ -11189,7 +11194,7 @@ function computeIntelligence(c) {
       return { name: 'Whole Life (Econolife 65 / 85)', kind: 'Final Expense', why: 'At ' + age + ', permanent cover secures the final-expense and legacy need without an expiry date. Confirm issue age and evidence with underwriting.' };
     }
 
-    const surplusHealthy = annualIncome > 0 && (annualSurplus / annualIncome) >= 0.15;
+    const surplusHealthy = householdAnnualInc > 0 && (annualSurplus / householdAnnualInc) >= 0.15;
     const clientGap = Math.max(c.insNeed, 0);
     const spouseGap = num(window.__spouseInsNeed || 0);
 
@@ -11515,7 +11520,7 @@ function computeIntelligence(c) {
   // ── LAPSE RISK PREDICTOR — will THIS sale stick? ──
   // The branch's #1 problem, attacked at the point of sale.
   const riskFactors = [];
-  if (annualIncome > 0 && annualSurplus / annualIncome < 0.10 && annualSurplus >= 0) riskFactors.push('thin surplus (<10% of income)');
+  if (householdAnnualInc > 0 && annualSurplus / householdAnnualInc < 0.10 && annualSurplus >= 0) riskFactors.push('thin surplus (<10% of income)');
   if (annualSurplus < 0) riskFactors.push('NEGATIVE cash flow — expenses exceed income');
   if (state.empStatus === 'Self Employed') riskFactors.push('self-employed income (irregular cash flow)');
   if (c.emergencyMonths !== undefined && c.emergencyMonths < 1 && num(state.monthlyExpenses) > 0) riskFactors.push('no emergency fund (under 1 month expenses)');
