@@ -19,7 +19,9 @@ This repository is the site. Every file in the root is served at the root:
 | `film-poster-v21.jpg` | | Its still frame |
 | `factfind360-film-v20.mp4` | | The earlier 90-second cut, kept for links already shared |
 | `film-poster-v20.jpg` | | Its still frame |
-| `factfind360-walkthrough-v20.mp4` | | The full 5m29s walkthrough, second on `/walkthrough`, with chapters |
+| `factfind360-walkthrough-v22.mp4` | | The full 5m29s walkthrough, second on `/walkthrough`, with chapters (titles in Inter Tight) |
+| `tour-poster-v22.jpg` | | Its still frame |
+| `factfind360-walkthrough-v20.mp4` | | The same walkthrough with its first titles, kept for links already shared |
 | `tour-poster-v20.jpg` | | Its still frame |
 
 `factfind360-tour-v19.mp4` and `tour-poster-v19.jpg` are the previous cut. They
