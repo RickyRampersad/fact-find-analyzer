@@ -12,6 +12,48 @@
         integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
+/* GUEST PRACTICE: /ffproject?guest=1, opened from factfind360.com/try or the
+   guest code on the sign-in. Asked for on 23 October 2026, from a conference:
+   "a guest code for persons to log in and try it to experience how it feels".
+   Everything a guest does stays on their own device:
+   - nothing reaches the branch: every request to Apps Script is answered here,
+     and Send for Manager's Review ends in a practice summary (rrbGuestSubmit);
+   - the practice copy lives under its own keys (rrbGuest:...), so an advisor
+     trying this on their own phone never touches their real saved fact find,
+     and nobody's signed-in session is read;
+   - the sample client (Load a sample client) is invented, as is its advisor. */
+(function () {
+  var on = false;
+  try { on = new URLSearchParams(location.search).get('guest') === '1'; } catch (e) {}
+  window.RRB_GUEST = on;
+  if (!on) return;
+  var P = 'rrbGuest:', LS = null;
+  try { LS = window.localStorage; } catch (e) {}
+  if (LS) {
+    var g = Storage.prototype.getItem, s = Storage.prototype.setItem, r = Storage.prototype.removeItem;
+    Storage.prototype.getItem = function (k) { if (this !== LS) return g.call(this, k); return k === 'rrbSession' ? null : g.call(this, P + k); };
+    Storage.prototype.setItem = function (k, v) { if (this !== LS) return s.call(this, k, v); if (k !== 'rrbSession') return s.call(this, P + k, v); };
+    Storage.prototype.removeItem = function (k) { if (this !== LS) return r.call(this, k); return r.call(this, P + k); };
+  }
+  var BRANCH = /script\.google(usercontent)?\.com/;
+  var f0 = window.fetch;
+  if (f0) window.fetch = function (u, o) {
+    if (BRANCH.test(String((u && u.url) || u))) return Promise.resolve(new Response(
+      JSON.stringify({ ok: false, guest: true, error: 'Practice: nothing is sent to the branch.' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    return f0.apply(this, arguments);
+  };
+  if (navigator.sendBeacon) {
+    var b0 = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function (u, d) { return BRANCH.test(String(u)) ? true : b0(u, d); };
+  }
+  var X = XMLHttpRequest.prototype, xo = X.open, xs = X.send;
+  X.open = function (m, u) { this.__rrbGuestBlock = BRANCH.test(String(u)); return xo.apply(this, arguments); };
+  X.send = function () { if (!this.__rrbGuestBlock) return xs.apply(this, arguments); };
+  window.RRB_GUEST_SAMPLE = {"appType":"full","ffScope":"Family","advisorName":"Nia Osei","agentCode":"D0005","agentEmail":"nia.osei@example.invalid","clientName":"Marcus Alleyne","fullName":"Marcus Alleyne","dob":"1985-03-12","idNumber":"SAMPLE-0001","maritalStatus":"Married","email":"marcus.alleyne@example.invalid","phone":"(868) 555-0142","address":"15 Example Road","addressArea":"San Fernando","empStatus":"Full-time","occupation":"Secondary School Teacher","monthlyIncome":"14500","employer":"Ministry of Education","tenure":"12","ownsBusiness":"No","spouseName":"Denise Alleyne","spouseDob":"1987-08-21","spouseGender":"F","spouseOccupation":"Registered Nurse","spouseEmployer":"Regional Health Authority","spouseEmpStatus":"Full-time","spouseMonthlyIncome":"9800","spouseTenure":"9","child1Name":"Yvonne Alleyne","child1Dob":"2014-05-02","child1Gender":"F","child1Occ":"Student","child2Name":"Jordan Alleyne","child2Dob":"2018-11-17","child2Gender":"M","child2Occ":"Student","eduTier":"local_gate","ins1Co":"Guardian Life","ins1Owner":"Client","ins1Type":"Group Life (employer)","ins1Sum":"250000","ins1Prem":"0","ins1Mode":"Monthly","ins1Year":"2014","ins1Status":"Active","monthlyIncomeTotal":"24300","monthlyExpenses":"17900","futureFactors":"No","budgetAnnual":"9000","budgetAnnualSrc":"Salary","budgetSubstantial":"No","includeAssets":"Yes","houseVal":"1450000","houseKS":"K","carsVal":"120000","carsKS":"K","cashBankVal":"85000","cashBankKS":"K","mortgageBal":"780000","mortgageMo":"6200","mortgageIns":"Y","bankLoanBal":"65000","bankLoanMo":"2100","bankLoanIns":"N","propIncome":"No","retPctIncome":"70","retYears":"20","retInflRate":"3","retRoi":"4.5","retNis":"3200","goal1Need":"Education Fund for Children","goal1Desc":"University for Yvonne and Jordan","goal1Val":"400000","goal1Tf":"6+ yrs","goal2Need":"Mortgage Protection","goal2Desc":"Clear the mortgage if Marcus dies","goal2Val":"780000","goal2Tf":"At soonest","medical":"No","rec1Pri":"1","rec1Need":"Income Replacement (Breadwinner) — Life","rec1Who":"Client","rec1Rec":"Flexi Term — to age 65 (convertible)","rec1Amt":"750000","rec1Prem":"310","rec1Mode":"Monthly","rec1Reason":"Clears the mortgage and keeps the family’s living costs paid for ten years, while both children are in school.","rec2Pri":"2","rec2Need":"Critical Illness","rec2Who":"Client","rec2Rec":"Rejuvenator (Critical Illness)","rec2Amt":"150000","rec2Prem":"95","rec2Mode":"Monthly","rec2Reason":"A lump sum on diagnosis, so treatment never comes out of the mortgage money.","rec3Pri":"3","rec3Need":"Income Protection / Disability","rec3Who":"Client","rec3Rec":"Praesidia (Personal Accident)","rec3Amt":"100000","rec3Prem":"48","rec3Mode":"Monthly","rec3Reason":"He is on his feet all day; an accident that stops him working is the likelier risk.","dec1Plan":"Flexi Term — to age 65 (convertible)","dec1Amt":"750000","dec1Prem":"310","dec1Go":"Yes","dec2Plan":"Rejuvenator (Critical Illness)","dec2Amt":"150000","dec2Prem":"95","dec2Go":"Yes","dec3Plan":"Praesidia (Personal Accident)","dec3Amt":"100000","dec3Prem":"48","dec3Go":"Later","dec3Reason":"Will decide after the mortgage refinance in January.","finalDecide":"proceed","replaceCover":"No","advisorSigDate":"2026-10-14","clientSigDate":"2026-10-14","notes":"Met at home with Marcus and Denise. Both children present for the education goals."};
+})();
+</script>
+<script>
   // Global safety net: surface the REAL error in the console (instead of the browser's
   // opaque "Script error.") and stop unhandled errors from breaking the agent's flow.
   // CDN/library failures (pdf.js, html2pdf) or blocked external fetches are logged, not fatal.
@@ -6456,6 +6498,7 @@ async function downloadForManager() {
 }
 
 async function submitForm() {
+  if (window.RRB_GUEST) { rrbGuestSubmit(); return; }   // practice: nothing is sent
   const btn = document.getElementById('submitBtn');
   const result = document.getElementById('submitResult');
   result.innerHTML = '';
@@ -17258,7 +17301,12 @@ function rrbReadiness() {
       if (!S['rec' + i + 'Need'] || !String(S['rec' + i + 'Need']).trim()) unlinked++;
     }
   }
-  var surplus = rrbNum_(S.cashSurplus_calc);
+  /* The surplus is a calc output on the page, not a field in state: state
+     carries cashSurplus_calc only on a case loaded back from the server. Read
+     from state alone, every advisor was told "No cash surplus recorded" with a
+     surplus on screen, and the affordability check below never ran. */
+  var sEl = document.getElementById('cashSurplus');
+  var surplus = (sEl && rrbNum_(sEl.textContent)) || rrbNum_(S.cashSurplus_calc);
 
   note(unlinked > 0, 'Each concept should link to an identified need',
        unlinked + ' recommendation' + (unlinked === 1 ? '' : 's') +
@@ -17428,6 +17476,7 @@ function rrbRenderReadiness() {
   // Pure decision: given the raw saved payload, the URL query and the app MODE,
   // should we prompt, and under what client name?
   function rrbgDecide(raw, search, mode) {
+    if (window.RRB_GUEST) return { show:false };                    // practice copy: nobody else's client
     if (mode && mode !== 'agent') return { show:false };            // manager review / view
     try { if (new URLSearchParams(search || '').get('id')) return { show:false }; } catch (e) {} // opening a record on purpose
     if (!raw) return { show:false };                                // nothing saved
@@ -17600,6 +17649,80 @@ function rrbFireworks(canvas, seconds, every) {
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(check, 1200); });
   else setTimeout(check, 1200);
+})();
+</script>
+<!-- ===== Guest practice: the bar, the sample client, the practice send ===== -->
+<script>
+(function () {
+  if (!window.RRB_GUEST) return;
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  window.rrbGuestSample = function () {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ fields: Object.assign({}, window.RRB_GUEST_SAMPLE), sigs: {}, ts: Date.now() }));
+      localStorage.removeItem('rrbranch_draft_id');
+    } catch (e) {}
+    location.reload();
+  };
+  window.rrbGuestBlank = function () {
+    try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem('rrbranch_draft_id'); } catch (e) {}
+    location.reload();
+  };
+  /* Send for Manager's Review, in practice: the same checks the real send
+     makes, then what would happen next. Nothing leaves the device. */
+  window.rrbGuestSubmit = function () {
+    var result = document.getElementById('submitResult');
+    if (!result) return;
+    var missing = [];
+    try { missing = rrbReadiness().blocking; } catch (e) {}
+    if (missing.length) {
+      result.innerHTML = '<span style="color:var(--danger)"><strong>Not quite ready to send.</strong> Still to do:<br>&bull; ' +
+        missing.map(esc).join('<br>&bull; ') + '</span>';
+      return;
+    }
+    var who = (typeof state !== 'undefined' && (state.clientName || state.fullName)) || 'your client';
+    var journey = '';
+    try { journey = ffJourneyHtml('agent_submit', 'agent', { submittedAt: new Date(), managerName: 'your manager', clientName: who }); } catch (e) {}
+    result.innerHTML = '<div style="border:1.5px solid #0D9488;background:#F0FDFA;border-radius:12px;padding:14px 16px;color:#134E4A;line-height:1.6">' +
+      '<strong style="font-size:16px">Practice run complete. Nothing was sent.</strong><br>' +
+      'In the branch, this is the moment it goes. Your manager gets a link that opens this fact find on their phone. ' +
+      esc(who) + ' gets a draft with one question: is this right? They confirm it, rate the advice and sign online. ' +
+      'Your manager approves only once they have, and is reminded at 3pm each day until they do. ' +
+      'You get your copy, and the date it is due back.</div>' + journey +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' +
+      '<button class="btn btn-primary" type="button" onclick="openPreview()">See the Guardian form</button>' +
+      '<button class="btn btn-ghost" type="button" onclick="location.href=\'/try\'">Back to the guest page</button>' +
+      '<button class="btn btn-ghost" type="button" onclick="rrbGuestBlank()">Start again, blank</button></div>';
+    try { showStatus('Practice: nothing was sent', true); } catch (e) {}
+    try { result.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+  };
+  /* The bar rides inside the sticky header, so a guest never scrolls past the
+     word PRACTICE. Compact on a phone: the long sentence drops, the buttons stay. */
+  function bar() {
+    if (document.getElementById('rrbGuestBar')) return;
+    var head = document.querySelector('.app-header');
+    var st = document.createElement('style');
+    st.textContent = '#rrbGuestBar{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;background:#0F766E;color:#fff;' +
+      'margin:-18px -20px 14px;padding:9px 20px;font-size:13px;line-height:1.4}' +
+      '#rrbGuestBar .tag{background:#F5B324;color:#1F2937;font-weight:800;font-size:10.5px;letter-spacing:.12em;padding:3px 8px;border-radius:999px}' +
+      '#rrbGuestBar .say{flex:1 1 240px}' +
+      '#rrbGuestBar button,#rrbGuestBar a{font:inherit;font-size:12.5px;font-weight:700;border-radius:8px;padding:6px 11px;cursor:pointer;text-decoration:none}' +
+      '#rrbGuestBar .b1{background:#fff;color:#0F766E;border:0}' +
+      '#rrbGuestBar .b2{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.6)}' +
+      '#rrbGuestBar a{color:#fff;text-decoration:underline;padding-left:2px}' +
+      '@media(max-width:640px){#rrbGuestBar .long{display:none}#rrbGuestBar{padding:8px 14px;margin:-18px -20px 12px}}';
+    document.head.appendChild(st);
+    var b = document.createElement('div');
+    b.id = 'rrbGuestBar';
+    b.setAttribute('role', 'note');
+    b.innerHTML = '<span class="tag">PRACTICE</span>' +
+      '<span class="say"><strong>Nothing you type is sent.</strong><span class="long"> You are trying factfind360 as a guest: ' +
+      'it stays on this device and never reaches the branch. The sample client is invented.</span></span>' +
+      '<button type="button" class="b1" onclick="rrbGuestSample()">Load a sample client</button>' +
+      '<button type="button" class="b2" onclick="rrbGuestBlank()">Start blank</button>' +
+      '<a href="/try">Guest page</a>';
+    if (head) head.insertBefore(b, head.firstChild); else document.body.insertBefore(b, document.body.firstChild);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bar); else bar();
 })();
 </script>
 </body>

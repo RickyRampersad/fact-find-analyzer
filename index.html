@@ -640,6 +640,8 @@
     <div class="login-note" id="liNote">
       Use the agent number on your fact finds. Managers see their team; the Branch Manager sees the whole branch.
     </div>
+    <a href="/try" style="display:block;margin-top:10px;font-size:13px;font-weight:700;color:#0D9488;text-decoration:none">
+      Not with the branch? Try it as a guest &rarr;</a>
     <!-- What changed this week. Above the walkthrough because an announcement
          outranks evergreen furniture for a fortnight, and slim because it does
          not displace it. Reachable without signing in, so the link works when
@@ -1345,6 +1347,30 @@ async function loadRoster(rows){
 var DEMO_MODE=(function(){
   try{ return new URLSearchParams(location.search).get('demo')==='1'; }catch(e){ return false; }
 })();
+if(DEMO_MODE){
+  /* The demo's figures are invented, so its units carry the demo roster's own
+     invented managers, never the branch's real ones: a real manager's name on
+     a made-up number reads as that manager's production. */
+  UNIT={ricky:'Dana Holder',kerwyn:'Omar Pierre',akaash:'Sara Lynch',gary:'Theo Grant'};
+  /* And nothing a visitor does in it reaches the branch. Opened from the guest
+     page (factfind360.com/try) at a conference, it is pressed by strangers:
+     every call to the Apps Script is answered here, so Approve, Send back,
+     Decline and Hold play out on the page and record nothing. */
+  (function(){
+    var f0=window.fetch; if(!f0) return;
+    var V={approve:'approved',decline:'declined',hold:'held','return':'returned'};
+    window.fetch=function(u,o){
+      if(/script\.google(usercontent)?\.com/.test(String((u&&u.url)||u))){
+        var b={}; try{ b=JSON.parse((o&&o.body)||'{}'); }catch(e){}
+        var j=(o&&/post/i.test(o.method||''))
+          ? {ok:true,demo:true,status:V[b.v]||'returned',id:b.id||'DEMO',sent:true}
+          : {ok:false,demo:true,error:'Sample data only.'};
+        return Promise.resolve(new Response(JSON.stringify(j),{status:200,headers:{'Content-Type':'application/json'}}));
+      }
+      return f0.apply(this,arguments);
+    };
+  })();
+}
 var DEMO_ROSTER=[
  ['dana.holder@example.invalid','D0001','Dana Holder','Branch Manager','ricky'],
  ['omar.pierre@example.invalid','D0002','Omar Pierre','Assistant Branch Manager','kerwyn'],
@@ -1550,6 +1576,11 @@ async function doLogin(ev){
   var name='';   // the server returns the real name; nothing is known before that
   var pass=document.getElementById('liPass').value;
   var err=document.getElementById('liErr'); err.textContent='';
+  /* GUEST, asked for on 23 October 2026 at a conference: "a guest code for
+     persons to log in and try it". It opens the guest page and never the
+     server: behind it are the sample dashboard and the practice fact find,
+     where nothing is sent. So the code can be handed out freely. */
+  if(code==='GUEST' && pass.trim()==='360'){ location.href='/try'; return; }
   liClearTest();
   var btn=document.getElementById('liBtn'); btn.disabled=true; btn.textContent='Signing in…';
 
@@ -1745,6 +1776,7 @@ var FACTFIND_FORM_URL = 'FFPROJECT.html';
 // see maybeAbortInitForFreshStart() in FFPROJECT.html.
 function openNewFactFind(){
   if (!SESSION) return;
+  if (DEMO_MODE) { window.open('ffproject.html?guest=1', '_blank'); return; }
   var url = FACTFIND_FORM_URL + '?new=1' + (SESSION.code ? '&agentCode=' + encodeURIComponent(SESSION.code) : '');
   window.open(url, '_blank');
 }
@@ -2384,7 +2416,7 @@ function renderExec(rows,cur,prev){
   ins.push({t:'info', ic:'💰', h:money(cur.pipeline)+' pipeline', b:'Monthly recommended premium generated this period.'});
 
   var headline = SESSION.scope.kind==='branch'
-    ? 'RR Branch is running at '+cur.count+' fact finds / '+periodDays()+' days'
+    ? (DEMO_MODE ? 'The sample branch' : 'RR Branch')+' is running at '+cur.count+' fact finds / '+periodDays()+' days'
     : (SESSION.name.split(' ')[0]+'’s '+(SESSION.scope.kind==='unit'?'unit':'')+' — '+cur.count+' fact finds / '+periodDays()+' days');
   el.innerHTML='<div class="exec"><div class="eh"><span class="dot"></span> '+scopeLabel+' insights · auto-generated</div>'+
     '<h2>'+headline+'</h2><div class="esub">Snapshot for '+(FILTERS.range==='all'?'all time':'the last '+periodDays()+' days')+' · compared with the previous '+periodDays()+' days</div>'+
@@ -3039,7 +3071,7 @@ function qFire(card,id,v,note,atts,sig,signName,ov){
           ? 'Declined and signed. "I do not agree" is ticked, the case is closed, and the advisor has been told it is not going forward. Nothing went to the client.'
           : 'Sent back. The advisor has been emailed with your reasons.';
         if(mine) mine.status=j.status;
-        setTimeout(function(){ refreshData(); },1600);
+        setTimeout(function(){ if(DEMO_MODE) renderQueue(); else refreshData(); },1600);
       })
       .catch(function(err){
         msg.className='qmsg err'; msg.textContent=err.message;
@@ -3114,6 +3146,13 @@ function renderProspecting(){
     + '</div><div id="pxBody" style="margin-top:12px;color:var(--muted);font-size:14px">'
     + 'Loading…</div></div>';
 
+  if (DEMO_MODE) {
+    // Sample links, never the branch's own board.
+    var demoRows = [], k;
+    for (k = 0; k < 18; k++) demoRows.push({ s: k < 6 ? 0 : k < 11 ? 1 : 2, booked: k >= 15 });
+    paint(demoRows);
+    return;
+  }
   var cb = 'rrbDash' + Date.now(), done = false;
   function cleanup(){
     var el = document.getElementById(cb);
@@ -3971,7 +4010,7 @@ function dailyMessage(d){
   const day = NOW.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
   const plural = (n, one, many) => n === 1 ? one : many;
 
-  L.push('*Ricky Rampersad Branch — ' + day + '*');
+  L.push('*' + (DEMO_MODE ? 'Sample branch' : 'Ricky Rampersad Branch') + ' — ' + day + '*');
   L.push('_' + d.scopeLabel + '_');
   L.push('');
   L.push('*' + d.submittedToday + '* ' + plural(d.submittedToday, 'fact find', 'fact finds') +
@@ -4136,7 +4175,7 @@ function weeklyMessage(d){
   var plural = function(n, one, many){ return n === 1 ? one : many; };
   var dd = function(x){ return x.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long' }); };
 
-  L.push('*Ricky Rampersad Branch — the week*');
+  L.push('*' + (DEMO_MODE ? 'Sample branch' : 'Ricky Rampersad Branch') + ' — the week*');
   L.push('_' + dd(d.from) + ' to ' + dd(d.to) + ' · ' + d.scopeLabel + '_');
   L.push('');
   L.push('*' + d.submitted + '* ' + plural(d.submitted, 'fact find', 'fact finds') +
@@ -4416,6 +4455,22 @@ if(DEMO_MODE){
   document.getElementById('appView').classList.remove('hide');
   document.getElementById('whoName').textContent=SESSION.name;
   document.getElementById('whoRole').textContent=SESSION.role+' · DEMO MODE — synthetic data';
+  // Say so at the top, and hand a guest the fact find: this is what the guest
+  // page opens for "the manager's side".
+  (function(){
+    var app=document.getElementById('appView'); if(!app || document.getElementById('demoBar')) return;
+    var b=document.createElement('div'); b.id='demoBar'; b.className='no-print';
+    b.style.cssText='background:#0F766E;color:#fff;padding:10px 18px;font:500 13.5px/1.45 Inter,system-ui,sans-serif;'+
+      'display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap';
+    b.innerHTML='<span style="background:#F5B324;color:#1F2937;font-weight:800;font-size:11px;letter-spacing:.12em;'+
+      'padding:3px 8px;border-radius:999px">SAMPLE</span>'+
+      '<span style="flex:1 1 280px">The branch dashboard on <strong>sample people and invented figures</strong>. '+
+      'Approve, send back or decline as you like: nothing reaches the branch.</span>'+
+      '<a href="ffproject.html?guest=1" target="_blank" rel="noopener" style="background:#fff;color:#0F766E;font-weight:800;'+
+      'padding:7px 12px;border-radius:8px;text-decoration:none">Try the fact find</a>'+
+      '<a href="/try" style="color:#fff;font-weight:700">Guest page</a>';
+    app.insertBefore(b, app.firstChild);
+  })();
   refreshData().then(function(){
     try{
       var sy=parseInt(new URLSearchParams(location.search).get('scrolly')||'0',10);

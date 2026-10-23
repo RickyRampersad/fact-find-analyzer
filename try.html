@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Try factfind360</title>
+<meta name="description" content="Try the Ricky Rampersad Branch's digital fact find as a guest: sample people, nothing sent.">
+<meta property="og:title" content="Try factfind360">
+<meta property="og:description" content="The digital fact find built in the Ricky Rampersad Branch. Try it as a guest: sample people, nothing sent.">
+<meta property="og:image" content="https://factfind360.com/tour-poster-v19.jpg">
+<link rel="icon" href="shield.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- The guest page. Asked for on 23 October 2026, from a conference: "a guest
+     code for persons to more or less log in and try it to experience how it
+     feels". The guest code on the home page sign-in (GUEST, 360) opens this
+     page. Both doors here are sample-only:
+       - the fact find in practice mode (ffproject.html?guest=1): nothing is sent,
+         and it keeps its own copy on the device, apart from any real one;
+       - the dashboard in demo mode (?demo=1): invented people and figures, and
+         every decision is played out on the page, never recorded. -->
+<style>
+:root{--ink:#0F172A;--navy:#0E1A2E;--teal:#0D9488;--teal-l:#2DD4BF;--gold:#F5B324;--mute:#93A7C4;--line:#1C2942}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;color:#F3F7FD;font:16px/1.55 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:28px 16px 56px;
+  background:radial-gradient(900px 520px at 85% -10%,rgba(45,212,191,.16),transparent 60%),
+             radial-gradient(700px 460px at 0% 110%,rgba(245,181,36,.10),transparent 55%),var(--navy)}
+.wrap{max-width:900px;margin:0 auto}
+.top{display:flex;align-items:center;gap:12px}
+.top img{width:34px;height:41px}
+.top b{font:700 22px Fraunces,Georgia,serif;letter-spacing:-.01em}
+.top b em{font-style:normal;color:var(--teal-l)}
+.top span{color:var(--mute);font-size:13px;font-weight:600}
+h1{font:700 clamp(34px,6vw,54px)/1.05 Fraunces,Georgia,serif;letter-spacing:-.02em;margin:34px 0 12px}
+h1 em{font-style:normal;color:var(--teal-l)}
+.lead{color:#C9D6EA;font-size:17px;max-width:640px}
+.pill{display:inline-flex;align-items:center;gap:8px;margin-top:16px;padding:7px 13px;border-radius:999px;font-size:13px;font-weight:700;
+  background:rgba(245,181,36,.12);border:1px solid rgba(245,181,36,.45);color:#FCD58A}
+.pill:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:30px}
+.card{display:flex;flex-direction:column;gap:10px;padding:24px 22px;border-radius:18px;text-decoration:none;color:inherit;
+  background:linear-gradient(180deg,rgba(30,41,59,.92),rgba(15,23,42,.92));border:1px solid var(--line);transition:transform .15s,border-color .15s}
+.card:hover,.card:focus-visible{transform:translateY(-3px);border-color:var(--teal-l);outline:none}
+.card .k{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-l)}
+.card h2{font:700 25px/1.2 Fraunces,Georgia,serif;letter-spacing:-.01em}
+.card p{color:#B7C6DC;font-size:15px}
+.card .go{margin-top:auto;display:inline-flex;align-self:flex-start;align-items:center;gap:8px;padding:11px 16px;border-radius:11px;
+  background:var(--teal);color:#fff;font-weight:800;font-size:15px}
+.card.alt .go{background:transparent;border:1.5px solid var(--teal-l);color:var(--teal-l)}
+.how{margin-top:30px;padding:20px 22px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.03)}
+.how h3{font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-bottom:10px}
+.how ol{padding-left:20px;color:#D5DFEE;font-size:15px}
+.how li{margin:6px 0}
+.foot{margin-top:30px;color:#6B7FA3;font-size:13px;text-align:center;line-height:1.8}
+.foot a{color:var(--teal-l);font-weight:700;text-decoration:none}
+@media(max-width:520px){h1{margin-top:26px}.card{padding:20px 18px}}
+</style>
+</head>
+<body><div class="wrap">
+  <div class="top"><img src="shield.svg" alt=""><div><b>factfind<em>360</em></b><br><span>Ricky Rampersad Branch &middot; Guardian Life of the Caribbean</span></div></div>
+  <h1>Try it <em>yourself</em>.</h1>
+  <p class="lead">The digital fact find our advisors use at the kitchen table, and the manager&rsquo;s side that keeps every case moving. Built in the branch, for advisors who are not technical.</p>
+  <div class="pill">Guest practice &middot; sample people &middot; nothing you type is sent</div>
+
+  <div class="cards">
+    <a class="card" href="ffproject.html?guest=1">
+      <span class="k">For advisors</span>
+      <h2>Fill in a fact find</h2>
+      <p>Guardian&rsquo;s own Confidential Fact Find, section by section. Start blank, or load a sample client and watch the need, the cash flow and retirement work themselves out as you type.</p>
+      <span class="go">Open the fact find &rarr;</span>
+    </a>
+    <a class="card alt" href="/?demo=1&amp;as=branch&amp;guest=1">
+      <span class="k">For managers</span>
+      <h2>See the manager&rsquo;s side</h2>
+      <p>The branch dashboard on sample data: the approval queue oldest first, the whole file opened in place, the client&rsquo;s own confirmation, approve and sign.</p>
+      <span class="go">Open the dashboard &rarr;</span>
+    </a>
+  </div>
+
+  <div class="how">
+    <h3>Two minutes, if you want a tour</h3>
+    <ol>
+      <li>Open the fact find and press <strong>Load a sample client</strong>.</li>
+      <li>Change the income or the expenses in Cash Flow and watch the surplus and the need move.</li>
+      <li>Press <strong>Preview</strong>: it is Guardian&rsquo;s own form, page for page.</li>
+      <li>Sign in section 11 and press <strong>Send for Manager&rsquo;s Review</strong> to see what happens next. Nothing is sent.</li>
+    </ol>
+  </div>
+
+  <div class="foot">
+    <a href="/walkthrough">Watch the film</a> &nbsp;&middot;&nbsp; <a href="/">factfind360.com</a><br>
+    Created by Ricky Rampersad, Branch Manager
+  </div>
+</div></body>
+</html>
