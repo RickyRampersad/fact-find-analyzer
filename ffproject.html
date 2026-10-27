@@ -7518,6 +7518,52 @@ function rulesForPlan(planStr) {
   return null;
 }
 
+/* PREMIUMS IN ONE MODE (27 October 2026). Fawwaz Mohamed's client took
+   Rejuvenator Plus at TT$350 a month and Provisor at TT$2,640 a YEAR, and the
+   pack printed "Total Monthly Premium $2,990": the health premium, quoted
+   annually, added in as if it were monthly. The RAI tiles already converted
+   by mode (premMonthly); the printed totals and the form's own running total
+   did not. Every total of the client's premiums now goes through these.
+
+   The mode of decision row i is the recommendation row's when the client took
+   the same plan; otherwise, and when no mode was chosen, it is read from the
+   plan: health is quoted annually here, everything else monthly. */
+function rrbDecMode_(s, i) {
+  s = s || {};
+  var decPlan = String(s['dec' + i + 'Plan'] || '').trim();
+  var recPlan = String(s['rec' + i + 'Rec'] || '').trim();
+  var mode = String(s['rec' + i + 'Mode'] || '');
+  if (mode && (!decPlan || !recPlan || canonicalPlan(decPlan) === canonicalPlan(recPlan))) return mode;
+  var rule = rulesForPlan(decPlan || recPlan);
+  return (rule && rule.type === 'health') ? 'Annual' : (mode || '');
+}
+function rrbModeFactor_(mode) {
+  var m = String(mode || '').toLowerCase();
+  if (m.indexOf('semi') > -1) return 6;        // "Semi-Annual" contains "annual": test it first
+  if (m.indexOf('quarter') > -1) return 3;
+  if (m.indexOf('annual') > -1 || m.indexOf('year') > -1) return 12;
+  return 1;
+}
+function rrbPremMonthly_(amount, mode) {
+  var n = stripCurrency(amount || '');
+  return n > 0 ? n / rrbModeFactor_(mode) : 0;
+}
+// The words after a premium in the printed pack: "a year", "a month" …
+function rrbPremCell_(amount, mode) {
+  var n = stripCurrency(amount || '');
+  if (!(n > 0)) return amount || '';
+  return rrbModeFactor_(mode) > 1 ? pf_money(n) + ' ' + rrbModeWords_(mode) : String(amount);
+}
+function rrbModeWords_(mode) {
+  var f = rrbModeFactor_(mode);
+  return f === 12 ? 'a year' : f === 6 ? 'every 6 months' : f === 3 ? 'a quarter' : 'a month';
+}
+// The need a plan meets, for a row where the advisor left Need blank.
+function rrbNeedOfPlan_(plan) {
+  var c = categoryOfProduct(plan);
+  return c === 'Health / Medical' ? 'Health / Medical Expenses' : c;
+}
+
 // Reads the chosen plan against the client's actual data and returns what is
 // wrong or what must be disclosed.
 //   level 'error' \u2014 as entered, the case cannot be issued. Red. Needs an action.
@@ -7943,8 +7989,9 @@ function renderRecEnhancedSummary() {
     const need = state['rec' + i + 'Need'] || '';
     if (!plan && !need) continue;
     const amt = state['rec' + i + 'Amt'] || '';
-    const prem = stripCurrency(state['rec' + i + 'Prem'] || '');
-    if (prem > 0) totalPrem += prem;
+    // By mode: a health premium is quoted per year (rrbPremMonthly_).
+    const recMode = state['rec' + i + 'Mode'] || ((rulesForPlan(plan) || {}).type === 'health' ? 'Annual' : '');
+    totalPrem += rrbPremMonthly_(state['rec' + i + 'Prem'], recMode);
     rows.push({ need: need, plan: plan, amt: amt, who: state['rec' + i + 'Who'] || 'Client', prem: state['rec' + i + 'Prem'] || '' });
   }
   // strategy anchor
@@ -7969,7 +8016,7 @@ function renderRecEnhancedSummary() {
         (r.prem ? ' \u00b7 ' + escapeHtml(r.prem) + '/mo' : '') + '</div>' +
       '</div></div>';
   });
-  if (totalPrem > 0) h += '<div style="margin-top:8px; padding-top:8px; border-top:2px solid #0D9488; font-size:13px; font-weight:800; color:#0F766E; text-align:right">Recommended total: TT$' + fmtNum(totalPrem) + '/mo</div>';
+  if (totalPrem > 0) h += '<div style="margin-top:8px; padding-top:8px; border-top:2px solid #0D9488; font-size:13px; font-weight:800; color:#0F766E; text-align:right">Recommended total: TT$' + fmtNum(Math.round(totalPrem)) + '/mo</div>';
   h += '</div>';
   host.innerHTML = h;
 }
@@ -10505,10 +10552,10 @@ function calc() {
     for (let r = 1; r <= 6; r++) {
       const go = (state['dec' + r + 'Go'] || '').trim();
       if (go === 'No') continue;            // skip declined
-      const prem = stripCurrency(state['dec' + r + 'Prem'] || '');
-      if (prem > 0) total += prem;
+      // A health premium is quoted per year: count its monthly share.
+      total += rrbPremMonthly_(state['dec' + r + 'Prem'], rrbDecMode_(state, r));
     }
-    el.textContent = total > 0 ? fmtTT(total) : 'TT$ 0';
+    el.textContent = total > 0 ? fmtTT(Math.round(total * 100) / 100) : 'TT$ 0';
   })();
 
   // ── Client Snapshot + objection handling: reveal & refresh ──
@@ -15261,8 +15308,21 @@ function buildPrintLayout() {
     html += '<tr>';
     html += '<td style="text-align:center">' + pf$(pri) + '</td>';
     if (!PF_STRICT_GUARDIAN) html += '<td>' + pf$(who) + '</td>';
+    if (!nd && rc) nd = rrbNeedOfPlan_(rc);
     html += '<td>' + pf$(nd) + '</td>';
-    html += '<td>' + pf$(rc) + '</td>';
+    // Guardian's table has no Amount or Premium column, so on the strict page
+    // the cover and premium are written into the recommendation itself, as an
+    // advisor writes them on the paper form. Fawwaz Mohamed, 27 October 2026:
+    // "the fields on top are blank but the addendum has the coverages".
+    var rcTxt = rc;
+    if (PF_STRICT_GUARDIAN && rc) {
+      var bits = [];
+      if (stripCurrency(amt) > 0) bits.push('TT$' + pf_money(stripCurrency(amt)) + ' cover');
+      if (stripCurrency(pm) > 0) bits.push('TT$' + pf_money(stripCurrency(pm)) + ' ' +
+        rrbModeWords_(s['rec' + rci + 'Mode'] || ((rulesForPlan(rc) || {}).type === 'health' ? 'Annual' : '')));
+      if (bits.length) rcTxt = rc + ' \u2014 ' + bits.join(', ');
+    }
+    html += '<td>' + pf$(rcTxt) + '</td>';
     if (!PF_STRICT_GUARDIAN) {
       html += '<td class="pf-num">' + pf$(amt) + '</td>';
       html += '<td class="pf-num">' + pf$(gp) + '</td>';
@@ -15303,12 +15363,20 @@ function buildPrintLayout() {
     var dpm= s['dec' + di + 'Prem'] || '';
     var dg = s['dec' + di + 'Go']   || '';
     var dr = s['dec' + di + 'Reason'] || '';
-    if (dg !== 'No') { var pv = stripCurrency(dpm); if (pv > 0) decPremTotal += pv; }
+    if (dg !== 'No') decPremTotal += rrbPremMonthly_(dpm, rrbDecMode_(s, di));
+    if (!dn) dn = s['rec' + di + 'Need'] || (dl ? rrbNeedOfPlan_(dl) : '');
+    var dlTxt = dl;
+    if (PF_STRICT_GUARDIAN && dl) {
+      var dbits = [];
+      if (stripCurrency(da) > 0) dbits.push('TT$' + pf_money(stripCurrency(da)) + ' cover');
+      if (stripCurrency(dpm) > 0) dbits.push('TT$' + pf_money(stripCurrency(dpm)) + ' ' + rrbModeWords_(rrbDecMode_(s, di)));
+      if (dbits.length) dlTxt = dl + ' \u2014 ' + dbits.join(', ');
+    }
     html += '<tr>';
     html += '<td style="text-align:center">' + pf$(dp) + '</td>';
     if (!PF_STRICT_GUARDIAN) html += '<td>' + pf$(dw) + '</td>';
     html += '<td>' + pf$(dn) + '</td>';
-    html += '<td>' + pf$(dl) + '</td>';
+    html += '<td>' + pf$(dlTxt) + '</td>';
     if (!PF_STRICT_GUARDIAN) {
       html += '<td class="pf-num">' + pf$(da) + '</td>';
       html += '<td class="pf-num">' + pf$(dpm) + '</td>';
@@ -16702,7 +16770,8 @@ function pf_displacedDetail(s) {
            '<td>' + pf$(s['rec' + r + 'Who'] || '') + '</td>' +
            '<td class="pf-num">' + pf$(s['rec' + r + 'Amt'] || '') + '</td>' +
            '<td class="pf-num">' + pf$(s['rec' + r + 'Gap'] || '') + '</td>' +
-           '<td class="pf-num">' + pf$(s['rec' + r + 'Prem'] || '') + '</td>' +
+           '<td class="pf-num">' + pf$(rrbPremCell_(s['rec' + r + 'Prem'], s['rec' + r + 'Mode'] ||
+              ((rulesForPlan(rc) || {}).type === 'health' ? 'Annual' : ''))) + '</td>' +
            '<td>' + pf$(s['rec' + r + 'Reason'] || '') + '</td></tr>';
   }
   if (rec) {
@@ -16796,15 +16865,22 @@ function pf_displacedDetail(s) {
   var dec = '';
   var addDecCount = pfRowCount('dec', ['Pri','Who','Need','Plan','Amt','Prem','Go','Reason'],
                                PF_ROWS.decision, PF_MAX.decision);
+  var converted = [];
   for (var d = 1; d <= addDecCount; d++) {
     var dl = s['dec' + d + 'Plan'] || '';
     if (!dl && !s['dec' + d + 'Need']) continue;
     var go = s['dec' + d + 'Go'] || '';
-    if (go !== 'No') { var pv = stripCurrency(s['dec' + d + 'Prem'] || ''); if (pv > 0) totalPrem += pv; }
+    var dMode = rrbDecMode_(s, d), dPrem = s['dec' + d + 'Prem'] || '';
+    if (go !== 'No') {
+      totalPrem += rrbPremMonthly_(dPrem, dMode);
+      if (rrbModeFactor_(dMode) > 1 && stripCurrency(dPrem) > 0)
+        converted.push((dl || 'Row ' + d) + ': TT$' + pf_money(stripCurrency(dPrem)) + ' ' + rrbModeWords_(dMode) +
+                       ' is TT$' + pf_money(rrbPremMonthly_(dPrem, dMode)) + ' a month');
+    }
     dec += '<tr><td style="text-align:center">' + (s['dec' + d + 'Pri'] || d) + '</td>' +
            '<td>' + pf$(s['dec' + d + 'Who'] || '') + '</td>' +
            '<td class="pf-num">' + pf$(s['dec' + d + 'Amt'] || '') + '</td>' +
-           '<td class="pf-num">' + pf$(s['dec' + d + 'Prem'] || '') + '</td>' +
+           '<td class="pf-num">' + pf$(rrbPremCell_(dPrem, dMode)) + '</td>' +
            '<td style="text-align:center">' + pf$(go) + '</td></tr>';
   }
   if (dec) {
@@ -16817,8 +16893,11 @@ function pf_displacedDetail(s) {
          '<th style="width:11%">Proceeding?</th></tr></thead><tbody>' + dec;
     if (totalPrem > 0)
       h += '<tr class="pf-row-total"><td colspan="3" style="text-align:right">Total Monthly Premium</td>' +
-           '<td class="pf-num">$' + pf_money(totalPrem) + '</td><td></td></tr>';
+           '<td class="pf-num">$' + pf_money(Math.round(totalPrem * 100) / 100) + '</td><td></td></tr>';
     h += '</tbody></table>';
+    if (converted.length)
+      h += '<div style="font-size:8pt; color:#64748B; margin-top:1mm">Counted in the monthly total at its ' +
+           'monthly share: ' + pf$(converted.join('; ')) + '.</div>';
   }
 
   if (!any) return '';
