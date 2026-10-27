@@ -479,6 +479,7 @@
   .qb.back{background:transparent;color:#B45309;border:1.5px solid rgba(245,158,11,.5)}
   .qb.decline{background:transparent;color:var(--danger);border:1.5px solid rgba(220,38,38,.35)}
   .qb.hold{background:transparent;color:var(--violet);border:1.5px solid rgba(124,58,237,.4)}
+  .qb.quiet{background:transparent;color:#475569;border:1.5px dashed rgba(71,85,105,.45)}
   .qb.ghost{background:transparent;color:var(--muted);border:1.5px solid var(--line)}
   .qb:disabled{opacity:.5;cursor:default}
   .qnote{width:100%;box-sizing:border-box;margin-top:8px;background:#F8FAFC;color:var(--ink);
@@ -1359,7 +1360,7 @@ if(DEMO_MODE){
      Decline and Hold play out on the page and record nothing. */
   (function(){
     var f0=window.fetch; if(!f0) return;
-    var V={approve:'approved',decline:'declined',hold:'held','return':'returned'};
+    var V={approve:'approved',decline:'declined',hold:'held','return':'returned',quiet:'cancelled'};
     window.fetch=function(u,o){
       if(/script\.google(usercontent)?\.com/.test(String((u&&u.url)||u))){
         var b={}; try{ b=JSON.parse((o&&o.body)||'{}'); }catch(e){}
@@ -2985,6 +2986,40 @@ function qHoldParts(r){
 function qWithKept(text,kept){
   return [qStr(text), kept ? QKEEP+kept : ''].filter(Boolean).join('\n\n');
 }
+/* CLOSE QUIETLY (27 October 2026). Akaash Kalladeen had eight early-stage
+   cases he wanted closed with nothing going to the client or the agent.
+   Decline e-mails the agent and Hold leaves the case open, so this posts its
+   own stage, queue_close (apps-script/QuietClose.gs), which sets the case to
+   cancelled with the reason on the file and sends nothing. A server without
+   that file answers "Agent code required"; the card then says to install it,
+   and nothing has changed. */
+var QQUIET_NOTE='Started in the early stages, before the new process. Closed by the manager; nothing to go to the client or the agent.';
+function qQuiet(card,id,note){
+  card.querySelectorAll('.qb').forEach(function(x){x.disabled=true;});
+  var msg=card.querySelector('.qmsg');
+  msg.style.display='block'; msg.className='qmsg'; msg.textContent='Closing…';
+  fetch(getEndpoint(),{method:'POST',cache:'no-store',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({stage:'queue_close',v:'quiet',token:SESSION.token,id:id,note:note})})
+    .then(function(x){return x.json();})
+    .then(function(j){
+      if(!j||!j.ok){
+        var e=(j&&j.error)||'';
+        if(/agent code required/i.test(e)) e='Close quietly is not switched on yet: QuietClose.gs has to be added to the fact find\'s Apps Script and a new version deployed. Nothing was changed and nothing was sent.';
+        if(j&&j.already){ msg.textContent=e+' Refreshing…'; return refreshData(); }
+        throw new Error(e||'Could not close the case.');
+      }
+      card.classList.add('done'); card.classList.remove('hot');
+      msg.textContent='Closed. Nothing was e-mailed to the agent or the client. Your reason and your name are on the file.';
+      var mine=ALL.filter(function(x){return x.id===id;})[0];
+      if(mine){ mine.status='cancelled'; mine.closedQuietlyNote=note; }
+      setTimeout(function(){ if(DEMO_MODE) renderQueue(); else refreshData(); },1600);
+    })
+    .catch(function(err){
+      msg.className='qmsg err'; msg.textContent=(err&&err.message)||'Could not close the case.';
+      card.querySelectorAll('.qb').forEach(function(x){x.disabled=false;});
+    });
+}
 function qFire(card,id,v,note,atts,sig,signName,ov){
   var msg=card.querySelector('.qmsg');
   card.querySelectorAll('.qb').forEach(function(x){x.disabled=true;});
@@ -3339,6 +3374,7 @@ function renderQueue(){
           '<button class="qb back" data-id="'+escapeHtml(r.id)+'" data-v="return">Send back&hellip;</button>'+
           '<button class="qb decline" data-id="'+escapeHtml(r.id)+'" data-v="decline">Decline&hellip;</button>'+
           '<button class="qb hold" data-id="'+escapeHtml(r.id)+'" data-v="hold">Hold&hellip;</button>'+
+          '<button class="qb quiet" data-id="'+escapeHtml(r.id)+'" data-v="quiet" title="Close the case. Nothing is e-mailed to the agent or the client.">Close quietly&hellip;</button>'+
           '<button class="qb ghost" data-id="'+escapeHtml(r.id)+'" data-v="toggle">Full review &#9662;</button>'+
         '</div>';
       return '<div class="qc'+(hot&&!held?' hot':'')+(held?' held':'')+(back?' back':'')+
@@ -3393,7 +3429,7 @@ function renderQueue(){
         b.innerHTML=det.classList.contains('open')?'Close review &#9652;':'Full review &#9662;';
         return;
       }
-      if(v==='return'||v==='hold'||v==='decline'){
+      if(v==='return'||v==='hold'||v==='decline'||v==='quiet'){
         if(card.dataset.armed!==v){
           card.dataset.armed=v;
           noteEl.classList.add('open');
@@ -3403,15 +3439,30 @@ function renderQueue(){
             ? 'Tap the reasons above, add your own words if needed — goes to the advisor.'
             : v==='decline'
             ? 'Why does this recommendation not stand? The advisor is not being asked to fix it, so this is all they get.'
+            : v==='quiet'
+            ? 'Why is it being closed? Stays on the file. Nothing goes to the agent or the client.'
             : 'What are you waiting on? Stays on the file — nothing is emailed, and the reminder clock resets.';
+          if(v==='quiet'&&!noteEl.value.trim()) noteEl.value=QQUIET_NOTE;
           noteEl.focus();
-          b.textContent = v==='return' ? 'Send back now' : v==='decline' ? 'Decline this case' : 'Confirm hold';
+          b.textContent = v==='return' ? 'Send back now' : v==='decline' ? 'Decline this case'
+            : v==='quiet' ? 'Close it, send nothing' : 'Confirm hold';
           card.querySelectorAll('.qb').forEach(function(x){
             if(x===b) return;
             if(x.dataset.v==='return')  x.innerHTML='Send back&hellip;';
             if(x.dataset.v==='decline') x.innerHTML='Decline&hellip;';
             if(x.dataset.v==='hold')    x.innerHTML='Hold&hellip;';
+            if(x.dataset.v==='quiet')   x.innerHTML='Close quietly&hellip;';
           });
+          return;
+        }
+        if(v==='quiet'){
+          var why=noteEl.value.trim();
+          if(why.length<10){
+            msg.style.display='block'; msg.className='qmsg err';
+            msg.textContent='Say why it is being closed. The reason stays on the file.';
+            return;
+          }
+          qQuiet(card,id,why);
           return;
         }
         if(v==='hold'&&!noteEl.value.trim()){
@@ -3472,6 +3523,7 @@ function renderQueue(){
                 if(x.dataset.v==='return')  x.innerHTML='Send back&hellip;';
                 if(x.dataset.v==='decline') x.innerHTML='Decline&hellip;';
                 if(x.dataset.v==='hold')    x.innerHTML='Hold&hellip;';
+                if(x.dataset.v==='quiet')   x.innerHTML='Close quietly&hellip;';
               });
             }
           }
