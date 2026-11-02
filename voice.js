@@ -211,7 +211,10 @@
 
   /* ── The interview ──────────────────────────────────────────────────────── */
   var MEM = { kids: null, moreIns: {}, moreGoal: {}, hasIns: null };
-  function first() { var n = val('fullName') || val('clientName'); return n ? n.split(' ')[0] : 'the client'; }
+  /* On the practice copy every line is said in fixed words (no names, no figures read back), so each one is a
+     recording of Andrew (andrew.js, voice/andrew/). The figures still show on the panel as they are filled. */
+  function plain() { return !!(window.RRB_SPEECH && window.RRB_SPEECH.plain); }
+  function first() { var n = val('fullName') || val('clientName'); return (n && !plain()) ? n.split(' ')[0] : 'the client'; }
   function partnered() { return /married|common/i.test(val('maritalStatus')); }
   function kidsKnown() { var n = 0; for (var i = 1; i <= 3; i++) if (val('child' + i + 'Name')) n = i; return n; }
 
@@ -249,7 +252,7 @@
       var on = function () { return (MEM.kids || kidsKnown()) >= i; };
       var ord = ['', 'first', 'second', 'third'][i];
       L.push(Q('Children', 'child' + i + 'Name', 'name', function () { return 'What is the ' + ord + ' child’s name?'; }, { when: on }));
-      L.push(Q('Children', 'child' + i + 'Dob', 'date', function () { return 'And ' + (val('child' + i + 'Name').split(' ')[0] || 'the child') + '’s date of birth?'; }, { when: on }));
+      L.push(Q('Children', 'child' + i + 'Dob', 'date', function () { return 'And ' + ((!plain() && val('child' + i + 'Name').split(' ')[0]) || 'the child') + '’s date of birth?'; }, { when: on }));
       L.push(Q('Children', 'child' + i + 'Gender', 'choice', function () { return 'Boy or girl?'; }, { when: on }));
     });
 
@@ -393,6 +396,8 @@
         t += e.results[i][0].transcript;
         if (e.results[i].isFinal) gotFinal = true;
       }
+      if (V.asking && echo(t)) { heard = ''; gotFinal = false; return; }   // the question, heard from the speaker
+      if (V.asking && t.trim().length > 1) interrupt();
       heard = t; hear(t, !gotFinal);
     };
     r.onerror = function (e) {
@@ -406,8 +411,8 @@
     r.onend = function () {
       V.listening = false; mic(false);
       if (!V.on || V.paused || V.noMic) return;
-      if (gotFinal && heard.trim()) handle(heard.trim());
-      else setTimeout(function () { if (V.on && !V.paused && !V.busy) listen(); }, 250);   // silence: keep listening
+      if (gotFinal && heard.trim() && !(V.asking && echo(heard))) { V.asking = ''; handle(heard.trim()); }
+      else setTimeout(function () { if (V.on && !V.paused && (!V.busy || V.asking) && !V.listening) listen(); }, 250);   // silence: keep listening
     };
     try { r.start(); V.rec = r; V.listening = true; mic(true); } catch (e) { showTyping(); }
   }
@@ -417,7 +422,25 @@
     V.cur = s; V.tries = 0; V.dictating = s.t === 'dictate';
     if (V.trail[V.trail.length - 1] !== s.id) V.trail.push(s.id);
     paintQuestion();
+    if (barge()) { var q = s.q(); V.asking = q; then(q, function () { V.asking = ''; if (!V.listening) listen(); }); listen(); return; }
     then(s.q(), listen);
+  }
+  /* Answering before the question is finished (2 November 2026: "if the agent gives the answer and knows it the
+     dictation should recognize this and not continue with the question"). On the practice copy the microphone is
+     open while the question is asked; the moment the agent speaks, the question stops and the answer is taken.
+     What the microphone hears of the question itself (from the speaker) is not taken for an answer. */
+  function barge() { return !!(window.RRB_SPEECH && SR && !V.noMic); }
+  function echo(heard) {
+    var q = String(V.asking || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean);
+    var h = String(heard || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean);
+    if (!q.length || !h.length) return false;
+    var hit = h.filter(function (w) { return q.indexOf(w) > -1; }).length;
+    return h.length >= 2 && hit / h.length >= 0.7;
+  }
+  function interrupt() {
+    if (!V.asking) return;
+    V.asking = ''; V.tok++; V.busy = false;
+    try { if (TTS) TTS.cancel(); else if (window.RRB_SPEECH) window.RRB_SPEECH.cancel(); } catch (e) {}
   }
   function advance(fromId) {
     var n = nextStep(fromId);
@@ -427,7 +450,10 @@
   }
   function finish() {
     stopListening(); V.cur = null; paintQuestion();
-    var msg = 'That is the interview. I filled ' + V.filled.length + ' answer' + (V.filled.length === 1 ? '' : 's') + '.' +
+    var msg = plain()
+      ? (V.left.length ? 'That is the interview. A few answers are left for you; they are listed on the panel. Check the form, then add your recommendations.'
+                       : 'That is the interview. Check the form, then add your recommendations.')
+      : 'That is the interview. I filled ' + V.filled.length + ' answer' + (V.filled.length === 1 ? '' : 's') + '.' +
       (V.left.length ? ' ' + V.left.length + ' are left for you to fill in. They are listed on the panel.' : '') +
       ' Check the form, then add your recommendations.';
     speak(msg); V.on = false; paintButtons();
@@ -460,7 +486,7 @@
         paintFilled();
       }
       if (V.dictating) { listen(); return; }        // keep taking notes until "done"
-      var back2 = V.speakBack && r.say ? 'Got it. ' + r.say + '.' : 'Got it.';
+      var back2 = V.speakBack && r.say && !plain() ? 'Got it. ' + r.say + '.' : 'Got it.';
       return then(back2, function () { advance(s.id); });
     }
     V.tries++;
@@ -696,7 +722,26 @@
     if (mode() !== 'agent') return;              // never on a manager's review or the client's view
     build();
   }
-  window.RRB_VOICE = { start: start, stop: stop, _parse: { number: parseNumber, date: parseDate, email: parseEmail,
+  /** Every line Dictation can say in plain words (for the recordings in voice/andrew/). */
+  function allLines() {
+    var out = [], add = function (t) { t = String(t || '').trim(); if (t && out.indexOf(t) < 0) out.push(t); };
+    var saved = { kids: MEM.kids, hasIns: MEM.hasIns };
+    steps().forEach(function (s) {
+      add(s.q()); add(s.sec + '.');
+      if (s.t === 'choice') add('I did not match that. The choices are: ' + optsOf(s.k).slice(0, 6).map(function (x) { return x.t; }).join(', ') + '.');
+    });
+    MEM.kids = saved.kids; MEM.hasIns = saved.hasIns;
+    ['Let’s go through the fact find. Answer each question, or say skip, back, repeat or stop at any time.',
+     'Got it.', 'I will leave that one for you.', 'Sorry, I did not catch that. Say it again, or say skip.',
+     'Say the date like "12 April 1988".', 'I need a number. Say it like "fifteen thousand", or say skip.',
+     'How many? Say a number, or none.', 'Please say yes or no.', 'Say it like "john dot smith at gmail dot com".',
+     'Say the number digit by digit.', 'Thank you, your notes are in.',
+     'Every question already has an answer. Tick "Ask everything" to go through them again.',
+     'That is the interview. A few answers are left for you; they are listed on the panel. Check the form, then add your recommendations.',
+     'That is the interview. Check the form, then add your recommendations.'].forEach(add);
+    return out;
+  }
+  window.RRB_VOICE = { start: start, stop: stop, _lines: allLines, _parse: { number: parseNumber, date: parseDate, email: parseEmail,
                        phone: parsePhone, yesno: parseYesNo, choice: matchChoice, words: wordsToNumber } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 600); });
   else setTimeout(boot, 600);

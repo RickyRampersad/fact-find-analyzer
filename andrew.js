@@ -117,11 +117,36 @@
 
   /* Speak a line: Andrew when the server has him, the device's best voice
      otherwise. `audio` (base64 MP3) is used as is when a caller already has it. */
+  /* Lines recorded ahead in Andrew's voice (voice/andrew/, made on the branch's voice runner with
+     en-US-AndrewMultilingualNeural and checked as English by Whisper). Every Dictation line and the AI partner's
+     greeting are there, so they play in Andrew's voice with no key and no wait. */
+  var REC = null, RECBASE = 'voice/andrew/';
+  function norm(t) {
+    return String(t || '').toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"')
+      .replace(/\s+/g, ' ').trim();
+  }
+  try {
+    fetch(RECBASE + 'manifest.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (m) { if (!m) return; REC = {}; Object.keys(m).forEach(function (t) { REC[norm(t)] = m[t]; }); })
+      .catch(function () {});
+  } catch (e) {}
+  function playUrl(url, tok) {
+    return new Promise(function (res) {
+      if (tok !== SP.tok) return res();
+      var a = audioEl(), done = false;
+      var fin = function () { if (!done) { done = true; a.onended = a.onerror = null; res(); } };
+      a.onended = fin; a.onerror = fin; a.src = url; SP.played = a;
+      var p = a.play(); if (p && p.catch) p.catch(function () { fin(); });
+    });
+  }
+
   function speak(text, audio) {
     text = String(text || '').trim();
     if (!text) return Promise.resolve();
     var tok = ++SP.tok;
     stopAudio();
+    var hit = REC && REC[norm(text)];
+    if (hit) return playUrl(RECBASE + hit, tok);
     if (audio) { SP.cache[text] = audio; SP.andrew = true; return playB64(audio, tok); }
     if (SP.andrew === false) return deviceSay(text);
     return fetchAndrew(text).then(function (b64) { return playB64(b64, tok); },
@@ -141,6 +166,8 @@
     speak: speak,
     cancel: function () { if (TTS) TTS.cancel(); else { SP.tok++; stopAudio(); } },
     prefetch: function (t) { t = String(t || '').trim(); if (t && SP.andrew !== false) fetchAndrew(t).catch(function () {}); },
+    plain: true,                         // Dictation speaks in fixed words, so every line is a recording
+    recorded: function (t) { return !!(REC && REC[norm(t)]); },
     who: function () { return SP.andrew ? 'Andrew' : ((SP.voice || bestVoice() || {}).name || 'the device voice'); },
     _state: SP
   };
