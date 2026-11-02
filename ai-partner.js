@@ -219,7 +219,7 @@
         try { if (typeof calc === 'function') calc(); } catch (e) {}
         A.turns++; A.cost += +j.cost || 0;
         if (j.usage) Object.keys(A.tokens).forEach(function (k) { A.tokens[k] += +j.usage[k] || 0; });
-        bubble('ai', j.say || '', placed, missed, j.insights);
+        bubble('ai', j.say || '', placed, missed, j.insights, j.coach);
         A.missing = j.missing || [];
         if (j.focus) { var el = fieldEl(j.focus); if (el && !placed.length) { openFor(el); flash(el); } }
         ui();
@@ -231,11 +231,14 @@
   /* ── The panel ──────────────────────────────────────────────────────────── */
   function $(id) { return document.getElementById('rrba-' + id); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function bubble(who, t, placed, missed, insights) {
+  function bubble(who, t, placed, missed, insights, coach) {
     var d = document.createElement('div'); d.className = 'rrba-b ' + who;
     var h = '<div class="t">' + esc(t) + '</div>';
     if (insights && insights.length) {
       h += '<div class="ins"><b>What I notice</b>' + insights.map(function (x) { return '<p>' + esc(x) + '</p>'; }).join('') + '</div>';
+    }
+    if (coach && coach.length) {
+      h += '<div class="ins coach"><b>For your next appointment</b>' + coach.map(function (x) { return '<p>' + esc(x) + '</p>'; }).join('') + '</div>';
     }
     if (placed && placed.length) {
       h += '<div class="f">Filled: ' + placed.map(function (f) {
@@ -290,6 +293,7 @@
       '.rrba-b .ins{margin-top:8px;padding:8px 10px;background:#FFF8E6;border-left:3px solid #F5B324;border-radius:6px;font-size:13.5px}' +
       '.rrba-b .ins b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#92400E;margin-bottom:2px}' +
       '.rrba-b .ins p{margin:3px 0 0}' +
+      '.rrba-b .ins.coach{background:#EEF4FF;border-left-color:#2D5BB9}.rrba-b .ins.coach b{color:#1E3A8A}' +
       '#rrba-busy{display:none;font-size:13px;color:#475569;padding:4px 14px}' +
       '#rrba-left{font-size:12.5px;color:#475569;padding:0 14px}' +
       '.rrba-in{display:flex;gap:8px;padding:10px 12px 6px;border-top:1px solid #E2E8F0}' +
