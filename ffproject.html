@@ -38,7 +38,8 @@
   var BRANCH = /script\.google(usercontent)?\.com/;
   var f0 = window.fetch;
   if (f0) window.fetch = function (u, o) {
-    if (BRANCH.test(String((u && u.url) || u))) return Promise.resolve(new Response(
+    /* The one exception: the AI partner's turns (ai-partner.js, only with ai=1). */
+    if (BRANCH.test(String((u && u.url) || u)) && !(o && o.rrbAiPartner)) return Promise.resolve(new Response(
       JSON.stringify({ ok: false, guest: true, error: 'Practice: nothing is sent to the branch.' }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }));
     return f0.apply(this, arguments);
@@ -17811,5 +17812,6 @@ function rrbFireworks(canvas, seconds, every) {
 </script>
 <!-- Voice interview: asks each question aloud and fills the form (voice.js, 2 November 2026). -->
 <script src="voice.js" defer></script>
+<script src="ai-partner.js" defer></script>
 </body>
 </html>
