@@ -219,7 +219,7 @@
         try { if (typeof calc === 'function') calc(); } catch (e) {}
         A.turns++; A.cost += +j.cost || 0;
         if (j.usage) Object.keys(A.tokens).forEach(function (k) { A.tokens[k] += +j.usage[k] || 0; });
-        bubble('ai', j.say || '', placed, missed);
+        bubble('ai', j.say || '', placed, missed, j.insights);
         A.missing = j.missing || [];
         if (j.focus) { var el = fieldEl(j.focus); if (el && !placed.length) { openFor(el); flash(el); } }
         ui();
@@ -231,9 +231,12 @@
   /* ── The panel ──────────────────────────────────────────────────────────── */
   function $(id) { return document.getElementById('rrba-' + id); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function bubble(who, t, placed, missed) {
+  function bubble(who, t, placed, missed, insights) {
     var d = document.createElement('div'); d.className = 'rrba-b ' + who;
     var h = '<div class="t">' + esc(t) + '</div>';
+    if (insights && insights.length) {
+      h += '<div class="ins"><b>What I notice</b>' + insights.map(function (x) { return '<p>' + esc(x) + '</p>'; }).join('') + '</div>';
+    }
     if (placed && placed.length) {
       h += '<div class="f">Filled: ' + placed.map(function (f) {
         var c = (A.cat || []).filter(function (x) { return x.k === f.field; })[0];
@@ -284,6 +287,9 @@
       '.rrba-b.ai{align-self:flex-start;background:#fff;border:1px solid #E2E8F0;border-bottom-left-radius:4px}' +
       '.rrba-b.note{align-self:center;background:#FEF3C7;color:#78350F;font-size:13.5px;max-width:100%}' +
       '.rrba-b .f{margin-top:6px;font-size:13px;color:#0F766E;display:flex;flex-wrap:wrap;gap:4px 10px}.rrba-b .f.miss{color:#B45309}' +
+      '.rrba-b .ins{margin-top:8px;padding:8px 10px;background:#FFF8E6;border-left:3px solid #F5B324;border-radius:6px;font-size:13.5px}' +
+      '.rrba-b .ins b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#92400E;margin-bottom:2px}' +
+      '.rrba-b .ins p{margin:3px 0 0}' +
       '#rrba-busy{display:none;font-size:13px;color:#475569;padding:4px 14px}' +
       '#rrba-left{font-size:12.5px;color:#475569;padding:0 14px}' +
       '.rrba-in{display:flex;gap:8px;padding:10px 12px 6px;border-top:1px solid #E2E8F0}' +
@@ -323,7 +329,7 @@
       var vf = document.querySelector('.rrbv-fab'); if (vf) vf.style.visibility = 'hidden';
       if (!A.cat) A.cat = catalogue();
       if (!$('log').children.length) {
-        var hi = 'Hi, I\'m your fact-find partner. Tell me about the client in your own words, as much or as little as you like. I\'ll fill the fact find as you go, read it back to you, work out the need and tell you what\'s still missing.';
+        var hi = 'Hi. How did the interview go? Tell me about the client in your own words, and I\'ll put it all on the fact find as we talk.';
         bubble('ai', hi); speak(hi);
       }
       ui(); setTimeout(function () { $('in').focus(); }, 50);
