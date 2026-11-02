@@ -356,6 +356,7 @@
     return vs[0] || null;
   }
   function speak(text) {
+    if (window.RRB_SPEECH && !V.muted) { say(text); return window.RRB_SPEECH.speak(text); }   // Andrew, on the practice copy (andrew.js)
     return new Promise(function (res) {
       say(text);
       if (!TTS || V.muted) return res();

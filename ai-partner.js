@@ -159,7 +159,8 @@
     for (var p = 0; p < pref.length; p++) for (var j = 0; j < vs.length; j++) if (pref[p].test(vs[j].name)) return vs[j];
     return vs[0] || null;
   }
-  function speak(t) {
+  function speak(t, audio) {
+    if (window.RRB_SPEECH && !A.muted && t) return window.RRB_SPEECH.speak(t, audio);   // Andrew (andrew.js)
     return new Promise(function (res) {
       if (!TTS || A.muted || !t) return res();
       try {
@@ -222,7 +223,7 @@
         A.missing = j.missing || [];
         if (j.focus) { var el = fieldEl(j.focus); if (el && !placed.length) { openFor(el); flash(el); } }
         ui();
-        speak(j.say);
+        speak(j.say, j.audio);
       })
       .catch(function (err) { A.busy = false; note('Could not reach the AI partner (' + ((err && err.message) || err) + ').'); ui(); });
   }
@@ -260,9 +261,18 @@
   function build() {
     var css = document.createElement('style');
     css.textContent =
-      '.rrba-fab{position:fixed;right:16px;bottom:72px;z-index:9998;display:flex;align-items:center;gap:8px;border:0;cursor:pointer;' +
-      'background:linear-gradient(135deg,#0D9488,#0F766E);color:#fff;font:600 15px/1 Inter,system-ui,sans-serif;padding:13px 18px;border-radius:999px;' +
-      'box-shadow:0 8px 22px rgba(13,148,136,.35)}.rrba-fab svg{width:20px;height:20px}' +
+      /* Two buttons that look and read differently (2 November 2026: "there must be a differentiation so persons
+         can understand"): Dictation (teal, the Voice interview) asks the form's questions one by one; the AI partner
+         (navy and gold) listens to you talk freely, fills, checks and works out the need. */
+      '.rrba-fab,.rrbv-fab.rrba-dict{position:fixed;right:16px;z-index:9998;display:flex;align-items:center;gap:10px;border:0;cursor:pointer;' +
+      'text-align:left;padding:10px 16px 10px 12px;border-radius:16px;width:min(300px,calc(100vw - 32px));min-height:56px}' +
+      '.rrba-fab{bottom:84px;background:linear-gradient(135deg,#0F172A,#1E3A5F);color:#fff;box-shadow:0 10px 26px rgba(15,23,42,.35);' +
+      'border:1.5px solid #F5B324}.rrba-fab svg{width:26px;height:26px;color:#F5B324;flex:none}' +
+      '.rrbv-fab.rrba-dict{bottom:16px;background:#fff;color:#0F766E;border:1.5px solid #0F766E;box-shadow:0 8px 20px rgba(15,118,110,.2)}' +
+      '.rrbv-fab.rrba-dict svg{width:24px;height:24px;flex:none}' +
+      '.rrba-l{display:flex;flex-direction:column;gap:3px;font:700 15px/1.15 Inter,system-ui,sans-serif}' +
+      '.rrba-l small{font:500 12.5px/1.3 Inter,system-ui,sans-serif;opacity:.9}' +
+      '.rrba-fab .rrba-l small{color:#E2E8F0}' +
       '.rrba{position:fixed;right:16px;bottom:16px;z-index:10000;width:min(440px,calc(100vw - 32px));height:min(82vh,680px);' +
       'display:none;flex-direction:column;background:#fff;color:#0F172A;border-radius:18px;box-shadow:0 18px 50px rgba(15,23,42,.28);' +
       'font:15px/1.45 Inter,system-ui,sans-serif;overflow:hidden}.rrba.open{display:flex}' +
@@ -285,13 +295,15 @@
       '#rrba-mute{background:#F1F5F9;color:#0F172A}' +
       '#rrba-cost{font-size:12.5px;color:#334155;padding:6px 14px 10px;border-top:1px dashed #E2E8F0}' +
       '.rrba-flash{outline:3px solid #14B8A6 !important;outline-offset:2px;transition:outline .2s}' +
-      '@media (max-width:600px){.rrba{left:8px;right:8px;bottom:8px;width:auto;height:70vh}.rrba-fab{right:12px;bottom:66px}}';
+      '@media (max-width:600px){.rrba{left:8px;right:8px;bottom:8px;width:auto;height:70vh}.rrba-fab{right:12px;bottom:78px}' +
+      '.rrbv-fab.rrba-dict{right:12px;bottom:12px}}';
     document.head.appendChild(css);
 
     var fab = document.createElement('button');
     fab.type = 'button'; fab.className = 'rrba-fab'; fab.id = 'rrba-fab';
     fab.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-      '<path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>AI partner';
+      '<path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>' +
+      '<span class="rrba-l">AI partner<small>Talk freely. It fills the form, checks the gaps and works out the need.</small></span>';
     document.body.appendChild(fab);
 
     var p = document.createElement('section');
@@ -311,7 +323,7 @@
       var vf = document.querySelector('.rrbv-fab'); if (vf) vf.style.visibility = 'hidden';
       if (!A.cat) A.cat = catalogue();
       if (!$('log').children.length) {
-        var hi = 'I am your fact-find partner. Tell me about the client in your own words, as much or as little as you like, and I will fill the fact find as you go, read it back and ask what is missing.';
+        var hi = 'Hi, I\'m your fact-find partner. Tell me about the client in your own words, as much or as little as you like. I\'ll fill the fact find as you go, read it back to you, work out the need and tell you what\'s still missing.';
         bubble('ai', hi); speak(hi);
       }
       ui(); setTimeout(function () { $('in').focus(); }, 50);
@@ -326,7 +338,21 @@
     $('mic').onclick = listen;
     $('mute').onclick = function () { A.muted = !A.muted; try { if (A.muted && TTS) TTS.cancel(); } catch (e) {} ui(); };
     if (TTS && TTS.onvoiceschanged !== undefined) TTS.onvoiceschanged = function () { A.voice = null; };
+    labelDictation(0);
     ui();
+  }
+  function labelDictation(n) {
+    var vf = document.querySelector('.rrbv-fab');
+    if (!vf) { if (n < 20) setTimeout(function () { labelDictation(n + 1); }, 300); return; }
+    var svg = vf.querySelector('svg'), span = vf.querySelector('span');
+    if (span) span.outerHTML = '<span class="rrba-l">Dictation<small>It asks each question in turn. You answer.</small></span>';
+    vf.classList.add('rrba-dict');
+    var hd = document.querySelector('.rrbv-hd b'); if (hd) hd.textContent = 'Dictation';
+    var stack = function () {
+      var f = $('fab') || document.getElementById('rrba-fab'), r = vf.getBoundingClientRect();
+      if (f && r.height) f.style.bottom = Math.round(innerHeight - r.top + 10) + 'px';
+    };
+    stack(); setTimeout(stack, 300); window.addEventListener('resize', stack);
   }
 
   function boot() { if (mode() !== 'agent') return; build(); }

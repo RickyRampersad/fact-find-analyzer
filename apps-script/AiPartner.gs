@@ -65,6 +65,10 @@ var AIP = {
     'claude-opus-5-5': [4, 20],
     'claude-haiku-5-5': [0.10, 0.50]
   },
+  /* Andrew's voice (2 November 2026: "the practice voice has to be Andrew … very robotic"). Azure Speech, when
+     AZURE_SPEECH_KEY and AZURE_SPEECH_REGION are in the Script properties; the page uses the device's voice otherwise. */
+  TTS: { KEY: 'AZURE_SPEECH_KEY', REGION: 'AZURE_SPEECH_REGION', VOICE_PROP: 'AZURE_VOICE',
+         VOICE: 'en-US-AndrewNeural', RATE: '-4%', MAX: 700, DAY_CAP: 4000, PRICE: 16 },   // US$ per million characters
   NEVER: /^(rec\d|dec\d|bm|mgr|dm|finalDecide|replaceCover|repDecl|ackRead|advisor|agent|clientSig|clientSign|notes$)/
 };
 
@@ -125,6 +129,12 @@ var AIP_SCHEMA = {
 
 var AIP_PREV_SUBMIT_ = (typeof ffProcessAgentSubmit === 'function') ? ffProcessAgentSubmit : null;
 ffProcessAgentSubmit = function (data) {
+  if (data && data.stage === 'ai_tts') {
+    var said;
+    try { said = aipTtsStage_(data); }
+    catch (err) { Logger.log('ai_tts failed: %s', (err && err.stack) || err); said = { ok: false, error: String((err && err.message) || err) }; }
+    return _ffJson(said);
+  }
   if (data && data.stage === 'ai_turn') {
     var out;
     try { out = aipTurn_(data); }
@@ -246,15 +256,20 @@ function aipTurn_(data) {
     return f && allowed[String(f.field)] && String(f.value == null ? '' : f.value).length <= 500;
   }).map(function (f) { return { field: String(f.field), value: String(f.value) }; });
 
+  var sayText = aipStr_(j.say, 1200), audio = '', speechChars = 0;
+  try { var sp = aipSpeak_(sayText); if (sp) { audio = sp.audio; speechChars = sp.chars; } }
+  catch (e) { Logger.log('Andrew did not speak: %s', e); }
+
   var u = body.usage || {};
   var usage = { input: +u.input_tokens || 0, cacheWrite: +u.cache_creation_input_tokens || 0,
                 cacheRead: +u.cache_read_input_tokens || 0, output: +u.output_tokens || 0 };
-  var cost = aipCostOf_(model, u);
-  aipLog_(sid, model, usage, cost, fill.length);
+  var cost = aipCostOf_(model, u) + speechChars * AIP.TTS.PRICE / 1e6;
+  aipLog_(sid, model, usage, cost, fill.length, speechChars);
 
   return {
     ok: true,
-    say: aipStr_(j.say, 1200),
+    say: sayText,
+    audio: audio,
     fill: fill,
     focus: allowed[String(j.focus)] ? String(j.focus) : '',
     missing: (Array.isArray(j.missing) ? j.missing : []).slice(0, 8).map(function (m) { return aipStr_(m, 80); }),
@@ -267,17 +282,17 @@ function aipTurn_(data) {
 }
 
 /** One row a turn: when, session, model, tokens, cost. Never the words, the form or a name. */
-function aipLog_(sid, model, usage, cost, filled) {
+function aipLog_(sid, model, usage, cost, filled, speechChars) {
   try {
     var ss = ffGetOrCreateRevisedTab_().getParent();
     var sh = ss.getSheetByName(AIP.LOG);
     if (!sh) {
       sh = ss.insertSheet(AIP.LOG);
-      sh.appendRow(['When', 'Session', 'Model', 'Input', 'Cache write', 'Cache read', 'Output', 'Fields filled', 'Cost US$']);
+      sh.appendRow(['When', 'Session', 'Model', 'Input', 'Cache write', 'Cache read', 'Output', 'Fields filled', 'Cost US$', 'Speech characters']);
       sh.setFrozenRows(1);
     }
     sh.appendRow([new Date(), sid, model, usage.input, usage.cacheWrite, usage.cacheRead, usage.output, filled,
-                  Math.round(cost * 1e6) / 1e6]);
+                  Math.round(cost * 1e6) / 1e6, speechChars || 0]);
   } catch (e) { Logger.log('AI partner log: %s', e); }
 }
 
@@ -309,6 +324,7 @@ function aipCheck() {
   Logger.log('AI partner: %s.', wired ? 'wired (AiPartner is the last file)' :
              'NOT wired: a later file replaces ffProcessAgentSubmit. Move AiPartner to the end.');
   Logger.log('ANTHROPIC_API_KEY: %s.', props.getProperty(AIP.KEY) ? 'set' : 'NOT set');
+  Logger.log('Voice: %s.', aipTtsReady_() ? 'Andrew (Azure Speech, ' + aipTtsVoice_() + ')' : 'the device\'s own (AZURE_SPEECH_KEY and AZURE_SPEECH_REGION not set)');
   Logger.log('Model: %s. Switched %s.', aipModel_(), String(props.getProperty(AIP.ON_PROP) || '').toLowerCase() === 'off' ? 'off' : 'on (practice only)');
   Logger.log('Remember: Deploy > Manage deployments > pencil > New version.');
   return { wired: wired, key: !!props.getProperty(AIP.KEY), model: aipModel_() };
@@ -329,4 +345,59 @@ function aipTest() {
   });
   Logger.log(JSON.stringify(r, null, 2));
   return r;
+}
+
+/* ── Andrew: Azure Speech, read and cached here ───────────────────────────── */
+function aipTtsReady_() {
+  var p = PropertiesService.getScriptProperties();
+  return !!(p.getProperty(AIP.TTS.KEY) && p.getProperty(AIP.TTS.REGION));
+}
+function aipTtsVoice_() {
+  return String(PropertiesService.getScriptProperties().getProperty(AIP.TTS.VOICE_PROP) || '').trim() || AIP.TTS.VOICE;
+}
+function aipXml_(t) {
+  return String(t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]; });
+}
+/** Andrew says `text`: {audio: base64 MP3, chars: characters billed (0 when it came from the cache)}, or null when
+ *  Azure Speech is not set up. A line said before is kept for six hours and costs nothing the second time. */
+function aipSpeak_(text) {
+  text = aipStr_(text, AIP.TTS.MAX).trim();
+  if (!text || !aipTtsReady_()) return null;
+  var p = PropertiesService.getScriptProperties(), voice = aipTtsVoice_();
+  var key = 'aip_v_' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, voice + '|' + AIP.TTS.RATE + '|' + text)).slice(0, 22);
+  var c = CacheService.getScriptCache(), hit = c.get(key);
+  if (hit) return { audio: hit, chars: 0 };
+  var ssml = '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">' +
+    '<voice name="' + aipXml_(voice) + '"><prosody rate="' + AIP.TTS.RATE + '">' + aipXml_(text) + '</prosody></voice></speak>';
+  var res = UrlFetchApp.fetch('https://' + String(p.getProperty(AIP.TTS.REGION)).trim().toLowerCase() +
+    '.tts.speech.microsoft.com/cognitiveservices/v1', {
+    method: 'post', muteHttpExceptions: true, contentType: 'application/ssml+xml', payload: ssml,
+    headers: { 'Ocp-Apim-Subscription-Key': String(p.getProperty(AIP.TTS.KEY)).trim(),
+               'X-Microsoft-OutputFormat': 'audio-24khz-48kbitrate-mono-mp3', 'User-Agent': 'FactFind360' }
+  });
+  if (res.getResponseCode() !== 200) throw new Error('Azure Speech answered ' + res.getResponseCode());
+  var b64 = Utilities.base64Encode(res.getBlob().getBytes());
+  if (b64.length < 95000) { try { c.put(key, b64, 21600); } catch (e) {} }
+  return { audio: b64, chars: text.length };
+}
+/** stage ai_tts: one line in Andrew's voice, for the Dictation questions on the practice copy. */
+function aipTtsStage_(data) {
+  if (data.guest !== true) return { ok: false, error: 'Practice only.' };
+  if (!aipTtsReady_()) return { ok: false, noVoice: true, error: 'Andrew is not set up: AZURE_SPEECH_KEY and AZURE_SPEECH_REGION.' };
+  var text = aipStr_(data.text, AIP.TTS.MAX).trim();
+  if (!text) return { ok: false, error: 'Nothing to say.' };
+  var c = CacheService.getScriptCache();
+  var dk = 'aip_t_' + Utilities.formatDate(new Date(), 'America/Port_of_Spain', 'yyyyMMdd'), n = +(c.get(dk) || 0);
+  if (n >= AIP.TTS.DAY_CAP) return { ok: false, noVoice: true, error: 'Andrew has said enough for today.' };
+  c.put(dk, String(n + 1), 90000);
+  var sp = aipSpeak_(text);
+  return { ok: true, audio: sp.audio, voice: aipTtsVoice_(), chars: sp.chars };
+}
+
+/** Editor only: Andrew says one line. Logs whether he answered and how big the sound was. */
+function aipVoiceTest() {
+  if (!aipTtsReady_()) { Logger.log('Set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION in the Script properties first.'); return false; }
+  var sp = aipSpeak_('Hi, I\'m your fact-find partner. Tell me about the client in your own words.');
+  Logger.log('Andrew answered: %s KB of sound (%s).', Math.round(sp.audio.length * 0.75 / 1024), aipTtsVoice_());
+  return true;
 }
