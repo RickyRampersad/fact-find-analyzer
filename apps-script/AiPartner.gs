@@ -110,7 +110,7 @@ var AIP_SYSTEM = [
   '- You can search the web. Use it only when a fact about the outside world would help the advisor or the client:',
   '  current NIS pension rules, typical school or university costs, mortgage practice in Trinidad and Tobago, what',
   '  a term in the conversation means. Never search for the client or anyone named. Prefer official sources',
-  '  (nis.org.tt, central-bank.org.tt, ttparliament.org, Guardian Life\'s own pages). Say where a figure comes from,',
+  '  (nibtt.net for NIS, central-bank.org.tt, ttparliament.org, Guardian Life\'s own pages). Say where a figure comes from,',
   '  put the addresses in "sources", and never let a searched figure replace one the client gave or the page\'s',
   '  own calculation. Most turns need no search.',
   '',
