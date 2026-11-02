@@ -57,7 +57,9 @@ var AIP = {
   MAX_FORM: 16000,                // characters of the form as filled
   MAX_FIG: 4000,
   HISTORY: 16,                    // earlier exchanges kept
-  MAX_TOKENS: 1200,
+  MAX_TOKENS: 1600,
+  SEARCHES: 2,                    // web searches a turn at most
+  SEARCH_PRICE: 0.01,             // US$ a search
   LOG: 'AI Partner Log',
   /* US$ per million tokens (in, out). A cache write costs 1.25 x in, a read 0.1 x in. */
   PRICE: {
@@ -78,10 +80,39 @@ var AIP = {
    pertinent data is placed on the form instead of making it very robotic". So it converses like an experienced
    colleague debriefing an agent, and fills the form quietly from whatever is said. */
 var AIP_SYSTEM = [
-  'You are the FactFind360 fact-find partner: an experienced, warm colleague at the Ricky Rampersad branch of',
-  'Guardian Life of the Caribbean in Trinidad and Tobago. An advisor has just come out of an interview with a client',
-  'and is debriefing with you by voice. You are not a form. You are the colleague who listens, picks up what matters,',
-  'and makes sure the fact find ends up complete, accurate and strong.',
+  'You are Andrew, the fact-find partner of the Ricky Rampersad branch of Guardian Life of the Caribbean in Trinidad',
+  'and Tobago: an experienced insurance professional the advisors trust. An advisor has just come out of an interview',
+  'with a client and is debriefing with you by voice. You are not a form. You lead: you know what a strong fact find',
+  'needs, you listen, you pick up what matters, you check it is right, and you guide the advisor to a file that is',
+  'complete, accurate and defensible. Never claim credentials, years or awards; your expertise shows in the questions.',
+  'On the first turn, glance at what is already on the form and start from there rather than from nothing.',
+  '',
+  'THE KIND OF FACT FIND (<kind>)',
+  '- "advice" (Specific Need Only, e.g. mortgage protection or one product): keep it focused. Confirm who the client',
+  '  is (name spelled right, date of birth, contact), then the facts that need and product depend on. For mortgage',
+  '  protection: lender, balance owed, term left, monthly payment, whose lives, any cover already on the mortgage.',
+  '  Then affordability, the duty of full health disclosure and the beneficiaries. Do not turn it into a full review;',
+  '  if a wider need is plain (young children, one income, no other cover), say so once, kindly, as a coaching point.',
+  '- "full" (Full Disclosure): the whole picture, dependants, income and spending, debts, assets, existing cover,',
+  '  goals, retirement and health, to the depth the client\'s situation calls for.',
+  '- Not chosen yet: ask the advisor which it is.',
+  '',
+  'ACCURACY (every turn)',
+  '- Read back the facts that matter most once, briefly: the client\'s name, dates of birth and the large amounts.',
+  '  Ask for an unusual name to be spelled.',
+  '- Cross-check before you accept: a stated age against the date of birth; children younger than their parents;',
+  '  spending against income; a debt payment against its balance; a Trinidad and Tobago phone number of seven digits',
+  '  after 868; an e-mail with an @ and a domain; a figure that changed from what is already on the form. When',
+  '  something does not fit, say so plainly and ask, and fill nothing for it until it is settled.',
+  '- Ask "is that a figure the client gave, or your estimate?" for the big numbers when it is not clear.',
+  '',
+  'RESEARCHING THE WEB',
+  '- You can search the web. Use it only when a fact about the outside world would help the advisor or the client:',
+  '  current NIS pension rules, typical school or university costs, mortgage practice in Trinidad and Tobago, what',
+  '  a term in the conversation means. Never search for the client or anyone named. Prefer official sources',
+  '  (nis.org.tt, central-bank.org.tt, ttparliament.org, Guardian Life\'s own pages). Say where a figure comes from,',
+  '  put the addresses in "sources", and never let a searched figure replace one the client gave or the page\'s',
+  '  own calculation. Most turns need no search.',
   '',
   'Your words are read aloud: short, natural, spoken sentences, with contractions. No lists, headings or symbols in',
   '"say". Keep "say" under 60 words.',
@@ -206,9 +237,10 @@ var AIP_RESEARCH = [
 var AIP_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['say', 'fill', 'insights', 'coach', 'focus', 'missing', 'done'],
+  required: ['say', 'fill', 'insights', 'coach', 'sources', 'focus', 'missing', 'done'],
   properties: {
     coach: { type: 'array', items: { type: 'string' } },
+    sources: { type: 'array', items: { type: 'string' } },
     say: { type: 'string' },
     insights: { type: 'array', items: { type: 'string' } },
     fill: {
@@ -319,36 +351,63 @@ function aipTurn_(data) {
   });
   if (msgs.length && msgs[0].role !== 'user') msgs.shift();
   if (msgs.length && msgs[msgs.length - 1].role === 'user') msgs.pop();
+  var ctx = data.context || {};
+  var kind = aipStr_(ctx.appType, 20).replace(/[^a-z]/gi, '') || 'not chosen';
+  var scope = aipStr_(ctx.ffScope, 20).replace(/[^a-z\/ ]/gi, '');
   msgs.push({ role: 'user', content:
-    '<form>' + formText + '</form>\n<figures>' + figText + '</figures>\n<said>' + said + '</said>' });
+    '<kind>' + kind + (scope ? ', ' + scope : '') + '</kind>\n<form>' + formText + '</form>\n<figures>' + figText + '</figures>\n<said>' + said + '</said>' });
 
   var model = aipModel_();
-  var res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
-    headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-    payload: JSON.stringify({
-      model: model,
-      max_tokens: AIP.MAX_TOKENS,
-      system: [
-        { type: 'text', text: AIP_SYSTEM },
-        { type: 'text', text: AIP_KNOWLEDGE + (AIP_RESEARCH ? '\n\n' + AIP_RESEARCH : '') + aipLessonsText_() },
-        { type: 'text', text: 'The catalogue of fields you may fill (k = field key, l = label, t = type, o = options):\n' + catText,
-          cache_control: { type: 'ephemeral' } }
-      ],
-      messages: msgs,
-      output_config: { effort: 'low', format: { type: 'json_schema', schema: AIP_SCHEMA } }
-    })
-  });
-  var code = res.getResponseCode(), body = {};
-  try { body = JSON.parse(res.getContentText()); } catch (e) {}
-  if (code !== 200) {
-    throw new Error(String((body.error && body.error.message) || ('HTTP ' + code)).slice(0, 200));
+  var web = String(PropertiesService.getScriptProperties().getProperty('AI_PARTNER_WEB') || '').toLowerCase() !== 'off';
+  var req = {
+    model: model,
+    max_tokens: AIP.MAX_TOKENS,
+    system: [
+      { type: 'text', text: AIP_SYSTEM },
+      { type: 'text', text: AIP_KNOWLEDGE + (AIP_RESEARCH ? '\n\n' + AIP_RESEARCH : '') + aipLessonsText_() },
+      { type: 'text', text: 'The catalogue of fields you may fill (k = field key, l = label, t = type, o = options):\n' + catText,
+        cache_control: { type: 'ephemeral' } }
+    ],
+    messages: msgs,
+    output_config: { effort: 'low', format: { type: 'json_schema', schema: AIP_SCHEMA } }
+  };
+  /* The web (2 November 2026: "have you built in researching the web, very deep analytics?"): Claude's own web search,
+     at most AIP.SEARCHES a turn, from Trinidad and Tobago. AI_PARTNER_WEB = off turns it off. */
+  if (web) req.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: AIP.SEARCHES,
+                          user_location: { type: 'approximate', country: 'TT', timezone: 'America/Port_of_Spain' } }];
+  var body = {}, all = [], searches = 0, u = { input_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0, output_tokens: 0 };
+  for (var hop = 0; hop < 3; hop++) {
+    var res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+      method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+      headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' }, payload: JSON.stringify(req)
+    });
+    var code = res.getResponseCode(); body = {};
+    try { body = JSON.parse(res.getContentText()); } catch (e) {}
+    if (code !== 200) throw new Error(String((body.error && body.error.message) || ('HTTP ' + code)).slice(0, 200));
+    var bu = body.usage || {};
+    ['input_tokens', 'cache_creation_input_tokens', 'cache_read_input_tokens', 'output_tokens'].forEach(function (k) { u[k] += +bu[k] || 0; });
+    searches += +((bu.server_tool_use || {}).web_search_requests) || 0;
+    all = all.concat(body.content || []);
+    if (body.stop_reason !== 'pause_turn') break;
+    req.messages = msgs.concat([{ role: 'assistant', content: all }]);     // a long search: let it carry on
   }
   if (body.stop_reason === 'refusal') return { ok: false, error: 'The AI partner declined that one. Say it another way.' };
-  var text = (body.content || []).filter(function (b) { return b.type === 'text'; })
+  /* The answer is the text after the last search result. */
+  var lastTool = -1;
+  all.forEach(function (b, i) { if (b.type === 'web_search_tool_result' || b.type === 'server_tool_use') lastTool = i; });
+  var text = all.slice(lastTool + 1).filter(function (b) { return b.type === 'text'; })
     .map(function (b) { return b.text; }).join('').trim();
   var j;
-  try { j = JSON.parse(text); } catch (e) { throw new Error('the answer could not be read' + (body.stop_reason === 'max_tokens' ? ' (it ran out of room)' : '')); }
+  try { j = JSON.parse(text); }
+  catch (e) {
+    var m = text.match(/\{[\s\S]*\}/);
+    try { j = JSON.parse(m ? m[0] : ''); }
+    catch (e2) { throw new Error('the answer could not be read' + (body.stop_reason === 'max_tokens' ? ' (it ran out of room)' : '')); }
+  }
+  var found = [];
+  all.forEach(function (b) {
+    if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) b.content.forEach(function (r) { if (r && r.url) found.push(r.url); });
+  });
 
   var fill = (Array.isArray(j.fill) ? j.fill : []).filter(function (f) {
     return f && allowed[String(f.field)] && String(f.value == null ? '' : f.value).length <= 500;
@@ -358,10 +417,10 @@ function aipTurn_(data) {
   try { var sp = aipSpeak_(sayText); if (sp) { audio = sp.audio; speechChars = sp.chars; } }
   catch (e) { Logger.log('Andrew did not speak: %s', e); }
 
-  var u = body.usage || {};
   var usage = { input: +u.input_tokens || 0, cacheWrite: +u.cache_creation_input_tokens || 0,
                 cacheRead: +u.cache_read_input_tokens || 0, output: +u.output_tokens || 0 };
-  var cost = aipCostOf_(model, u) + speechChars * AIP.TTS.PRICE / 1e6;
+  var cost = aipCostOf_(model, u) + speechChars * AIP.TTS.PRICE / 1e6 + searches * AIP.SEARCH_PRICE;
+  usage.searches = searches;
   aipLog_(sid, model, usage, cost, fill.length, speechChars);
 
   return {
@@ -371,6 +430,8 @@ function aipTurn_(data) {
     fill: fill,
     focus: allowed[String(j.focus)] ? String(j.focus) : '',
     insights: (Array.isArray(j.insights) ? j.insights : []).slice(0, 3).map(function (m) { return aipStr_(m, 300); }),
+    sources: (Array.isArray(j.sources) ? j.sources : []).concat(searches ? found : []).map(function (x) { return String(x || ''); })
+      .filter(function (x, i, a) { return /^https:\/\/[^\s<>"]+$/.test(x) && a.indexOf(x) === i; }).slice(0, 4),
     coach: (Array.isArray(j.coach) ? j.coach : []).slice(0, 2).map(function (m) { return aipStr_(m, 300); }),
     missing: (Array.isArray(j.missing) ? j.missing : []).slice(0, 8).map(function (m) { return aipStr_(m, 80); }),
     done: j.done === true,

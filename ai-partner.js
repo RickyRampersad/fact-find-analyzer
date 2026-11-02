@@ -202,7 +202,8 @@
     A.busy = true; ui();
     if (!A.cat) A.cat = catalogue();
     var payload = { stage: 'ai_turn', guest: true, sid: A.sid, said: said, catalogue: A.cat,
-                    form: formNow(), figures: figures(), history: A.history.slice(-32) };
+                    form: formNow(), figures: figures(), history: A.history.slice(-32),
+                    context: { appType: String(S().appType || ''), ffScope: String(S().ffScope || '') } };
     fetch(endpoint(), { method: 'POST', cache: 'no-store', rrbAiPartner: true,
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
       .then(function (r) { return r.json(); })
@@ -219,7 +220,7 @@
         try { if (typeof calc === 'function') calc(); } catch (e) {}
         A.turns++; A.cost += +j.cost || 0;
         if (j.usage) Object.keys(A.tokens).forEach(function (k) { A.tokens[k] += +j.usage[k] || 0; });
-        bubble('ai', j.say || '', placed, missed, j.insights, j.coach);
+        bubble('ai', j.say || '', placed, missed, j.insights, j.coach, j.sources);
         A.missing = j.missing || [];
         if (j.focus) { var el = fieldEl(j.focus); if (el && !placed.length) { openFor(el); flash(el); } }
         ui();
@@ -231,11 +232,17 @@
   /* ── The panel ──────────────────────────────────────────────────────────── */
   function $(id) { return document.getElementById('rrba-' + id); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function bubble(who, t, placed, missed, insights, coach) {
+  function bubble(who, t, placed, missed, insights, coach, sources) {
     var d = document.createElement('div'); d.className = 'rrba-b ' + who;
     var h = '<div class="t">' + esc(t) + '</div>';
     if (insights && insights.length) {
       h += '<div class="ins"><b>What I notice</b>' + insights.map(function (x) { return '<p>' + esc(x) + '</p>'; }).join('') + '</div>';
+    }
+    if (sources && sources.length) {
+      h += '<div class="src">Looked up: ' + sources.map(function (u) {
+        var host = u.replace(/^https:\/\/(www\.)?/, '').split('/')[0];
+        return '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(host) + '</a>';
+      }).join(' · ') + '</div>';
     }
     if (coach && coach.length) {
       h += '<div class="ins coach"><b>For your next appointment</b>' + coach.map(function (x) { return '<p>' + esc(x) + '</p>'; }).join('') + '</div>';
@@ -293,6 +300,7 @@
       '.rrba-b .ins{margin-top:8px;padding:8px 10px;background:#FFF8E6;border-left:3px solid #F5B324;border-radius:6px;font-size:13.5px}' +
       '.rrba-b .ins b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#92400E;margin-bottom:2px}' +
       '.rrba-b .ins p{margin:3px 0 0}' +
+      '.rrba-b .src{margin-top:6px;font-size:12.5px;color:#475569}.rrba-b .src a{color:#0F766E}' +
       '.rrba-b .ins.coach{background:#EEF4FF;border-left-color:#2D5BB9}.rrba-b .ins.coach b{color:#1E3A8A}' +
       '#rrba-busy{display:none;font-size:13px;color:#475569;padding:4px 14px}' +
       '#rrba-left{font-size:12.5px;color:#475569;padding:0 14px}' +
@@ -319,7 +327,7 @@
     var p = document.createElement('section');
     p.className = 'rrba'; p.id = 'rrba-panel'; p.setAttribute('aria-label', 'AI fact-find partner');
     p.innerHTML =
-      '<div class="rrba-h"><b>AI fact-find partner</b><span class="rrba-tag">PRACTICE</span><button type="button" id="rrba-x">Close</button></div>' +
+      '<div class="rrba-h"><b>Andrew · your fact-find partner</b><span class="rrba-tag">PRACTICE</span><button type="button" id="rrba-x">Close</button></div>' +
       '<div id="rrba-log" aria-live="polite"></div>' +
       '<div id="rrba-busy">Thinking…</div><div id="rrba-left"></div>' +
       '<div class="rrba-in"><textarea id="rrba-in" rows="1" placeholder="Tell it about the client, or answer its question"></textarea>' +
