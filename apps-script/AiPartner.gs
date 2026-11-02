@@ -623,3 +623,28 @@ function aipLearnWeekly() {
   ScriptApp.newTrigger('aipLearn').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(6).create();
   Logger.log('The lessons will be refreshed every Monday at 6am.');
 }
+
+/* ── Setting the keys when the Script properties page is read-only ─────────────
+ *  Google makes the Script properties page read-only once a project has more than 50 properties, which this one
+ *  has (2 November 2026). So the keys are set from here instead:
+ *    1. Paste each key between its quotes below. Leave a quote empty to keep what is already set.
+ *    2. Choose aipSetup in the function list at the top, and press Run.
+ *    3. Delete the keys from the quotes again and save, so they are not left in the code.
+ *  The log shows only the last four characters of each key. */
+function aipSetup() {
+  var ANTHROPIC_API_KEY = '';      // from console.anthropic.com
+  var AZURE_SPEECH_KEY = '';       // optional: Andrew's live voice (portal.azure.com, a Speech resource)
+  var AZURE_SPEECH_REGION = '';    // optional: e.g. eastus
+  var p = PropertiesService.getScriptProperties(), set = [];
+  [['ANTHROPIC_API_KEY', ANTHROPIC_API_KEY], ['AZURE_SPEECH_KEY', AZURE_SPEECH_KEY], ['AZURE_SPEECH_REGION', AZURE_SPEECH_REGION]]
+    .forEach(function (kv) {
+      var v = String(kv[1] || '').trim();
+      if (v) { p.setProperty(kv[0], v); set.push(kv[0]); }
+    });
+  var show = function (k) { var v = String(p.getProperty(k) || ''); return v ? 'set (ends ' + v.slice(-4) + ')' : 'not set'; };
+  Logger.log('Saved now: %s.', set.length ? set.join(', ') : 'nothing (every quote was empty)');
+  Logger.log('ANTHROPIC_API_KEY: %s. AZURE_SPEECH_KEY: %s. AZURE_SPEECH_REGION: %s.',
+             show('ANTHROPIC_API_KEY'), show('AZURE_SPEECH_KEY'), p.getProperty('AZURE_SPEECH_REGION') || 'not set');
+  Logger.log('Now delete the keys from the quotes in aipSetup and save.');
+  return set;
+}
