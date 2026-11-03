@@ -31,6 +31,7 @@
 
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var TTS = window.speechSynthesis;
+  var REC = /^rec\d(Need|Who|Rec|Amt|Prem|Mode|Reason)$/;   // only while the advisor records their own recommendation
   var NEVER = /^(rec\d|dec\d|bm|mgr|dm|finalDecide|replaceCover|repDecl|ackRead|advisor|agent|clientSig|clientSign|notes$|appType)/;
   var A = { open: false, busy: false, muted: false, listening: false, history: [], turns: 0, cost: 0,
             tokens: { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 }, cat: null, voice: null, rec: null,
@@ -69,7 +70,7 @@
     var seen = {}, out = [];
     document.querySelectorAll('[data-field]').forEach(function (el) {
       var k = el.getAttribute('data-field');
-      if (!k || seen[k] || !/^[A-Za-z][A-Za-z0-9]*$/.test(k) || NEVER.test(k)) return;
+      if (!k || seen[k] || !/^[A-Za-z][A-Za-z0-9]*$/.test(k) || (NEVER.test(k) && !(A.rec && REC.test(k)))) return;
       if (el.readOnly || el.disabled || el.type === 'hidden' || el.type === 'checkbox' || el.type === 'file') return;
       if (el.closest('[data-mode-only="manager"], .mgr-only')) return;
       seen[k] = 1;
@@ -77,7 +78,7 @@
       if (el.tagName === 'SELECT') {
         f.t = 'choice';
         f.o = Array.prototype.slice.call(el.options).filter(function (o) { return o.value && !/^__/.test(o.value); })
-          .map(function (o) { return o.value; }).slice(0, 40);
+          .map(function (o) { return o.value; }).slice(0, 80);
       } else if (el.type === 'radio') {
         f.t = 'choice';
         f.o = Array.prototype.slice.call(document.querySelectorAll('input[type="radio"][name="' + el.name + '"]'))
@@ -140,6 +141,10 @@
       var opt = Array.prototype.slice.call(el.options).filter(function (o) { return o.value === v; })[0] ||
                 Array.prototype.slice.call(el.options).filter(function (o) {
                   return o.value.toLowerCase() === v.toLowerCase() || txt(o).toLowerCase() === v.toLowerCase(); })[0];
+      if (!opt && v) {    // "Rejuvenator Plus" for "Rejuvenator Plus (Critical Illness)": only when exactly one option starts so
+        var pre = Array.prototype.slice.call(el.options).filter(function (o) { return o.value && o.value.toLowerCase().indexOf(v.toLowerCase()) === 0; });
+        if (pre.length === 1) opt = pre[0];
+      }
       if (!opt) return false;
       v = opt.value;
     }
@@ -201,7 +206,7 @@
     bubble('you', said);
     A.busy = true; ui();
     if (!A.cat) A.cat = catalogue();
-    var payload = { stage: 'ai_turn', guest: true, sid: A.sid, said: said, catalogue: A.cat,
+    var payload = { stage: 'ai_turn', guest: true, sid: A.sid, said: said, catalogue: A.cat, recordRec: !!A.rec,
                     form: formNow(), figures: figures(), history: A.history.slice(-32),
                     context: { appType: String(S().appType || ''), ffScope: String(S().ffScope || '') } };
     fetch(endpoint(), { method: 'POST', cache: 'no-store', rrbAiPartner: true,
@@ -311,6 +316,8 @@
       '.rrba-row{display:flex;gap:8px;padding:0 12px 8px;align-items:center}#rrba-mic{flex:1;background:#E6FFFA;color:#0F766E;border:1px solid #99F6E4}' +
       '#rrba-mic.on{background:#DC2626;color:#fff;border-color:#DC2626}#rrba-mic:disabled{opacity:.55}' +
       '#rrba-mute{background:#F1F5F9;color:#0F172A}' +
+      '#rrba-rec{flex:1;background:#FFF8E6;color:#92400E;border:1px solid #FCD34D}#rrba-rec.on{background:#F5B324;color:#1F2937;border-color:#F5B324}' +
+      '#rrba-mail{flex:1;background:#0F172A;color:#fff}' +
       '#rrba-cost{font-size:12.5px;color:#334155;padding:6px 14px 10px;border-top:1px dashed #E2E8F0}' +
       '.rrba-flash{outline:3px solid #14B8A6 !important;outline-offset:2px;transition:outline .2s}' +
       '@media (max-width:600px){.rrba{left:8px;right:8px;bottom:8px;width:auto;height:70vh}.rrba-fab{right:12px;bottom:78px}' +
@@ -333,6 +340,7 @@
       '<div class="rrba-in"><textarea id="rrba-in" rows="1" placeholder="Tell it about the client, or answer its question"></textarea>' +
       '<button type="button" id="rrba-send">Send</button></div>' +
       '<div class="rrba-row"><button type="button" id="rrba-mic">Speak</button><button type="button" id="rrba-mute">Voice on</button></div>' +
+      '<div class="rrba-row"><button type="button" id="rrba-rec">Record my recommendation</button><button type="button" id="rrba-mail">Client e-mail</button></div>' +
       '<div id="rrba-cost"></div>';
     document.body.appendChild(p);
 
@@ -354,6 +362,16 @@
     $('send').onclick = function () { send($('in').value); };
     $('in').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send($('in').value); } });
     $('mic').onclick = listen;
+    /* The advisor dictates their own recommendation (3 November 2026): the rec fields join the catalogue, Andrew
+       records exactly what is said, reads it back and asks to confirm. The client e-mail previews what goes out. */
+    $('rec').onclick = function () {
+      A.rec = !A.rec; A.cat = null; this.classList.toggle('on', A.rec);
+      this.textContent = A.rec ? 'Recording your recommendation: tap when done' : 'Record my recommendation';
+      var t = A.rec ? 'Go ahead: tell me your recommendation. For each plan, who it is for, the cover, the premium and how often, and why. I will write down exactly what you say and read it back.'
+                    : 'Got it. Tap Client e-mail to see what your client will receive.';
+      bubble('ai', t); speak(t);
+    };
+    $('mail').onclick = function () { if (window.RRB_CLIENT_PLAN) window.RRB_CLIENT_PLAN.preview(); else note('The client e-mail preview did not load. Reload the page.'); };
     $('mute').onclick = function () { A.muted = !A.muted; try { if (A.muted && TTS) TTS.cancel(); } catch (e) {} ui(); };
     if (TTS && TTS.onvoiceschanged !== undefined) TTS.onvoiceschanged = function () { A.voice = null; };
     labelDictation(0);

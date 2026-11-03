@@ -71,6 +71,7 @@ var AIP = {
      AZURE_SPEECH_KEY and AZURE_SPEECH_REGION are in the Script properties; the page uses the device's voice otherwise. */
   TTS: { KEY: 'AZURE_SPEECH_KEY', REGION: 'AZURE_SPEECH_REGION', VOICE_PROP: 'AZURE_VOICE',
          VOICE: 'en-US-AndrewNeural', RATE: '-4%', MAX: 700, DAY_CAP: 4000, PRICE: 16 },   // US$ per million characters
+  REC: /^rec\d(Need|Who|Rec|Amt|Prem|Mode|Reason)$/,   // filled only while the advisor dictates their recommendation
   NEVER: /^(rec\d|dec\d|bm|mgr|dm|finalDecide|replaceCover|repDecl|ackRead|advisor|agent|clientSig|clientSign|notes$)/
 };
 
@@ -135,6 +136,18 @@ var AIP_SYSTEM = [
   '  in normal capitals. If a fact is corrected, fill the new value. Do not read every value back; mention only',
   '  the important ones briefly ("I\'ve put his income at fifteen thousand a month").',
   '- Never invent a fact. If something is unclear, ask about it and fill nothing for it.',
+  '',
+  'RECORDING THE ADVISOR\'S RECOMMENDATION (<mode>recommend</mode> only; 3 November 2026: "if the client just wants',
+  '  product advice it types that into the box with a voice command and sends to the client to sign")',
+  '- The advisor is dictating THEIR OWN recommendation. Record exactly what they say into the rec fields, one row a plan:',
+  '  the need, for whom, the plan, the amount, the premium and how often, and their reason in their own words.',
+  '- Never add, drop, change or suggest a plan, an amount or a premium. If anything is missing (who it is for, how often',
+  '  the premium is paid, the reason), ask for it. If a plan name is not one the advisor would recognise, ask them to',
+  '  say it again rather than guess.',
+  '- Read the whole recommendation back plainly and ask the advisor to confirm before they send it to the client. Point',
+  '  out, as a fact, anything the branch review will ask: a premium against the budget, a need with no plan, a gap left',
+  '  open with no reason. The reason must be in the advisor\'s words: never write it for them.',
+  '- In <mode>debrief</mode> the rec fields are not in the catalogue and you never fill them.',
   '',
   'TWO LIVES, NOT ONE (3 November 2026: "should you not ask about Lisa\'s income and is both dependent?")',
   '- In a couple, analyse EACH adult as a life of their own, earning or not. Ask early: what the household spends a',
@@ -339,11 +352,13 @@ function aipTurn_(data) {
   if (!said) return { ok: false, error: 'Nothing was said.' };
 
   /* The catalogue: fields the page offers, minus anything never filled here. */
+  var recMode = data.recordRec === true;     // the advisor is dictating their own recommendation
   var cat = Array.isArray(data.catalogue) ? data.catalogue : [];
   var allowed = {};
   cat = cat.filter(function (f) {
     var k = f && String(f.k || '');
-    if (!k || !/^[A-Za-z][A-Za-z0-9]{0,40}$/.test(k) || AIP.NEVER.test(k)) return false;
+    if (!k || !/^[A-Za-z][A-Za-z0-9]{0,40}$/.test(k)) return false;
+    if (AIP.NEVER.test(k) && !(recMode && AIP.REC.test(k))) return false;
     allowed[k] = f;
     return true;
   });
@@ -367,7 +382,7 @@ function aipTurn_(data) {
   var kind = aipStr_(ctx.appType, 20).replace(/[^a-z]/gi, '') || 'not chosen';
   var scope = aipStr_(ctx.ffScope, 20).replace(/[^a-z\/ ]/gi, '');
   msgs.push({ role: 'user', content:
-    '<kind>' + kind + (scope ? ', ' + scope : '') + '</kind>\n<form>' + formText + '</form>\n<figures>' + figText + '</figures>\n<said>' + said + '</said>' });
+    '<kind>' + kind + (scope ? ', ' + scope : '') + '</kind>\n<mode>' + (recMode ? 'recommend' : 'debrief') + '</mode>\n<form>' + formText + '</form>\n<figures>' + figText + '</figures>\n<said>' + said + '</said>' });
 
   var model = aipModel_();
   var web = String(PropertiesService.getScriptProperties().getProperty('AI_PARTNER_WEB') || '').toLowerCase() !== 'off';
