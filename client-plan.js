@@ -151,9 +151,9 @@
     }
     h += '<div style="font-weight:800;font-size:13px;letter-spacing:.1em;color:#0F766E">WHAT ' + esc(d.advisorFirst).toUpperCase() + ' RECOMMENDS</div>';
     if (d.recs.length) {
-      h += '<table style="width:100%;border-collapse:collapse;margin:6px 0 4px"><tr style="background:#F8FAFC;font-size:12.5px;color:#475569;text-align:left"><th style="padding:8px 12px">Plan</th><th style="padding:8px 12px">For</th><th style="padding:8px 12px">Cover</th><th style="padding:8px 12px">Premium</th></tr>';
+      h += '<table style="width:100%;border-collapse:collapse;margin:6px 0 4px"><tr style="background:#F8FAFC;font-size:12.5px;color:#475569;text-align:left"><th style="padding:8px 12px">Plan</th><th style="padding:8px 12px">For</th><th style="padding:8px 12px">Cover</th></tr>';
       d.recs.forEach(function (r) {
-        h += '<tr><td style="' + td + '"><b>' + esc(r.plan) + '</b>' + (r.need ? '<div style="color:#64748B;font-size:12.5px">' + esc(r.need) + '</div>' : '') + '</td><td style="' + td + '">' + esc(who(d, r.who)) + '</td><td style="' + td + '">' + (r.amt ? tt(r.amt) : '—') + '</td><td style="' + td + '">' + (r.prem ? tt(r.prem) + ' ' + esc(r.mode.toLowerCase()) : '—') + '</td></tr>';
+        h += '<tr><td style="' + td + '"><b>' + esc(r.plan) + '</b>' + (r.need ? '<div style="color:#64748B;font-size:12.5px">' + esc(r.need) + '</div>' : '') + '</td><td style="' + td + '">' + esc(who(d, r.who)) + '</td><td style="' + td + '">' + (r.amt ? tt(r.amt) : '—') + '</td></tr>';
         if (r.reason) h += '<tr><td colspan="4" style="padding:0 12px 10px;font-size:13.5px;color:#334155;font-style:italic">Why: ' + esc(r.reason) + '</td></tr>';
       });
       h += '</table>';

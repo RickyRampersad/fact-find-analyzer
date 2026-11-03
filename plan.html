@@ -108,9 +108,9 @@ var CURRENT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4v
   if (D.recs && D.recs.length) {
     var rl = [['Here is what ' + D.advisorFirst + ' recommends' + (D.advice && D.need ? ' for ' + D.need : '') + '.']];
     var rh = D.recs.map(function (r, i) {
-      rl.push([r.plan + ', for ' + who(r.who) + (r.amt ? ': ' + say$(r.amt) + ' of cover' : '') + (r.prem ? ', for ' + say$(r.prem) + ' ' + (r.mode || 'monthly').toLowerCase() : '') + '.', '#r' + i]);
+      rl.push([r.plan + ', for ' + who(r.who) + (r.amt ? ': ' + say$(r.amt) + ' of cover' : '') + '.', '#r' + i]);
       if (r.reason) rl.push(['Why? ' + r.reason]);
-      return '<div class="rec" id="r' + i + '"><h3>' + esc(r.plan) + '</h3><div class="m">For ' + esc(who(r.who)) + (r.amt ? ' · ' + tt(r.amt) + ' cover' : '') + (r.prem ? ' · ' + tt(r.prem) + ' ' + esc((r.mode || 'monthly').toLowerCase()) : '') + '</div>' + (r.reason ? '<div class="y">Why: ' + esc(r.reason) + '</div>' : '') + '</div>';
+      return '<div class="rec" id="r' + i + '"><h3>' + esc(r.plan) + '</h3><div class="m">For ' + esc(who(r.who)) + (r.amt ? ' · ' + tt(r.amt) + ' cover' : '') + '</div>' + (r.reason ? '<div class="y">Why: ' + esc(r.reason) + '</div>' : '') + '</div>';
     }).join('');
     SC.push(['<div class="kick">WHAT ' + esc(D.advisorFirst).toUpperCase() + ' RECOMMENDS</div><h1>Your plan, <em>in plain words.</em></h1><div class="grid" style="grid-template-columns:1fr">' + rh + '</div>', rl]);
   }
