@@ -22,7 +22,7 @@
   .kick{font-size:12px;letter-spacing:.16em;font-weight:800;color:var(--teal2);margin-top:20px}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr));gap:12px;margin-top:14px}
   .card{background:var(--navy2);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px 18px;opacity:0;transform:translateY(12px);transition:opacity .45s,transform .45s}
-  .card.show{opacity:1;transform:none}.card small{display:block;font-size:11.5px;letter-spacing:.12em;font-weight:800;color:var(--mute)}.card b{font-size:1.25rem}
+  .card.show{opacity:1;transform:none}.card.ins{border-color:rgba(245,179,36,.5)}.card.ins b{font-size:1.05rem;font-weight:700}.card small{display:block;font-size:11.5px;letter-spacing:.12em;font-weight:800;color:var(--mute)}.card b{font-size:1.25rem}
   .big{font-size:clamp(1.4rem,3.8vw,2rem);font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums;white-space:nowrap}
   .bar{height:14px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:10px;display:flex}.bar i{display:block;height:100%;transition:width 1.4s ease}
   .rec{background:#fff;color:var(--ink);border-radius:16px;padding:16px 18px;border-left:6px solid var(--teal);opacity:0;transform:translateX(20px);transition:opacity .45s,transform .45s}
@@ -74,8 +74,10 @@ var CURRENT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4v
 
   /* Scenes: [html, lines]; a line can reveal an element (#id) as it is said. */
   var SC = [];
-  SC.push(['<div class="kick">PREPARED BY YOUR ADVISOR</div><h1>The <em>' + esc(D.surname || D.first) + '</em> household</h1><p class="sub">A plan for ' + esc(names) + ', from ' + esc(D.advisor) + '.</p>',
-    [['Hello ' + names + '. This is your family plan, prepared for you by your advisor, ' + D.advisor + '.'], ['It takes about three minutes. Watch it together, and if you are driving, just listen.']]]);
+  var br = D.branch || 'Ricky Rampersad Branch';
+  document.getElementById('tag').textContent = 'PRESENTED BY ' + String(D.advisor).toUpperCase();
+  SC.push(['<div class="kick">PRESENTED BY YOUR ADVISOR</div><h1>The <em>' + esc(D.surname || D.first) + '</em> household</h1><p class="sub">A plan for ' + esc(names) + ', from ' + esc(D.advisor) + ' &middot; ' + esc(br) + ', Guardian Life of the Caribbean.</p>',
+    [['Hello ' + names + '. This is your family plan, prepared for you by ' + D.advisor + ', from the ' + br + ' of Guardian Life.'], ['It takes about three minutes. Watch it together, and if you are driving, just listen.']]]);
   if (!D.advice) {
     var cards = [], lines = [['Here is what you told us.']];
     if (D.spouse) { cards.push(['c1', 'FAMILY', esc(D.spouse)]); lines.push(['You are married to ' + D.spouseFirst + '.', '#c1']); }
@@ -87,6 +89,11 @@ var CURRENT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4v
     if (D.goals && D.goals.length) { cards.push(['c5', 'WHAT MATTERS MOST', D.goals.map(function (g) { return esc(g.desc || g.need); }).join(' · ')]);
       lines.push(['And what matters most to you: ' + D.goals.map(function (g) { return g.desc || g.need; }).join(', and ') + '.', '#c5']); }
     SC.push(['<div class="kick">WHAT YOU TOLD US</div><h1>Your family, <em>in your words.</em></h1><div class="grid">' + cards.map(function (c) { return '<div class="card" id="' + c[0] + '"><small>' + c[1] + '</small><b>' + c[2] + '</b></div>'; }).join('') + '</div>', lines]);
+    if (D.insights && D.insights.length) {
+      var il = [['Here is what we noticed.']];
+      var ih = D.insights.map(function (x, i) { il.push([x.say, '#i' + i]); return '<div class="card ins" id="i' + i + '"><small>' + esc(x.title).toUpperCase() + '</small><b>' + esc(x.text) + '</b></div>'; }).join('');
+      SC.push(['<div class="kick" style="color:var(--gold)">WHAT WE NOTICED</div><h1>The things that <em>matter most.</em></h1><div class="grid">' + ih + '</div>', il]);
+    }
     if (D.totalNeed || D.gap) {
       SC.push(['<div class="kick">WHAT YOUR FAMILY WOULD NEED</div><h1>If the unexpected <em>happened.</em></h1><div class="grid">' +
         (D.totalNeed ? '<div class="card" id="n1"><small>YOUR FAMILY WOULD NEED</small><div class="big" style="color:#fff">' + esc(D.totalNeed) + '</div></div>' : '') +
@@ -110,7 +117,7 @@ var CURRENT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4v
   SC.push(['<div class="kick">NEXT</div><h1>If this looks right, <em>confirm it.</em></h1><p class="sub">One tap, and ' + esc(D.advisorFirst) + ' takes it from here.</p><div class="btns"><a class="btn go" href="#" onclick="alert(\'Practice copy: in the real e-mail this confirms your fact find.\');return false">Confirm my fact find</a>' +
     (D.advisorEmail ? '<a class="btn alt" href="mailto:' + esc(D.advisorEmail) + '">Ask ' + esc(D.advisorFirst) + ' a question</a>' : '') + '</div>' +
     '<p class="note">This plan is based on what you told your advisor and is not a contract. Cover starts only when a policy is issued. Practice copy with a made-up client.</p>',
-    [['If this looks right, tap Confirm, and ' + D.advisorFirst + ' takes it from here.'], ['If you have questions first, just ask. Thank you for trusting us with your family\'s future.']]]);
+    [['If this looks right, tap Confirm, and ' + D.advisorFirst + ' takes it from here.'], ['If you have questions first, just ask. Thank you for trusting the ' + br + ' with your family\'s future.']]]);
 
   var dots = document.getElementById('dots');
   dots.innerHTML = SC.map(function () { return '<i></i>'; }).join('');

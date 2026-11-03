@@ -57,15 +57,55 @@
       recs.push({ need: v('rec' + r + 'Need'), who: v('rec' + r + 'Who') || 'Client', plan: v('rec' + r + 'Rec'), amt: num(v('rec' + r + 'Amt')),
                   prem: num(v('rec' + r + 'Prem')), mode: v('rec' + r + 'Mode') || 'Monthly', reason: v('rec' + r + 'Reason') });
     }
-    return {
+    var d0 = {
       advice: advice, client: client, first: first(client), surname: last(client) || client,
       spouse: v('spouseName'), spouseFirst: first(v('spouseName')), kids: kids,
       email: v('email') || v('adviceClientEmail'), need: v('adviceClientNeed'),
       income: num(v('monthlyIncome')), spouseIncome: num(v('spouseMonthlyIncome')), spend: num(v('monthlyExpenses')),
       mortgage: num(v('mortgageBal')), goals: goals, recs: recs,
       totalNeed: fig('totalNeed'), cover: fig('totalCoverage'), gap: fig('insuranceNeed'),
-      advisor: v('advisorName') || 'your advisor', advisorFirst: first(v('advisorName')) || 'your advisor', advisorEmail: v('agentEmail')
+      advisor: v('advisorName') || 'your advisor', advisorFirst: first(v('advisorName')) || 'your advisor', advisorEmail: v('agentEmail'),
+      branch: 'Ricky Rampersad Branch'
     };
+    d0.insights = advice ? [] : insights(d0);
+    return d0;
+  }
+
+  /* What Andrew noticed, for the client (3 November 2026: "I did ask you to build in those insights"). Facts from the
+     fact find only, each with the sentence Andrew says. Never a product or an amount of cover: that is the advisor's. */
+  function insights(d) {
+    var out = [], st = S();
+    function add(k, title, text, say) { out.push({ k: k, title: title, text: text, say: say || text }); }
+    var spend = d.spend, inc = d.income, inc2 = d.spouseIncome;
+    if (spend && inc && inc2 && spend > inc && spend > inc2) {
+      add('both', 'You depend on each other', 'Your family spends ' + tt(spend) + ' a month. Neither salary covers that alone.',
+          'Your family spends ' + Math.round(spend).toLocaleString('en-US') + ' dollars a month. Neither salary covers that alone. You depend on each other.');
+    }
+    var pols = [];
+    for (var i = 1; i <= 4; i++) if (v('ins' + i + 'Co') && !/^none$/i.test(v('ins' + i + 'Co'))) pols.push({ owner: v('ins' + i + 'Owner'), type: v('ins' + i + 'Type'), sum: num(v('ins' + i + 'Sum')), status: v('ins' + i + 'Status') });
+    var live = pols.filter(function (p) { return !/lapsed|surrender/i.test(p.status); });
+    if (live.length && live.every(function (p) { return /group/i.test(p.type); })) {
+      var gs = live.reduce(function (a, p) { return a + p.sum; }, 0);
+      add('group', 'Your cover is only through work', (gs ? tt(gs) + ' of group life. ' : '') + 'It usually ends if the job ends.',
+          'Your only cover today is group life through work' + (gs ? ', ' + Math.round(gs).toLocaleString('en-US') + ' dollars' : '') + '. It usually ends if the job ends.');
+    }
+    if (d.spouse && !live.some(function (p) { return /spouse|joint/i.test(p.owner); })) {
+      var pr = /^f/i.test(v('spouseGender')) ? 'her' : /^m/i.test(v('spouseGender')) ? 'his' : 'their';
+      add('spouse', d.spouseFirst + ' has no cover of ' + pr + ' own', 'Nothing on file protects the family if ' + d.spouseFirst + ' could not be there.',
+          d.spouseFirst + ' has no life cover of ' + pr + ' own. Nothing on file protects the family if ' + d.spouseFirst + ' could not be there.');
+    }
+    var ages = d.kids.map(function (k) { return k.age; }).filter(function (a) { return a !== ''; });
+    var edu = d.goals.filter(function (g) { return /educat|univers|school|college/i.test(g.need + ' ' + g.desc) && g.val; })[0];
+    if (edu && ages.length) {
+      var eldest = Math.max.apply(null, ages), yrs = Math.max(1, 18 - eldest), fv = edu.val * Math.pow(1.03, yrs);
+      add('edu', 'University will cost more', tt(edu.val) + ' today is about ' + tt(Math.round(fv / 1000) * 1000) + ' in ' + yrs + ' years, at 3% inflation.',
+          'The ' + Math.round(edu.val).toLocaleString('en-US') + ' dollars you set aside for university becomes about ' + Math.round(fv / 1000).toLocaleString('en-US') + ' thousand in ' + yrs + ' years, at three percent inflation.');
+    }
+    if (inc || d.goals.some(function (g) { return /retire/i.test(g.need); })) {
+      add('nis', 'NIS: the full pension age is rising', 'From January 2028 it moves from 60 to 65, a year every two years (National Insurance Board).',
+          'And the full NIS pension age rises from sixty to sixty-five, starting in January twenty twenty-eight. Worth knowing as you plan for retirement.');
+    }
+    return out.slice(0, 5);
   }
   function who(d, w) {
     if (/spouse/i.test(w) && d.spouseFirst) return d.spouseFirst;
@@ -86,7 +126,7 @@
     h += '<div style="background:#0F172A;color:#fff;padding:22px 26px;border-radius:14px 14px 0 0">' +
       '<div style="font-size:12px;letter-spacing:.14em;color:#5EEAD4;font-weight:800">YOUR FAMILY PLAN · FROM YOUR ADVISOR</div>' +
       '<div style="font-size:26px;font-weight:800;margin-top:6px;line-height:1.2">' + names + ', your plan is ready.</div>' +
-      '<div style="color:#CBD5E1;margin-top:6px">Prepared for ' + hh + ' by ' + esc(d.advisor) + '</div></div>';
+      '<div style="color:#CBD5E1;margin-top:6px">Prepared for ' + hh + ' by ' + esc(d.advisor) + ', ' + esc(d.branch) + '</div></div>';
     h += '<div style="padding:22px 26px;border:1px solid #E2E8F0;border-top:0;border-radius:0 0 14px 14px">';
     h += '<p style="margin:0 0 14px;font-size:15.5px;line-height:1.55">Thank you for your time. ' +
       (d.advice ? 'Here is my recommendation for ' + esc(d.need || 'what you asked about') + ', in plain words.' :
@@ -102,6 +142,8 @@
       if (d.mortgage) told.push('Mortgage owed: ' + tt(d.mortgage));
       if (d.goals.length) told.push('What matters most: ' + d.goals.map(function (g) { return esc(g.desc || g.need); }).join('; '));
       if (told.length) h += '<div style="font-weight:800;font-size:13px;letter-spacing:.1em;color:#0F766E;margin-top:4px">WHAT YOU TOLD US</div><ul style="margin:6px 0 16px;padding-left:20px;font-size:14.5px;line-height:1.6">' + told.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>';
+      if (d.insights && d.insights.length) h += '<div style="font-weight:800;font-size:13px;letter-spacing:.1em;color:#92400E;margin-top:4px">WHAT WE NOTICED</div>' +
+        d.insights.map(function (x) { return '<div style="background:#FFF8E6;border-left:4px solid #F5B324;border-radius:8px;padding:9px 12px;margin:6px 0;font-size:14px"><b>' + esc(x.title) + '.</b> ' + esc(x.text) + '</div>'; }).join('') + '<div style="height:10px"></div>';
       if (d.totalNeed || d.gap) h += '<div style="background:#F0FDFA;border:1px solid #99F6E4;border-radius:12px;padding:14px 16px;margin-bottom:16px">' +
         '<div style="font-weight:800;font-size:13px;letter-spacing:.1em;color:#0F766E">WHAT YOUR FAMILY WOULD NEED</div>' +
         (d.totalNeed ? '<div style="font-size:14.5px;margin-top:6px">Total need: <b>' + esc(d.totalNeed) + '</b>' + (d.cover ? ' &middot; cover today: <b>' + esc(d.cover) + '</b>' : '') + '</div>' : '') +
