@@ -2564,6 +2564,10 @@
      by attribute cannot inherit the same trap. */
   [hidden]{ display:none !important; }
 
+.sbYr{font-size:.74em;color:var(--ink-3);padding:.2em .2em .7em;line-height:1.4}.sbYr b{color:var(--ink-2)}
+/* Months still to come in the financial year: a quiet slot, so the chart
+   reads as a year being filled in rather than one bar across the panel. */
+.sbMb.fut .sbPair{opacity:.22}.sbMb.fut span{opacity:.45}
 </style>
 </head>
 <body>
@@ -7511,7 +7515,12 @@ var PROD = {
        Once the production feed names its year, a settled figure is shown
        only when the settlement feed names the same year (both come from
        fyrLabel_ in FinancialYear.gs); until it answers the cells wait. */
-    var STL_NOW = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
+    var STL_NOW = (typeof STL !== 'undefined' && STL.data) ? stlFyView(STL.data, S.yearLabel) : null;
+    if(STL_NOW && STL_NOW !== STL.data){
+      STLM = {}; STLA = {};
+      STL_NOW.matrix.forEach(function(x){ STLM[x.code] = x.api||0; STLA[x.code] = x.apps||0; });
+      QUOTA = STL_NOW.quotas;
+    }
     var SET_OK = !S.yearLabel || !!(STL_NOW && STL_NOW.fyLabel && STL_NOW.fyLabel === S.yearLabel);
     /* Settled app counts come from the settlement feed alone — the agent
        export carries API, not cases. Blank until that feed has answered. */
@@ -7598,7 +7607,10 @@ var PROD = {
     }
     function gPctTxt(p){ return (p >= 10 || p === 0 ? String(Math.round(p)) : p.toFixed(1).replace(/\.0$/, '')) + '%'; }
     /* The share of a goal, with its bar and the pace tick. */
-    var G_WAIT = 'reading the ' + GFY + ' settled figures';
+    var G_WAIT = (typeof STL !== 'undefined' && STL.err) ? ('settled not in: ' + STL.err)
+               : (STL_NOW === null && typeof STL !== 'undefined' && STL.data)
+                 ? ('the settlement board is not counting ' + GFY + ' yet')
+                 : ('reading the ' + GFY + ' settled figures');
     function gCell(done, goal, pace, cls, on, d, title){
       if(!(goal > 0)) return '<div class="c gPct' + cls + '"></div>';
       if(!GOAL_LIVE) return '<div class="c gPct gWait' + cls + '" title="' + G_WAIT + '">&middot;</div>';
@@ -7891,14 +7903,13 @@ var PROD = {
     }).join('');
 
     var t = S.total || {};
-    var stlD2 = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
+    var stlD2 = STL_NOW;
     var bt = q('sbBranch');
     if(bt){
       /* The branch line uses the report's own total, which includes the
          manager's own production — that carries a quota but is not a row on
          the roster, so summing the rows would leave it out. */
-      var qb = (typeof STL !== 'undefined' && STL.data && STL.data.quotaBranch)
-               || SUB_QUOTA_BRANCH_FALLBACK;
+      var qb = (STL_NOW && STL_NOW.quotaBranch) || SUB_QUOTA_BRANCH_FALLBACK;
       t._quota   = qb ? qb.quota   : 0;
       t._settled = (SET_OK && qb) ? qb.settled : 0;
       /* THE BRANCH LINE IS A STRIP, NOT A ROW. A total under each column
@@ -7943,7 +7954,7 @@ var PROD = {
         var gCap = '<span>Goals &middot; ' + esc(GFY) + ' &middot; ' + GB.n + ' plan' + (GB.n === 1 ? '' : 's') + '</span>';
         if(GB.goal && !GOAL_LIVE){
           gTile = '<div class="sbTile gl gWait" title="' + G_WAIT + '">' + gCap
-            + '<div class="tv"><b>' + money(GB.goal) + '</b><i>reading settled&hellip;</i></div></div>';
+            + '<div class="tv"><b>' + money(GB.goal) + '</b><i>' + (STL.err ? 'settled not in' : 'reading settled&hellip;') + '</i></div></div>';
         } else if(GB.goal){
           var gp = GB.set / GB.goal * 100, gx = Math.min(100, GB.pace / GB.goal);
           var earn = GB.inc ? GB.earn : GB.set * FYC_SHARE, ip = GB.inc ? earn / GB.inc * 100 : 0;
@@ -7973,7 +7984,9 @@ var PROD = {
            cut to "YEAR T…" and "SETTLE…", which is worse than saying less.
            "FY27 to date" and "Settled · FY26" are the same lengths as the
            captions they replace. */
-        + tile(' set', 'Settled &middot; ' + setYr, setApps || null, t._settled || null)
+        + (t._settled || !STL.err ? tile(' set', 'Settled &middot; ' + setYr, setApps || null, t._settled || null)
+           : '<div class="sbTile set" title="' + esc(STL.err) + '"><span>Settled &middot; ' + setYr + '</span>'
+             + '<div class="tv"><b style="font-size:.62em;opacity:.8">Not in yet</b><i>' + esc(STL.err) + '</i></div></div>')
         + gTile
         + '</div>';
     }
@@ -7999,11 +8012,28 @@ var PROD = {
        board is a thing you put a serving advisor on, and the branch manager
        asked for them off it by name. They keep their line in the roster. */
     wk = wk.filter(function(z){ return !!qrow(z.r.label) && !elsewhere(z.r.label); });
+    /* AN EMPTY WEEK STILL HAS A BOARD. On a Monday, or any week before the
+       first case, the panel was a box of air with one line in it. It shows
+       the year's three leaders instead, under a line saying that is what it
+       is, until somebody writes this week. */
+    var WK_YEAR = false;
+    if(!wk.length){
+      units.forEach(function(x){
+        var un = x.row ? subUnitName(x.row.label) : '';
+        function takeY(a, mg2){ if(yy(a,1)) wk.push({r:a, mgr:mg2, unit:un}); }
+        x.mgrs.forEach(function(m2){ m2.ags.forEach(function(a){ takeY(a, m2.row.label); }); });
+        x.loose.forEach(function(a){ takeY(a, ''); });
+      });
+      wk = wk.filter(function(z){ return !!qrow(z.r.label) && !elsewhere(z.r.label); });
+      wk.sort(down(function(z){ return yy(z.r,1); }));
+      WK_YEAR = wk.length > 0;
+    }
+    var wfig = WK_YEAR ? yy : w;
     var MED = ['\u{1F947}','\u{1F948}','\u{1F949}'];
     /* Scaled after the filter, not before: with the removed name still in
        the list the bars were measured against somebody who is not on the
        board, so the leader's bar came out short of full. */
-    var weekTop = wk.length ? w(wk[0].r,1) : 0;
+    var weekTop = wk.length ? wfig(wk[0].r,1) : 0;
     function coverFor(label){
       var stl2 = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
       if(!stl2 || !stl2.matrix) return 0;
@@ -8018,8 +8048,9 @@ var PROD = {
       /* Three, not five. The branch manager asked for the top three, and five
          blocks with the product mix beneath them ran the fifth off the card
          on a full wall. Three medals, three names, nothing cut in half. */
-      wb.innerHTML = wk.length ? wk.slice(0,3).map(function(z,i){
-        var api = w(z.r,1), apps = w(z.r,0);
+      wb.innerHTML = (WK_YEAR ? '<div class="sbYr">Nobody has submitted yet this week. <b>' + esc(subYr)
+          + ' leaders so far:</b></div>' : '') + (wk.length ? wk.slice(0,3).map(function(z,i){
+        var api = wfig(z.r,1), apps = wfig(z.r,0);
         var share = weekTop ? Math.max(3, api/weekTop*100) : 3;
         var cov = coverFor(z.r.label);
         /* The block was a name, a bar and one figure, and it read as a list
@@ -8030,7 +8061,7 @@ var PROD = {
            largest thing on the panel and it did not need to be. */
         var zSet = settledFor(z.r.label);
         var zg = goalOf(z.r.label);
-        var meta = '<span>' + money(yy(z.r,1)) + ' year</span>';
+        var meta = WK_YEAR ? '' : '<span>' + money(yy(z.r,1)) + ' year</span>';
         if(zSet) meta += '<span class="set">' + money(zSet) + ' settled</span>';
         /* As short as the "% kept" it replaces, so the block does not grow a
            line: the goal itself is on the advisor's row. */
@@ -8059,7 +8090,7 @@ var PROD = {
           + (apps ? apps + ' app' + (apps===1?'':'s') : 'increase') + '</span></div></div>';
       }).join('')
       : '<div style="padding:1.4em .3em;color:var(--ink-3);font-size:.8em">'
-        + 'Nobody has submitted yet this week. The board is open.</div>';
+        + 'Nobody has submitted yet this week. The board is open.</div>');
     }
     /* What the goal columns are measured on, said once under the heading,
        and taking turns with the race itself. "Can a wall have more motion to
@@ -8599,7 +8630,7 @@ var PROD = {
       if(x.apps !== undefined) subA[x.m] = x.apps||0;
     });
 
-    var stl = (typeof STL !== 'undefined' && STL.data) ? STL.data : null;
+    var stl = (typeof STL !== 'undefined' && STL.data) ? stlFyView(STL.data, S && S.yearLabel) : null;
     var setBy = {}, setA = {};
     if(stl && stl.months) stl.months.forEach(function(x){
       setBy[MN[x.m-1]] = x.api||0;
@@ -8613,7 +8644,8 @@ var PROD = {
        to September for FY26, October to September from 1 October. */
     var names = (stl && stl.months && stl.months.length)
       ? stl.months.map(function(x){ return MN[((x.m || 1) - 1) % 12]; })
-      : ((S.series && S.series.length) ? S.series.map(function(x){ return x.m; }) : MN.slice(0, 9));
+      : (S.yearLabel ? MN.slice(9).concat(MN.slice(0, 9))
+         : ((S.series && S.series.length) ? S.series.map(function(x){ return x.m; }) : MN.slice(0, 9)));
     var max = 0;
     names.forEach(function(n){
       if((sub[n]||0) > max) max = sub[n]||0;
@@ -8642,7 +8674,10 @@ var PROD = {
          of numbers. The tallest month is BAR_EM tall; the rest scale to it. */
       var BAR_EM = 2.2;
       function emH(v){ return (Math.max(0, v) / max * BAR_EM).toFixed(2) + 'em'; }
-      return '<div class="sbMb"><div class="sbPair">'
+      var fyAt = function(nm){ return (MN.indexOf(nm) - 9 + 12) % 12; };
+      var fut = S.yearLabel && !sv && !has && fyAt(n) > fyAt(MN[new Date().getMonth()]);
+      if(fut){ sa = undefined; ta = undefined; }
+      return '<div class="sbMb' + (fut ? ' fut' : '') + '"><div class="sbPair">'
         + '<div class="sbCol"><em>' + (sv?k(sv):'') + '</em>'
         + '<div class="sbBar sub" style="height:' + emH(sv) + '">'
         + (ic ? '<i class="sbSeg inc" style="height:' + icH.toFixed(1) + '%" title="increases"></i>' : '')
@@ -8693,7 +8728,9 @@ var PROD = {
              other. So the line says what it is and claims nothing more. */
           + '<div class="sbTot gap"><b>TT$' + n(subT-setT) + '</b>'
             + '<span>submitted less settled &middot; not a pipeline figure</span></div>'
-          : '<div class="sbTot"><span>settled fills in from the settlement board</span></div>')
+          : '<div class="sbTot"><span>' + ((typeof STL !== 'undefined' && STL.err)
+              ? 'settled not in yet: ' + esc(STL.err)
+              : 'settled fills in from the settlement board') + '</span></div>')
         + '<div class="sbKey"><span><i class="nb"></i>New business</span>'
         + '<span><i class="inc"></i>Increases</span>'
         + '<span><i class="set"></i>Settled</span>'
@@ -8988,7 +9025,50 @@ var PROD = {
 
      Tap a month to re-rank the league for that month alone. Tap API or APPS
      to change what it ranks on. The year totals never move. */
-  var STL = { mode:'api', month:0, data:null, busy:false, view:'board' };
+  var STL = { mode:'api', month:0, data:null, busy:false, view:'board', err:'' };
+
+  /* THE SETTLED FIGURES FOR THE WALL'S OWN YEAR. A board that names its year
+     (fyLabel) is used as it is when it names the wall's year, and not at all
+     when it names another. A board that names no year is still counting the
+     calendar year, as the settlement code did before 1 October 2026; its
+     months are known by number, so October to December 2026 are FY27's first
+     three and are taken from it, every advisor's included. Without a month
+     split there is nothing safe to take, and the wall goes on waiting. */
+  function stlFyView(d, label){
+    if(!d) return null;
+    if(!label || d.fyLabel === label) return d;
+    if(d.fyLabel) return null;
+    var fy = parseInt(String(label).replace(/\D/g,''), 10);
+    var y = Number(d.year) || 0;
+    if(!fy || !y || !d.months || !d.matrix) return null;
+    var start = 2000 + fy - 1;
+    var keep = d.months.map(function(x, i){
+      var m = x.m || (i + 1);
+      return (y === start && m >= 10) || (y === start + 1 && m <= 9);
+    });
+    if(!keep.some(Boolean)) return null;
+    function sum(arr){
+      var o = { apps:0, api:0, cover:0 };
+      (arr||[]).forEach(function(c, i){ if(keep[i] && c){ o.apps += c.apps||0; o.api += c.api||0; o.cover += c.cover||0; } });
+      return o;
+    }
+    var matrix = [], byCode = {};
+    for(var i = 0; i < d.matrix.length; i++){
+      var a = d.matrix[i]; if(!a.m) return null;
+      var t = sum(a.m); byCode[a.code] = t;
+      if(t.apps || t.api) matrix.push({ code:a.code, name:a.name, apps:t.apps, api:t.api, cover:t.cover });
+    }
+    var quotas = {}, qb = { quota:0, settled:0, agents:0 };
+    Object.keys(d.quotas || {}).forEach(function(c){
+      var q = d.quotas[c], st = byCode[c] ? byCode[c].api : 0;
+      quotas[c] = Object.assign({}, q, { settled: st });
+      qb.quota += q.quota||0; qb.settled += st; qb.agents++;
+    });
+    var got = {}; d.months.forEach(function(x, i){ if(keep[i]) got[x.m || (i + 1)] = x; });
+    var months = []; for(var k = 0; k < 12; k++){ var mm = ((9 + k) % 12) + 1; months.push(got[mm] || { m: mm, apps:0, api:0, cover:0 }); }
+    return { success:true, derived:true, fyLabel:label, year:y, months:months, ytd:sum(d.months),
+             matrix:matrix, quotas:quotas, quotaBranch:qb };
+  }
 
   function stlMoney(n){
     n = Math.round(Number(n)||0);
@@ -9072,7 +9152,7 @@ var PROD = {
              October 2026 it was stored after the repaint, so slide 13 drew the
              answer before last, and after a start of the wall nothing at all,
              for ten minutes. */
-          STL.data = j;
+          STL.data = j; STL.err = '';
           try {
             if(typeof paintSubmitted === 'function' && typeof SUB_LAST !== 'undefined' && SUB_LAST)
               paintSubmitted(SUB_LAST);
@@ -9086,6 +9166,10 @@ var PROD = {
              standing there, and it tells the branch nothing it can act on. */
           var raw = (j && (j.error || j.message)) || '';
           var notOn = /unknown action/i.test(raw);
+          /* Slide 13 says the same thing, instead of "reading settled" for ever. */
+          STL.err = notOn ? 'the branch server has no settlement action yet'
+                          : (raw || 'the settlement board answered without figures');
+          try { if(typeof paintSubmitted === 'function' && typeof SUB_LAST !== 'undefined' && SUB_LAST) paintSubmitted(SUB_LAST); } catch(e){}
           box.innerHTML = '<div class="stlCard" style="align-items:center;justify-content:center;text-align:center">' +
             '<div class="stlCap" style="justify-content:center">Settlement</div>' +
             '<div style="font-size:1.15em;font-weight:800;color:var(--ink-2);margin-bottom:.35em">' +
@@ -9105,7 +9189,8 @@ var PROD = {
         }
         STL.data = j; stlPaint();
       })
-      .catch(function(){ STL.busy = false; });
+      .catch(function(){ STL.busy = false; STL.err = 'the settlement board did not answer';
+        try { if(typeof paintSubmitted === 'function' && typeof SUB_LAST !== 'undefined' && SUB_LAST) paintSubmitted(SUB_LAST); } catch(e){} });
   }
 
 
