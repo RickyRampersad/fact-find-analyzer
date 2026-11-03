@@ -2215,6 +2215,7 @@
   .sbR .c.st.sHi{color:var(--gold)}
   .sbR .c.st.sOk{color:#34D399}
   .sbR .c.st.sMid{color:var(--ink-2)}
+  .sbR .c.st.sLo{color:#F87171}
   .sbR.hd .c.st{color:var(--ink-3); font-weight:700}
   .sbR.hdg .grp.st{grid-column:span 1; color:var(--gold);
     border-bottom-color:rgba(245,185,53,.45)}
@@ -2568,6 +2569,45 @@
 /* Months still to come in the financial year: a quiet slot, so the chart
    reads as a year being filled in rather than one bar across the panel. */
 .sbMb.fut .sbPair{opacity:.22}.sbMb.fut span{opacity:.45}
+
+/* SLIDE 13'S INSIGHT CARD: five views taking turns in one card, a tab for
+   each with a bar that fills while it is up. A tap on a tab holds that view. */
+.sbIns{position:relative}
+.insTabs{display:flex;gap:.25em;flex-wrap:nowrap;margin-bottom:.55em}
+.insTabs button{all:unset;cursor:pointer;position:relative;overflow:hidden;font:800 .56em Inter,system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;
+  padding:.42em .62em;border-radius:999px;white-space:nowrap;background:rgba(255,255,255,.05);color:var(--ink-3);border:1px solid rgba(255,255,255,.08)}
+.insTabs button.on{color:#04201C;background:var(--teal);border-color:var(--teal)}
+.insTabs button i{position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--gold)}
+.insTabs button.on i{animation:insFill var(--insT,9s) linear forwards}
+.sbIns.hold .insTabs button.on i{animation:none;width:100%}
+@keyframes insFill{to{width:100%}}
+.insP{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.sbIns{min-height:0;overflow:hidden;contain:size}
+@media (max-width:760px){.sbIns{contain:none;min-height:30em}}
+.insP.on{display:flex;animation:insIn .5s ease both}
+@keyframes insIn{from{opacity:0;transform:translateY(.4em)}to{opacity:1;transform:none}}
+.insH{font:900 1.05em 'Inter Tight',Inter,sans-serif;margin:.1em 0 .15em}.insH em{font-style:normal;color:var(--teal)}
+.insS{font-size:.62em;color:var(--ink-3);margin-bottom:.6em;line-height:1.4}
+.insRow{display:grid;grid-template-columns:minmax(0,7em) minmax(0,1fr) 4.3em;gap:.5em;align-items:center;font-size:.66em;padding:.22em 0}
+.insRow b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.insRow .v{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.insBar{position:relative;height:.95em;border-radius:.3em;background:rgba(255,255,255,.05);overflow:hidden}
+.insBar i{position:absolute;left:0;top:0;bottom:0;border-radius:.3em;transform-origin:left;animation:insGrow .9s cubic-bezier(.2,.8,.2,1) both}
+.insBar i.a{background:#8B5CF6;opacity:.55}.insBar i.b{background:var(--teal);top:.25em;bottom:.25em}
+.insBar u{position:absolute;top:-.1em;bottom:-.1em;width:2px;background:#fff;opacity:.8}
+@keyframes insGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.insKey{display:flex;gap:1em;font-size:.58em;color:var(--ink-3);margin:.2em 0 .5em}.insKey i{display:inline-block;width:.8em;height:.8em;border-radius:.2em;margin-right:.35em;vertical-align:-.1em}
+.insBig{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.4em;margin-top:auto}
+.insBig div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:.6em;padding:.5em .6em}
+.insBig b{display:block;font:900 .9em/1.15 'Inter Tight',Inter,sans-serif;font-variant-numeric:tabular-nums}.insBig span{display:block;font-size:.5em;line-height:1.25;color:var(--ink-3);letter-spacing:.05em;text-transform:uppercase}
+.insTag{font:800 .5em Inter;letter-spacing:.1em;padding:.15em .45em;border-radius:999px;margin-left:.4em;vertical-align:.15em}
+.insTag.l{background:rgba(248,113,113,.15);color:#FCA5A5}.insTag.s{background:rgba(245,179,36,.15);color:var(--gold)}
+/* On a phone the roster drops the week columns; the year and settled lead. */
+@media (max-width:760px){
+  .sbGrid{grid-template-columns:1fr !important}
+  .sbIns{min-height:24em}
+  .insRow{font-size:.78em}
+}
 </style>
 </head>
 <body>
@@ -2971,13 +3011,20 @@
         <div class="sbUnits" id="pdRoster"></div>
         <div id="sbBranch"></div>
       </div>
-      <div class="sbCard">
-        <div class="sbCap" id="sbWeekCap">This week &mdash; top three</div>
-        <div id="sbWeek"></div>
-        <div class="sbSec" style="margin-top:auto">
-          <div class="sbCap" style="margin:0">Products this week<em id="sbPieCap">everybody</em></div>
-          <div class="sbPie" id="sbPie"></div>
+      <div class="sbCard sbIns" id="sbIns">
+        <div class="insTabs" id="insTabs"></div>
+        <div class="insP on" data-n="Top 3">
+          <div class="sbCap" id="sbWeekCap">This week &mdash; top three</div>
+          <div id="sbWeek"></div>
+          <div class="sbSec" style="margin-top:auto">
+            <div class="sbCap" style="margin:0">Products this week<em id="sbPieCap">everybody</em></div>
+            <div class="sbPie" id="sbPie"></div>
+          </div>
         </div>
+        <div class="insP" data-n="Settled" id="insSet"></div>
+        <div class="insP" data-n="Fact finds" id="insFF"></div>
+        <div class="insP" data-n="P2" id="insP2"></div>
+        <div class="insP" data-n="Others" id="insAll"></div>
       </div>
     </div>
     <div class="sbCard sbChart">
@@ -7417,6 +7464,36 @@ var PROD = {
      Beside it, this week's board — permanently, not behind a button. Anyone
      with something this week is picked out in gold in the main table too, so
      the week can be seen in the shape of the year. */
+
+  /* The insight card's turns: nine seconds a view, a tap holds one. */
+  function insStart(){
+    var box = document.getElementById('sbIns'), tabs = document.getElementById('insTabs');
+    if(!box || !tabs) return;
+    var ps = box.querySelectorAll('.insP');
+    if(!tabs.children.length){
+      tabs.innerHTML = [].map.call(ps, function(p, i){ return '<button data-i="' + i + '">' + p.getAttribute('data-n') + '<i></i></button>'; }).join('');
+      tabs.addEventListener('click', function(e){
+        var bt = e.target.closest('button'); if(!bt) return;
+        var i = +bt.getAttribute('data-i');
+        if(box.classList.contains('hold') && window.__insAt === i){ box.classList.remove('hold'); }
+        else box.classList.add('hold');
+        insShow(i);
+      });
+    }
+    if(window.__insTimer) return;
+    insShow(window.__insAt || 0);
+    window.__insTimer = setInterval(function(){
+      if(box.classList.contains('hold')) return;
+      insShow(((window.__insAt || 0) + 1) % ps.length);
+    }, 9000);
+  }
+  function insShow(i){
+    var box = document.getElementById('sbIns'); if(!box) return;
+    window.__insAt = i;
+    box.querySelectorAll('.insP').forEach(function(p, j){ p.classList.toggle('on', j === i); });
+    var bs = document.querySelectorAll('#insTabs button');
+    bs.forEach(function(b, j){ b.classList.toggle('on', j === i); var k = b.querySelector('i'); if(k){ k.style.animation = 'none'; void k.offsetWidth; k.style.animation = ''; } });
+  }
   function paintSubmitted(S){
     var box = q('pdRoster'); if(!box) return false;
     function n0(v){ return (v===null||v===undefined||v==='') ? '' : Math.round(v).toLocaleString('en-US'); }
@@ -7466,7 +7543,10 @@ var PROD = {
        at the point of drawing. From 1 October they are Not Active on the
        Access tab, so a team's headcount counts the names it shows. Declared
        here, above the first use. */
-    var SUB_ELSEWHERE = { A04020: 1, A04028: 1 };
+    /* Javid and Aleema are on the board again (3 November 2026: "avid and
+       aleema production needs to be picked up"). Codes listed here are kept
+       off the rows; their figures stay in the totals either way. */
+    var SUB_ELSEWHERE = {};
     function elsewhere(label){
       var c2 = String(label||'').toUpperCase().match(/[AU](\d{5})/);
       return !!(c2 && SUB_ELSEWHERE['A' + c2[1]]);
@@ -7594,6 +7674,16 @@ var PROD = {
       var nm = String(l.name||'').toUpperCase().replace(/[^A-Z]/g,'');
       if(nm) GBYNAME[nm] = l;
     });
+    /* EVERYTHING THAT SETTLED. The year's own total from the board, with
+       Javid's, Aleema's and the brokers' in it, and what settled under
+       advisors who have left: a board that does not count them yet sends
+       them apart in diag.offBoard. */
+    var SET_ALL = (SET_OK && STL_NOW && STL_NOW.ytd) ? (function(){
+      var off = (!STL_NOW.withFormer && STL_NOW.diag && STL_NOW.diag.offBoard) || { api:0, apps:0 };
+      return { api: (STL_NOW.ytd.api||0) + (off.api||0), apps: (STL_NOW.ytd.apps||0) + (off.apps||0),
+               formerApi: STL_NOW.withFormer ? (STL_NOW.matrix||[]).filter(function(x){ return x.left; })
+                            .reduce(function(a,x){ return a + (x.api||0); }, 0) : (off.api||0) };
+    })() : null;
     var GFY = (GW && GW.fy && GW.fy.label) || S.yearLabel || 'FY27';
     var GOAL_LIVE = !!(GW && SET_OK && STL_NOW && STL_NOW.fyLabel === GFY);
     var HAS_INC = !!(GW && GW.lanes.some(function(l){ return l && l.income > 0; }));
@@ -7693,7 +7783,16 @@ var PROD = {
       var x = RATED[codeOf(label)];
       return (x && x.show) ? x : null;
     }
+    /* THE CLIENT STARS ARE OFF THIS SLIDE (3 November 2026: "only show the
+       2 year persistency and remove the star rating"). The column carries
+       two-year persistency from the agent report instead. */
     function starCell(r){
+      var pq = (r.lvl === 2) ? qrow(r.label) : null, p2v = pq && Number(pq.p2);
+      if(!(p2v > 0)) return '<div class="c st"></div>';
+      return '<div class="c st ' + (p2v >= 90 ? 'sOk' : p2v >= 80 ? 'sHi' : 'sLo') + '" title="two-year persistency">'
+        + (p2v >= 99.95 ? '100' : p2v.toFixed(1)) + '</div>';
+    }
+    function starCellOld(r){
       var x = (r.lvl === 2) ? rateFor(r.label) : null;
       if(!x) return '<div class="c st"></div>';
       var cls = x.avg >= 4.5 ? ' sHi' : x.avg >= 4 ? ' sOk' : ' sMid';
@@ -7762,14 +7861,14 @@ var PROD = {
         + '<div class="grp">Submitted &mdash; ' + subYr + '</div>'
         + '<div class="grp s1">Settled &mdash; ' + setYr + '</div>'
         + '<div class="grp gGrp">Goal &mdash; ' + esc(GFY) + '</div>'
-        + '<div class="grp st">Client</div></div>'
+        + '<div class="grp st">P2</div></div>'
         + '<div class="sbR hd"><div class="l">Advisor</div>'
         + '<div class="c ap">Apps</div><div class="c">API</div>'
         + '<div class="c ap">Apps</div><div class="c">API</div>'
         + '<div class="c s ap">Apps</div><div class="c s">API</div>'
         + '<div class="c gGoal">API</div><div class="c gPct">To goal</div>'
         + '<div class="c gPct">' + (HAS_INC ? 'Income' : 'FYC') + '</div>'
-        + '<div class="c st">\u2605</div></div>';
+        + '<div class="c st">P2 %</div></div>';
     }
 
     /* Rebuilt into a tree before sorting. Sorting the flat rows in place would
@@ -7911,14 +8010,14 @@ var PROD = {
          the roster, so summing the rows would leave it out. */
       var qb = (STL_NOW && STL_NOW.quotaBranch) || SUB_QUOTA_BRANCH_FALLBACK;
       t._quota   = qb ? qb.quota   : 0;
-      t._settled = (SET_OK && qb) ? qb.settled : 0;
+      t._settled = SET_ALL ? SET_ALL.api : ((SET_OK && qb) ? qb.settled : 0);
       /* THE BRANCH LINE IS A STRIP, NOT A ROW. A total under each column
          answered "what do the columns add up to"; the branch manager reads
          this line for one thing first — what the branch wrote this week —
          and then the month, the year, and what has actually settled. Four
          tiles, the week lit, the settled tile carrying its app count, which
          the old row had no column for. */
-      var setApps = (SET_OK && stlD2 && stlD2.ytd) ? (stlD2.ytd.apps||0) : 0;
+      var setApps = SET_ALL ? SET_ALL.apps : 0;
       /* The caption sits above the figures rather than beside them. On one
          row the numbers won and the captions were cut to "YEAR T…" and
          "SETTLE…", which is the one place on the panel a word cannot be
@@ -8098,6 +8197,91 @@ var PROD = {
        who leads the race, how many plans are ahead of today's pace and who is
        past halfway. Only what somebody has done goes on it: nobody is named
        for being behind. The interval after paintSubmitted moves it on. */
+    /* ── THE INSIGHT CARD'S OTHER FOUR VIEWS ─────────────────────────────
+       Settled against submitted, fact finds against applications, two-year
+       persistency, and everyone whose business counts but who is not on the
+       roster. Built from what this slide already holds. */
+    try {
+      var insAg = ag.filter(function(r){ return yy(r,1) || settledFor(r.label); });
+      function nm(r){ return esc(subShort(r.label)); }
+      function rowsHtml(list, maxV, a, b, val, mark){
+        return list.map(function(z, i){
+          var wa = maxV ? Math.max(1, a(z) / maxV * 100) : 0, wb2 = maxV ? b(z) / maxV * 100 : 0;
+          return '<div class="insRow"><b>' + z.n + '</b><div class="insBar">'
+            + (a(z) ? '<i class="a" style="width:' + wa.toFixed(1) + '%;animation-delay:' + (i * 45) + 'ms"></i>' : '')
+            + (b(z) ? '<i class="b" style="width:' + Math.min(100, wb2).toFixed(1) + '%;animation-delay:' + (i * 45 + 120) + 'ms"></i>' : '')
+            + (mark ? '<u style="left:' + mark + '%"></u>' : '')
+            + '</div><span class="v">' + val(z) + '</span></div>';
+        }).join('');
+      }
+      /* 1. Settled against submitted */
+      var sv = insAg.map(function(r){ return { n: nm(r), sub: yy(r,1), set: settledFor(r.label) }; })
+                    .sort(function(x, y){ return (y.set - x.set) || (y.sub - x.sub); }).slice(0, 10);
+      var svMax = Math.max.apply(null, sv.map(function(z){ return Math.max(z.sub, z.set); }).concat([1]));
+      var tSub = yy(t,1), tSet = SET_ALL ? SET_ALL.api : (t._settled || 0);
+      var eSet = q('insSet');
+      if(eSet) eSet.innerHTML = '<div class="insH">Settled <em>against</em> submitted</div>'
+        + '<div class="insS">' + esc(subYr) + ' to date, the ten with the most settled. Settled can run ahead of submitted: cases written before 1 October settle in this year.</div>'
+        + '<div class="insKey"><span><i style="background:#8B5CF6;opacity:.6"></i>Submitted</span><span><i style="background:var(--teal)"></i>Settled</span></div>'
+        + rowsHtml(sv, svMax, function(z){ return z.sub; }, function(z){ return z.set; }, function(z){ return money(z.set); })
+        + '<div class="insBig"><div><b>' + money(tSet) + '</b><span>Settled</span></div><div><b>' + money(tSub) + '</b><span>Submitted</span></div>'
+        + '<div><b>' + (tSub ? Math.round(tSet / tSub * 100) + '%' : '&mdash;') + '</b><span>Settled ÷ submitted</span></div></div>';
+      /* 2. Fact finds against applications */
+      var feed = window.__wallFeed || {}, yl = feed.yearLeaders || feed.monthLeaders || [];
+      function key(x){ return String(x||'').toUpperCase().replace(/[^A-Z]/g,''); }
+      var ffBy = {}; yl.forEach(function(x){ ffBy[key(x.name)] = x.count || 0; });
+      function ffOf(r){ var k = key(subShort(r.label)); if(ffBy[k] != null) return ffBy[k];
+        var hit = Object.keys(ffBy).filter(function(k2){ return k2.indexOf(k.slice(0, 6)) === 0; }); return hit.length === 1 ? ffBy[hit[0]] : 0; }
+      var ff = ag.map(function(r){ return { n: nm(r), f: ffOf(r), a: yy(r,0) }; })
+                 .filter(function(z){ return z.f || z.a; })
+                 .sort(function(x, y){ return (y.f - x.f) || (y.a - x.a); }).slice(0, 10);
+      var ffMax = Math.max.apply(null, ff.map(function(z){ return Math.max(z.f, z.a); }).concat([1]));
+      var ffT = ff.reduce(function(a2, z){ return a2 + z.f; }, 0), apT = yy(t,0);
+      var eFF = q('insFF');
+      if(eFF) eFF.innerHTML = '<div class="insH">Fact finds <em>to</em> applications</div>'
+        + '<div class="insS">Fact finds filed on FactFind360 this year beside the applications submitted. A fact find with no application yet is the pipeline to work this week.</div>'
+        + '<div class="insKey"><span><i style="background:#8B5CF6;opacity:.6"></i>Fact finds</span><span><i style="background:var(--teal)"></i>Applications</span></div>'
+        + (ff.length ? rowsHtml(ff, ffMax, function(z){ return z.f; }, function(z){ return z.a; },
+            function(z){ return z.f ? Math.round(z.a / z.f * 100) + '%' : z.a + ' apps'; })
+          : '<div class="insS">The fact-find feed has not answered yet.</div>')
+        + '<div class="insBig"><div><b>' + ffT + '</b><span>Fact finds</span></div><div><b>' + apT + '</b><span>Applications</span></div>'
+        + '<div><b>' + (ffT ? Math.round(apT / ffT * 100) + '%' : '&mdash;') + '</b><span>Apps per fact find</span></div></div>';
+      /* 3. Two-year persistency */
+      var pp = ag.map(function(r){ var x = qrow(r.label); return { n: nm(r), p: x ? Number(x.p2) || 0 : 0 }; })
+                 .filter(function(z){ return z.p > 0; }).sort(function(x, y){ return y.p - x.p; });
+      var pAvg = pp.length ? pp.reduce(function(a2, z){ return a2 + z.p; }, 0) / pp.length : 0;
+      var pLow = pp.filter(function(z){ return z.p < 90; }).length;
+      var eP2 = q('insP2');
+      function scaleP(v){ return Math.max(0, (v - 70) / 30 * 100); }
+      if(eP2) eP2.innerHTML = '<div class="insH">Two-year <em>persistency</em></div>'
+        + '<div class="insS">The share of policies still in force after two years, from the agent report. The white line is 90%.</div>'
+        + pp.slice(0, 12).map(function(z, i){
+            return '<div class="insRow"><b>' + z.n + '</b><div class="insBar"><i class="b" style="top:0;bottom:0;width:' + scaleP(z.p).toFixed(1)
+              + '%;background:' + (z.p >= 90 ? 'var(--teal)' : z.p >= 80 ? 'var(--gold)' : '#F87171') + ';animation-delay:' + (i * 45) + 'ms"></i>'
+              + '<u style="left:' + scaleP(90).toFixed(1) + '%"></u></div><span class="v">' + z.p.toFixed(1) + '%</span></div>';
+          }).join('')
+        + '<div class="insBig"><div><b>' + (pAvg ? pAvg.toFixed(1) + '%' : '&mdash;') + '</b><span>Branch average</span></div>'
+        + '<div><b>' + (pp.length - pLow) + '</b><span>At 90% or more</span></div><div><b style="color:' + (pLow ? '#FCA5A5' : 'inherit') + '">' + pLow + '</b><span>Under 90%</span></div></div>';
+      /* 4. Everyone whose business counts */
+      var mx = (STL_NOW && STL_NOW.matrix) || [];
+      var still = mx.filter(function(x){ return x.still; }), gone = mx.filter(function(x){ return x.left; });
+      var off = STL_NOW && STL_NOW.diag && STL_NOW.diag.offBoard;
+      var eAll = q('insAll');
+      function line(x, tag){ return '<div class="insRow"><b>' + esc(String(x.name||x.code).replace(/^\s*[AU]\d+\s*[-–]\s*/i,''))
+        + '</b><span style="font-size:.9em;color:var(--ink-3)">' + (x.apps||0) + ' app' + (x.apps === 1 ? '' : 's')
+        + '<span class="insTag ' + tag + '">' + (tag === 'l' ? 'LEFT' : 'COUNTED') + '</span></span><span class="v">' + money(x.api||0) + '</span></div>'; }
+      if(eAll) eAll.innerHTML = '<div class="insH">Everyone <em>who counts</em></div>'
+        + '<div class="insS">Settled business from people not on the roster above. It is in every branch total on this slide.</div>'
+        + (still.length ? still.map(function(x){ return line(x, 's'); }).join('') : '')
+        + (gone.length ? gone.map(function(x){ return line(x, 'l'); }).join('')
+           : (off && off.api ? '<div class="insRow"><b>Advisors who left</b><span style="font-size:.9em;color:var(--ink-3)">' + (off.apps||0)
+               + ' apps · ' + ((off.advisors||[]).length) + ' advisors<span class="insTag l">LEFT</span></span><span class="v">' + money(off.api) + '</span></div>' : ''))
+        + (!still.length && !gone.length && !(off && off.api) ? '<div class="insS">Nothing settled outside the roster this year.</div>' : '')
+        + '<div class="insBig"><div><b>' + money(SET_ALL ? SET_ALL.api : 0) + '</b><span>Branch settled</span></div>'
+        + '<div><b>' + money(SET_ALL ? SET_ALL.formerApi : 0) + '</b><span>From advisors who left</span></div>'
+        + '<div><b>' + money(still.reduce(function(a2, x){ return a2 + (x.api||0); }, 0)) + '</b><span>Javid &amp; Aleema</span></div></div>';
+      insStart();
+    } catch(eIns){ console.warn('insight card', eIns); }
     var rc = q('sbRosterCap');
     var rb = RATE_LIVE ? ((RATE.data && RATE.data.branch) || null) : null;
     var capKey = 'gold marks the branch’s best &middot; goals are the ' + esc(GFY) + ' flight plans, '
@@ -8179,8 +8363,7 @@ var PROD = {
     var wkTxt = 'week ' + (S.week || '');
     set('t_p12',
       (bs ? '<b data-cu="' + Math.round(bs) + '" data-fmt="tt">' + full(bs) + '</b> settled'
-            + ((stlD && stlD.ytd && stlD.ytd.apps)
-                ? ' &middot; <b>' + n0(stlD.ytd.apps) + '</b> apps' : '')
+            + (SET_ALL && SET_ALL.apps ? ' &middot; <b>' + n0(SET_ALL.apps) + '</b> apps' : '')
             + ' &nbsp;&nbsp;<span class="tSub">' + full(yy(t,1)) + ' submitted &middot; '
             + (fyD ? fyD + ' &middot; ' : '') + wkTxt + '</span>'
         : fyD && !yy(t,1) && !yy(t,0)
@@ -8675,8 +8858,8 @@ var PROD = {
       var BAR_EM = 2.2;
       function emH(v){ return (Math.max(0, v) / max * BAR_EM).toFixed(2) + 'em'; }
       var fyAt = function(nm){ return (MN.indexOf(nm) - 9 + 12) % 12; };
-      var fut = S.yearLabel && !sv && !has && fyAt(n) > fyAt(MN[new Date().getMonth()]);
-      if(fut){ sa = undefined; ta = undefined; }
+      var fut = S.yearLabel && !sv && !tv && fyAt(n) > fyAt(MN[new Date().getMonth()]);
+      if(fut){ sa = undefined; ta = undefined; has = false; }
       return '<div class="sbMb' + (fut ? ' fut' : '') + '"><div class="sbPair">'
         + '<div class="sbCol"><em>' + (sv?k(sv):'') + '</em>'
         + '<div class="sbBar sub" style="height:' + emH(sv) + '">'

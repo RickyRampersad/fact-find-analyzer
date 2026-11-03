@@ -730,10 +730,14 @@ function getSettlement(e) {
     var cnt = Number(row[K]) || 0;                               // the FLAG, netted
     var api = Number(String(row[L]).replace(/[^0-9.\-]/g, '')) || 0;
     var cov = Number(String(row[H]).replace(/[^0-9.\-]/g, '')) || 0;
-    if (!fyrCounted_(acc, code)) {
+    /* Advisors who have left: what settled under them is still the
+       branch's settled business (asked for on 3 November 2026: "agents who
+       left that settled last month but not reflected"). It counts in every
+       total and they are named on the matrix with left: true. */
+    var left = !fyrCounted_(acc, code);
+    if (left) {
       gone.apps += cnt; gone.api += api;
       if (gone.advisors.indexOf(code) < 0) gone.advisors.push(code);
-      continue;
     }
     rowsUsed++;
     ytd.apps += cnt; ytd.api += api; ytd.cover += cov;
@@ -749,7 +753,7 @@ function getSettlement(e) {
     if (!a) {
       a = byAgent[code] = { code: code, name: (acc[code] && acc[code].name) || FYR_STILL_COUNTED[code] ||
                                              (fyrBroker_(code) && fyrBroker_(code).name) || code,
-                            apps: 0, api: 0, cover: 0, m: [] };
+                            apps: 0, api: 0, cover: 0, m: [], left: left };
       for (var z = 0; z < 12; z++) a.m.push({ apps: 0, api: 0, cover: 0 });
     }
     a.apps += cnt; a.api += api; a.cover += cov;
@@ -760,9 +764,19 @@ function getSettlement(e) {
      above and are left off the lists, as on the production board. */
   var all = Object.keys(byAgent).map(function (k) { return byAgent[k]; })
                   .filter(function (a) { return fyrNamed_(acc, a.code) && (a.apps !== 0 || a.api !== 0); });
-  var matrix = all.map(function (a) {
-    return { code: a.code, name: a.name, apps: a.apps, api: a.api, cover: a.cover, m: a.m };
-  }).sort(function (x, y) { return y.api - x.api; });
+  /* The matrix names everybody whose business settled: the active roster,
+     Javid and Aleema (still: true), anyone kept off the board (off: true)
+     and advisors who have left (left: true). The league below keeps to the
+     active roster. */
+  var matrix = Object.keys(byAgent).map(function (k) { return byAgent[k]; })
+    .filter(function (a) { return a.apps !== 0 || a.api !== 0; })
+    .map(function (a) {
+      var o = { code: a.code, name: a.name, apps: a.apps, api: a.api, cover: a.cover, m: a.m };
+      if (a.left) o.left = true;
+      else if (FYR_STILL_COUNTED[a.code]) o.still = true;
+      else if (FYR_OFF_BOARD[a.code]) o.off = true;
+      return o;
+    }).sort(function (x, y) { return y.api - x.api; });
   var agents = all.map(function (a) {
     if (onlyAt < 0) return { code: a.code, name: a.name, apps: a.apps, api: a.api, cover: a.cover };
     var c2 = a.m[onlyAt];
@@ -797,7 +811,7 @@ function getSettlement(e) {
   var avg = ytd.api / doneM;
 
   return {
-    success: true, v: 'settle-fy', year: Number(from.slice(0, 4)), month: only,
+    success: true, v: 'settle-fy2', withFormer: true, year: Number(from.slice(0, 4)), month: only,
     fyStartsOn: from, fyEndsOn: fyrEnds_(from), fyLabel: fyrLabel_(from),
     ytd: ytd, months: months, agents: agents, matrix: matrix,
     quotas: quotas, quotaBranch: qb,
