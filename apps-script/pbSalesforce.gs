@@ -467,3 +467,35 @@ function sfCheck() {
     return 'FAILED: ' + (err && err.message || err);
   }
 }
+
+/**
+ * ONE-TIME SWITCH TO CLIENT CREDENTIALS, for a project whose Script
+ * properties page has gone read-only (more than 50 properties).
+ *
+ * 1. Paste the KPI Tracker's three values between the quotes below.
+ * 2. Save, choose sfUseClientCredentials in the function list, press Run.
+ * 3. Delete the three values again and save. They are stored in the
+ *    project's properties by then; the log shows only their last four
+ *    characters.
+ *
+ * It replaces SF_CLIENT_ID, SF_CLIENT_SECRET and SF_LOGIN_URL rather than
+ * adding new properties, removes the expired SF_REFRESH_TOKEN, and adds
+ * SF_AUTH, so the count goes down by none overall.
+ */
+var SF_CC_KEY    = '';   // the KPI Tracker's SF_KEY
+var SF_CC_SECRET = '';   // the KPI Tracker's SF_SECRET
+var SF_CC_URL    = '';   // the KPI Tracker's SF_LOGIN_URL, https://<domain>.my.salesforce.com
+
+function sfUseClientCredentials() {
+  var k = String(SF_CC_KEY).trim(), s = String(SF_CC_SECRET).trim(), u = String(SF_CC_URL).trim().replace(/\/+$/, '');
+  if (!k || !s || !u) { console.log('Paste all three values between the quotes at the top of this function first.'); return; }
+  if (!/my\.salesforce\.com$/.test(u)) console.log('Note: SF_LOGIN_URL should be the My Domain address ending my.salesforce.com.');
+  var p = PropertiesService.getScriptProperties();
+  p.setProperty('SF_CLIENT_ID', k); p.setProperty('SF_CLIENT_SECRET', s); p.setProperty('SF_LOGIN_URL', u);
+  p.deleteProperty('SF_REFRESH_TOKEN'); p.deleteProperty('SF_KEY'); p.deleteProperty('SF_SECRET');
+  p.setProperty('SF_AUTH', 'client');
+  console.log('Stored. Key …' + k.slice(-4) + ', secret …' + s.slice(-4) + ', ' + u + '. Testing the sign-in…');
+  try { var sess = sfLogin_(); console.log('Salesforce sign-in works: ' + sess.url); }
+  catch (e) { console.log(String(e.message || e)); }
+  console.log('Now delete the three values above, save, and publish a New version.');
+}
