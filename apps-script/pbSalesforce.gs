@@ -117,6 +117,33 @@ function sfLogin_() {
   /* A refresh token is the flow to prefer: it does not carry a password, and
      it is not the one Salesforce has been switching off. Falls back to
      username-password only if no refresh token has been stored. */
+  /* CLIENT CREDENTIALS, the way the KPI Tracker signs in. A refresh token
+     expires (6 November 2026: "invalid_grant · expired access/refresh token"
+     blanked the production board); a client-credentials app does not. Set
+     SF_AUTH to "client" to use it always. Without that, it is tried whenever
+     the refresh token is refused. It needs the app's "Enable Client
+     Credentials Flow" with a Run As user, and SF_LOGIN_URL must be the My
+     Domain address (https://<domain>.my.salesforce.com). SF_KEY and SF_SECRET,
+     the KPI Tracker's names, are read when they are stored; otherwise this
+     app's SF_CLIENT_ID and SF_CLIENT_SECRET. */
+  var ccId = sfProp_('SF_KEY') || id, ccSecret = sfProp_('SF_SECRET') || secret;
+  function clientCreds() {
+    var r2 = UrlFetchApp.fetch(host + '/services/oauth2/token', {
+      method: 'post', muteHttpExceptions: true,
+      payload: { grant_type: 'client_credentials', client_id: ccId, client_secret: ccSecret }
+    });
+    if (r2.getResponseCode() !== 200) return { err: r2.getResponseCode() + ': ' + r2.getContentText() };
+    var j2 = JSON.parse(r2.getContentText());
+    return { token: j2.access_token, url: j2.instance_url };
+  }
+  if (String(sfProp_('SF_AUTH')).toLowerCase() === 'client') {
+    var cc = clientCreds();
+    if (cc.err) throw new Error('Salesforce login refused (client credentials ' + cc.err + ').  >>> In Salesforce, the ' +
+      'connected app needs "Enable Client Credentials Flow" ticked with a Run As user, and SF_LOGIN_URL must be the ' +
+      'My Domain address, not login.salesforce.com.');
+    return cc;
+  }
+
   var payload;
   if (refresh) {
     payload = { grant_type: 'refresh_token', client_id: id, client_secret: secret,
@@ -160,6 +187,14 @@ function sfLogin_() {
     } else if (body.indexOf('invalid_client') > -1) {
       hint = '  >>> Consumer Key or Secret wrong, or the app has not finished ' +
              'propagating - that takes about ten minutes after saving.';
+    }
+    if (refresh && body.indexOf('invalid_grant') > -1) {
+      var cc2 = clientCreds();
+      if (!cc2.err) return cc2;
+      hint = '  >>> The stored refresh token has expired. Either run sfAuth again for a new one (sfAuth.gs ' +
+             'explains the four steps), or switch this project to client credentials, as the KPI Tracker uses: ' +
+             'store SF_KEY, SF_SECRET and SF_LOGIN_URL (the My Domain address) from the KPI Tracker\'s Script ' +
+             'properties and set SF_AUTH to client. Client credentials tried as well: ' + cc2.err;
     }
     throw new Error('Salesforce login refused (' + res.getResponseCode() + '): ' + body + hint);
   }
