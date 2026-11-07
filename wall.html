@@ -2888,6 +2888,37 @@
 #p12 .pbQbar{padding-top:1.9em}
 #p12 .pbTP li > span{min-width:0}
 @media (max-width:1500px){#p12 .pbScene:not(.pbAll){font-size:1.05em}}
+
+/* 9 the month, closed */
+#p12 .pbCl{flex:1;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:1.6em;align-items:start}
+#p12 .pbClL{display:flex;flex-direction:column;gap:1em}
+#p12 .pbClBar{position:relative;padding-top:1.4em}#p12 .pbClBar .pbBar{height:1.6em}
+#p12 .pbClT{position:absolute;top:0;bottom:0;width:3px;background:var(--gold);box-shadow:0 0 .6em rgba(245,185,53,.7)}
+#p12 .pbClT span{position:absolute;top:0;right:.4em;font:800 .55em Inter,sans-serif;color:var(--gold);text-transform:uppercase;letter-spacing:.1em}
+#p12 .pbClStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.6em}
+#p12 .pbClStats div{padding:.6em .8em;border-radius:.6em;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09)}
+#p12 .pbClStats div.g{background:rgba(245,185,53,.1);border-color:rgba(245,185,53,.45)}
+#p12 .pbClStats b{display:block;font:900 1.4em 'Inter Tight',Inter,sans-serif;color:#fff;white-space:nowrap}
+#p12 .pbClStats div.g b{color:var(--gold)}
+#p12 .pbClStats small{font-size:.5em;color:var(--ink-3);font-weight:700}
+#p12 .pbClStats span{font-size:.55em;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+#p12 .pbClBeat{display:flex;flex-wrap:wrap;gap:.45em;align-items:center}
+#p12 .pbClBeat > span{font:800 .55em Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#34D399;margin-right:.4em}
+#p12 .pbClBeat i{font-style:normal;font-size:.75em;padding:.3em .7em;border-radius:999px;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.45);color:#fff}
+#p12 .pbClBeat i b{color:#34D399}
+#p12 .pbClH{display:grid;gap:.45em;align-content:start}
+#p12 .pbHon{position:relative;overflow:hidden;padding:.45em .9em;border-radius:.7em;background:linear-gradient(100deg,rgba(245,185,53,.18),rgba(245,185,53,.03));border:1px solid rgba(245,185,53,.45)}
+#p12 .pbHon u{display:block;text-decoration:none;font:800 .5em Inter,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+#p12 .pbHon b{display:block;font:900 1.05em 'Inter Tight',Inter,sans-serif;color:#fff;line-height:1.15}
+#p12 .pbHon span{font-size:.65em;color:var(--ink-2)}
+@media (prefers-reduced-motion:no-preference){
+  #p12 .pbScene.on .pbHon{animation:pbHonIn .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(.5s + var(--i) * .22s)}
+  #p12 .pbScene.on .pbHon::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.22) 50%,transparent 70%);transform:translateX(-120%);animation:pbShine 1.2s ease-out both;animation-delay:calc(1.1s + var(--i) * .22s)}
+  #p12 .pbScene.on .pbClBeat i{animation:pbIn .5s both;animation-delay:calc(1s + var(--i) * .1s)}
+}
+@keyframes pbHonIn{from{opacity:0;transform:translateX(1.2em) scale(.96)}}
+@keyframes pbShine{to{transform:translateX(120%)}}
+@media (max-width:1500px){#p12 .pbCl{grid-template-columns:1fr}#p12 .pbClStats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -3288,6 +3319,7 @@
     <div class="pbNav" id="pbNav"></div>
     <div class="pbStage" id="pbStage">
     <div class="pbScene" data-n="Scoreboard" id="pbs1"></div>
+    <div class="pbScene pbSkip" data-n="Month closed" id="pbs9"></div>
     <div class="pbScene" data-n="Oct &amp; Nov" id="pbs2"></div>
     <div class="pbScene" data-n="Targets" id="pbs3"></div>
     <div class="pbScene" data-n="Activity" id="pbs4"></div>
@@ -7807,7 +7839,7 @@ var PROD = {
      and the wall does not move on until the last has played (rotate waits on
      pbHold). A tap on a scene's name holds it; a second tap lets it run. */
   var PBC = { i: 0, timer: 0, held: false, done: false, was: false };
-  function pbScenes(){ return document.querySelectorAll('#pbStage .pbScene'); }
+  function pbScenes(){ return document.querySelectorAll('#pbStage .pbScene:not(.pbSkip)'); }
   function pbShow(i){
     var ss = pbScenes(); if(!ss.length) return;
     PBC.i = (i + ss.length) % ss.length;
@@ -7827,15 +7859,16 @@ var PROD = {
   }
   function pbStart(){
     var nav = document.getElementById('pbNav'), ss = pbScenes();
-    if(nav && !nav.children.length && ss.length){
+    if(nav && nav.children.length !== ss.length && ss.length){
       nav.innerHTML = [].map.call(ss, function(el, i){ return '<button data-i="' + i + '">' + el.getAttribute('data-n') + '<i></i></button>'; }).join('');
-      nav.addEventListener('click', function(e){
+      if(!nav.__on) nav.addEventListener('click', function(e){
         var b = e.target.closest('button'); if(!b) return;
         var i = +b.getAttribute('data-i');
         if(PBC.held && PBC.i === i){ PBC.held = false; nav.classList.remove('hold'); }
         else { PBC.held = true; nav.classList.add('hold'); }
         pbShow(i);
       });
+      nav.__on = true;
       pbShow(0);
     } else if(ss.length) pbShow(PBC.i);
     if(!PBC.timer) PBC.timer = setInterval(pbTick, 9000);
@@ -8866,7 +8899,32 @@ var PROD = {
       PB.s7 = head('Talking points', 'Five things to <em>talk about today.</em>', 'Worked out from the figures on this slide, fresh on every read.')
         + '<ol class="pbTP">' + tp.slice(0, 5).map(function(x, i){ return '<li style="--i:' + i + '"><span>' + x + '</span></li>'; }).join('') + '</ol>';
 
-      ['s1','s2','s3','s4','s5','s6','s7'].forEach(function(k){ var el = q('pb' + k); if(el) el.innerHTML = PB[k]; });
+      /* 9 · THE MONTH, CLOSED (MonthClose.gs): last month against the plans,
+         its honours, who beat their own plan, and what the close-outs commit. */
+      var CL = GW && GW.close, s9 = q('pbs9');
+      if(s9){
+        if(CL && CL.branch && (CL.branch.sub || CL.branch.set)){
+          var cb = CL.branch, cpct = cb.goal ? Math.round(cb.sub / cb.goal * 100) : 0;
+          s9.setAttribute('data-n', esc(CL.name) + ' closed');
+          PB.s9 = head(esc(CL.name) + ' &middot; closed', esc(CL.name) + ' is in. <em class="' + (cpct >= 100 ? 'ok' : 'no') + '">' + cpct + '% of the plans.</em>',
+              'Submitted against what our flight plans asked of ' + esc(CL.name) + '. Every advisor has their own close-out in their inbox.')
+            + '<div class="pbCl"><div class="pbClL">'
+            + '<div class="pbTri"><div><span>Submitted</span>' + big(cb.sub, 'tt', .2) + '<i>' + n0(cb.subApps) + ' apps</i></div>'
+            + '<div><span>Plans asked</span>' + big(cb.goal, 'tt', .35) + '<i>' + cb.plans + ' flight plans</i></div>'
+            + '<div><span>Settled</span>' + big(cb.set, 'tt', .5) + '<i>' + n0(cb.setApps) + ' policies</i></div></div>'
+            + '<div class="pbClBar">' + bar(cb.sub, Math.max(cb.goal, cb.sub, 1), cpct >= 100 ? 'ok' : '', .3) + '<div class="pbClT" style="left:' + (cb.goal ? Math.min(99.5, cb.goal / Math.max(cb.goal, cb.sub) * 100) : 100).toFixed(1) + '%"><span>plans</span></div></div>'
+            + '<div class="pbClStats"><div><b>' + cb.onGoal + '<small> of ' + cb.plans + '</small></b><span>beat their own plan</span></div>'
+            + '<div><b>' + n0(cb.ffs) + '</b><span>fact finds filed</span></div>'
+            + '<div><b>' + CL.closed + '<small> of ' + (CL.sent || cb.people) + '</small></b><span>closed out' + (CL.rating ? ' &middot; ' + CL.rating + '&#9733;' : '') + '</span></div>'
+            + '<div class="g"><b>' + (CL.commit ? money(CL.commit) : '&mdash;') + '</b><span>' + esc(CL.next) + ' committed</span></div></div>'
+            + (CL.beat && CL.beat.length ? '<div class="pbClBeat"><span>Beat the plan</span>' + CL.beat.slice(0, 8).map(function(b2, i){ return '<i style="--i:' + i + '">' + esc(String(b2.name).split(' ')[0]) + ' <b>' + b2.pct + '%</b></i>'; }).join('') + '</div>' : '')
+            + '</div><div class="pbClH">' + (CL.honours || []).slice(0, 5).map(function(h, i){
+                return '<div class="pbHon" style="--i:' + i + '"><u>' + esc(h.title) + '</u><b>' + h.names.slice(0, 2).map(esc).join(' &amp; ') + (h.names.length > 2 ? ' +' + (h.names.length - 2) : '') + '</b><span>' + esc(h.value) + '</span></div>'; }).join('')
+            + '</div></div>';
+          s9.classList.remove('pbSkip');
+        } else s9.classList.add('pbSkip');
+      }
+      ['s1','s2','s3','s4','s5','s6','s7','s9'].forEach(function(k){ var el = q('pb' + k); if(el && PB[k]) el.innerHTML = PB[k]; });
       pbStart();
     })(); } catch(ePb){ console.warn('production board', ePb); }
     var rc = q('sbRosterCap');
