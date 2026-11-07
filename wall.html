@@ -2754,6 +2754,140 @@
   #p12 #pdRoster .sbR{grid-template-columns:minmax(0,1fr) 5.6em 5.6em 4.6em 3em !important}
   #p12 #pdRoster .sbR > .c:nth-last-child(2),#p12 #pdRoster .sbR > .c.mny.wk{display:none}
 }
+
+/* ═══ THE PRODUCTION BOARD · slide 13 as scenes (7 November 2026) ═══════ */
+#p12 .pbNav{display:flex;gap:.3em;flex-wrap:wrap;margin:-.2em 0 .1em}
+#p12 .pbNav button{all:unset;cursor:pointer;position:relative;overflow:hidden;font:800 .5em Inter,system-ui,sans-serif;letter-spacing:.1em;
+  text-transform:uppercase;padding:.55em .95em;border-radius:999px;color:var(--ink-3);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09)}
+#p12 .pbNav button.past{color:var(--ink-2)}
+#p12 .pbNav button.on{color:#04211D;background:var(--teal);border-color:var(--teal)}
+#p12 .pbNav button i{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--gold)}
+#p12 .pbNav button.on i{animation:pbFill 9s linear forwards}
+#p12 .pbNav.hold button.on i{animation:none;width:100%}
+@keyframes pbFill{to{width:100%}}
+#p12 .pbStage{flex:1 1 auto;min-height:0;position:relative;display:flex;flex-direction:column}
+#p12 .pbScene{position:absolute;inset:0;display:flex;flex-direction:column;gap:.9em;opacity:0;visibility:hidden;pointer-events:none;
+  transform:translateY(.8em) scale(.985);transition:opacity .55s ease,transform .7s cubic-bezier(.2,.8,.2,1),visibility 0s .55s}
+#p12 .pbScene.on{position:relative;flex:1 1 auto;min-height:0;opacity:1;visibility:visible;pointer-events:auto;transform:none;transition-delay:0s}
+#p12 .pbAll{gap:.7em}
+#p12 .pbHead .pbK{font:800 .55em Inter,system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+#p12 .pbHead h2{margin:.15em 0 .1em;font:900 2.1em/1.05 'Inter Tight',Inter,system-ui,sans-serif;letter-spacing:-.02em;color:#fff}
+#p12 .pbHead h2 em{font-style:normal;color:var(--teal)}
+#p12 .pbHead h2 em.ok{color:#34D399}#p12 .pbHead h2 em.no{color:#FBBF24}
+#p12 .pbHead p{margin:0;color:var(--ink-2);font-size:.8em;max-width:62ch}
+#p12 .pbScene.on .pbHead h2{animation:pbIn .7s .05s cubic-bezier(.2,.8,.2,1) both}
+@keyframes pbIn{from{opacity:0;transform:translateY(.4em)}}
+#p12 .pbBar{position:relative;height:.9em;border-radius:.45em;background:rgba(255,255,255,.07);overflow:hidden}
+#p12 .pbBar i{position:absolute;inset:0 auto 0 0;width:var(--w);border-radius:.45em;background:linear-gradient(90deg,#7C3AED,#A78BFA)}
+#p12 .pbBar.set i{background:linear-gradient(90deg,#0D9488,#2DD4BF)}
+#p12 .pbBar.ok i{background:linear-gradient(90deg,#059669,#34D399)}
+#p12 .pbBar.tgt i{background:repeating-linear-gradient(90deg,rgba(245,185,53,.85) 0 .5em,rgba(245,185,53,.35) .5em 1em)}
+#p12 .pbBar.proj i{background:repeating-linear-gradient(45deg,rgba(167,139,250,.75) 0 .35em,rgba(167,139,250,.35) .35em .7em)}
+#p12 .pbScene.on .pbBar i{animation:pbGrow 1.2s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0s)}
+@keyframes pbGrow{from{width:0}}
+#p12 .pbLp{font:900 .9em 'Inter Tight',Inter,sans-serif;text-align:right;font-variant-numeric:tabular-nums}
+#p12 .pbLp.ok{color:#34D399}#p12 .pbLp.mid{color:#FBBF24}#p12 .pbLp.no{color:#F87171}
+/* 1 scoreboard */
+#p12 .pbScore{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:2em;align-items:center}
+#p12 .pbRing{position:relative;max-width:15em;width:100%;justify-self:center}
+#p12 .pbRing svg{width:100%;transform:rotate(-90deg);overflow:visible}
+#p12 .pbRing .rb{fill:none;stroke:rgba(255,255,255,.08);stroke-width:7}
+#p12 .pbRing .rf{fill:none;stroke:var(--teal);stroke-width:7;stroke-linecap:round;stroke-dashoffset:var(--o);filter:drop-shadow(0 0 .4em rgba(45,212,191,.5))}
+#p12 .pbScene.on .pbRing .rf{animation:pbRing 1.8s .2s cubic-bezier(.2,.8,.2,1) both}
+@keyframes pbRing{from{stroke-dashoffset:264}}
+#p12 .pbRing .rk{stroke:#FBBF24;stroke-width:2.5;transform-origin:50px 50px}
+#p12 .pbRingT{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#p12 .pbRingT b{font:900 2.6em 'Inter Tight',Inter,sans-serif;color:#fff}
+#p12 .pbRingT span{font-size:.55em;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;max-width:9em}
+#p12 .pbVerdict{border-radius:.8em;padding:.7em 1em;margin-bottom:1em}
+#p12 .pbVerdict b{display:block;font:900 2.4em 'Inter Tight',Inter,sans-serif;letter-spacing:-.02em}
+#p12 .pbVerdict span{font-size:.7em;color:var(--ink-2)}
+#p12 .pbVerdict.ok{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.45)}#p12 .pbVerdict.ok b{color:#34D399}
+#p12 .pbVerdict.no{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.45)}#p12 .pbVerdict.no b{color:#FBBF24}
+#p12 .pbScene.on .pbVerdict{animation:pbPulse 2.4s 1.4s ease-in-out 2}
+@keyframes pbPulse{50%{transform:scale(1.03);box-shadow:0 0 1.5em rgba(52,211,153,.25)}}
+#p12 .pbTri{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6em}
+#p12 .pbTri div{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:.6em;padding:.55em .7em}
+#p12 .pbTri span{display:block;font-size:.5em;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:800}
+#p12 .pbTri b{display:block;font:900 1.15em 'Inter Tight',Inter,sans-serif;color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
+#p12 .pbTri i{font-style:normal;font-size:.55em;color:var(--ink-3)}
+/* 2 months */
+#p12 .pbMons{flex:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.2em;align-content:start}
+#p12 .pbMon{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:.8em;padding:.9em 1.1em}
+#p12 .pbMon.cur{border-color:rgba(45,212,191,.5);background:rgba(45,212,191,.05)}
+#p12 .pbMon h3{margin:0 0 .5em;font:900 1.5em 'Inter Tight',Inter,sans-serif;color:#fff}
+#p12 .pbMon h3 i{font:600 .4em Inter,sans-serif;color:var(--ink-3);font-style:normal;letter-spacing:.04em}
+#p12 .pbMrow{display:grid;grid-template-columns:7em minmax(0,1fr) 5.5em;gap:.7em;align-items:center;margin:.45em 0;font-size:.85em}
+#p12 .pbMrow span{color:var(--ink-2)}#p12 .pbMrow b{text-align:right;color:#fff;font-variant-numeric:tabular-nums}
+#p12 .pbMfoot{margin-top:.6em;font-size:.65em;color:var(--ink-3)}
+/* 3 cascade */
+#p12 .pbLvls{display:grid;gap:.75em}
+#p12 .pbLvl{display:grid;grid-template-columns:9em minmax(0,1fr) 9em 3.5em;gap:1em;align-items:center}
+#p12 .pbLn b{display:block;font:900 1.15em 'Inter Tight',Inter,sans-serif;color:#fff}#p12 .pbLn i{font-style:normal;font-size:.6em;color:var(--ink-3)}
+#p12 .pbLvl .pbBar{height:1.3em}
+#p12 .pbLv{text-align:right}#p12 .pbLv b{display:block;color:#fff;font-weight:800;font-variant-numeric:tabular-nums}#p12 .pbLv span{font-size:.6em;color:var(--ink-3)}
+#p12 .pbDay{margin-top:auto;display:flex;align-items:baseline;gap:1em;flex-wrap:wrap;padding:.8em 1.1em;border-radius:.8em;
+  background:linear-gradient(100deg,rgba(245,185,53,.18),rgba(245,185,53,.04));border:1px solid rgba(245,185,53,.45)}
+#p12 .pbDay span{color:var(--ink-2);font-size:.85em}#p12 .pbDay b{font:900 1.8em 'Inter Tight',Inter,sans-serif;color:var(--gold)}#p12 .pbDay i{font-style:normal;font-size:.65em;color:var(--ink-3)}
+/* 4 activity */
+#p12 .pbFun{display:grid;gap:.7em}
+#p12 .pbF{display:grid;grid-template-columns:12em minmax(0,1fr) 3.5em;gap:1em;align-items:center;animation:pbIn .6s both;animation-delay:calc(var(--i) * .12s)}
+#p12 .pbFt span{display:block;font-size:.6em;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:800}
+#p12 .pbFt b{font:900 1.3em 'Inter Tight',Inter,sans-serif;color:#fff;margin-right:.35em}#p12 .pbFt i{font-style:normal;font-size:.65em;color:var(--ink-3)}
+#p12 .pbF .pbBar{height:1.2em}
+#p12 .pbFF{margin-top:auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.6em}
+#p12 .pbFF div{padding:.6em .8em;border-radius:.6em;background:rgba(45,212,191,.07);border:1px solid rgba(45,212,191,.35)}
+#p12 .pbFF b{display:block;font:900 1.3em 'Inter Tight',Inter,sans-serif;color:#fff}#p12 .pbFF span{font-size:.55em;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+/* 5 quarter */
+#p12 .pbQ{display:flex;flex-direction:column;gap:1em}
+#p12 .pbQbar{position:relative;display:grid;gap:.5em;padding-top:1.6em}
+#p12 .pbQbar .pbBar{height:1.5em}
+#p12 .pbQt{position:absolute;top:0;bottom:0;width:3px;background:var(--gold);box-shadow:0 0 .6em rgba(245,185,53,.7)}
+#p12 .pbQt span{position:absolute;top:0;left:.4em;white-space:nowrap;font:800 .6em Inter,sans-serif;color:var(--gold)}
+#p12 .pbNext{font-size:.75em;color:var(--ink-2)}#p12 .pbNext b{color:#fff}
+/* 6 podium */
+#p12 .pbPod{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1em;align-items:end}
+#p12 .pbP{display:flex;flex-direction:column;align-items:center;text-align:center;gap:.3em;animation:pbIn .8s both}
+#p12 .pbP.p1{animation-delay:.5s}#p12 .pbP.p2{animation-delay:.25s}#p12 .pbP.p3{animation-delay:.1s}
+#p12 .pbPn{font:900 1.3em 'Inter Tight',Inter,sans-serif;color:#fff}
+#p12 .pbP.p1 .pbPn{font-size:1.7em;color:var(--gold)}
+#p12 .pbPf b{display:block;font:900 1.05em 'Inter Tight',Inter,sans-serif;color:#fff}#p12 .pbPf.g b{color:var(--gold)}
+#p12 .pbPf span{font-size:.5em;color:var(--ink-3);text-transform:uppercase;letter-spacing:.1em;font-weight:800}
+#p12 .pbBlock{width:100%;margin-top:.4em;border-radius:.6em .6em 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:.3em;
+  background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.12);border-bottom:none}
+#p12 .pbBlock u{text-decoration:none;font:900 2em 'Inter Tight',Inter,sans-serif;color:rgba(255,255,255,.5)}
+#p12 .pbP.p1 .pbBlock{height:7em;background:linear-gradient(180deg,rgba(245,185,53,.45),rgba(245,185,53,.08));border-color:rgba(245,185,53,.6)}
+#p12 .pbP.p1 .pbBlock u{color:#1F2937}
+#p12 .pbP.p2 .pbBlock{height:5em}#p12 .pbP.p3 .pbBlock{height:3.6em}
+#p12 .pbP.empty{visibility:hidden}
+/* 7 talking points */
+#p12 .pbTP{margin:0;padding:0;list-style:none;counter-reset:tp;display:grid;gap:.75em}
+#p12 .pbTP li{counter-increment:tp;display:grid;grid-template-columns:2.2em minmax(0,1fr);gap:.8em;align-items:start;font-size:1.05em;line-height:1.35;color:var(--ink);
+  animation:pbIn .6s both;animation-delay:calc(var(--i) * .35s + .3s)}
+#p12 .pbTP li::before{content:counter(tp);display:grid;place-items:center;width:1.8em;height:1.8em;border-radius:50%;background:var(--teal);color:#04211D;font:900 .8em Inter,sans-serif}
+#p12 .pbTP b{color:#fff}
+@media (max-width:1500px){
+  #p12 .pbHead h2{font-size:1.7em}
+  #p12 .pbScore,#p12 .pbMons{grid-template-columns:1fr}
+  #p12 .pbLvl{grid-template-columns:7em minmax(0,1fr) 7em 3em}
+  #p12 .pbF{grid-template-columns:9em minmax(0,1fr) 3em}
+}
+@media (max-width:760px){
+  #p12 .pbLvl,#p12 .pbF{grid-template-columns:1fr 3em} #p12 .pbLvl .pbBar,#p12 .pbF .pbBar{grid-column:1/-1} #p12 .pbLv{display:none}
+  #p12 .pbTri,#p12 .pbFF{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #p12 .pbMrow{grid-template-columns:5.5em minmax(0,1fr) 4.5em}
+}
+@media (prefers-reduced-motion:reduce){#p12 .pbScene,#p12 .pbScene *{animation:none!important;transition:none!important}}
+
+/* Bigger on a television: the scenes fill the slide instead of sitting in its top half. */
+#p12 .pbScene:not(.pbAll){font-size:1.22em;justify-content:flex-start}
+#p12 .pbScene:not(.pbAll) > :last-child{margin-bottom:auto}
+#p12 .pbRing{max-width:20em}
+#p12 .pbScore{gap:3em}
+#p12 .pbQt span{left:auto;right:.5em}
+#p12 .pbQbar{padding-top:1.9em}
+#p12 .pbTP li > span{min-width:0}
+@media (max-width:1500px){#p12 .pbScene:not(.pbAll){font-size:1.05em}}
 </style>
 </head>
 <body>
@@ -3151,6 +3285,16 @@
          across the foot. The split used to be by row count, which ran a
          manager's advisors past the halfway mark and stranded them under the
          next unit's heading — they read as that unit's people. -->
+    <div class="pbNav" id="pbNav"></div>
+    <div class="pbStage" id="pbStage">
+    <div class="pbScene" data-n="Scoreboard" id="pbs1"></div>
+    <div class="pbScene" data-n="Oct &amp; Nov" id="pbs2"></div>
+    <div class="pbScene" data-n="Targets" id="pbs3"></div>
+    <div class="pbScene" data-n="Activity" id="pbs4"></div>
+    <div class="pbScene" data-n="Quarter" id="pbs5"></div>
+    <div class="pbScene" data-n="Top 3" id="pbs6"></div>
+    <div class="pbScene" data-n="Talking points" id="pbs7"></div>
+    <div class="pbScene pbAll" data-n="Every advisor" id="pbs8">
     <div class="sbStar" id="sbStar"></div>
     <div class="sbGrid">
       <div class="sbCard">
@@ -3181,6 +3325,7 @@
       <div class="sbTots" id="sbTots"></div>
       <div class="sbBars" id="incChart"></div>
     </div>
+    </div></div>
     <!-- The rail. Every advisor, year to date, with the week's movement beside
          it — the branch going past like a market. It was here before the panel
          was rebuilt and went out with the old markup; its CSS, its animation
@@ -4480,6 +4625,8 @@ function panelOff(i){ return (i === 17 && !dayReady) || (i === 18 && !monthReady
 var rotateWait=null;
 function rotate(){
   if(paused || window.__wallLocked) return;
+  /* Slide 13 plays its scenes through before the wall moves on. */
+  if(window.pbHold && window.pbHold()) return;
   /* Do not move the board out from under a sentence. The longest line is 12.0s
      against a 15s rotation so it normally fits, but announce() runs on a 700ms
      interval and the five named lines are assembled at play time from three
@@ -7655,6 +7802,54 @@ var PROD = {
       p.querySelectorAll('.pline,.pgoal,.rf,.insBar i').forEach(function(el){ el.style.animation = 'none'; void el.getBoundingClientRect(); el.style.animation = ''; });
     }
   }
+
+  /* THE BOARD'S SCENES. Nine seconds each while slide 13 is up, in order,
+     and the wall does not move on until the last has played (rotate waits on
+     pbHold). A tap on a scene's name holds it; a second tap lets it run. */
+  var PBC = { i: 0, timer: 0, held: false, done: false, was: false };
+  function pbScenes(){ return document.querySelectorAll('#pbStage .pbScene'); }
+  function pbShow(i){
+    var ss = pbScenes(); if(!ss.length) return;
+    PBC.i = (i + ss.length) % ss.length;
+    ss.forEach(function(el, j){ el.classList.toggle('on', j === PBC.i); });
+    document.querySelectorAll('#pbNav button').forEach(function(b, j){
+      b.classList.toggle('on', j === PBC.i); b.classList.toggle('past', j < PBC.i);
+      var k = b.querySelector('i'); if(k){ k.style.animation = 'none'; void k.offsetWidth; k.style.animation = ''; } });
+    var el = ss[PBC.i];
+    if(el && typeof s13Count === 'function'){ try{ s13Count(el); }catch(e){} }
+    if(PBC.i === ss.length - 1) PBC.done = true;
+  }
+  function pbTick(){
+    var p = document.getElementById('p12');
+    if(!p || !p.classList.contains('on') || PBC.held || paused) return;
+    var ss = pbScenes();
+    if(PBC.i < ss.length - 1) pbShow(PBC.i + 1); else PBC.done = true;
+  }
+  function pbStart(){
+    var nav = document.getElementById('pbNav'), ss = pbScenes();
+    if(nav && !nav.children.length && ss.length){
+      nav.innerHTML = [].map.call(ss, function(el, i){ return '<button data-i="' + i + '">' + el.getAttribute('data-n') + '<i></i></button>'; }).join('');
+      nav.addEventListener('click', function(e){
+        var b = e.target.closest('button'); if(!b) return;
+        var i = +b.getAttribute('data-i');
+        if(PBC.held && PBC.i === i){ PBC.held = false; nav.classList.remove('hold'); }
+        else { PBC.held = true; nav.classList.add('hold'); }
+        pbShow(i);
+      });
+      pbShow(0);
+    } else if(ss.length) pbShow(PBC.i);
+    if(!PBC.timer) PBC.timer = setInterval(pbTick, 9000);
+    var p = document.getElementById('p12');
+    if(p && !p.__pbObs && window.MutationObserver){
+      p.__pbObs = true;
+      new MutationObserver(function(){
+        var on = p.classList.contains('on');
+        if(on && !PBC.was){ PBC.done = false; PBC.held = false; if(nav) nav.classList.remove('hold'); pbShow(0); }
+        PBC.was = on;
+      }).observe(p, { attributes: true, attributeFilter: ['class'] });
+    }
+  }
+  window.pbHold = function(){ var p = document.getElementById('p12'); return !!(p && p.classList.contains('on') && (PBC.held || !PBC.done)); };
   function paintSubmitted(S){
     var box = q('pdRoster'); if(!box) return false;
     function n0(v){ return (v===null||v===undefined||v==='') ? '' : Math.round(v).toLocaleString('en-US'); }
@@ -8538,6 +8733,142 @@ var PROD = {
           + '<div><b>' + (topFF ? esc(String(topFF.name).split(' ')[0]) : '&mdash;') + '</b><span>' + (topFF ? 'most fact finds (' + topFF.count + ')' : 'top fact-finder') + '</span></div></div></div>';
       }
     } catch(eSt){ console.warn('performer', eSt); }
+    /* ── THE PRODUCTION BOARD (7 November 2026) ────────────────────────────
+       "An entire redesign ... goals, fact finds, activities ... Oct and Nov
+       and our projections ... targets driven out of goals ... daily, weekly,
+       monthly and the coming quarter". Slide 13 plays as scenes, one talking
+       point each, built on the 4DX scoreboard rules: winning or losing is
+       readable in five seconds, lag measures (submitted, settled) sit beside
+       the lead measures that move them (contacts, appointments, fact finds),
+       and every target is the branch's own goals cut down to the day. */
+    try { (function(){
+      var PB = {};
+      var MN3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var now = new Date(), fyStart = new Date(2026, 9, 1), fyEnd = new Date(2027, 8, 30);
+      if(now > fyEnd){ fyStart = new Date(now.getFullYear() - (now.getMonth() < 9 ? 1 : 0), 9, 1); fyEnd = new Date(fyStart.getFullYear() + 1, 8, 30); }
+      function wd(a, b){ var n = 0, d = new Date(a.getFullYear(), a.getMonth(), a.getDate()); while(d <= b){ var x = d.getDay(); if(x && x < 6) n++; d.setDate(d.getDate() + 1); } return n; }
+      var dayN = Math.max(1, Math.floor((now - fyStart) / 864e5) + 1), fyDays = Math.round((fyEnd - fyStart) / 864e5) + 1;
+      var goalT = 0, paceW = 0;
+      if(GW) GW.lanes.forEach(function(l){ if(l && l.goal > 0 && !elsewhere(l.code)){ goalT += l.goal; paceW += l.goal * (l.expPct || 0) / 100; } });
+      var paceFrac = goalT && paceW ? paceW / goalT : dayN / fyDays;
+      var ask = (GW && GW.ask) || {}, gwk = (GW && GW.week) || {};
+      var subFY = yy(t,1), appsFY = yy(t,0), setFY = SET_ALL ? SET_ALL.api : (t._settled || 0);
+      var paceNowT = goalT * paceFrac, gapNow = setFY - paceNowT;
+      /* months: submitted from the series, settled from the board */
+      var ser = (S.series || []), byM = {};
+      ser.forEach(function(x){ byM[x.m] = { sub: (x.nb||0) + (x.inc||0), apps: x.apps || 0, set: 0, setA: 0 }; });
+      ((STL_NOW && STL_NOW.months) || []).forEach(function(x){ var k = MN3[(x.m || 1) - 1]; (byM[k] = byM[k] || { sub: 0, apps: 0, set: 0, setA: 0 }); byM[k].set = x.api || 0; byM[k].setA = x.apps || 0; });
+      var curM = MN3[now.getMonth()], prevM = MN3[(now.getMonth() + 11) % 12];
+      var mStart = new Date(now.getFullYear(), now.getMonth(), 1), mEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      var mGone = wd(mStart, now), mAll = wd(mStart, mEnd), mLeft = Math.max(0, mAll - mGone);
+      var cur = byM[curM] || { sub: 0, apps: 0, set: 0, setA: 0 }, prev = byM[prevM] || { sub: 0, apps: 0, set: 0, setA: 0 };
+      var curProj = mGone ? cur.sub / mGone * mAll : 0;
+      var mTarget = ask.apiMonth || (goalT / 12), wTarget = ask.apiWeek || (goalT / 52), dTarget = ask.apiDay || (goalT / 250);
+      /* the quarter: October to December is Q1 of the year */
+      var qIx = Math.floor(((now.getMonth() - 9 + 12) % 12) / 3), qM = [0, 1, 2].map(function(i){ return MN3[(9 + qIx * 3 + i) % 12]; });
+      var qStartM = (9 + qIx * 3) % 12, qStart = new Date(now.getFullYear() - (qStartM > now.getMonth() ? 1 : 0), qStartM, 1);
+      var qEnd = new Date(qStart.getFullYear(), qStart.getMonth() + 3, 0);
+      var qDone = qM.reduce(function(a, k){ return a + ((byM[k] || {}).sub || 0); }, 0);
+      var qLeftWd = Math.max(1, wd(new Date(now.getTime() + 864e5), qEnd));
+      var qTarget = mTarget * 3, qProj = qDone + (mGone ? cur.sub / mGone : 0) * qLeftWd;
+      var qNeedDay = Math.max(0, qTarget - qDone) / qLeftWd;
+      var qNext = ['Jan', 'Apr', 'Jul', 'Oct'][(qIx + 1) % 4], qNextL = 'Q' + ((qIx + 1) % 4 + 1);
+      var ff = window.__wallFeed || {}, ffW = (ff.week || {}).submitted || 0, ffM = (ff.month || {}).submitted || 0, ffD = (ff.today || {}).submitted || 0;
+      function bar(v, max, cls, d){ var p = max ? Math.min(100, v / max * 100) : 0; return '<div class="pbBar ' + (cls||'') + '"><i style="--w:' + p.toFixed(1) + '%;--d:' + (d||0) + 's"></i></div>'; }
+      function big(v, f, d){ return '<b data-cu="' + Math.round(Math.max(0, v)) + '" data-fmt="' + (f||'tt') + '" data-cd="' + (d||0) + '">' + (f === 'pct' ? Math.round(v) + '%' : full(v)) + '</b>'; }
+      function head(k, h, sub){ return '<div class="pbHead"><span class="pbK">' + k + '</span><h2>' + h + '</h2>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>'; }
+      var win = gapNow >= 0;
+
+      /* 1 · ARE WE WINNING? */
+      var ringP = goalT ? Math.min(1, setFY / goalT) : 0, paceP = Math.min(1, paceFrac), C = 2 * Math.PI * 42;
+      PB.s1 = head('Scoreboard &middot; ' + esc(GFY), win ? 'We are <em class="ok">winning.</em>' : 'We are <em class="no">behind the line.</em>',
+          'Day ' + dayN + ' of ' + fyDays + '. Settled against where our ' + (GW ? GW.lanes.length : 0) + ' flight plans say we should be today.')
+        + '<div class="pbScore"><div class="pbRing"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" class="rb"/>'
+        + '<circle cx="50" cy="50" r="42" class="rf" style="stroke-dasharray:' + C.toFixed(1) + ';--o:' + (C * (1 - ringP)).toFixed(1) + '"/>'
+        + '<line x1="50" y1="4" x2="50" y2="14" class="rk" style="transform:rotate(' + (paceP * 360).toFixed(1) + 'deg)"/></svg>'
+        + '<div class="pbRingT">' + big(goalT ? setFY / goalT * 100 : 0, 'pct', .3) + '<span>of the ' + esc(GFY) + ' goal settled</span></div></div>'
+        + '<div class="pbScoreR"><div class="pbVerdict ' + (win ? 'ok' : 'no') + '"><b>' + (win ? '+' : '&minus;') + money(Math.abs(gapNow)) + '</b><span>' + (win ? 'ahead of' : 'behind') + ' today&rsquo;s line</span></div>'
+        + '<div class="pbTri"><div><span>Goal ' + esc(GFY) + '</span>' + big(goalT, 'tt', .2) + '</div>'
+        + '<div><span>Settled</span>' + big(setFY, 'tt', .4) + '</div>'
+        + '<div><span>Submitted</span>' + big(subFY, 'tt', .6) + '<i>' + n0(appsFY) + ' apps</i></div></div></div></div>';
+
+      /* 2 · MONTH AGAINST MONTH */
+      var mMax = Math.max(prev.sub, prev.set, cur.sub, cur.set, curProj, mTarget, 1);
+      function mcol(lbl, m, proj, isCur){
+        return '<div class="pbMon' + (isCur ? ' cur' : '') + '"><h3>' + lbl + (isCur ? ' <i>to date &middot; ' + mGone + ' of ' + mAll + ' working days</i>' : '') + '</h3>'
+          + '<div class="pbMrow"><span>Submitted</span>' + bar(m.sub, mMax, 'sub', .2) + '<b>' + money(m.sub) + '</b></div>'
+          + (isCur ? '<div class="pbMrow"><span>On course for</span>' + bar(proj, mMax, 'proj', .4) + '<b>' + money(proj) + '</b></div>' : '')
+          + '<div class="pbMrow"><span>Settled</span>' + bar(m.set, mMax, 'set', .6) + '<b>' + money(m.set) + '</b></div>'
+          + '<div class="pbMrow"><span>Target</span>' + bar(mTarget, mMax, 'tgt', .8) + '<b>' + money(mTarget) + '</b></div>'
+          + '<div class="pbMfoot">' + n0(m.apps) + ' apps submitted &middot; ' + n0(m.setA) + ' settled</div></div>';
+      }
+      PB.s2 = head(prevM + ' against ' + curM, curProj >= mTarget ? curM + ' is on course to <em class="ok">beat the target.</em>' : curM + ' needs <em class="no">' + money(Math.max(0, mTarget - cur.sub)) + ' more.</em>',
+          'At ' + curM + '&rsquo;s pace so far, ' + money(curProj) + ' by month end, against a month target of ' + money(mTarget) + ' from the plans.')
+        + '<div class="pbMons">' + mcol(prevM, prev, 0, false) + mcol(curM, cur, curProj, true) + '</div>';
+
+      /* 3 · THE GOAL, CUT DOWN TO TODAY */
+      var wkDone = w(t,1), needDay = mLeft ? Math.max(0, mTarget - cur.sub) / mLeft : 0;
+      function lvl(name, tgt, done, note, d){
+        var p = tgt ? done / tgt * 100 : 0;
+        return '<div class="pbLvl"><div class="pbLn"><b>' + name + '</b><i>' + note + '</i></div>' + bar(done, tgt, p >= 100 ? 'ok' : 'sub', d)
+          + '<div class="pbLv"><b>' + money(done) + '</b><span>of ' + money(tgt) + '</span></div><div class="pbLp ' + (p >= 100 ? 'ok' : p >= 70 ? 'mid' : 'no') + '">' + Math.round(p) + '%</div></div>';
+      }
+      PB.s3 = head('Targets from our goals', 'One goal. <em>Every day counts.</em>', 'The ' + esc(GFY) + ' flight plans added up, then cut to the quarter, the month, the week and the day. Submitted API against each.')
+        + '<div class="pbLvls">'
+        + lvl(esc(GFY), goalT, subFY, 'the year', .1)
+        + lvl('Q' + (qIx + 1), qTarget, qDone, qM.join(' &middot; '), .25)
+        + lvl(curM, mTarget, cur.sub, mLeft + ' working days left', .4)
+        + lvl('This week', wTarget, wkDone, 'week ' + (S.week || ''), .55)
+        + '</div><div class="pbDay"><span>Needed each working day for the rest of ' + curM + '</span>' + big(needDay, 'tt', .7) + '<i>daily target from the plans: ' + money(dTarget) + '</i></div>';
+
+      /* 4 · ACTIVITY DRIVES PRODUCTION (lead measures) */
+      var acts = [['Contacts', gwk.contacts, ask.contactsWeek], ['Appointments', gwk.appts, ask.apptWeek], ['Fact finds', gwk.ffs || ffW, ask.ffWeek],
+                  ['Applications', gwk.apps || w(t,0), ask.appsWeek], ['API', gwk.api || wkDone, ask.apiWeek]];
+      PB.s4 = head('Lead measures &middot; this week', 'Activity today is <em>production next month.</em>', 'What the branch did this week against what its plans ask for each week. These are the numbers we can move today.')
+        + '<div class="pbFun">' + acts.map(function(a, i){
+            var v = a[1] || 0, tg = a[2] || 0, p = tg ? v / tg * 100 : 0;
+            return '<div class="pbF" style="--i:' + i + '"><div class="pbFt"><span>' + a[0] + '</span><b>' + (a[0] === 'API' ? money(v) : n0(v)) + '</b><i>' + (tg ? 'of ' + (a[0] === 'API' ? money(tg) : n0(Math.round(tg))) : 'no target yet') + '</i></div>'
+              + bar(v, tg || v || 1, p >= 100 ? 'ok' : 'sub', .15 * i) + '<div class="pbLp ' + (p >= 100 ? 'ok' : p >= 70 ? 'mid' : 'no') + '">' + (tg ? Math.round(p) + '%' : '&mdash;') + '</div></div>';
+          }).join('') + '</div>'
+        + '<div class="pbFF"><div><b>' + ffD + '</b><span>fact finds today</span></div><div><b>' + ffW + '</b><span>this week</span></div><div><b>' + ffM + '</b><span>this month</span></div>'
+        + '<div><b>' + (ffW && w(t,0) ? Math.round(w(t,0) / ffW * 100) + '%' : '&mdash;') + '</b><span>apps per fact find this week</span></div></div>';
+
+      /* 5 · THE QUARTER AHEAD */
+      PB.s5 = head('Q' + (qIx + 1) + ' &middot; ' + qM[0] + ' to ' + qM[2], qProj >= qTarget ? 'On course for the quarter. <em class="ok">Keep the pace.</em>' : 'The quarter is <em class="no">still winnable.</em>',
+          'Where ' + qM[0] + ' to ' + qM[2] + ' lands at today&rsquo;s pace, and what each working day has to bring to reach the target.')
+        + '<div class="pbQ"><div class="pbQbar">' + bar(qDone, Math.max(qTarget, qProj, 1), 'sub', .2) + bar(qProj, Math.max(qTarget, qProj, 1), 'proj', .5)
+        + '<div class="pbQt" style="left:' + (Math.min(99.6, qTarget / Math.max(qTarget, qProj, 1) * 100)).toFixed(1) + '%"><span>Q' + (qIx + 1) + ' target ' + money(qTarget) + '</span></div></div>'
+        + '<div class="pbTri"><div><span>Done so far</span>' + big(qDone, 'tt', .2) + '</div><div><span>At this pace</span>' + big(qProj, 'tt', .4) + '</div>'
+        + '<div><span>Needed a working day</span>' + big(qNeedDay, 'tt', .6) + '<i>' + qLeftWd + ' working days left</i></div></div>'
+        + '<div class="pbNext">Next: <b>' + qNextL + '</b> from 1 ' + qNext + ', target ' + money(mTarget * 3) + '.</div></div>';
+
+      /* 6 · THE PODIUM */
+      var pod = ag.filter(function(r){ return w(r,1) > 0 && !elsewhere(r.label); }).sort(function(a2, b2){ return w(b2,1) - w(a2,1); }).slice(0, 3);
+      var order = [1, 0, 2];
+      PB.s6 = head('This week &middot; top three', pod.length ? esc(subShort(pod[0].label)) + ' <em class="ok">leads the week.</em>' : 'The week is <em>open.</em>', 'Ranked on API submitted this week. FYC taken as half of API.')
+        + '<div class="pbPod">' + order.map(function(ix){
+            var r = pod[ix]; if(!r) return '<div class="pbP empty"></div>';
+            return '<div class="pbP p' + (ix + 1) + '"><div class="pbPn">' + esc(subShort(r.label)) + '</div>'
+              + '<div class="pbPf"><b>' + money(w(r,1)) + '</b><span>API</span></div><div class="pbPf"><b>' + n0(w(r,0)) + '</b><span>apps</span></div>'
+              + '<div class="pbPf g"><b>' + money(w(r,1) * FYC_SHARE) + '</b><span>FYC</span></div><div class="pbBlock"><u>' + (ix + 1) + '</u></div></div>';
+          }).join('') + '</div>';
+
+      /* 7 · TALKING POINTS */
+      var tp = [];
+      if(goalT) tp.push(win ? 'The branch is <b>' + money(gapNow) + ' ahead</b> of the line its own plans draw for today. Protect it.' : 'The branch is <b>' + money(-gapNow) + ' behind</b> the line its own plans draw for today. That is ' + money(-gapNow / Math.max(1, mLeft || 1)) + ' a working day for the rest of ' + curM + '.');
+      if(curProj) tp.push(curM + ' is on course for <b>' + money(curProj) + '</b>, ' + (curProj >= prev.sub ? 'ahead of' : 'short of') + ' ' + prevM + '&rsquo;s ' + money(prev.sub) + '.');
+      var ahead = GW ? GW.lanes.filter(function(l){ return l && l.goal > 0 && !elsewhere(l.code) && (l.pct || 0) >= (l.expPct || 0) && (l.expPct || 0) > 0; }).length : 0;
+      if(GW) tp.push('<b>' + ahead + ' of ' + GW.lanes.length + '</b> flight plans are at or ahead of their own pace today.');
+      var noApp = ag.filter(function(r){ return !elsewhere(r.label) && !yy(r,0); }).length;
+      if(noApp) tp.push('<b>' + noApp + ' advisor' + (noApp === 1 ? ' has' : 's have') + '</b> no application yet this year. One fact find this week starts it.');
+      if(ffW && w(t,0)) tp.push('This week, <b>' + ffW + ' fact finds</b> and <b>' + w(t,0) + ' applications</b>: ' + Math.round(w(t,0) / ffW * 100) + ' apps for every 100 fact finds.');
+      if(setFY > subFY) tp.push('Settled (' + money(setFY) + ') is ahead of submitted (' + money(subFY) + '): cases written before 1 October are still landing. The pipeline for ' + qNextL + ' is what we write now.');
+      PB.s7 = head('Talking points', 'Five things to <em>talk about today.</em>', 'Worked out from the figures on this slide, fresh on every read.')
+        + '<ol class="pbTP">' + tp.slice(0, 5).map(function(x, i){ return '<li style="--i:' + i + '"><span>' + x + '</span></li>'; }).join('') + '</ol>';
+
+      ['s1','s2','s3','s4','s5','s6','s7'].forEach(function(k){ var el = q('pb' + k); if(el) el.innerHTML = PB[k]; });
+      pbStart();
+    })(); } catch(ePb){ console.warn('production board', ePb); }
     var rc = q('sbRosterCap');
     var rb = RATE_LIVE ? ((RATE.data && RATE.data.branch) || null) : null;
     var capKey = 'gold marks the branch’s best &middot; goals are the ' + esc(GFY) + ' flight plans, '
