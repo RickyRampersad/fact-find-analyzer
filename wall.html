@@ -1,6 +1,37 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>
+/* CLIENT NAMES NEVER REACH THE WALL (7 November 2026: "dont display client
+   names but initials for confidentiality"). Every JSON answer the wall reads
+   passes through here: any field that holds a client's name is turned into
+   initials before any slide sees it. Advisors keep their names. */
+(function(){
+  var KEY = /^(client|clientname|client_name|clientfull|insured|customer|policyholder|holder|household|householdname|lifeassured|prospect|prospectname|leadname|cname)$/i;
+  function ini(v){
+    if(typeof v !== 'string' || !/[A-Za-z]/.test(v) || /^[A-Z](\.[A-Z])*\.?$/.test(v.replace(/\s/g,''))) return v;
+    if(/^(a client|\(no name\)|unknown)$/i.test(v.trim())) return v;
+    return v.replace(/^\s*(mr|mrs|ms|miss|dr)\.?\s+/i, '').split(/[\s,]+/).filter(Boolean).map(function(w){
+      return w.split('-').map(function(p){ return p.charAt(0).toUpperCase() + '.'; }).join('-');
+    }).join(' ');
+  }
+  function walk(o, d){
+    if(!o || typeof o !== 'object' || d > 8) return;
+    if(Array.isArray(o)){ for(var i = 0; i < o.length; i++) walk(o[i], d + 1); return; }
+    for(var k in o){ if(!Object.prototype.hasOwnProperty.call(o, k)) continue;
+      var v = o[k];
+      if(typeof v === 'string'){ if(KEY.test(k)) o[k] = ini(v); }
+      else if(v && typeof v === 'object') walk(v, d + 1); }
+  }
+  window.rrbInitials = ini;
+  var P = JSON.parse;
+  JSON.parse = function(t, r){ var o = P.call(JSON, t, r); try{ walk(o, 0); }catch(e){} return o; };
+  if(window.Response && Response.prototype.json){
+    var RJ = Response.prototype.json;
+    Response.prototype.json = function(){ return RJ.call(this).then(function(o){ try{ walk(o, 0); }catch(e){} return o; }); };
+  }
+})();
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <!-- A screen that runs for months will happily serve a cached copy of itself
@@ -2700,6 +2731,29 @@
 #p12 .stFFg span{font-size:.42em;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;font-weight:700}
 @media (max-width:760px){#p12 .sbStar{grid-template-columns:1fr}#p12 .stFFg{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (prefers-reduced-motion:reduce){#p12 .stHero::after,#p12 .stBadge,#p12 .stName b,#p12 .stFig{animation:none!important}}
+
+/* SLIDE 13 ON A LAPTOP OR SMALLER (7 November 2026: "scale properly"). The
+   two units side by side are drawn for a television; under 1500px wide they
+   squeezed the figures to about 9px. Here the units stack, the insight card
+   goes beneath them, the type comes up, and the slide scrolls. */
+@media (max-width:1500px){
+  #p12{overflow-y:auto !important}
+  #p12 .sbGrid{grid-template-columns:1fr !important; flex:0 0 auto}
+  #p12 .sbUnits{grid-template-columns:1fr !important; gap:.9em 0}
+  #p12 #pdRoster .sbR .l{font-size:.86em !important}
+  #p12 #pdRoster .sbR .c{font-size:.74em !important}
+  #p12 #pdRoster .sbR.hd .c{font-size:.6em !important}
+  #p12 #pdRoster .sbR{grid-template-columns:minmax(0,1fr) 5.6em 6em 6em 5.6em 3.6em 3.2em !important; padding-block:.18em}
+  #p12 .sbIns{contain:none; min-height:26em}
+  #p12 .sbStrip{grid-template-columns:repeat(auto-fit,minmax(min(100%,11em),1fr)) !important}
+  #p12 .stHero{font-size:1.15em}
+  #p12 .stFF{font-size:1.1em}
+}
+@media (max-width:900px){
+  #p12 .sbStar{grid-template-columns:1fr}
+  #p12 #pdRoster .sbR{grid-template-columns:minmax(0,1fr) 5.6em 5.6em 4.6em 3em !important}
+  #p12 #pdRoster .sbR > .c:nth-last-child(2),#p12 #pdRoster .sbR > .c.mny.wk{display:none}
+}
 </style>
 </head>
 <body>
