@@ -268,7 +268,8 @@ function mclData_(ym, fresh) {
 /* The month's honours. Named advisors only: Javid and Aleema count in the
    totals and are not named, as everywhere on the wall. */
 function mclHonours_(people, M) {
-  var seen = people.filter(function (p) { return !p.hidden; });
+  /* Honours go to advisors with a filed plan only. */
+  var seen = people.filter(function (p) { return !p.hidden && p.plan; });
   function top(score, min, fmt, title, why) {
     var best = seen.filter(function (p) { return score(p) > min; }).sort(function (a, b) { return score(b) - score(a); });
     if (!best.length) return null;
@@ -425,6 +426,21 @@ function mclAdvisorHtml_(p, D, opts) {
   return mclShell_(inner, opts && opts.preview);
 }
 
+/* The only thing an advisor with no filed flight plan gets: it is overdue. */
+function mclOverdueHtml_(p, D, opts) {
+  var first = mclFirst_(p.name), link = 'https://factfind360.com/goals';
+  var inner = '<div style="background:linear-gradient(135deg,#7C2D12,#B45309);color:#fff;padding:22px">' +
+      '<div style="font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#FDE68A">' + (opts && opts.again ? 'Second reminder &middot; ' : '') + 'FY27 flight plan</div>' +
+      '<div style="font-size:23px;font-weight:800;margin-top:6px;line-height:1.25">' + mclEsc_(first) + ', your flight plan is overdue.</div></div>' +
+    '<div style="padding:18px 22px">' +
+      '<p style="margin:0 0 10px">The advisors who filed their FY27 flight plan have received their ' + D.M.name + ' close-out: their month against their own goals, their place in the branch and the honours.</p>' +
+      '<p style="margin:0 0 10px"><b>Yours cannot be sent until your plan is filed.</b> Without it there is no goal to measure your month against.</p>' +
+      '<p style="margin:0">File it today. Your close-out follows once it is in.</p></div>' +
+    '<div style="padding:4px 22px 24px;text-align:center"><a href="' + link + '" style="display:inline-block;background:#B45309;color:#fff;text-decoration:none;font-weight:800;padding:13px 26px;border-radius:12px;font-size:16px">File my flight plan &rarr;</a>' +
+      '<div style="color:#64748B;font-size:13px;margin-top:8px">factfind360.com/goals &middot; sign in with your agent number and fact-find password.</div></div>';
+  return mclShell_(inner, opts && opts.preview);
+}
+
 function mclManagerHtml_(D, opts) {
   var M = D.M, B = D.branch, rows = mclRowsFor_(M.ym), closed = {};
   rows.forEach(function (r) { if (r['Closed At']) closed[goalKey_(r.Code)] = r; });
@@ -434,7 +450,7 @@ function mclManagerHtml_(D, opts) {
     return '<tr><td style="' + cell + '">' + mclEsc_(p.name) + '</td><td style="' + cell + 'text-align:right">' + (p.goal ? mclK_(p.goal.api) : '<span style="color:#B45309">no plan</span>') + '</td>' +
       '<td style="' + cell + 'text-align:right"><b>' + mclK_(p.sub.api) + '</b></td><td style="' + cell + 'text-align:right;color:' + (p.pct >= 100 ? '#059669' : '#0F172A') + '">' + (p.pct === null ? '' : p.pct + '%') + '</td>' +
       '<td style="' + cell + 'text-align:right">' + mclK_(p.set.api) + '</td><td style="' + cell + 'text-align:right">' + p.sub.apps + '</td><td style="' + cell + 'text-align:right">' + p.ffs.filed + '</td>' +
-      '<td style="' + cell + 'text-align:center">' + p.checks.n + '</td><td style="' + cell + 'text-align:center">' + (c ? (c.Rating ? c.Rating + '&#9733; ' : '&#10003; ') + (c['Next API'] ? mclK_(c['Next API']) : '') : (p.email ? '<span style="color:#B45309">open</span>' : '<span style="color:#94A3B8">no e-mail</span>')) + '</td></tr>';
+      '<td style="' + cell + 'text-align:center">' + p.checks.n + '</td><td style="' + cell + 'text-align:center">' + (!p.plan ? '<b style="color:#B91C1C">plan overdue</b>' : c ? (c.Rating ? c.Rating + '&#9733; ' : '&#10003; ') + (c['Next API'] ? mclK_(c['Next API']) : '') : (p.email ? '<span style="color:#B45309">open</span>' : '<span style="color:#94A3B8">no e-mail</span>')) + '</td></tr>';
   }).join('');
   var commit = rows.reduce(function (a, r) { return a + mclNum_(r['Next API']); }, 0);
   var nClosed = Object.keys(closed).length;
@@ -484,24 +500,42 @@ function mclSend_(ym, how) {
     var me = Session.getEffectiveUser().getEmail(), bm = mclBranchTo_(), ums = mclUnitManagers_();
     var sh = mclTab_(), rows = mclRowsFor_(ym), byCode = {};
     rows.forEach(function (r) { byCode[goalKey_(r.Code)] = r; });
-    var sent = 0, skipped = [], list = D.people.slice();
-    if (preview) list = list.filter(function (p) { return p.plan; }).sort(function (a, b) { return b.sub.api - a.sub.api; }).slice(0, 3);
+    var sent = 0, skipped = [], overdue = [], list = D.people.slice();
+    /* The preview: three close-outs and, if anyone has no plan, one overdue notice. */
+    if (preview) list = list.filter(function (p) { return p.plan; }).sort(function (a, b) { return b.sub.api - a.sub.api; }).slice(0, 3)
+                            .concat(list.filter(function (p) { return !p.plan; }).slice(0, 1));
     list.forEach(function (p) {
       var had = byCode[p.code];
       if (!p.email) { skipped.push(p.name + ' (no e-mail on the Access tab)'); return; }
+      var wasOverdue = !!(had && /"overdue":true/.test(String(had['Figures JSON'] || '')));
       if (how === 'timer' && had && had['Sent At']) return;
-      if (how === 'remind' && (!had || had['Closed At'] || had['Reminded At'])) return;
+      /* The reminder run: an open close-out is reminded once; an advisor who
+         was told their plan is overdue and has filed it since gets the full
+         close-out now; one still without a plan is told again. */
+      if (how === 'remind' && !(wasOverdue && p.plan) && (!had || had['Closed At'] || had['Reminded At'])) return;
       if (MailApp.getRemainingDailyQuota() < 3) { skipped.push(p.name + ' (daily e-mail allowance used up)'); return; }
-      var remind = how === 'remind';
+      var um = ums[String(p.unit || '').trim().toLowerCase()], now = new Date();
+      /* No filed flight plan: nothing of the month at all, only that the plan is overdue. */
+      if (!p.plan) {
+        var om = { to: preview ? me : p.email, name: MCL_FROM_NAME, replyTo: bm,
+          subject: (preview ? '[PREVIEW] ' : '') + 'Your FY27 flight plan is overdue',
+          htmlBody: mclOverdueHtml_(p, D, { preview: preview, again: how === 'remind' }) };
+        if (!preview && um && um !== p.email) om.cc = um;
+        MailApp.sendEmail(om); sent++; overdue.push(p.name);
+        if (preview) return;
+        if (had) { sh.getRange(had._row, MCL_COLS.indexOf(how === 'remind' ? 'Reminded At' : 'Sent At') + 1).setValue(now);
+                   sh.getRange(had._row, MCL_COLS.indexOf('Figures JSON') + 1).setValue('{"overdue":true}'); }
+        else sh.appendRow([M.ym, p.code, p.name, p.unit, p.email, now, '', '', '', '', '', '', '', '', ''].concat(['', '', '', '', '', '', '', '', '', '{"overdue":true}', '']));
+        return;
+      }
+      var remind = how === 'remind' && !wasOverdue;
       var msg = { to: preview ? me : p.email, name: MCL_FROM_NAME, replyTo: bm,
         subject: (preview ? '[PREVIEW] ' : remind ? 'Reminder: ' : '') + M.name + ' closed: ' + mclMoney_(p.sub.api) + ' submitted' +
                  (p.goal && p.goal.api ? ', ' + (p.pct || 0) + '% of your goal' : '') + ' — close out your month',
         htmlBody: mclAdvisorHtml_(p, D, { preview: preview, remind: remind }) };
-      var um = ums[String(p.unit || '').trim().toLowerCase()];
       if (!preview && um && um !== p.email) msg.cc = um;
       MailApp.sendEmail(msg); sent++;
       if (preview) return;
-      var now = new Date();
       if (remind) { sh.getRange(had._row, MCL_COLS.indexOf('Reminded At') + 1).setValue(now); return; }
       var fig = { goal: p.goal, sub: p.sub, set: p.set, ffs: p.ffs, checks: p.checks, ytd: p.ytd, ytdExp: p.ytdExp, rank: p.rank, of: p.of };
       var row = [M.ym, p.code, p.name, p.unit, p.email, now, '', had ? had['Closed At'] : '',
@@ -516,7 +550,9 @@ function mclSend_(ym, how) {
         htmlBody: mclManagerHtml_(D, { preview: preview }) });
     }
     try { CacheService.getScriptCache().remove('mcl_wall'); } catch (e) {}
-    Logger.log('%s %s: %s e-mail(s) to advisors.%s', how, ym, String(sent), skipped.length ? ' Not sent: ' + skipped.join('; ') : '');
+    Logger.log('%s %s: %s e-mail(s) to advisors.%s%s', how, ym, String(sent),
+      overdue.length ? ' Flight plan overdue (reminder only): ' + overdue.join(', ') + '.' : '',
+      skipped.length ? ' Not sent: ' + skipped.join('; ') : '');
   } finally { lock.releaseLock(); }
 }
 
@@ -563,6 +599,7 @@ function mclMe_(e) {
   if (e.parameter.code && goalInScope_(me, goalKey_(e.parameter.code))) code = goalKey_(e.parameter.code);
   var p = D.people.filter(function (x) { return x.code === code; })[0];
   if (!p) return { ok: false, error: 'You are not on the branch roster for ' + D.M.name + '.' };
+  if (!p.plan) return { ok: false, noPlan: true, error: 'Your FY27 flight plan is overdue. File it first; your ' + D.M.name + ' close-out opens once it is in.' };
   var row = mclRowsFor_(ym).filter(function (r) { return goalKey_(r.Code) === code; })[0], answers = null;
   if (row && row['Answers JSON']) { try { answers = JSON.parse(String(row['Answers JSON'])); } catch (err) {} }
   return { ok: true, v: 'mcl1', month: { ym: ym, name: D.M.name, y: D.M.y, next: D.M.nextName }, me: { name: p.name, code: p.code },
@@ -587,6 +624,8 @@ function mclSave_(data) {
   var me = goalWho_(data.token);
   if (!me) return RRB_EXPIRED;
   if (!me.key) return { ok: false, error: 'Your sign-in has no agent number.' };
+  var mine = goalPlans_()[me.key];
+  if (!mine || !mine.plan) return { ok: false, error: 'Your FY27 flight plan is overdue. File it at factfind360.com/goals first.' };
   var ym = String(data.m || '');
   if (!/^\d{4}-\d{2}$/.test(ym)) return { ok: false, error: 'Which month?' };
   if (ym > mclToday_().slice(0, 7) || ym < '2026-10') return { ok: false, error: 'That month cannot be closed out.' };

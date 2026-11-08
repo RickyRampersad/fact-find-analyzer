@@ -190,6 +190,7 @@ async function load() {
   try {
     var j = await call(ENDPOINT + '?action=goal_close_me&token=' + encodeURIComponent(S.session.token) + (MONTH ? '&m=' + MONTH : ''), { method: 'GET', redirect: 'follow' }, 60000);
     if (j && j.expired) { store('rrbSession', null); $('siErr').textContent = 'Your sign-in has expired. Sign in again.'; show('vSign'); return; }
+    if (j && j.noPlan) { $('loadMsg').innerHTML = esc(j.error) + '<br><br><a class="btn" style="display:inline-block;text-decoration:none" href="goals">File my flight plan</a>'; return; }
     if (!j || !j.ok) { $('loadMsg').textContent = (j && j.error) || 'The close-out is not open yet. Try again later today.'; return; }
     S.d = j; paint();
   } catch (e) { $('loadMsg').textContent = e.message; }
