@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex">
+<title>Andrew reads your client their plan · film source</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!--
+  The source of the "Andrew reads your client their plan" film (9 November 2026). Every frame is a
+  function of time: seek(t) draws the film at t seconds, rendered frame by frame. Scene lengths come
+  from the narration. Made-up client and advisor; sample screens only.
+-->
+<style>
+  :root{--ink:#0d3f5e;--body:#2b3b47;--teal:#00728d;--teal2:#0e93b0;--gold:#b7791f;--ground:#f5f7f4}
+  *{box-sizing:border-box}
+  html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:var(--ground);font-family:Inter,system-ui,sans-serif;color:var(--body)}
+  #stage{position:absolute;inset:0;overflow:hidden}
+  .bg1,.bg2{position:absolute;border-radius:50%;pointer-events:none}
+  .bg1{width:1100px;height:1100px;right:-300px;top:-420px;background:radial-gradient(circle,rgba(14,147,176,.20),transparent 65%)}
+  .bg2{width:900px;height:900px;left:-320px;bottom:-460px;background:radial-gradient(circle,rgba(183,121,31,.16),transparent 65%)}
+  .sc{position:absolute;inset:0;opacity:0}
+  .brand{position:absolute;left:80px;top:56px;display:flex;align-items:center;gap:16px;font:800 30px 'Inter Tight',Inter,sans-serif;color:var(--ink)}
+  .brand img{width:44px;height:52px}.brand span{font:500 22px Inter,sans-serif;color:#5b6670;margin-left:6px}
+  .kick{font:800 24px Inter,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+  h1{font:900 112px/1.0 'Inter Tight',Inter,sans-serif;letter-spacing:-.035em;color:var(--ink);margin:20px 0 0}
+  h1 em,h2 em{font-style:normal;color:var(--teal)}
+  h2{font:900 76px/1.04 'Inter Tight',Inter,sans-serif;letter-spacing:-.03em;color:var(--ink);margin:16px 0 0}
+  .w{display:inline-block;will-change:transform,opacity}
+  .txt{position:absolute;left:110px;top:250px;width:760px}
+  .txt p{font:500 34px/1.45 Inter,sans-serif;color:var(--body);margin:26px 0 0}
+  .shotR{position:absolute;right:110px;top:150px;width:860px;height:760px;border-radius:28px;overflow:hidden;box-shadow:0 50px 110px -40px rgba(13,63,94,.6);border:1px solid #e4e0d4;background:#fff}
+  .shotR img{width:100%;display:block}
+  .phone{position:absolute;right:270px;top:170px;width:430px;height:713px;border-radius:56px;border:14px solid #10263a;overflow:hidden;box-shadow:0 60px 120px -40px rgba(13,63,94,.7);background:#fff}
+  .phone img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+  .phone.p2{transform-origin:center;z-index:1}
+  .wide{position:absolute;left:50%;top:330px;width:1500px;margin-left:-750px;border-radius:24px;overflow:hidden;box-shadow:0 60px 130px -40px rgba(13,63,94,.65)}
+  .wide img{width:100%;display:block}
+  .wave{display:flex;gap:7px;align-items:center;height:90px;margin-top:30px}
+  .wave i{display:block;width:12px;border-radius:6px;background:linear-gradient(180deg,var(--teal2),var(--teal));height:20px}
+  .call{position:absolute;right:150px;top:300px;width:720px;background:#fff;border-radius:26px;box-shadow:0 50px 110px -40px rgba(13,63,94,.6);border:1px solid #e4e0d4;padding:34px 38px;font-family:Arial,sans-serif}
+  .call .from{font:600 20px Inter,sans-serif;color:#5b6670}.call .subj{font:800 34px/1.2 Inter,sans-serif;color:#0F172A;margin:14px 0}
+  .call p{font:400 22px/1.5 Inter,sans-serif;color:#24343f;margin:0}
+  .ping{position:absolute;right:120px;top:250px;width:66px;height:66px;border-radius:50%;background:#c2410c;color:#fff;font:900 30px Inter,sans-serif;display:grid;place-items:center}
+  .tag{position:absolute;top:18px;left:18px;z-index:2;background:#fff7e0;color:#7a4b00;font:800 18px Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:7px 14px;border:1px solid #f2d38a}
+  .chips{display:flex;flex-wrap:wrap;gap:14px;margin-top:34px}
+  .chip{font:800 28px Inter,sans-serif;color:#fff;background:var(--teal);border-radius:999px;padding:14px 26px}
+  .chip.g{background:#128C4A}.chip.o{background:#fff;color:var(--teal);border:3px solid var(--teal)}
+  .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .ring{width:220px;height:220px}
+  .url{margin-top:40px;font:800 46px 'Inter Tight',Inter,sans-serif;color:#fff;background:var(--teal);padding:18px 40px;border-radius:999px}
+  .cap{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);width:1500px;text-align:center;font:600 32px/1.35 Inter,sans-serif;color:var(--ink);background:rgba(255,255,255,.88);border-radius:18px;padding:14px 28px;box-shadow:0 10px 30px -18px rgba(13,63,94,.5)}
+  .bar{position:absolute;left:0;top:0;height:8px;background:linear-gradient(90deg,var(--teal),var(--teal2))}
+  .sample{position:absolute;right:30px;top:30px;font:800 16px Inter,sans-serif;letter-spacing:.12em;color:#7a4b00;background:#fff7e0;border:1px solid #f2d38a;border-radius:999px;padding:6px 12px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg1" id="bg1"></div><div class="bg2" id="bg2"></div>
+  <div class="brand"><img src="../shield.svg" alt="">FactFind360<span>Ricky Rampersad Branch</span></div>
+  <div class="sample">SAMPLE DATA</div>
+
+  <div class="sc" id="s0"><div class="center">
+    <div class="kick">A first · Ricky Rampersad Branch</div>
+    <h1 class="split">Andrew reads your client <em>their plan.</em></h1>
+    <div class="wave" id="wv0"></div>
+  </div></div>
+
+  <div class="sc" id="s1"><div class="txt"><div class="kick">01 · After the summary</div><h2 class="split">A second e-mail, <em>from you.</em></h2><p>"Andrew will read you your plan." Signed by the advisor, sent from support@.</p></div>
+    <div class="phone"><img id="mail" src="mail-phone.jpg" alt="" style="height:auto"></div></div>
+
+  <div class="sc" id="s2"><div class="txt"><div class="kick">02 · Private</div><h2 class="split">Their date of birth, <em>their own plan.</em></h2><div class="chips"><span class="chip">A private link</span><span class="chip o">Nobody else can open it</span></div></div>
+    <div class="phone"><img src="gate-phone.jpg" alt=""></div></div>
+
+  <div class="sc" id="s3"><div class="txt"><div class="kick">03 · Three minutes</div><h2 class="split">Press play. <em>Listen on the drive home.</em></h2><div class="chips"><span class="chip">Plays with the phone locked</span><span class="chip o">No need to look</span></div></div>
+    <div class="phone"><img src="start-phone.jpg" alt=""></div></div>
+
+  <div class="sc" id="s4"><div class="txt"><div class="kick">Andrew, reading to the client</div><h2 class="split">"This is your <em>family plan."</em></h2><div class="wave" id="wv4"></div></div>
+    <div class="phone"><img id="told" src="told-phone.jpg" alt=""><img id="noticed" src="noticed-phone.jpg" alt="" style="position:absolute;inset:0;opacity:0"></div></div>
+
+  <div class="sc" id="s5"><div class="txt"><div class="kick">04 · Your advice</div><h2 class="split">Your plans. Your reasons. <em>In plain words.</em></h2><p>Andrew never writes a recommendation. He reads yours.</p></div>
+    <div class="phone"><img src="recs-phone.jpg" alt=""></div></div>
+
+  <div class="sc" id="s6"><div class="txt" style="width:640px"><div class="kick">05 · The moment they finish</div><h2 class="split">They heard it all. <em>Call now.</em></h2></div>
+    <div class="call" id="call"><div class="from">FactFind360 · to Sam Reyes</div><div class="subj">Jordan Mitchell just listened to the whole plan. Call now.</div><p>Jordan has just heard your plan, read by Andrew, all the way to the end. This is the best moment to call.</p></div><div class="ping" id="pg">1</div></div>
+
+  <div class="sc" id="s7"><div class="center" style="justify-content:flex-start;padding-top:150px"><div class="kick">06 · Your dashboard</div><h2 class="split">Who opened it. <em>How much they heard.</em></h2></div>
+    <div class="wide" id="w1" style="top:380px"><img src="dashboard.jpg" alt=""></div></div>
+
+  <div class="sc" id="s8"><div class="center">
+    <svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="#e4e0d4" stroke-width="8"/><circle id="ringf" cx="50" cy="50" r="42" fill="none" stroke="#00728d" stroke-width="8" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-dasharray="263.9" stroke-dashoffset="263.9"/><path id="tick" d="M33 51l11 11 22-24" fill="none" stroke="#00728d" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="60" stroke-dashoffset="60"/></svg>
+    <h2 class="split" style="margin-top:30px">Your advice, <em>heard in your client's car.</em></h2>
+    <div class="url" id="url">factfind360.com/andrew</div>
+  </div></div>
+
+  <div class="cap" id="cap"></div>
+  <div class="bar" id="bar"></div>
+</div>
+<script>
+var LINES = [
+ "Here's a first at the Ricky Rampersad Branch. Andrew now reads your client their plan.",
+ "A few minutes after your client gets their summary, a second email arrives, from you. Andrew will read you your plan.",
+ "It's private. They enter their date of birth, and their own plan opens.",
+ "They press play, and Andrew reads it to them in about three minutes. It keeps playing with the phone locked, so they can listen on the drive home.",
+ "Hello Jordan and Alicia. This is your family plan, prepared for you by Sam Reyes, from the Ricky Rampersad Branch of Guardian Life.",
+ "Every recommendation is yours. Your plans, your amounts, and your reasons, in plain words.",
+ "And the moment they've heard it all, you get an email. They just listened. Call now.",
+ "On your dashboard, you see who opened it, how much they heard, where they stopped, and who confirmed.",
+ "Your advice, heard in your client's car. Starting this week. See it at factfind360.com/andrew."
+];
+var DURS = window.FILM_DURS || [6,8,5,9,8,6,6,7,7];
+var LEAD = window.FILM_LEAD || 0.5;      // seconds of quiet before each line
+/* words split for the headline rise */
+document.querySelectorAll('.split').forEach(function (h) {
+  var parts = []; h.childNodes.forEach(function (n) {
+    if (n.nodeType === 3) n.textContent.split(/(\s+)/).forEach(function (w) { parts.push(w.trim() ? '<span class="w">' + w + '</span>' : w); });
+    else parts.push('<em>' + n.textContent.split(/(\s+)/).map(function (w) { return w.trim() ? '<span class="w">' + w + '</span>' : w; }).join('') + '</em>');
+  }); h.innerHTML = parts.join('');
+});
+function E(x){ x = Math.max(0, Math.min(1, x)); return 1 - Math.pow(1 - x, 3); }
+function starts(){ var s = [0]; for (var i = 0; i < DURS.length; i++) s.push(s[i] + DURS[i]); return s; }
+window.filmLength = function(){ return starts()[DURS.length]; };
+window.seek = function (t) {
+  var S = starts(), total = S[DURS.length];
+  document.getElementById('bar').style.width = (t / total * 100) + '%';
+  document.getElementById('bg1').style.transform = 'translate(' + (-60 * Math.sin(t / 7)) + 'px,' + (40 * Math.cos(t / 9)) + 'px)';
+  document.getElementById('bg2').style.transform = 'translate(' + (50 * Math.cos(t / 8)) + 'px,' + (-30 * Math.sin(t / 6)) + 'px)';
+  var cap = '';
+  for (var i = 0; i < DURS.length; i++) {
+    var el = document.getElementById('s' + i), lt = t - S[i], d = DURS[i];
+    var a = lt < 0 || lt > d + 0.6 ? 0 : Math.min(E(lt / 0.6), 1 - E((lt - d) / 0.6));
+    el.style.opacity = a; el.style.transform = 'translateY(' + ((1 - E(lt / 0.8)) * 40) + 'px)';
+    if (a <= 0) continue;
+    if (lt >= LEAD && lt < d) cap = LINES[i];
+    el.querySelectorAll('.w').forEach(function (w, k) { var p = E((lt - 0.15 - k * 0.07) / 0.55); w.style.opacity = p; w.style.transform = 'translateY(' + ((1 - p) * 50) + 'px)'; });
+    el.querySelectorAll('.chip').forEach(function (c, k) { var p = E((lt - 1.2 - k * 0.35) / 0.5); c.style.opacity = p; c.style.transform = 'scale(' + (0.85 + 0.15 * p) + ')'; });
+    el.querySelectorAll('.shotR,.phone,.wide').forEach(function (s) { var p = E((lt - 0.2) / 0.9); s.style.opacity = p; s.style.transform = (s.classList.contains('wide') ? 'translateY(' : 'translateX(') + ((1 - p) * 120) + 'px) scale(' + (0.96 + 0.04 * p) + ')'; });
+  }
+  /* inside the screens */
+  function L(i){ return Math.max(0, Math.min(1, (t - S[i]) / DURS[i])); }
+  ['wv0','wv4'].forEach(function (id) { var w = document.getElementById(id); if (!w.children.length) w.innerHTML = new Array(18).join('<i></i>');
+    [].forEach.call(w.children, function (b, k) { b.style.height = (14 + 70 * Math.abs(Math.sin(t * 5.2 + k * 0.8) * Math.cos(t * 2.1 + k * 0.37))) + 'px'; }); });
+  document.getElementById('mail').style.transform = 'translateY(' + (-Math.max(0, (L(1) - 0.45) / 0.55) * 560) + 'px)';
+  document.getElementById('noticed').style.opacity = Math.max(0, Math.min(1, (L(4) - 0.5) / 0.15));
+  var cp = E((t - S[6] - 0.6) / 0.7); document.getElementById('call').style.opacity = cp; document.getElementById('call').style.transform = 'translateY(' + ((1 - cp) * 60) + 'px)';
+  var pg = E((t - S[6] - 1.4) / 0.4); document.getElementById('pg').style.transform = 'scale(' + pg + ')';
+  document.getElementById('w1').querySelector('img').style.transform = 'scale(' + (1 + 0.05 * L(7)) + ')';
+  var lt8 = t - S[8];
+  document.getElementById('ringf').setAttribute('stroke-dashoffset', 263.9 * (1 - E(lt8 / 1.4)));
+  document.getElementById('tick').setAttribute('stroke-dashoffset', 60 * (1 - E((lt8 - 1.1) / 0.6)));
+  var u = document.getElementById('url'), pu = E((lt8 - 1.8) / 0.6); u.style.opacity = pu; u.style.transform = 'scale(' + (0.8 + 0.2 * pu) + ')';
+  var c = document.getElementById('cap'); c.textContent = cap; c.style.opacity = cap ? 1 : 0;
+};
+window.seek(0);
+</script>
+</body>
+</html>

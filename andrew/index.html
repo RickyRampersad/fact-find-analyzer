@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Andrew reads your client their plan · Ricky Rampersad Branch</title>
+<meta name="description" content="A first from the Ricky Rampersad Branch: after the fact find, Andrew reads the client their own plan, in their advisor's words, so they can listen on the drive home.">
+<meta property="og:title" content="A first: Andrew reads your client their plan.">
+<meta property="og:description" content="The client hears their plan in their advisor's words on the drive home, and the advisor knows the moment they have heard it all.">
+<meta property="og:image" content="https://factfind360.com/andrew/andrew-reads.jpg">
+<meta property="og:image:width" content="1280"><meta property="og:image:height" content="720">
+<meta property="og:type" content="video.other">
+<meta property="og:video" content="https://factfind360.com/andrew/andrew-reads.mp4">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../shield.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all';this.onload=null">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<!--
+  factfind360.com/andrew — the launch of "Andrew reads your client their plan"
+  (9 November 2026). Sample screens only: a made-up client and advisor.
+-->
+<style>
+  :root{
+    --ground:#f7f8f6; --card:#fff; --ink:#0d3f5e; --body:#2b3b47; --muted:#5b6670;
+    --teal:#00728d; --teal2:#0e93b0; --gold:#b7791f; --line:#e4e0d4; --green:#128C4A;
+    --sh:0 18px 50px -24px rgba(13,63,94,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--ground);color:var(--body);font:17px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  body{overflow-x:clip}
+  a{color:var(--teal)}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+  header.top{display:flex;align-items:center;gap:10px;padding:16px 0}
+  header.top img{width:30px;height:36px}
+  header.top b{color:var(--ink);font:800 17px 'Inter Tight',Inter,sans-serif}
+  header.top span{color:var(--muted);font-size:14px}
+  header.top .sp{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:9px 16px;font:700 15px Inter,sans-serif;text-decoration:none;min-height:44px}
+  .pill.solid{background:var(--teal);color:#fff}.pill.line{border:1.5px solid var(--teal);color:var(--teal);background:#fff}
+
+  .hero{position:relative;padding:clamp(36px,7vw,80px) 0 40px;overflow:clip}
+  .hero:before,.hero:after{content:"";position:absolute;border-radius:50%;filter:none;z-index:0;pointer-events:none}
+  .hero:before{width:620px;height:620px;right:-180px;top:-200px;background:radial-gradient(circle,rgba(14,147,176,.18),transparent 65%)}
+  .hero:after{width:520px;height:520px;left:-200px;bottom:-260px;background:radial-gradient(circle,rgba(183,121,31,.14),transparent 65%)}
+  .hero > *{position:relative;z-index:1}
+  .kick{display:inline-block;font:800 12px Inter,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);background:rgba(0,114,141,.08);padding:6px 12px;border-radius:999px}
+  h1{font:900 clamp(2.2rem,6vw,4.2rem)/1.03 'Inter Tight',Inter,sans-serif;letter-spacing:-.03em;color:var(--ink);margin:16px 0 14px;max-width:16ch}
+  h1 em{font-style:normal;background:linear-gradient(90deg,var(--teal),var(--teal2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:clamp(1.05rem,2.2vw,1.25rem);max-width:58ch;color:var(--body);margin:0 0 26px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:12px;margin-top:30px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;box-shadow:var(--sh)}
+  .stat b{display:block;font:900 2rem/1 'Inter Tight',Inter,sans-serif;color:var(--ink);letter-spacing:-.02em}
+  .stat span{color:var(--muted);font-size:14px}
+
+  section.f{padding:clamp(40px,7vw,80px) 0;border-top:1px solid var(--line)}
+  .row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(24px,5vw,64px);align-items:center}
+  .row.flip > .txt{order:2}
+  .num{font:800 13px Inter,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+  h2{font:900 clamp(1.7rem,4vw,2.6rem)/1.08 'Inter Tight',Inter,sans-serif;letter-spacing:-.02em;color:var(--ink);margin:8px 0 12px}
+  .txt p{margin:0 0 14px}
+  ul.ticks{list-style:none;padding:0;margin:14px 0 0}
+  ul.ticks li{position:relative;padding-left:30px;margin:0 0 10px}
+  ul.ticks li:before{content:"";position:absolute;left:0;top:.35em;width:18px;height:18px;border-radius:50%;background:var(--teal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/12px no-repeat}
+  .shot{position:relative}
+  .shot img{display:block;width:100%;height:auto;border-radius:18px;box-shadow:0 30px 70px -30px rgba(13,63,94,.55);border:1px solid var(--line);background:#fff}
+  .shot.phone{display:flex;justify-content:center;gap:18px}
+  .shot.phone img{width:min(46%,260px);border-radius:30px;border:8px solid #10263a}
+  .shot.mail img{max-height:560px;object-fit:cover;object-position:top}
+  .tag{position:absolute;top:12px;left:12px;background:#fff7e0;color:#7a4b00;font:800 11px Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:5px 10px;border:1px solid #f2d38a}
+  .duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));gap:14px;margin-top:22px}
+  .duo div{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+  .duo b{display:block;color:var(--ink);font:800 17px 'Inter Tight',Inter,sans-serif;margin-bottom:4px}
+  .duo span{color:var(--muted);font-size:15px}
+  .film{display:block;width:100%;margin-top:28px;border-radius:22px;box-shadow:0 40px 90px -40px rgba(13,63,94,.6);background:#0d3f5e}
+  .close{text-align:center;padding:clamp(48px,8vw,90px) 0}
+  .close h2{max-width:22ch;margin:0 auto 12px}
+  .close p{max-width:52ch;margin:0 auto 22px}
+  .close .bwa{justify-content:center}
+  footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--muted);font-size:13px}
+  @media (max-width:820px){.row,.row.flip{grid-template-columns:1fr}.row.flip > .txt{order:0}}
+  @media (prefers-reduced-motion:no-preference){
+    .js .rv{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+    .js .rv.in{opacity:1;transform:none}
+    .js .shot.rv{transform:translateY(30px) scale(.98)}
+    .js .shot.rv.in{transform:none}
+    .hero h1,.hero .lede,.hero .kick,.hero .cta{animation:up .8s cubic-bezier(.2,.8,.2,1) both}
+    .hero .lede{animation-delay:.1s}.hero .cta{animation-delay:.2s}
+    .stat{animation:up .7s cubic-bezier(.2,.8,.2,1) both}
+    .stat:nth-child(2){animation-delay:.08s}.stat:nth-child(3){animation-delay:.16s}.stat:nth-child(4){animation-delay:.24s}
+    .hero:before{animation:drift 14s ease-in-out infinite alternate}
+    .hero:after{animation:drift 18s ease-in-out infinite alternate-reverse}
+  }
+  @keyframes up{from{opacity:0;transform:translateY(16px)}}
+  @keyframes drift{to{transform:translate(-60px,40px)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><img src="../shield.svg" alt=""><div><b>FactFind360</b><br><span>Ricky Rampersad Branch</span></div><div class="sp"></div>
+    <a class="pill solid" href="https://factfind360.com">Sign in</a></header>
+
+  <div class="hero">
+    <span class="kick">A first · Ricky Rampersad Branch</span>
+    <h1>Andrew reads your client <em>their plan.</em></h1>
+    <p class="lede">After the fact find, your client gets their plan read to them by Andrew, in your words: what they told you, what you noticed, what their family would need, and what you recommend and why. They listen on the drive home. You know the moment they have heard it all.</p>
+    <div class="cta" style="display:flex;flex-wrap:wrap;gap:10px"><a class="pill solid" href="#film">Watch the film (1:13)</a><a class="pill line" href="https://factfind360.com">Open my dashboard</a></div>
+    <video id="film" class="film" controls playsinline preload="metadata" poster="andrew-reads.jpg"><source src="andrew-reads.mp4" type="video/mp4"></video>
+    <div class="stats">
+      <div class="stat"><b>3 min</b><span>your plan, read aloud to your client</span></div>
+      <div class="stat"><b>0</b><span>changes to your fact find or the Guardian form</span></div>
+      <div class="stat"><b>1</b><span>e-mail to you the moment they have heard it all</span></div>
+    </div>
+  </div>
+</div>
+
+<section class="f"><div class="wrap row">
+  <div class="txt rv">
+    <div class="num">01 · After the summary</div>
+    <h2>A second e-mail, from you: "Andrew will read you your plan."</h2>
+    <p>A few minutes after your client gets their written summary, a second e-mail arrives from support@, signed by you, with replies coming to you. One button: <b>Listen to your plan</b>.</p>
+    <ul class="ticks"><li>Nothing for you to do: it goes by itself</li><li>Your draft e-mail, your fact find and the Guardian form are untouched</li></ul>
+  </div>
+  <div class="shot phone rv"><span class="tag">Sample</span><img src="mail-phone.jpg" alt="The e-mail on a phone: Jordan and Alicia, Andrew will read you your plan, and a Listen to your plan button." loading="lazy" style="object-fit:cover;object-position:top;aspect-ratio:1170/1992"></div>
+</div></section>
+
+<section class="f"><div class="wrap row flip">
+  <div class="txt rv">
+    <div class="num">02 · Private, and made for the car</div>
+    <h2>Their date of birth opens it. Then they just listen.</h2>
+    <p>The link is private and expires. If their date of birth is on the fact find, they enter it before anything plays. Then one tap, and Andrew reads the plan in about three minutes, with the cards lighting up as he speaks.</p>
+    <p>It is one recording, so it <b>keeps playing with the phone locked</b>, on the drive home.</p>
+  </div>
+  <div class="shot phone rv"><span class="tag">Sample</span><img src="gate-phone.jpg" alt="Hi Jordan: enter your date of birth to open your plan." loading="lazy"><img src="start-phone.jpg" alt="Jordan and Alicia, your family plan: press play." loading="lazy"></div>
+</div></section>
+
+<section class="f"><div class="wrap row">
+  <div class="txt rv">
+    <div class="num">03 · Your advice</div>
+    <h2>Your plans, your amounts, your reasons. In plain words.</h2>
+    <p>Andrew never writes a recommendation. He reads yours, exactly as you wrote it on the fact find, and adds only facts from it: what the family spends, cover that is only through work, a spouse with no cover of their own, what university will cost by then.</p>
+  </div>
+  <div class="shot phone rv"><span class="tag">Sample</span><img src="noticed-phone.jpg" alt="What we noticed: the things that matter most." loading="lazy"><img src="recs-phone.jpg" alt="Your plan, in plain words: the advisor's recommendations and reasons." loading="lazy"></div>
+</div></section>
+
+<section class="f"><div class="wrap">
+  <div class="rv" style="max-width:780px">
+    <div class="num">04 · The moment they finish</div>
+    <h2>They heard it all. You get: "Call now."</h2>
+    <p>When your client reaches the end, you get an e-mail straight away: <i>"Jordan Mitchell just listened to the whole plan. Call now."</i> It is fresh in their mind. Ask what they thought, answer any question, and ask them to confirm.</p>
+  </div>
+  <div class="shot rv" style="margin-top:22px"><span class="tag">Sample</span><img src="dashboard.jpg" alt="The dashboard panel: sent, opened, heard it all, average heard, confirmed after listening, and a row per client." loading="lazy"></div>
+  <div class="duo rv">
+    <div><b>On your dashboard</b><span>Who opened it, how much they heard, where they stopped, which buttons they tapped, and who confirmed after listening.</span></div>
+    <div><b>Who sees what</b><span>You see your own clients, your unit manager your team, the branch manager the branch.</span></div>
+    <div><b>What it never records</b><span>Nothing the client types, and not where they are.</span></div>
+  </div>
+</div></section>
+
+<div class="wrap close">
+  <h2 class="rv">Your advice, heard in your client's car.</h2>
+  <p class="rv">Starting this week, on every fact find. Nothing changes in how you fill it in.</p>
+  <div id="bwa-here"></div>
+</div>
+
+<footer><div class="wrap">FactFind360 · created by Ricky Rampersad, Branch Manager · Ricky Rampersad Branch, Guardian Life of the Caribbean. Every screen on this page is a sample with a made-up client.</div></footer>
+
+<script>
+document.documentElement.classList.add('js');
+(function(){
+  var els=[].slice.call(document.querySelectorAll('.rv'));
+  if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in');});return;}
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{rootMargin:'0px 0px -8% 0px'});
+  els.forEach(function(e){io.observe(e);});
+  setTimeout(function(){els.forEach(function(e){e.classList.add('in');});},4000);
+})();
+</script>
+<script src="../branch-wa.js" defer data-wa-text="Hi Ricky Rampersad Branch, I saw that Andrew now reads clients their plan and would like to know more."></script>
+</body>
+</html>
