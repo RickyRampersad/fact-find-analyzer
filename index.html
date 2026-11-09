@@ -596,6 +596,56 @@
     .qdet.open{grid-template-columns:1fr}
     .qage{font-size:14px; min-width:2.1em}
   }
+
+  /* ── MY PIPELINE (9 November 2026) ── the person's own funnel, open against
+     closed, the success rate and what is waiting on them, from the cases
+     already on this page. */
+  #myPipe .mp{background:linear-gradient(135deg,#ffffff 0%,#f0fbf9 100%);border:1px solid var(--line);border-radius:18px;padding:18px 18px 14px;margin-bottom:14px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  #myPipe .mp:before{content:"";position:absolute;right:-120px;top:-140px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(20,184,166,.16),transparent 65%);pointer-events:none}
+  #myPipe .mph{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;position:relative}
+  #myPipe .mph h2{font:800 22px/1.15 Inter,sans-serif;color:var(--slate);margin:0;letter-spacing:-.01em}
+  #myPipe .mph span{color:var(--muted);font-size:13px}
+  #myPipe .mpg{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;margin-top:12px;position:relative}
+  @media (max-width:860px){#myPipe .mpg{grid-template-columns:1fr}}
+  #myPipe .fun{display:grid;gap:7px}
+  #myPipe .fr{display:grid;grid-template-columns:9.5em minmax(0,1fr) 5.2em;gap:10px;align-items:center;font-size:13.5px}
+  #myPipe .fr .l{color:var(--ink-soft);font-weight:600}
+  #myPipe .fr .b{height:22px;border-radius:7px;background:#edf2f7;overflow:hidden}
+  #myPipe .fr .b i{display:block;height:100%;border-radius:7px;background:linear-gradient(90deg,#0F766E,#14B8A6);width:var(--w);transform-origin:left}
+  #myPipe .fr.c .b i{background:linear-gradient(90deg,#059669,#34D399)}
+  #myPipe .fr .v{text-align:right;font-weight:800;color:var(--slate);font-variant-numeric:tabular-nums}
+  #myPipe .fr .v small{display:block;font-weight:600;color:var(--muted);font-size:11px}
+  #myPipe .side{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+  #myPipe .ring{width:118px;height:118px;position:relative}
+  #myPipe .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  #myPipe .ring .t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  #myPipe .ring .t b{font:800 26px Inter,sans-serif;color:var(--slate)}
+  #myPipe .ring .t span{font-size:10.5px;color:var(--muted);max-width:6.5em;line-height:1.2}
+  #myPipe .oc{display:grid;gap:6px;font-size:13px}
+  #myPipe .oc div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding-bottom:4px}
+  #myPipe .oc b{color:var(--slate);font-variant-numeric:tabular-nums}
+  #myPipe .wait{margin-top:12px;position:relative}
+  #myPipe .wait h4{margin:0 0 6px;font:800 12px Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#B45309}
+  #myPipe .wl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:8px}
+  #myPipe .wi{display:flex;gap:10px;align-items:center;border:1px solid #f3dcb5;background:#fffaf0;border-radius:12px;padding:8px 10px;font-size:13px;cursor:pointer;text-align:left;color:var(--ink);font-family:inherit}
+  #myPipe .wi:hover{border-color:#d97706}
+  #myPipe .wi b{display:block;color:var(--slate)}
+  #myPipe .wi i{font-style:normal;color:var(--muted);font-size:12px}
+  #myPipe .wi .d{margin-left:auto;font-weight:800;color:#B45309;white-space:nowrap}
+  #myPipe .ok{color:#047857;font-size:13px;font-weight:600}
+  #myPipe .lead{display:grid;gap:5px;margin-top:10px;font-size:13px}
+  #myPipe .lead div{display:grid;grid-template-columns:1.4em minmax(0,1fr) 4em 4em;gap:8px;align-items:center}
+  #myPipe .lead .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #myPipe .lead .r{text-align:right;font-weight:800;color:var(--slate)}
+  #myPipe .lead .m{text-align:right;color:var(--muted)}
+  @media (prefers-reduced-motion:no-preference){
+    #myPipe .fr .b i{animation:mpGrow 1.1s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0s)}
+    #myPipe .fr{animation:mpIn .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0s)}
+    #myPipe .arc{transition:stroke-dashoffset 1.3s cubic-bezier(.2,.8,.2,1)}
+    #myPipe .wi{animation:mpIn .5s both;animation-delay:calc(.4s + var(--i,0) * .06s)}
+  }
+  @keyframes mpGrow{from{transform:scaleX(0)}}
+  @keyframes mpIn{from{opacity:0;transform:translateY(6px)}}
 </style>
 </head>
 <body>
@@ -980,6 +1030,7 @@
   <div class="wrap">
     <div class="filters no-print" id="filterBar"></div>
     <div id="flightPlan" class="no-print"></div>
+    <div id="myPipe" class="no-print"></div>
     <div id="execSummary"></div>
     <div id="queueCard"></div>
     <div id="prospectCard"></div>
@@ -2372,6 +2423,7 @@ function render(){
   var cur=metricSet(windowRows(base,D,0)), prev=metricSet(windowRows(base,2*D,D));
   renderQueue();
   renderProspecting();
+  try{ renderMyPipe(rows); }catch(eMp){ console.warn('my pipeline', eMp); }
   renderExec(rows,cur,prev);
   renderKPIs(rows,cur,prev);
   renderCharts(rows);
@@ -2387,6 +2439,82 @@ function render(){
   srcEl.innerHTML= SRC==='live'
     ? 'Data source: <span class="src-live">live from the branch sheet</span> · '+ALL.length+' records loaded · '+rows.length+' in view · '+escapeHtml(new Date().toLocaleString('en-GB'))+rosterNote
     : 'Data source: <span class="src-sample">DEMO — synthetic people and clients</span>, <strong>not real branch data</strong>. Remove <code>?demo=1</code> from the URL and sign in for live figures · '+rows.length+' in view';
+}
+
+
+/* ── MY PIPELINE (9 November 2026) ─────────────────────────────────────────
+   "an individualized on top experience … how much close, how much open, what's
+   our success rate". Built only from the cases this page already holds for the
+   signed-in person (an agent their own, a unit manager their unit, the branch
+   everyone), in the period and filters chosen above. Nothing new is fetched.
+   The journey: submitted → approved → the plan sent to the client → the
+   client confirmed. Closed is confirmed or declined; everything else is open. */
+function mpDate(v){ var d=v?new Date(v):null; return d&&!isNaN(d)?d:null; }
+function mpDays(d){ return d?Math.max(0,Math.floor((NOW-d)/864e5)):0; }
+function mpCase(r){
+  var g=statusGroup(r.status), sent=mpDate(r.clientDraftSentAt), conf=/^(y|yes|true|1)$/i.test(String(r.clientConfirmed||''))||!!mpDate(r.clientConfirmedAt);
+  if(DEMO_MODE && g==='approved'){ // sample only: the demo rows carry no client dates
+    var h=0, id=String(r.id||r.clientName||''); for(var i=0;i<id.length;i++) h=(h*31+id.charCodeAt(i))|0; h=Math.abs(h);
+    var ap=mpDate(r.approvedAt)||mpDate(r.submittedAt)||NOW;
+    if(h%10<8){ sent=new Date(ap.getTime()+864e5); conf=h%10<5; }
+  }
+  return { g:g, sent:sent, conf:conf, back:/chang|return|sent.?back/i.test(String(r.status||''))||!!r.sentBackNote };
+}
+function renderMyPipe(rows){
+  var el=document.getElementById('myPipe'); if(!el) return;
+  if(!SESSION||!SESSION.scope){ el.innerHTML=''; return; }
+  var kind=SESSION.scope.kind, first=String(SESSION.name||'').split(' ')[0]||'Your';
+  var C=rows.map(function(r){ return { r:r, c:mpCase(r) }; });
+  var n={ all:C.length, draft:0, review:0, back:0, approved:0, sent:0, conf:0, declined:0 };
+  C.forEach(function(x){ var c=x.c;
+    if(c.g==='draft') n.draft++; if(c.g==='review'||c.g==='pending') n.review++; if(c.g==='declined') n.declined++;
+    if(c.back) n.back++;
+    if(c.g==='approved'){ n.approved++; if(c.sent) n.sent++; if(c.conf) n.conf++; } });
+  var submitted=n.all-n.draft, closed=n.conf+n.declined, open=n.all-closed;
+  var rate=submitted?Math.round(n.conf/submitted*100):0;
+  var steps=[['Fact finds done',submitted,''],['Approved',n.approved,submitted],['Plan sent to client',n.sent,n.approved],['Client confirmed',n.conf,n.sent]];
+  var mx=Math.max(1,submitted);
+  var fun=steps.map(function(s,i){ var pct=s[2]?Math.round(s[1]/Math.max(1,s[2])*100):null;
+    return '<div class="fr'+(i===3?' c':'')+'" style="--d:'+(i*0.12)+'s"><span class="l">'+s[0]+'</span><span class="b"><i style="--w:'+(s[1]/mx*100).toFixed(1)+'%"></i></span>'+
+      '<span class="v">'+s[1]+(pct===null?'':'<small>'+pct+'% of the step before</small>')+'</span></div>'; }).join('');
+  var C2=2*Math.PI*48;
+  var ring='<div class="ring"><svg viewBox="0 0 110 110"><circle cx="55" cy="55" r="48" fill="none" stroke="#e8eef3" stroke-width="12"/>'+
+    '<circle class="arc" id="mpArc" cx="55" cy="55" r="48" fill="none" stroke="#0D9488" stroke-width="12" stroke-linecap="round" stroke-dasharray="'+C2.toFixed(1)+'" stroke-dashoffset="'+C2.toFixed(1)+'"/></svg>'+
+    '<div class="t"><b>'+rate+'%</b><span>success rate: confirmed of done</span></div></div>';
+  var oc='<div class="oc"><div><span>Open</span><b>'+open+'</b></div><div><span>Closed (confirmed or declined)</span><b>'+closed+'</b></div>'+
+    '<div><span>In review now</span><b>'+n.review+'</b></div><div><span>Sent back to fix</span><b>'+n.back+'</b></div></div>';
+  /* waiting: an agent's own work; a manager's reviews */
+  var W=[];
+  C.forEach(function(x){ var r=x.r, c=x.c, sub=mpDate(r.submittedAt), ap=mpDate(r.approvedAt);
+    var nm=escapeHtml(r.clientName||'A client'), who=kind==='agent'?'':' &middot; '+escapeHtml(String(r.advisorName||'').split(' ')[0]);
+    if(kind==='agent'){
+      if(c.back&&c.g!=='approved') W.push({d:mpDays(sub),id:r.id,h:nm,t:'Sent back: fix and resend'});
+      else if(c.g==='draft') W.push({d:mpDays(sub),id:r.id,h:nm,t:'Draft not finished'});
+      else if(c.g==='approved'&&!c.sent) W.push({d:mpDays(ap),id:r.id,h:nm,t:'Approved: send the plan to the client'});
+      else if(c.g==='approved'&&c.sent&&!c.conf&&mpDays(c.sent)>=3) W.push({d:mpDays(c.sent),id:r.id,h:nm,t:'Plan sent, not confirmed: follow up'});
+    } else if((c.g==='review'||c.g==='pending')&&mpDays(sub)>=1) W.push({d:mpDays(sub),id:r.id,h:nm+who,t:c.g==='pending'?'Waiting for the branch manager':'Waiting for review'});
+    else if(c.g==='approved'&&c.sent&&!c.conf&&mpDays(c.sent)>=5) W.push({d:mpDays(c.sent),id:r.id,h:nm+who,t:'Client has not confirmed'});
+  });
+  W.sort(function(a,b){ return b.d-a.d; });
+  var wait='<div class="wait"><h4>'+(kind==='agent'?'Waiting on you':'Waiting on the team')+(W.length?' ('+W.length+')':'')+'</h4>'+
+    (W.length?'<div class="wl">'+W.slice(0,6).map(function(w,i){ return '<button type="button" class="wi" style="--i:'+i+'" data-id="'+escapeHtml(w.id||'')+'" onclick="openCase(this.dataset.id,null)"><span><b>'+w.h+'</b><i>'+w.t+'</i></span><span class="d">'+w.d+'d</span></button>'; }).join('')+'</div>'+
+      (W.length>6?'<div style="font-size:12px;color:var(--muted);margin-top:6px">and '+(W.length-6)+' more, oldest first</div>':'')
+     :'<div class="ok">&#10003; Nothing waiting. Every case is moving.</div>')+'</div>';
+  /* managers: who converts best */
+  var lead='';
+  if(kind!=='agent'){
+    var by={};
+    C.forEach(function(x){ var a=x.r.advisorName||'?'; var o=by[a]||(by[a]={n:0,c:0,d:0}); if(x.c.g!=='draft') o.n++; if(x.c.conf) o.c++; });
+    var L=Object.keys(by).map(function(a){ return {a:a,n:by[a].n,c:by[a].c,r:by[a].n?by[a].c/by[a].n:0}; }).filter(function(o){ return o.n>=2; })
+      .sort(function(a,b){ return b.r-a.r||b.c-a.c; }).slice(0,5);
+    if(L.length) lead='<div class="lead"><div style="font:800 11px Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)"><span></span><span>Best conversion</span><span class="m">done</span><span class="r">rate</span></div>'+
+      L.map(function(o,i){ return '<div><span>'+(i+1)+'</span><span class="n">'+escapeHtml(o.a)+'</span><span class="m">'+o.n+'</span><span class="r">'+Math.round(o.r*100)+'%</span></div>'; }).join('')+'</div>';
+  }
+  var title=kind==='agent'?escapeHtml(first)+'&rsquo;s pipeline':kind==='unit'?'Your unit&rsquo;s pipeline':'The branch pipeline';
+  el.innerHTML='<div class="mp"><div class="mph"><h2>'+title+'</h2><span>'+n.all+' fact find'+(n.all===1?'':'s')+' in this view &middot; from done to the client&rsquo;s confirmation</span></div>'+
+    '<div class="mpg"><div><div class="fun">'+fun+'</div>'+wait+'</div><div><div class="side">'+ring+oc+'</div>'+lead+'</div></div></div>';
+  var arc=document.getElementById('mpArc');
+  if(arc) requestAnimationFrame(function(){ requestAnimationFrame(function(){ arc.setAttribute('stroke-dashoffset',(C2*(1-rate/100)).toFixed(1)); }); });
 }
 
 // Monthly branch target (fact finds). Tune here or wire to a sheet cell later.
