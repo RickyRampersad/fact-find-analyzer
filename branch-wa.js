@@ -17,7 +17,7 @@
   var me = document.currentScript;
   var og = document.querySelector('meta[property="og:title"]');
   var name = (og && og.content) || document.title || 'your film';
-  var hello = (me && me.getAttribute('data-wa-text')) ||
+  var hello = window.RRB_WA_TEXT || (me && me.getAttribute('data-wa-text')) ||
     'Hi Ricky Rampersad Branch, I just watched your film "' + name.replace(/\s+$/, '') + '" and would like to talk to someone.';
   var share = name + ' ' + location.origin + location.pathname;
   var chatUrl = 'https://wa.me/' + NUM + '?text=' + encodeURIComponent(hello);
@@ -40,6 +40,8 @@
     bar.innerHTML = '<a class="c" href="' + chatUrl + '" target="_blank" rel="noopener">' + ICON + 'Chat with the branch</a>' +
       '<a class="s" href="' + shareUrl + '" target="_blank" rel="noopener">' + ICON + 'Share this film</a>' +
       '<small>WhatsApp (868) 678-5921 &middot; Ricky Rampersad Branch, Guardian Life of the Caribbean</small>';
+    var fabOnly = me && me.hasAttribute('data-wa-fab-only');
+    if (fabOnly) bar.style.display = 'none';
     var spot = document.getElementById('bwa-here');
     if (spot) { spot.appendChild(bar); bar = null; }
     var v = document.querySelector('video'), at = v && (v.closest('.vwrap,.player,figure') || v);
@@ -50,7 +52,8 @@
     var fab = document.createElement('a'); fab.className = 'bwaf'; fab.href = chatUrl; fab.target = '_blank'; fab.rel = 'noopener';
     fab.setAttribute('aria-label', 'Chat with the branch on WhatsApp'); fab.innerHTML = ICON;
     document.body.appendChild(fab);
-    if ('IntersectionObserver' in window) new IntersectionObserver(function (e) { fab.classList.toggle('on', !e[0].isIntersecting); }).observe(bar);
+    if (fabOnly) fab.classList.add('on');
+    else if ('IntersectionObserver' in window) new IntersectionObserver(function (e) { fab.classList.toggle('on', !e[0].isIntersecting); }).observe(bar);
     else fab.classList.add('on');
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();

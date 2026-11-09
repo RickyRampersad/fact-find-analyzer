@@ -71,6 +71,9 @@ var CURRENT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4v
   function say$(n) { return Math.round(n).toLocaleString('en-US') + ' dollars'; }
   function who(w) { if (/spouse/i.test(w) && D.spouseFirst) return D.spouseFirst; if (/client/i.test(w) || !w) return D.first || 'you'; return w; }
   var names = D.spouseFirst ? D.first + ' and ' + D.spouseFirst : D.first;
+  /* WhatsApp to the branch, first line written for them (9 November 2026). */
+  var waText = 'Hi Ricky Rampersad Branch, this is ' + (D.first || 'a client') + '. I watched the family plan ' + (D.advisorFirst || 'my advisor') + ' prepared for us and would like to talk.';
+  window.RRB_WA_TEXT = waText;
 
   /* Scenes: [html, lines]; a line can reveal an element (#id) as it is said. */
   var SC = [];
@@ -115,7 +118,9 @@ var CURRENT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4v
     SC.push(['<div class="kick">WHAT ' + esc(D.advisorFirst).toUpperCase() + ' RECOMMENDS</div><h1>Your plan, <em>in plain words.</em></h1><div class="grid" style="grid-template-columns:1fr">' + rh + '</div>', rl]);
   }
   SC.push(['<div class="kick">NEXT</div><h1>If this looks right, <em>confirm it.</em></h1><p class="sub">One tap, and ' + esc(D.advisorFirst) + ' takes it from here.</p><div class="btns"><a class="btn go" href="#" onclick="alert(\'Practice copy: in the real e-mail this confirms your fact find.\');return false">Confirm my fact find</a>' +
-    (D.advisorEmail ? '<a class="btn alt" href="mailto:' + esc(D.advisorEmail) + '">Ask ' + esc(D.advisorFirst) + ' a question</a>' : '') + '</div>' +
+    (D.advisorEmail ? '<a class="btn alt" href="mailto:' + esc(D.advisorEmail) + '">Ask ' + esc(D.advisorFirst) + ' a question</a>' : '') +
+    '<a class="btn alt" target="_blank" rel="noopener" href="https://wa.me/18686785921?text=' + encodeURIComponent(waText) + '">WhatsApp the branch</a>' +
+    '<a class="btn alt" href="tel:+18686785921">Call the branch</a></div>' +
     '<p class="note">This plan is based on what you told your advisor and is not a contract. Cover starts only when a policy is issued. Practice copy with a made-up client.</p>',
     [['If this looks right, tap Confirm, and ' + D.advisorFirst + ' takes it from here.'], ['If you have questions first, just ask. Thank you for trusting the ' + br + ' with your family\'s future.']]]);
 
@@ -161,5 +166,6 @@ var CURRENT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4v
   show(0);
 })();
 </script>
+<script src="branch-wa.js" defer data-wa-fab-only></script>
 </body>
 </html>
