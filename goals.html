@@ -447,6 +447,9 @@
   .x{appearance:none; border:1px solid var(--line-2); background:transparent; color:var(--ink-2); width:40px; height:40px; border-radius:50%; font-size:20px; cursor:pointer; flex:none}
   .cgrid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
   .cgrid .f{margin:0}
+  .ciAuto{margin:0 0 14px; padding:12px 14px; border-radius:14px; border:1px solid rgba(45,212,191,.35); background:rgba(45,212,191,.08); font-size:14px; line-height:1.5; color:var(--ink-2)}
+  .ciAuto b{color:var(--teal)}
+  .inp.autoFilled{border-color:rgba(45,212,191,.7); box-shadow:0 0 0 3px rgba(45,212,191,.15)}
   .cgrid .f > span:not(.money){font-size:13px}
   .cgrid .f > span small{font-size:12px}
   .conf{display:flex; gap:8px}
@@ -845,6 +848,7 @@
     </div>
     <div class="tabs wkToggle" id="ciWeeks"></div>
     <p class="note" style="margin:0 0 14px">Five numbers, one win, one obstacle. Two minutes.</p>
+    <p class="ciAuto" id="ciAuto" hidden></p>
     <div class="cgrid" id="ciGrid"></div>
     <div class="f" style="margin-top:16px"><span class="lab">How confident are you about next week?</span>
       <div class="conf" id="ciConf"></div></div>
@@ -2131,6 +2135,7 @@ function openCheckin(week) {
       ' · W' + w.replace(/^.*-W0?/, '') + '</button>'; }).join('');
   $('ciWeeks').hidden = weeks.length < 2;
   loadCheck(week);
+  fillAuto(week);
   $('ciErr').textContent = '';
   $('ciSheet').hidden = false;
   setTimeout(function () { $('ci_contacts').focus(); }, 250);
@@ -2139,13 +2144,45 @@ function loadCheck(week) {
   CI.week = week;
   var c = checkFor(week) || (recall(cKey()) || {})[week] || {};
   CHECK.forEach(function (x) {
-    var v = num(c[x[0]]), el = $('ci_' + x[0]);
+    var v = num(c[x[0]]), el = $('ci_' + x[0]); el.classList.remove('autoFilled');
     el.value = c[x[0]] == null || c[x[0]] === '' ? '' : (x[0] === 'api' ? commas(v) : v);
   });
   CI.conf = num(c.confidence) || 3; CI.help = [].concat(c.help || []);
   $('ciWin').value = c.win || ''; $('ciObs').value = c.obstacle || ''; $('ciHelpText').value = c.helpText || '';
   paintCheck();
   $('ciTitle').textContent = (week === S.fy.weekKey ? 'This week' : 'Last week') + (checkFor(week) ? ' · editing' : '');
+}
+
+/* The three numbers the records already hold: fact finds off the submitted
+   tab, apps and API off Salesforce on their picked-up dates. Filled in only
+   where the box is empty, so a number the advisor typed is never replaced. */
+var CI_AUTO = {};
+function weekSpan(week) {
+  var fy = S.fy, n = +String(week).replace(/^.*-W0?/, '');
+  var f = utc(fy.from), fwd = new Date(f).getUTCDay() || 7, mon1 = f + ((8 - fwd) % 7) * 864e5;
+  var start = mon1 + (n - 1) * 7 * 864e5, end = start + 6 * 864e5;
+  return { from: n === 1 ? fy.from : isoOf(start), to: isoOf(Math.min(end, utc(fy.today))) };
+}
+async function fillAuto(week) {
+  var box = $('ciAuto'); box.hidden = true;
+  if (!S.ready || !S.session || !S.session.token) return;
+  var sp = weekSpan(week), a = CI_AUTO[week];
+  if (!a) {
+    try {
+      var j = await getJson({ action: 'goal_week_auto', token: S.session.token, from: sp.from, to: sp.to }, 30000);
+      if (!j || !j.ok) return;
+      a = CI_AUTO[week] = j;
+    } catch (e) { return; }
+  }
+  if (CI.week !== week) return;
+  var put = function (k, v) { var el = $('ci_' + k); if (el && el.value === '' && v > 0) { el.value = k === 'api' ? commas(v) : v; el.classList.add('autoFilled'); } };
+  put('ffs', a.ffs);
+  if (a.sf) { put('apps', a.apps); put('api', a.api); }
+  box.innerHTML = '<b>From your records, ' + esc(niceDate(sp.from)) + ' to ' + esc(niceDate(sp.to)) + ':</b> ' +
+    a.ffs + ' fact find' + (a.ffs === 1 ? '' : 's') + (a.approved ? ' (' + a.approved + ' approved)' : '') +
+    (a.sf ? ' · ' + a.apps + ' app' + (a.apps === 1 ? '' : 's') + ' picked up · TT$' + commas(a.api) + ' API' : ' · Salesforce did not answer, so apps and API are yours to fill') +
+    '. Filled in where the box was empty; change any number that is wrong.';
+  box.hidden = false;
 }
 function paintCheck() {
   document.querySelectorAll('#ciConf button').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.c === CI.conf ? 'true' : 'false'); });
@@ -2158,7 +2195,7 @@ $('ciSheet').addEventListener('click', function (ev) {
   var b = t.closest('#ciConf button'); if (b) { CI.conf = +b.dataset.c; paintCheck(); return; }
   var h = t.closest('#ciHelp .chip');
   if (h) { var i = CI.help.indexOf(h.dataset.v); if (i > -1) CI.help.splice(i, 1); else CI.help.push(h.dataset.v); paintCheck(); return; }
-  var w = t.closest('#ciWeeks button'); if (w) { loadCheck(w.dataset.w); }
+  var w = t.closest('#ciWeeks button'); if (w) { loadCheck(w.dataset.w); fillAuto(w.dataset.w); }
 });
 $('ciSave').addEventListener('click', async function () {
   var c = { week: CI.week, confidence: CI.conf, help: CI.help.slice(), win: $('ciWin').value.trim(), obstacle: $('ciObs').value.trim(),
