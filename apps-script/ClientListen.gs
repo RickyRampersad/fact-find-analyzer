@@ -57,7 +57,8 @@ var CL = {
   MAX_CHARS: 6000,          // the longest script Andrew will read
   VOICE: 'en-US-AndrewNeural', RATE: '-4%',
   TAB: 'Client Listen',
-  COLS: ['Id', 'Client', 'Advisor', 'Agent Code', 'Email', 'Sent At', 'Mode', 'Opened At', 'Opens', 'Finished At', 'Told Advisor At'],
+  COLS: ['Id', 'Client', 'Advisor', 'Agent Code', 'Email', 'Sent At', 'Mode', 'Opened At', 'Opens', 'Finished At', 'Told Advisor At',
+         'Plays', 'Heard %', 'Stopped At', 'WhatsApp Taps', 'Call Taps', 'Ask Taps', 'Device', 'Last Seen'],
   FOLDER: 'Client Listen audio',
   BRANCH: 'Ricky Rampersad Branch',
   WA: '18686785921'
@@ -68,6 +69,11 @@ var CL = {
 var CL_PREV_DOGET_ = (typeof doGet === 'function') ? doGet : null;
 if (CL_PREV_DOGET_) doGet = function (e) {
   var a = (e && e.parameter && e.parameter.action) || '';
+  if (a === 'listen_stats') {
+    var st;
+    try { st = clStats_(e.parameter); } catch (err) { Logger.log('listen_stats failed: %s', (err && err.stack) || err); st = { ok: false, error: String((err && err.message) || err) }; }
+    return _ffJson(st);
+  }
   if (a === 'listen') {
     var out;
     try { out = clOpen_(e.parameter); } catch (err) { Logger.log('listen failed: %s', (err && err.stack) || err); out = { ok: false, error: 'The plan could not be opened just now. Please try again in a minute.' }; }
@@ -78,9 +84,9 @@ if (CL_PREV_DOGET_) doGet = function (e) {
 
 var CL_PREV_SUBMIT_ = (typeof ffProcessAgentSubmit === 'function') ? ffProcessAgentSubmit : null;
 ffProcessAgentSubmit = function (data) {
-  if (data && (data.stage === 'listen_audio' || data.stage === 'listen_done')) {
+  if (data && (data.stage === 'listen_audio' || data.stage === 'listen_done' || data.stage === 'listen_ping')) {
     var out;
-    try { out = data.stage === 'listen_audio' ? clAudio_(data) : clDone_(data); }
+    try { out = data.stage === 'listen_audio' ? clAudio_(data) : data.stage === 'listen_ping' ? clPing_(data) : clDone_(data); }
     catch (err) { Logger.log('%s failed: %s', data.stage, (err && err.stack) || err); out = { ok: false, error: String((err && err.message) || err) }; }
     return _ffJson(out);
   }
@@ -288,6 +294,7 @@ function clDone_(data) {
   clLog_(id, function (r) {
     rowSeen = r;
     r['Finished At'] = r['Finished At'] || new Date().toISOString();
+    r['Heard %'] = 100; r['Last Seen'] = new Date().toISOString();
     if (!r['Told Advisor At'] && r['Mode'] !== 'test') { r['Told Advisor At'] = new Date().toISOString(); told = true; }
   });
   if (told) { try { clTellAdvisor_(id); } catch (e) { Logger.log('cl tell advisor: %s', e && e.message); } }
@@ -310,11 +317,74 @@ function clTellAdvisor_(id) {
   });
 }
 
+/* ── what the client did on the page ───────────────────────────────────── */
+
+/* ev: play (pressed Play), at (how far: pct of the plan, and the scene), pause, wa / call / ask (a button). */
+function clPing_(data) {
+  var id = clVerify_(data.t);
+  if (!id || id === 'expired' || clStr_(data.k) !== clKey_(id)) return { ok: false };
+  var ev = clStr_(data.ev), pct = Math.max(0, Math.min(100, Math.round(clNum_(data.pct)))), scene = clStr_(data.scene).slice(0, 40);
+  clLog_(id, function (r) {
+    if (ev === 'play') r['Plays'] = (+r['Plays'] || 0) + 1;
+    if (pct > (+r['Heard %'] || 0)) r['Heard %'] = pct;
+    if (scene && !r['Finished At']) r['Stopped At'] = scene;
+    if (ev === 'wa') r['WhatsApp Taps'] = (+r['WhatsApp Taps'] || 0) + 1;
+    if (ev === 'call') r['Call Taps'] = (+r['Call Taps'] || 0) + 1;
+    if (ev === 'ask') r['Ask Taps'] = (+r['Ask Taps'] || 0) + 1;
+    if (!r['Device'] && data.dev) r['Device'] = clStr_(data.dev).slice(0, 20);
+    r['Last Seen'] = new Date().toISOString();
+  });
+  return { ok: true };
+}
+
+/* For the dashboard: every listen e-mail the signed-in person may see, with whether the client then confirmed. */
+function clStats_(p) {
+  var me = (typeof rrbAuthorize_ === 'function') ? rrbAuthorize_({ parameter: { token: clStr_(p.token) } }) : null;
+  if (!me) return (typeof RRB_EXPIRED !== 'undefined') ? RRB_EXPIRED : { ok: false, expired: true };
+  var kind = (me.scope && me.scope.kind) || 'agent', myCode = clStr_(me.code).toUpperCase();
+  var seen = function (code) {
+    code = clStr_(code).toUpperCase();
+    if (kind === 'branch') return true;
+    if (kind === 'unit' || kind === 'units') { try { return rrbScopeHasUnit_(me.scope, ffLookupDirectManager_(code)); } catch (e) { return false; } }
+    return code && code === myCode;
+  };
+  /* Whether each client confirmed, off the fact find sheet in one read. */
+  var sheet = ffGetOrCreateRevisedTab_(), headers = ffEnsureHeaders_(sheet), last = sheet.getLastRow(), conf = {};
+  if (last >= 2) {
+    var maps = _ffSchemaMaps(), at = {};
+    headers.forEach(function (h, i) { at[maps.l2k[h] || h] = i; });
+    var cId = at.submissionId !== undefined ? at.submissionId : at.id, cC = at.clientConfirmed, cCA = at.clientConfirmedAt, cS = at.status;
+    if (cId !== undefined) sheet.getRange(2, 1, last - 1, headers.length).getValues().forEach(function (r) {
+      conf[clStr_(r[cId])] = { yes: cC !== undefined && /^(yes|true|ok|confirmed)/i.test(clStr_(r[cC])), at: cCA !== undefined ? r[cCA] : '', status: cS !== undefined ? clStr_(r[cS]) : '' };
+    });
+  }
+  var rows = clRows_(), out = [];
+  Object.keys(rows).forEach(function (id) {
+    var r = rows[id]; if (r.Mode !== 'live' || !seen(r['Agent Code'])) return;
+    var c = conf[id] || {}, ca = clDate_(c.at), op = clDate_(r['Opened At']);
+    out.push({ id: id, client: clStr_(r.Client), advisor: clStr_(r.Advisor), code: clStr_(r['Agent Code']),
+      sent: clStr_(r['Sent At']), opened: clStr_(r['Opened At']), opens: +r.Opens || 0, plays: +r.Plays || 0,
+      heard: +r['Heard %'] || 0, finished: clStr_(r['Finished At']), stopped: clStr_(r['Stopped At']),
+      wa: +r['WhatsApp Taps'] || 0, call: +r['Call Taps'] || 0, ask: +r['Ask Taps'] || 0, device: clStr_(r.Device),
+      confirmed: !!c.yes, confirmedAfter: !!(c.yes && op && (!ca || ca.getTime() >= op.getTime())), status: c.status || '' });
+  });
+  out.sort(function (a, b) { return a.sent < b.sent ? 1 : -1; });
+  var n = out.length, cnt = function (f) { return out.filter(f).length; };
+  var opened = out.filter(function (x) { return x.opened; });
+  return { ok: true, v: 'cl1', mode: clMode_(), voice: clVoiceReady_(), rows: out.slice(0, 200), total: {
+    sent: n, opened: opened.length, finished: cnt(function (x) { return x.finished; }),
+    avgHeard: opened.length ? Math.round(opened.reduce(function (a, x) { return a + x.heard; }, 0) / opened.length) : 0,
+    confirmed: cnt(function (x) { return x.confirmed; }), confirmedAfter: cnt(function (x) { return x.confirmedAfter; }),
+    taps: out.reduce(function (a, x) { return a + x.wa + x.call + x.ask; }, 0) } };
+}
+
 /* ── the record ────────────────────────────────────────────────────────── */
 
 function clTab_() {
   var ss = ffGetOrCreateRevisedTab_().getParent(), sh = ss.getSheetByName(CL.TAB);
-  if (!sh) { sh = ss.insertSheet(CL.TAB); sh.getRange(1, 1, 1, CL.COLS.length).setValues([CL.COLS]).setFontWeight('bold'); sh.setFrozenRows(1); }
+  if (!sh) { sh = ss.insertSheet(CL.TAB); sh.setFrozenRows(1); }
+  var head = sh.getLastRow() ? sh.getRange(1, 1, 1, CL.COLS.length).getValues()[0] : [];
+  if (head.join('|') !== CL.COLS.join('|')) sh.getRange(1, 1, 1, CL.COLS.length).setValues([CL.COLS]).setFontWeight('bold');
   return sh;
 }
 function clRows_() {

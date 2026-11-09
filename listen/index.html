@@ -87,6 +87,15 @@
     var u = ENDPOINT + '?action=listen&t=' + encodeURIComponent(T) + (params || '');
     return fetch(u, { cache: 'no-store' }).then(function (r) { return r.json(); });
   }
+  /* What the client did, for the branch: Play, how far they got, which button. Never what they typed. */
+  var lastPct = -1;
+  function ping(ev, extra) {
+    if (!KEY) return;
+    var b = { stage: 'listen_ping', t: T, k: KEY, ev: ev, dev: (/Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'phone' : 'computer') };
+    for (var x in extra || {}) b[x] = extra[x];
+    try { fetch(ENDPOINT, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(b) }).catch(function () {}); } catch (e) {}
+  }
+  function where() { var L = LINES[cur] || LINES[0]; return { pct: LINES.length ? Math.round((cur + 1) / LINES.length * 100) : 0, scene: L ? SCN[L.sc] : '' }; }
   function post(body) {
     return fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); });
   }
@@ -121,7 +130,7 @@
   get('').then(handle, fail);
 
   /* ── the plan, scene by scene, and what Andrew says ──────────────────── */
-  var D, KEY, VOICE, SC = [], LINES = [];
+  var D, KEY, VOICE, SC = [], LINES = [], SCN = [];
   function tt(n) { return 'TT$' + Math.round(n).toLocaleString('en-US'); }
   function say$(n) { return Math.round(n).toLocaleString('en-US') + ' dollars'; }
   function money(s) { return String(s).replace(/TT\$\s*/, '').replace(/,/g, ','); }
@@ -180,6 +189,7 @@
       [['If this sounds right, tap Yes, that\'s correct, in the summary ' + D.advisorFirst + ' e-mailed you, and ' + D.advisorFirst + ' takes it from here.'], ['If you have a question first, just ask. Thank you for trusting the ' + br + ' with your family\'s future.']]]);
 
     LINES = [];
+    SCN = SC.map(function (s) { var m = /class="kick"[^>]*>([^<]+)</.exec(s[0]); return m ? m[1].charAt(0) + m[1].slice(1).toLowerCase() : ''; });
     SC.forEach(function (s, si) { s[1].forEach(function (l) { LINES.push({ text: l[0], show: l[1], sc: si }); }); });
     document.getElementById('dots').innerHTML = SC.map(function () { return '<i></i>'; }).join('');
     M.innerHTML = SC.map(function (s, i) { return '<section class="sc" id="s' + i + '">' + s[0] + '</section>'; }).join('');
@@ -206,13 +216,16 @@
     if (!LINES[cur] || LINES[cur].sc !== L.sc) { showScene(L.sc); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     for (var k = 0; k <= i; k++) if (LINES[k].show && LINES[k].sc === L.sc) { var el = document.querySelector(LINES[k].show); if (el) el.classList.add('show'); }
     document.getElementById('cap').innerHTML = '<span>ANDREW</span>' + esc(L.text);
+    var newScene = !LINES[cur] || LINES[cur].sc !== L.sc;
     cur = i;
+    if (newScene) { var w = where(); if (w.pct > lastPct) { lastPct = w.pct; ping('at', w); } }
   }
 
   /* ── playing: one recording when Andrew is set up, the phone's voice otherwise ── */
   var A = document.getElementById('aud'), REC = null, mode = '', paused = false, finished = false;
   function start() {
     var s = document.getElementById('start'); if (s) s.remove();
+    ping('play');
     document.getElementById('dock').hidden = false;
     document.getElementById('cap').innerHTML = '<span>ANDREW</span>Getting ready…';
     /* Unlock audio on this tap, before the recording arrives (iPhone needs the tap). */
@@ -277,7 +290,7 @@
   }
   function setPP(p) { document.getElementById('pp').textContent = p ? 'Play' : 'Pause'; }
   document.getElementById('pp').onclick = function () {
-    if (mode === 'rec') { if (A.paused) { A.play(); setPP(false); } else { A.pause(); setPP(true); } return; }
+    if (mode === 'rec') { if (A.paused) { A.play(); setPP(false); } else { A.pause(); setPP(true); ping('pause', where()); } return; }
     if (paused) { playDevice(Math.max(0, cur)); }
     else { paused = true; dtok++; try { TTS.cancel(); } catch (e) {} setPP(true); }
   };
@@ -290,6 +303,11 @@
     try { navigator.mediaSession.setActionHandler('play', function () { if (mode === 'rec') A.play(); });
           navigator.mediaSession.setActionHandler('pause', function () { if (mode === 'rec') A.pause(); }); } catch (e) {}
   }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden' && cur >= 0) ping('away', where()); });
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest && ev.target.closest('a.btn'); if (!a) return;
+    ping(/wa\.me/.test(a.href) ? 'wa' : /^tel:/.test(a.href) ? 'call' : /^mailto:/.test(a.href) ? 'ask' : 'link', where());
+  });
   function done() {
     setPP(true);
     document.getElementById('seek').style.width = '100%';

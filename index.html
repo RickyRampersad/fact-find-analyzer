@@ -629,6 +629,23 @@
   #myPipe .wl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:8px}
   #myPipe .wi{display:flex;gap:10px;align-items:center;border:1px solid #f3dcb5;background:#fffaf0;border-radius:12px;padding:8px 10px;font-size:13px;cursor:pointer;text-align:left;color:var(--ink);font-family:inherit}
   #myPipe .wi:hover{border-color:#d97706}
+  #listenCard .lc{background:linear-gradient(135deg,#0B2A40,#0E4A5E 70%,#0D7D86);color:#fff;border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+  #listenCard .lch{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  #listenCard .lch h2{font:800 21px/1.15 Inter,sans-serif;margin:0}
+  #listenCard .lch span{color:#9FE3E6;font-size:13px}
+  #listenCard .lch em{font-style:normal;margin-left:auto;font-size:11px;font-weight:800;letter-spacing:.1em;background:#F3C454;color:#0B2A40;border-radius:999px;padding:3px 9px}
+  #listenCard .lt{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,8.5rem),1fr));gap:10px;margin-top:12px}
+  #listenCard .lt div{background:rgba(255,255,255,.08);border-radius:13px;padding:10px 12px}
+  #listenCard .lt b{display:block;font:800 24px Inter,sans-serif;font-variant-numeric:tabular-nums}
+  #listenCard .lt span{font-size:12px;color:#C6D6E2}
+  #listenCard table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+  #listenCard th{text-align:left;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9FE3E6;font-weight:800;padding:6px 6px;border-bottom:1px solid rgba(255,255,255,.15)}
+  #listenCard td{padding:7px 6px;border-bottom:1px solid rgba(255,255,255,.08);vertical-align:middle}
+  #listenCard .hb{height:8px;border-radius:5px;background:rgba(255,255,255,.14);overflow:hidden;min-width:60px}
+  #listenCard .hb i{display:block;height:100%;background:linear-gradient(90deg,#14B8A6,#F3C454)}
+  #listenCard .ok{color:#7FE0D4;font-weight:800}
+  #listenCard .scroll{overflow-x:auto}
+  @media (max-width:640px){ #listenCard .hide-s{display:none} }
   #myPipe .wi b{display:block;color:var(--slate)}
   #myPipe .wi i{font-style:normal;color:var(--muted);font-size:12px}
   #myPipe .wi .d{margin-left:auto;font-weight:800;color:#B45309;white-space:nowrap}
@@ -1031,6 +1048,7 @@
     <div class="filters no-print" id="filterBar"></div>
     <div id="flightPlan" class="no-print"></div>
     <div id="myPipe" class="no-print"></div>
+    <div id="listenCard" class="no-print"></div>
     <div id="execSummary"></div>
     <div id="queueCard"></div>
     <div id="prospectCard"></div>
@@ -2424,6 +2442,7 @@ function render(){
   renderQueue();
   renderProspecting();
   try{ renderMyPipe(rows); }catch(eMp){ console.warn('my pipeline', eMp); }
+  try{ loadListen(); }catch(eLc){ console.warn('listen card', eLc); }
   renderExec(rows,cur,prev);
   renderKPIs(rows,cur,prev);
   renderCharts(rows);
@@ -2460,6 +2479,46 @@ function mpCase(r){
   }
   return { g:g, sent:sent, conf:conf, back:/chang|return|sent.?back/i.test(String(r.status||''))||!!r.sentBackNote };
 }
+/* Andrew read the plan (9 November 2026): who was sent their plan to hear, who opened it, how much they heard,
+   which buttons they tapped and whether they then confirmed. From ClientListen.gs (?action=listen_stats); the
+   card stays away until that answers. */
+var LISTEN_AT=0, LISTEN=null;
+async function loadListen(){
+  var el=document.getElementById('listenCard'); if(!el||!SESSION) return;
+  if(DEMO_MODE){ LISTEN=listenSample(); return drawListen(); }
+  if(Date.now()-LISTEN_AT<120000 && LISTEN) return drawListen();
+  LISTEN_AT=Date.now();
+  var ep=getEndpoint(); if(!ep) return;
+  try{
+    var r=await fetch(ep+(ep.indexOf('?')>-1?'&':'?')+'action=listen_stats&token='+encodeURIComponent(SESSION.token||''),{cache:'no-store'});
+    var j=await r.json(); if(j&&j.ok&&j.rows){ LISTEN=j; drawListen(); }
+  }catch(e){}
+}
+function listenSample(){
+  var names=['J. Mitchell','K. Ali','S. Moses','G. Robert','V. Persad','M. Singh'], adv=['Sam Reyes','Raj Patel','Noah Reid','Sam Reyes','Lena Vaz','Raj Patel'];
+  var heard=[100,100,64,0,100,38], rows=names.map(function(n,i){ var op=heard[i]>0||i===3?'2026-07-1'+i+'T21:0'+i+':00Z':''; if(i===3)op='';
+    return {client:n,advisor:adv[i],sent:'2026-07-1'+i+'T20:00:00Z',opened:op,opens:op?1+(i%2):0,plays:op?1:0,heard:heard[i],finished:heard[i]===100?op:'',stopped:heard[i]===100?'':(i===2?'What we noticed':i===5?'What you told us':''),wa:i===0?1:0,call:i===4?1:0,ask:0,device:'phone',confirmed:i===0||i===4,confirmedAfter:i===0||i===4}; });
+  return {ok:true,mode:'live',voice:true,rows:rows,total:{sent:6,opened:5,finished:3,avgHeard:80,confirmed:2,confirmedAfter:2,taps:2}};
+}
+function drawListen(){
+  var el=document.getElementById('listenCard'), L=LISTEN; if(!el||!L) return;
+  var t=L.total||{}, pct=function(a,b){ return b?Math.round(a/b*100)+'%':'–'; };
+  var when=function(s){ if(!s) return ''; var d=new Date(s); return isNaN(d)?'':d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}); };
+  if(!t.sent){ el.innerHTML='<div class="lc"><div class="lch"><h2>Andrew reads the plan</h2><span>'+(L.mode==='live'?'No client has been sent their plan to hear yet.':'Not switched on yet: run clGoLive in the fact find script.')+'</span><em>NEW</em></div></div>'; return; }
+  var h='<div class="lc"><div class="lch"><h2>Andrew read the plan</h2><span>Clients sent their plan to hear, and what they did with it</span><em>NEW</em></div>'+
+    '<div class="lt"><div><b>'+t.sent+'</b><span>sent to hear</span></div><div><b>'+t.opened+'</b><span>opened · '+pct(t.opened,t.sent)+'</span></div>'+
+    '<div><b>'+t.finished+'</b><span>heard it all · '+pct(t.finished,t.opened)+' of those who opened</span></div><div><b>'+(t.avgHeard||0)+'%</b><span>heard, on average</span></div>'+
+    '<div><b>'+t.confirmedAfter+'</b><span>confirmed after listening</span></div><div><b>'+(t.taps||0)+'</b><span>WhatsApp, call or ask taps</span></div></div>'+
+    '<div class="scroll"><table><thead><tr><th>Client</th><th class="hide-s">Advisor</th><th>Opened</th><th>Heard</th><th class="hide-s">Stopped at</th><th class="hide-s">Tapped</th><th>Confirmed</th></tr></thead><tbody>'+
+    L.rows.slice(0,12).map(function(r){
+      var taps=[r.wa?'WhatsApp':'',r.call?'Call':'',r.ask?'Ask':''].filter(Boolean).join(', ');
+      return '<tr><td><b>'+escapeHtml(r.client)+'</b></td><td class="hide-s">'+escapeHtml(r.advisor)+'</td><td>'+(r.opened?escapeHtml(when(r.opened))+(r.opens>1?' · '+r.opens+'×':''):'<span style="color:#F3C454">not yet</span>')+'</td>'+
+        '<td><div class="hb" title="'+r.heard+'%"><i style="width:'+r.heard+'%"></i></div><small>'+(r.finished?'all of it':r.heard+'%')+'</small></td>'+
+        '<td class="hide-s">'+escapeHtml(r.finished?'':r.stopped||'')+'</td><td class="hide-s">'+escapeHtml(taps)+'</td><td>'+(r.confirmed?'<span class="ok">Yes</span>':'')+'</td></tr>'; }).join('')+
+    '</tbody></table></div></div>';
+  el.innerHTML=h;
+}
+
 function renderMyPipe(rows){
   var el=document.getElementById('myPipe'); if(!el) return;
   if(!SESSION||!SESSION.scope){ el.innerHTML=''; return; }
