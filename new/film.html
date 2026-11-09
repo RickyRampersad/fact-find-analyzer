@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex">
+<title>What's new in FactFind360 · film source</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!--
+  The source of the "What's new in FactFind360" film (9 November 2026). Every
+  frame is a function of time: window.seek(t) draws the film at t seconds, so
+  the recorder renders it frame by frame and nothing drifts. Scene lengths come
+  from the narration (window.FILM_DURS, set by the recorder). Sample screens only.
+-->
+<style>
+  :root{--ink:#0d3f5e;--body:#2b3b47;--teal:#00728d;--teal2:#0e93b0;--gold:#b7791f;--ground:#f5f7f4}
+  *{box-sizing:border-box}
+  html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:var(--ground);font-family:Inter,system-ui,sans-serif;color:var(--body)}
+  #stage{position:absolute;inset:0;overflow:hidden}
+  .bg1,.bg2{position:absolute;border-radius:50%;pointer-events:none}
+  .bg1{width:1100px;height:1100px;right:-300px;top:-420px;background:radial-gradient(circle,rgba(14,147,176,.20),transparent 65%)}
+  .bg2{width:900px;height:900px;left:-320px;bottom:-460px;background:radial-gradient(circle,rgba(183,121,31,.16),transparent 65%)}
+  .sc{position:absolute;inset:0;opacity:0}
+  .brand{position:absolute;left:80px;top:56px;display:flex;align-items:center;gap:16px;font:800 30px 'Inter Tight',Inter,sans-serif;color:var(--ink)}
+  .brand img{width:44px;height:52px}.brand span{font:500 22px Inter,sans-serif;color:#5b6670;margin-left:6px}
+  .kick{font:800 24px Inter,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+  h1{font:900 112px/1.0 'Inter Tight',Inter,sans-serif;letter-spacing:-.035em;color:var(--ink);margin:20px 0 0}
+  h1 em,h2 em{font-style:normal;color:var(--teal)}
+  h2{font:900 76px/1.04 'Inter Tight',Inter,sans-serif;letter-spacing:-.03em;color:var(--ink);margin:16px 0 0}
+  .w{display:inline-block;will-change:transform,opacity}
+  .txt{position:absolute;left:110px;top:250px;width:760px}
+  .txt p{font:500 34px/1.45 Inter,sans-serif;color:var(--body);margin:26px 0 0}
+  .shotR{position:absolute;right:110px;top:150px;width:860px;height:760px;border-radius:28px;overflow:hidden;box-shadow:0 50px 110px -40px rgba(13,63,94,.6);border:1px solid #e4e0d4;background:#fff}
+  .shotR img{width:100%;display:block}
+  .phone{position:absolute;right:270px;top:120px;width:430px;height:820px;border-radius:56px;border:14px solid #10263a;overflow:hidden;box-shadow:0 60px 120px -40px rgba(13,63,94,.7);background:#fff}
+  .phone img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+  .wide{position:absolute;left:50%;top:330px;width:1500px;margin-left:-750px;border-radius:24px;overflow:hidden;box-shadow:0 60px 130px -40px rgba(13,63,94,.65)}
+  .wide img{width:100%;display:block}
+  .tag{position:absolute;top:18px;left:18px;z-index:2;background:#fff7e0;color:#7a4b00;font:800 18px Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:7px 14px;border:1px solid #f2d38a}
+  .chips{display:flex;flex-wrap:wrap;gap:14px;margin-top:34px}
+  .chip{font:800 28px Inter,sans-serif;color:#fff;background:var(--teal);border-radius:999px;padding:14px 26px}
+  .chip.g{background:#128C4A}.chip.o{background:#fff;color:var(--teal);border:3px solid var(--teal)}
+  .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .ring{width:220px;height:220px}
+  .url{margin-top:40px;font:800 46px 'Inter Tight',Inter,sans-serif;color:#fff;background:var(--teal);padding:18px 40px;border-radius:999px}
+  .cap{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);width:1500px;text-align:center;font:600 32px/1.35 Inter,sans-serif;color:var(--ink);background:rgba(255,255,255,.88);border-radius:18px;padding:14px 28px;box-shadow:0 10px 30px -18px rgba(13,63,94,.5)}
+  .bar{position:absolute;left:0;top:0;height:8px;background:linear-gradient(90deg,var(--teal),var(--teal2))}
+  .sample{position:absolute;right:30px;top:30px;font:800 16px Inter,sans-serif;letter-spacing:.12em;color:#7a4b00;background:#fff7e0;border:1px solid #f2d38a;border-radius:999px;padding:6px 12px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg1" id="bg1"></div><div class="bg2" id="bg2"></div>
+  <div class="brand"><img src="../shield.svg" alt="">FactFind360<span>Ricky Rampersad Branch</span></div>
+  <div class="sample">SAMPLE DATA</div>
+
+  <div class="sc" id="s0"><div class="center">
+    <div class="kick">New · November 2026</div>
+    <h1 class="split">Your month, <em>closed out.</em></h1>
+    <h2 class="split" style="font-size:60px;margin-top:22px;color:#2b3b47">Against your own plan.</h2>
+  </div></div>
+
+  <div class="sc" id="s1"><div class="txt"><div class="kick">01 · The close-out</div><h2 class="split">One e-mail. <em>Your own plan.</em></h2><p>Submitted and settled, against the flight plan you wrote. On the second working day of every month.</p></div>
+    <div class="shotR"><img id="mail1" src="closeout-email.jpg" alt=""></div></div>
+
+  <div class="sc" id="s2"><div class="txt"><div class="kick">01 · The close-out</div><h2 class="split">What the quarter <em>needs.</em></h2><div class="chips"><span class="chip">Your place</span><span class="chip o">The honours</span><span class="chip">Next month</span></div></div>
+    <div class="shotR"><img id="mail2" src="closeout-email.jpg" alt=""></div></div>
+
+  <div class="sc" id="s3"><div class="txt"><div class="kick">02 · Close it out</div><h2 class="split">Three minutes. <em>Commit to next month.</em></h2><div class="chips"><span class="chip">Rate it</span><span class="chip">Name your win</span><span class="chip o">Set November</span></div></div>
+    <div class="phone"><img id="ph1" src="closeout-phone.jpg" alt=""></div></div>
+
+  <div class="sc" id="s4"><div class="center" style="justify-content:flex-start;padding-top:150px"><div class="kick">03 · The production board</div><h2 class="split">Eight scenes. <em>Five seconds</em> to know.</h2></div>
+    <div class="wide" id="w1"><img src="wall-score.jpg" alt=""></div></div>
+
+  <div class="sc" id="s5"><div class="center" style="justify-content:flex-start;padding-top:150px"><div class="kick">04 · The month, on the wall</div><h2 class="split">Who <em>carried</em> the month.</h2></div>
+    <div class="wide" id="w2"><img src="wall-month.jpg" alt=""></div></div>
+
+  <div class="sc" id="s6"><div class="txt"><div class="kick">05 · For our clients</div><h2 class="split">WhatsApp on <em>every film.</em></h2><div class="chips"><span class="chip g">Chat with the branch</span></div><p style="margin-top:40px">Every e-mail from one address:</p><div class="chips" style="margin-top:14px"><span class="chip o">support@rickyrampersadbranch.com</span></div></div>
+    <div class="phone"><img id="ph2" src="whatsapp-phone.jpg" alt=""></div></div>
+
+  <div class="sc" id="s7"><div class="center">
+    <svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="#e4e0d4" stroke-width="8"/><circle id="ringf" cx="50" cy="50" r="42" fill="none" stroke="#00728d" stroke-width="8" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-dasharray="263.9" stroke-dashoffset="263.9"/><path id="tick" d="M33 51l11 11 22-24" fill="none" stroke="#00728d" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="60" stroke-dashoffset="60"/></svg>
+    <h2 class="split" style="margin-top:30px">Your October close-out <em>is in your inbox.</em></h2>
+    <div class="url" id="url">factfind360.com/new</div>
+  </div></div>
+
+  <div class="cap" id="cap"></div>
+  <div class="bar" id="bar"></div>
+</div>
+<script>
+var LINES = [
+ "There's something new at the Ricky Rampersad Branch. Your month, closed out, against your own plan.",
+ "On the second working day of every month, you get one email. What you submitted, and what settled, measured against the flight plan you wrote yourself.",
+ "It shows what each month of the quarter now needs, where you stand in the branch, and the branch's honours. If one of them is yours, it says so.",
+ "Then you tap Close out. In three minutes, you rate the month, you name your win, and you commit to next month. Your manager sees it.",
+ "On the wall, slide thirteen is now a production board in eight scenes. Are we winning? You'll know in five seconds.",
+ "And when a month closes, the whole branch sees who carried it.",
+ "Every film we share now carries the branch's WhatsApp, so a client can talk to us in one tap. And every email comes from one address: support@rickyrampersadbranch.com.",
+ "Your October close-out is in your inbox. Open it, close out the month, and set your November. Everything new is at factfind360.com/new."
+];
+var DURS = window.FILM_DURS || [6,9,9,8,8,5,10,9];
+var LEAD = window.FILM_LEAD || 0.5;      // seconds of quiet before each line
+/* words split for the headline rise */
+document.querySelectorAll('.split').forEach(function (h) {
+  var parts = []; h.childNodes.forEach(function (n) {
+    if (n.nodeType === 3) n.textContent.split(/(\s+)/).forEach(function (w) { parts.push(w.trim() ? '<span class="w">' + w + '</span>' : w); });
+    else parts.push('<em>' + n.textContent.split(/(\s+)/).map(function (w) { return w.trim() ? '<span class="w">' + w + '</span>' : w; }).join('') + '</em>');
+  }); h.innerHTML = parts.join('');
+});
+function E(x){ x = Math.max(0, Math.min(1, x)); return 1 - Math.pow(1 - x, 3); }
+function starts(){ var s = [0]; for (var i = 0; i < DURS.length; i++) s.push(s[i] + DURS[i]); return s; }
+window.filmLength = function(){ return starts()[DURS.length]; };
+window.seek = function (t) {
+  var S = starts(), total = S[DURS.length];
+  document.getElementById('bar').style.width = (t / total * 100) + '%';
+  document.getElementById('bg1').style.transform = 'translate(' + (-60 * Math.sin(t / 7)) + 'px,' + (40 * Math.cos(t / 9)) + 'px)';
+  document.getElementById('bg2').style.transform = 'translate(' + (50 * Math.cos(t / 8)) + 'px,' + (-30 * Math.sin(t / 6)) + 'px)';
+  var cap = '';
+  for (var i = 0; i < DURS.length; i++) {
+    var el = document.getElementById('s' + i), lt = t - S[i], d = DURS[i];
+    var a = lt < 0 || lt > d + 0.6 ? 0 : Math.min(E(lt / 0.6), 1 - E((lt - d) / 0.6));
+    el.style.opacity = a; el.style.transform = 'translateY(' + ((1 - E(lt / 0.8)) * 40) + 'px)';
+    if (a <= 0) continue;
+    if (lt >= LEAD && lt < d) cap = LINES[i];
+    el.querySelectorAll('.w').forEach(function (w, k) { var p = E((lt - 0.15 - k * 0.07) / 0.55); w.style.opacity = p; w.style.transform = 'translateY(' + ((1 - p) * 50) + 'px)'; });
+    el.querySelectorAll('.chip').forEach(function (c, k) { var p = E((lt - 1.2 - k * 0.35) / 0.5); c.style.opacity = p; c.style.transform = 'scale(' + (0.85 + 0.15 * p) + ')'; });
+    el.querySelectorAll('.shotR,.phone,.wide').forEach(function (s) { var p = E((lt - 0.2) / 0.9); s.style.opacity = p; s.style.transform = (s.classList.contains('wide') ? 'translateY(' : 'translateX(') + ((1 - p) * 120) + 'px) scale(' + (0.96 + 0.04 * p) + ')'; });
+  }
+  /* inside the screens: the e-mail scrolls, the wall zooms */
+  var m1 = document.getElementById('mail1'), l1 = (t - S[1]) / DURS[1]; if (m1) m1.style.transform = 'translateY(' + (-Math.max(0, Math.min(1, (l1 - 0.25) / 0.75)) * 420) + 'px)';
+  var m2 = document.getElementById('mail2'), l2 = (t - S[2]) / DURS[2]; if (m2) m2.style.transform = 'translateY(' + (-(420 + Math.max(0, Math.min(1, l2)) * 820)) + 'px)';
+  var w1 = document.getElementById('w1'), lw1 = Math.max(0, (t - S[4]) / DURS[4]); w1.querySelector('img').style.transform = 'scale(' + (1 + 0.08 * lw1) + ')';
+  var w2 = document.getElementById('w2'), lw2 = Math.max(0, (t - S[5]) / DURS[5]); w2.querySelector('img').style.transform = 'scale(' + (1.06 - 0.06 * Math.min(1, lw2)) + ')';
+  var ph = document.getElementById('ph1'), lp = Math.max(0, (t - S[3]) / DURS[3]); ph.style.transform = 'scale(' + (1 + 0.04 * Math.min(1, lp)) + ')';
+  var lt7 = t - S[7];
+  document.getElementById('ringf').setAttribute('stroke-dashoffset', 263.9 * (1 - E(lt7 / 1.4)));
+  document.getElementById('tick').setAttribute('stroke-dashoffset', 60 * (1 - E((lt7 - 1.1) / 0.6)));
+  var u = document.getElementById('url'), pu = E((lt7 - 1.8) / 0.6); u.style.opacity = pu; u.style.transform = 'scale(' + (0.8 + 0.2 * pu) + ')';
+  var c = document.getElementById('cap'); c.textContent = cap; c.style.opacity = cap ? 1 : 0;
+};
+window.seek(0);
+</script>
+</body>
+</html>
