@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your family plan, read by Andrew · Ricky Rampersad Branch</title>
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="../shield.svg">
+<!--
+  The client's plan, read to them by Andrew (9 November 2026). Opened from the
+  "Andrew will read you your plan" e-mail (apps-script/ClientListen.gs) with a
+  private, expiring link; the plan is read off the client's own fact find on
+  the server, after their date of birth when it is on file. Andrew reads it as
+  one recording, so it keeps playing with the phone locked in the car. Without
+  Azure Speech set up, the phone's own voice reads it, line by line.
+-->
+<style>
+  :root{--navy:#081221;--navy2:#0F1E36;--teal:#14B8A6;--teal2:#2DD4BF;--gold:#F5B324;--ink:#0F172A;--mute:#94A3B8}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%}
+  body{background:radial-gradient(800px 500px at 15% 0%,rgba(20,184,166,.18),transparent 60%),radial-gradient(700px 500px at 100% 100%,rgba(245,179,36,.12),transparent 60%),var(--navy);color:#fff;font:16px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+  header{display:flex;align-items:center;gap:10px;padding:14px 18px}header img{width:24px;height:29px}header b{font-weight:800}
+  header .tag{margin-left:auto;background:var(--gold);color:#1F2937;font-weight:800;font-size:11px;letter-spacing:.12em;padding:4px 10px;border-radius:999px;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  main{max-width:860px;margin:0 auto;padding:4px 16px 170px;min-height:70vh;position:relative}
+  .sc{display:none}.sc.on{display:block}
+  @media (prefers-reduced-motion:no-preference){.sc.on{animation:in .5s ease both}}
+  @keyframes in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  h1{font-size:clamp(1.9rem,6vw,3rem);line-height:1.08;font-weight:900;letter-spacing:-.01em;margin:18px 0 8px}h1 em{font-style:normal;color:var(--teal2)}
+  .sub{color:#CBD5E1;font-size:1.05rem}
+  .kick{font-size:12px;letter-spacing:.16em;font-weight:800;color:var(--teal2);margin-top:20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr));gap:12px;margin-top:14px}
+  .card{background:var(--navy2);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px 18px;opacity:.25;transform:translateY(8px);transition:opacity .45s,transform .45s}
+  .card.show{opacity:1;transform:none}.card.ins{border-color:rgba(245,179,36,.5)}.card.ins b{font-size:1.05rem;font-weight:700}.card small{display:block;font-size:11.5px;letter-spacing:.12em;font-weight:800;color:var(--mute)}.card b{font-size:1.25rem}
+  .big{font-size:clamp(1.4rem,3.8vw,2rem);font-weight:900;color:var(--gold);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .rec{background:#fff;color:var(--ink);border-radius:16px;padding:16px 18px;border-left:6px solid var(--teal);opacity:.25;transform:translateX(12px);transition:opacity .45s,transform .45s}
+  .rec.show{opacity:1;transform:none}.rec h3{font-size:1.25rem;font-weight:900}.rec .m{color:#0F766E;font-weight:700;font-size:.95rem}.rec .y{color:#334155;font-style:italic;margin-top:6px;font-size:.95rem}
+  .btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
+  .btn{font:inherit;font-weight:800;font-size:1.05rem;border:0;border-radius:14px;padding:16px 22px;min-height:52px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+  .btn.go{background:var(--gold);color:#1F2937}.btn.alt{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25)}.btn.wa{background:#128C4A;color:#fff}
+  .start{position:fixed;inset:0;z-index:5;background:rgba(8,18,33,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
+  .start .play{width:116px;height:116px;border-radius:50%;border:0;background:var(--teal);display:grid;place-items:center;cursor:pointer}
+  @media (prefers-reduced-motion:no-preference){.start .play{animation:pulse 1.8s infinite}}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(45,212,191,.5)}100%{box-shadow:0 0 0 26px rgba(45,212,191,0)}}
+  .start h2{font-size:clamp(1.5rem,5vw,2.2rem);font-weight:900;margin:22px 0 6px}.start p{color:#CBD5E1;max-width:30rem}
+  .safe{margin-top:14px;font-size:.95rem;color:#FDE68A}
+  .first{margin-bottom:8px;font-size:12px;letter-spacing:.16em;font-weight:800;color:var(--gold)}
+  .gate{max-width:420px;margin:60px auto;background:var(--navy2);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:24px}
+  .gate h1{font-size:1.7rem;margin-top:0}.gate p{color:#CBD5E1;margin-bottom:16px}
+  .dob{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:10px}
+  .dob label{font-size:12px;font-weight:700;color:var(--mute)}
+  .dob input{width:100%;min-height:54px;border-radius:12px;border:1.5px solid rgba(255,255,255,.25);background:#0B1729;color:#fff;font-size:max(16px,1.2rem);text-align:center;margin-top:4px}
+  .gate .err{color:#FCA5A5;margin:12px 0 0;min-height:1.2em;font-size:.95rem}
+  .gate .btn{width:100%;justify-content:center;margin-top:14px}
+  .dock{position:fixed;left:0;right:0;bottom:0;background:rgba(8,18,33,.96);border-top:1px solid rgba(255,255,255,.1);padding:10px 16px calc(14px + env(safe-area-inset-bottom))}
+  .cap{max-width:860px;margin:0 auto;font-size:1.02rem;font-weight:600;min-height:2.8em}.cap span{color:var(--teal2);font-weight:800;font-size:.78rem;letter-spacing:.12em;margin-right:8px}
+  .seek{max-width:860px;margin:6px auto 0;height:5px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden}.seek i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--teal2))}
+  .ctl{max-width:860px;margin:8px auto 0;display:flex;align-items:center;gap:10px}
+  .ctl button{font:inherit;font-weight:700;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:8px 14px;min-height:44px;cursor:pointer}
+  .dots{display:flex;gap:6px;margin-left:auto}.dots i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.2)}.dots i.on{background:var(--teal2)}
+  .note{font-size:.82rem;color:var(--mute);margin-top:22px}
+  .msg{max-width:560px;margin:80px auto;text-align:center;color:#CBD5E1}.msg h1{color:#fff}
+  .spin{width:44px;height:44px;border-radius:50%;border:4px solid rgba(255,255,255,.15);border-top-color:var(--teal2);margin:20px auto}
+  @media (prefers-reduced-motion:no-preference){.spin{animation:sp 1s linear infinite}}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.card,.rec{transition:none}}
+</style>
+</head>
+<body>
+<header><img src="../shield.svg" alt=""><b>Ricky Rampersad Branch</b><span class="tag" id="tag">YOUR FAMILY PLAN</span></header>
+<main id="main"><div class="msg"><div class="spin" aria-hidden="true"></div><p>Opening your plan…</p></div></main>
+<div class="dock" id="dock" hidden><div class="cap" id="cap" aria-live="polite"></div><div class="seek"><i id="seek"></i></div>
+  <div class="ctl"><button type="button" id="pp">Pause</button><button type="button" id="rp">Start again</button><div class="dots" id="dots"></div></div></div>
+<audio id="aud" preload="auto" playsinline></audio>
+<script>
+(function () {
+  'use strict';
+  var ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec';
+  try { var api = new URLSearchParams(location.search).get('api'); if (api && /^https:\/\/script\.google\.com\//.test(api)) ENDPOINT = api; } catch (e) {}
+  var T = new URLSearchParams(location.search).get('t') || '';
+  var M = document.getElementById('main');
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function msg(h, p) { M.innerHTML = '<div class="msg"><h1>' + esc(h) + '</h1><p style="margin-top:10px">' + esc(p || '') + '</p></div>'; }
+  if (!T) { msg('This plan link is not complete.', 'Please open it again from the e-mail your advisor sent.'); return; }
+
+  function get(params) {
+    var u = ENDPOINT + '?action=listen&t=' + encodeURIComponent(T) + (params || '');
+    return fetch(u, { cache: 'no-store' }).then(function (r) { return r.json(); });
+  }
+  function post(body) {
+    return fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+  }
+
+  /* ── the date of birth first, when it is on file ─────────────────────── */
+  function gate(j) {
+    M.innerHTML = '<form class="gate" id="g" novalidate><h1>Hi' + (j.first ? ' ' + esc(j.first) : '') + '.</h1>' +
+      '<p>Your plan is private. Enter your date of birth to open it.</p>' +
+      '<div class="dob"><div><label for="dd">Day</label><input id="dd" inputmode="numeric" maxlength="2" placeholder="DD" autocomplete="bday-day"></div>' +
+      '<div><label for="mm">Month</label><input id="mm" inputmode="numeric" maxlength="2" placeholder="MM" autocomplete="bday-month"></div>' +
+      '<div><label for="yy">Year</label><input id="yy" inputmode="numeric" maxlength="4" placeholder="YYYY" autocomplete="bday-year"></div></div>' +
+      '<p class="err" id="ge" role="alert">' + esc(j.wrong || j.locked ? j.error : '') + '</p>' +
+      '<button class="btn go" type="submit">Open my plan</button></form>';
+    var dd = document.getElementById('dd'), mm = document.getElementById('mm'), yy = document.getElementById('yy');
+    [dd, mm].forEach(function (el, i) { el.addEventListener('input', function () { if (el.value.length === 2) [mm, yy][i].focus(); }); });
+    dd.focus();
+    document.getElementById('g').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var d = +dd.value, m = +mm.value, y = +yy.value;
+      if (!d || !m || y < 1900 || d > 31 || m > 12) { document.getElementById('ge').textContent = 'Please enter the day, month and year.'; return; }
+      var iso = y + '-' + ('0' + m).slice(-2) + '-' + ('0' + d).slice(-2);
+      M.querySelector('.btn').textContent = 'Opening…';
+      get('&dob=' + iso).then(handle, fail);
+    });
+  }
+  function fail() { msg('We could not reach the branch just now.', 'Please check your signal and open the link again.'); }
+  function handle(j) {
+    if (j && j.ok) return build(j);
+    if (j && j.needDob) return gate(j);
+    msg('This plan cannot be opened.', (j && j.error) || 'Please ask your advisor to send it again.');
+  }
+  get('').then(handle, fail);
+
+  /* ── the plan, scene by scene, and what Andrew says ──────────────────── */
+  var D, KEY, VOICE, SC = [], LINES = [];
+  function tt(n) { return 'TT$' + Math.round(n).toLocaleString('en-US'); }
+  function say$(n) { return Math.round(n).toLocaleString('en-US') + ' dollars'; }
+  function money(s) { return String(s).replace(/TT\$\s*/, '').replace(/,/g, ','); }
+  function who(w) { if (/spouse/i.test(w) && D.spouseFirst) return D.spouseFirst; if (/client/i.test(w) || !w) return D.first || 'you'; return w; }
+
+  function build(j) {
+    D = j.plan; KEY = j.k; VOICE = j.voice;
+    var names = D.spouseFirst ? D.first + ' and ' + D.spouseFirst : D.first;
+    var br = D.branch || 'Ricky Rampersad Branch';
+    var waText = 'Hi Ricky Rampersad Branch, this is ' + (D.first || 'a client') + '. I listened to the plan ' + (D.advisorFirst || 'my advisor') + ' prepared for us and would like to talk.';
+    document.getElementById('tag').textContent = 'PRESENTED BY ' + String(D.advisor).toUpperCase();
+    SC = [];
+    SC.push(['<div class="kick">PRESENTED BY YOUR ADVISOR</div><h1>The <em>' + esc(D.surname || D.first) + '</em> household</h1><p class="sub">A plan for ' + esc(names) + ', from ' + esc(D.advisor) + ' &middot; ' + esc(br) + ', Guardian Life of the Caribbean.</p>',
+      [['Hello ' + names + '. This is your family plan, prepared for you by ' + D.advisor + ', from the ' + br + ' of Guardian Life.'], ['It takes about three minutes. If you are driving, just listen.']]]);
+    if (!D.advice) {
+      var cards = [], lines = [['Here is what you told us.']];
+      if (D.spouse) { cards.push(['c1', 'FAMILY', esc(D.spouse)]); lines.push(['You and ' + D.spouseFirst + ' are building this together.', '#c1']); }
+      if (D.kids && D.kids.length) { cards.push(['c2', 'CHILDREN', D.kids.map(function (k) { return esc(k.name) + (k.age !== '' ? ', ' + k.age : ''); }).join(' · ')]);
+        lines.push(['You have ' + D.kids.length + (D.kids.length === 1 ? ' child, ' : ' children, ') + D.kids.map(function (k) { return k.name + (k.age !== '' ? ', ' + k.age : ''); }).join(', and ') + '.', '#c2']); }
+      if (D.income) { cards.push(['c3', 'INCOME A MONTH', esc(D.first) + ' ' + tt(D.income) + (D.spouseIncome ? ' · ' + esc(D.spouseFirst || 'spouse') + ' ' + tt(D.spouseIncome) : '')]);
+        lines.push([D.first + ' earns ' + say$(D.income) + ' a month' + (D.spouseIncome ? ', and ' + (D.spouseFirst || 'your spouse') + ' ' + say$(D.spouseIncome) : '') + '.', '#c3']); }
+      if (D.mortgage) { cards.push(['c4', 'STILL OWED ON YOUR HOME', tt(D.mortgage)]); lines.push(['There is ' + say$(D.mortgage) + ' still owed on your home.', '#c4']); }
+      if (D.goals && D.goals.length) { cards.push(['c5', 'WHAT MATTERS MOST', D.goals.map(function (g) { return esc(g.desc || g.need); }).join(' · ')]);
+        lines.push(['And what matters most to you: ' + D.goals.map(function (g) { return g.desc || g.need; }).join(', and ') + '.', '#c5']); }
+      if (cards.length) SC.push(['<div class="kick">WHAT YOU TOLD US</div><h1>Your family, <em>in your words.</em></h1><div class="grid">' + cards.map(function (c) { return '<div class="card" id="' + c[0] + '"><small>' + c[1] + '</small><b>' + c[2] + '</b></div>'; }).join('') + '</div>', lines]);
+      if (D.insights && D.insights.length) {
+        var il = [['Here is what we noticed.']];
+        var ih = D.insights.map(function (x, i) { il.push([x.say, '#i' + i]); return '<div class="card ins" id="i' + i + '"><small>' + esc(x.title).toUpperCase() + '</small><b>' + esc(x.text) + '</b></div>'; }).join('');
+        SC.push(['<div class="kick" style="color:var(--gold)">WHAT WE NOTICED</div><h1>The things that <em>matter most.</em></h1><div class="grid">' + ih + '</div>', il]);
+      }
+      if (D.totalNeed || D.gap) {
+        SC.push(['<div class="kick">WHAT YOUR FAMILY WOULD NEED</div><h1>If the unexpected <em>happened.</em></h1><div class="grid">' +
+          (D.totalNeed ? '<div class="card" id="n1"><small>YOUR FAMILY WOULD NEED</small><div class="big" style="color:#fff">' + esc(D.totalNeed) + '</div></div>' : '') +
+          (D.cover ? '<div class="card" id="n2"><small>YOU HAVE TODAY</small><div class="big" style="color:#fff">' + esc(D.cover) + '</div></div>' : '') +
+          (D.gap ? '<div class="card" id="n3" style="border-color:var(--gold)"><small>THE GAP</small><div class="big">' + esc(D.gap) + '</div></div>' : '') + '</div>',
+          [['If the unexpected happened, here is what your family would need.'],
+           D.totalNeed ? ['In all, about ' + money(D.totalNeed) + ' dollars.', '#n1'] : null,
+           D.cover ? ['You have ' + money(D.cover) + ' dollars of cover today.', '#n2'] : null,
+           D.gap ? ['That leaves a gap of ' + money(D.gap) + ' dollars. That is what ' + D.advisorFirst + "'s recommendation is here to close.", '#n3'] : null].filter(Boolean)]);
+      }
+    }
+    if (D.recs && D.recs.length) {
+      var rl = [['Here is what ' + D.advisorFirst + ' recommends' + (D.advice && D.need ? ' for ' + D.need : '') + '.']];
+      var rh = D.recs.map(function (r, i) {
+        rl.push([r.plan + ', for ' + who(r.who) + (r.amt ? ': ' + say$(r.amt) + ' of cover' : '') + '.', '#r' + i]);
+        if (r.reason) rl.push(['Why? ' + r.reason]);
+        return '<div class="rec" id="r' + i + '"><h3>' + esc(r.plan) + '</h3><div class="m">For ' + esc(who(r.who)) + (r.amt ? ' · ' + tt(r.amt) + ' cover' : '') + '</div>' + (r.reason ? '<div class="y">Why: ' + esc(r.reason) + '</div>' : '') + '</div>';
+      }).join('');
+      SC.push(['<div class="kick">WHAT ' + esc(D.advisorFirst).toUpperCase() + ' RECOMMENDS</div><h1>Your plan, <em>in plain words.</em></h1><div class="grid" style="grid-template-columns:1fr">' + rh + '</div>', rl]);
+    }
+    SC.push(['<div class="kick">NEXT</div><h1>If this sounds right, <em>confirm it.</em></h1><p class="sub">Tap <b>Yes, that\'s correct</b> in the summary ' + esc(D.advisorFirst) + ' e-mailed you, and ' + esc(D.advisorFirst) + ' takes it from here.</p><div class="btns">' +
+      (D.advisorEmail ? '<a class="btn alt" href="mailto:' + esc(D.advisorEmail) + '?subject=' + encodeURIComponent('A question about our plan') + '">Ask ' + esc(D.advisorFirst) + ' a question</a>' : '') +
+      '<a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/18686785921?text=' + encodeURIComponent(waText) + '">WhatsApp the branch</a>' +
+      '<a class="btn alt" href="tel:+18686785921">Call the branch</a></div>' +
+      '<p class="note">This plan is based on what you told your advisor and is not a contract. Cover starts only when a policy is issued. Read by Andrew, the branch\'s voice.</p>',
+      [['If this sounds right, tap Yes, that\'s correct, in the summary ' + D.advisorFirst + ' e-mailed you, and ' + D.advisorFirst + ' takes it from here.'], ['If you have a question first, just ask. Thank you for trusting the ' + br + ' with your family\'s future.']]]);
+
+    LINES = [];
+    SC.forEach(function (s, si) { s[1].forEach(function (l) { LINES.push({ text: l[0], show: l[1], sc: si }); }); });
+    document.getElementById('dots').innerHTML = SC.map(function () { return '<i></i>'; }).join('');
+    M.innerHTML = SC.map(function (s, i) { return '<section class="sc" id="s' + i + '">' + s[0] + '</section>'; }).join('');
+    showScene(0);
+    var st = document.createElement('div'); st.className = 'start'; st.id = 'start';
+    st.innerHTML = '<div class="first">A FIRST FROM THE RICKY RAMPERSAD BRANCH</div><button type="button" class="play" aria-label="Play your family plan"><svg width="46" height="46" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></button>' +
+      '<h2>' + esc(names) + ', your family plan</h2><p>Prepared by ' + esc(D.advisor) + ', read to you by Andrew. About three minutes.</p><p class="safe">Driving? Just listen. It keeps playing with your phone locked.</p>';
+    document.body.appendChild(st);
+    st.querySelector('.play').onclick = start;
+    if ('mediaSession' in navigator) {
+      try { navigator.mediaSession.metadata = new MediaMetadata({ title: 'Your family plan', artist: 'Read by Andrew · ' + D.advisor, album: 'Ricky Rampersad Branch', artwork: [{ src: location.origin + '/new/whats-new.jpg', sizes: '1280x720', type: 'image/jpeg' }] }); } catch (e) {}
+    }
+  }
+
+  var dots = function () { return document.getElementById('dots'); };
+  function showScene(i) {
+    [].forEach.call(document.querySelectorAll('.sc'), function (el, k) { el.classList.toggle('on', k === i); });
+    [].forEach.call(dots().children, function (d, k) { d.classList.toggle('on', k <= i); });
+  }
+  var cur = -1;
+  function showLine(i) {
+    if (i === cur || !LINES[i]) return;
+    var L = LINES[i];
+    if (!LINES[cur] || LINES[cur].sc !== L.sc) { showScene(L.sc); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    for (var k = 0; k <= i; k++) if (LINES[k].show && LINES[k].sc === L.sc) { var el = document.querySelector(LINES[k].show); if (el) el.classList.add('show'); }
+    document.getElementById('cap').innerHTML = '<span>ANDREW</span>' + esc(L.text);
+    cur = i;
+  }
+
+  /* ── playing: one recording when Andrew is set up, the phone's voice otherwise ── */
+  var A = document.getElementById('aud'), REC = null, mode = '', paused = false, finished = false;
+  function start() {
+    var s = document.getElementById('start'); if (s) s.remove();
+    document.getElementById('dock').hidden = false;
+    document.getElementById('cap').innerHTML = '<span>ANDREW</span>Getting ready…';
+    /* Unlock audio on this tap, before the recording arrives (iPhone needs the tap). */
+    try { A.src = silence(); var pr = A.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) {}
+    if (REC) return playRec();
+    if (!VOICE) return playDevice(0);
+    post({ stage: 'listen_audio', t: T, k: KEY, lines: LINES.map(function (l) { return l.text; }) }).then(function (j) {
+      if (j && j.ok && j.audio) { REC = j; playRec(); } else playDevice(0);
+    }, function () { playDevice(0); });
+  }
+  /* A quarter-second of silence, made here, so the tap unlocks the player. */
+  function silence() {
+    var n = 2000, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    function w(o, str) { for (var i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); }
+    w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, 8000, true); v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
+  function playRec() {
+    mode = 'rec'; paused = false; cur = -1;
+    var bin = atob(REC.audio), u8 = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    A.src = URL.createObjectURL(new Blob([u8], { type: 'audio/mpeg' }));
+    A.currentTime = 0;
+    var pr = A.play(); if (pr && pr.catch) pr.catch(function () { setPP(true); });
+    setPP(false);
+  }
+  A.addEventListener('timeupdate', function () {
+    if (mode !== 'rec' || !REC) return;
+    var t = A.currentTime, i = 0;
+    while (i + 1 < REC.marks.length && REC.marks[i + 1] <= t + 0.05) i++;
+    showLine(i);
+    document.getElementById('seek').style.width = Math.min(100, t / (REC.secs || A.duration || 1) * 100) + '%';
+    if (REC.secs && t >= REC.secs - 0.4) done();
+  });
+  A.addEventListener('ended', function () { if (mode === 'rec') done(); });
+
+  /* The phone's own voice: the best natural one it has, never the first on the list. */
+  var TTS = window.speechSynthesis, VV = null, dtok = 0;
+  function pickVoice() {
+    if (VV || !TTS) return VV;
+    var vs = TTS.getVoices().filter(function (v) { return /^en/i.test(v.lang); });
+    VV = vs.filter(function (v) { return /andrew/i.test(v.name); })[0] || vs.filter(function (v) { return /natural|enhanced|premium/i.test(v.name); })[0] ||
+         vs.filter(function (v) { return /google/i.test(v.name) && /en-(us|gb)/i.test(v.lang); })[0] || vs[0] || null;
+    return VV;
+  }
+  function playDevice(i) {
+    mode = 'dev'; paused = false; setPP(false);
+    var tok = ++dtok;
+    (function next(k) {
+      if (tok !== dtok || paused) return;
+      if (k >= LINES.length) return done();
+      showLine(k);
+      document.getElementById('seek').style.width = (k / LINES.length * 100) + '%';
+      if (!TTS) return setTimeout(function () { next(k + 1); }, 2500);
+      var u = new SpeechSynthesisUtterance(LINES[k].text), v = pickVoice();
+      if (v) u.voice = v; u.rate = 0.98;
+      var fin = false, go = function () { if (!fin) { fin = true; setTimeout(function () { next(k + 1); }, 350); } };
+      u.onend = go; u.onerror = go;
+      try { TTS.cancel(); TTS.speak(u); } catch (e) { go(); }
+    })(i);
+  }
+  function setPP(p) { document.getElementById('pp').textContent = p ? 'Play' : 'Pause'; }
+  document.getElementById('pp').onclick = function () {
+    if (mode === 'rec') { if (A.paused) { A.play(); setPP(false); } else { A.pause(); setPP(true); } return; }
+    if (paused) { playDevice(Math.max(0, cur)); }
+    else { paused = true; dtok++; try { TTS.cancel(); } catch (e) {} setPP(true); }
+  };
+  document.getElementById('rp').onclick = function () {
+    [].forEach.call(document.querySelectorAll('.card,.rec'), function (el) { el.classList.remove('show'); });
+    cur = -1;
+    if (mode === 'rec') { A.currentTime = 0; A.play(); setPP(false); } else { try { TTS.cancel(); } catch (e) {} playDevice(0); }
+  };
+  if ('mediaSession' in navigator) {
+    try { navigator.mediaSession.setActionHandler('play', function () { if (mode === 'rec') A.play(); });
+          navigator.mediaSession.setActionHandler('pause', function () { if (mode === 'rec') A.pause(); }); } catch (e) {}
+  }
+  function done() {
+    setPP(true);
+    document.getElementById('seek').style.width = '100%';
+    if (finished) return; finished = true;
+    post({ stage: 'listen_done', t: T, k: KEY }).catch(function () {});
+  }
+})();
+</script>
+</body>
+</html>
