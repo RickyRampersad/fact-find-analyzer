@@ -40,10 +40,13 @@
     bar.innerHTML = '<a class="c" href="' + chatUrl + '" target="_blank" rel="noopener">' + ICON + 'Chat with the branch</a>' +
       '<a class="s" href="' + shareUrl + '" target="_blank" rel="noopener">' + ICON + 'Share this film</a>' +
       '<small>WhatsApp (868) 678-5921 &middot; Ricky Rampersad Branch, Guardian Life of the Caribbean</small>';
+    var spot = document.getElementById('bwa-here');
+    if (spot) { spot.appendChild(bar); bar = null; }
     var v = document.querySelector('video'), at = v && (v.closest('.vwrap,.player,figure') || v);
     var after = at && at.nextElementSibling && /full hd|download/i.test(at.nextElementSibling.textContent || '') ? at.nextElementSibling : at;
-    if (after && after.parentNode) after.parentNode.insertBefore(bar, after.nextSibling);
-    else (document.querySelector('main') || document.body).appendChild(bar);
+    if (bar && after && after.parentNode) after.parentNode.insertBefore(bar, after.nextSibling);
+    else if (bar) (document.querySelector('main') || document.body).appendChild(bar);
+    bar = spot ? spot.firstChild : bar;
     var fab = document.createElement('a'); fab.className = 'bwaf'; fab.href = chatUrl; fab.target = '_blank'; fab.rel = 'noopener';
     fab.setAttribute('aria-label', 'Chat with the branch on WhatsApp'); fab.innerHTML = ICON;
     document.body.appendChild(fab);
