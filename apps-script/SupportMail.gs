@@ -53,10 +53,28 @@ function smMessage_(a) {
 }
 
 /* One e-mail through the relay. True when it went; false (and the reason
-   kept) when it should go from Gmail instead. Attachments, inline images and
-   noReply cannot travel through the relay, so those e-mails go from Gmail. */
+   kept) when it should go from Gmail instead. Inline images and noReply cannot
+   travel through the relay, so those e-mails go from Gmail.
+   Attachments travel since 11 November 2026: the fact find's review e-mail and
+   the advisor's copy carry the PDF, and from Gmail they hit its 100-a-day limit
+   and stopped the submission ("Failed to fetch"). A relay older than that
+   answers without sending them, so it is checked (j.att) and Gmail used then. */
+function smAtt_(list) {
+  return [].concat(list || []).map(function (a) {
+    var b = (a && a.getBlob) ? a.getBlob() : a;
+    return { name: b.getName() || 'attachment', type: b.getContentType() || 'application/octet-stream', b64: Utilities.base64Encode(b.getBytes()) };
+  });
+}
+/* Whether the relay carries attachments: asked once (its address answers att: true from 11 November), kept 6 hours. */
+function smRelayTakesAtt_() {
+  var c = null; try { c = CacheService.getScriptCache(); var k = c.get('sm_att'); if (k) return k === 'y'; } catch (e) {}
+  var yes = false;
+  try { var r = UrlFetchApp.fetch(smProp_('MAIL_RELAY_URL'), { muteHttpExceptions: true, followRedirects: true }); yes = !!JSON.parse(r.getContentText() || '{}').att; } catch (e2) {}
+  try { if (c) c.put('sm_att', yes ? 'y' : 'n', yes ? 21600 : 900); } catch (e3) {}
+  return yes;
+}
 function smViaRelay_(o) {
-  if (!smReady_() || o.attachments || o.inlineImages || o.noReply) return false;
+  if (!smReady_() || o.inlineImages || o.noReply) return false;
   var cache = null;
   try { cache = CacheService.getScriptCache(); if (cache.get('sm_down')) return false; } catch (e) {}
   var why = '';
@@ -66,6 +84,7 @@ function smViaRelay_(o) {
       if (o[k] != null && o[k] !== '') m[k] = String(o[k]);
     });
     if (!m.name) m.name = SM_NAME;
+    if (o.attachments) { if (!smRelayTakesAtt_()) return false; m.att = smAtt_(o.attachments); }
     var body = JSON.stringify(m), t = String(Date.now());
     var res = UrlFetchApp.fetch(smProp_('MAIL_RELAY_URL'), {
       method: 'post', contentType: 'application/json', muteHttpExceptions: true, followRedirects: true,
@@ -89,7 +108,21 @@ var SM_STANDIN_ = {
   sendEmail: function () {
     var o = smMessage_(arguments);
     if (smViaRelay_(o)) return;
-    return SM_MAILAPP_.sendEmail.apply(SM_MAILAPP_, arguments);
+    try { return SM_MAILAPP_.sendEmail.apply(SM_MAILAPP_, arguments); }
+    catch (err) {
+      /* Gmail's own daily limit is spent: one more try through the relay, so the e-mail still goes and the fact
+         find that asked for it does not stop with "Failed to fetch". Inline images are left out; noReply ignored. */
+      if (!/too many times|quota|limit/i.test(String(err && err.message))) throw err;
+      try { CacheService.getScriptCache().remove('sm_down'); } catch (e2) {}
+      var o2 = {}; Object.keys(o).forEach(function (k) { if (k !== 'inlineImages' && k !== 'noReply') o2[k] = o[k]; });
+      if (o2.attachments && !smRelayTakesAtt_()) {
+        /* A relay older than 11 November cannot carry the PDF: the e-mail goes without it rather than not at all. */
+        delete o2.attachments;
+        if (o2.htmlBody) o2.htmlBody += '<p style="font:13px Arial;color:#B45309">The PDF could not be attached to this e-mail today. Open the case on the FactFind360 dashboard to download it.</p>';
+      }
+      if (smViaRelay_(o2)) return;
+      throw err;
+    }
   },
   /* The relay allows about 1,400 a day; with it ready, the Gmail allowance is
      not the limit, so the senders' own quota checks stop holding mail back. */
@@ -107,6 +140,12 @@ function smSetRelay() {
   PropertiesService.getScriptProperties().setProperties({ MAIL_RELAY_URL: SM_RELAY_URL.trim(), MAIL_RELAY_KEY: SM_RELAY_KEY.trim() }, false);
   try { CacheService.getScriptCache().remove('sm_down'); } catch (e) {}
   Logger.log('Stored. Now put both values back to \'\' at the top of the file, save, and run smCheck.');
+}
+
+/* The editor's button: Gmail's own allowance left today, and whether the relay carries PDFs. */
+function smQuota() {
+  Logger.log('Gmail allowance left today (this account): %s', SM_MAILAPP_.getRemainingDailyQuota());
+  Logger.log('Relay ready: %s · carries attachments: %s', smReady_() ? 'yes' : 'no', smReady_() && smRelayTakesAtt_() ? 'yes' : 'NO: paste the new MailRelay.gs in the relay project');
 }
 
 function smCheck() {
