@@ -4350,8 +4350,10 @@ const RAI_MASCOT = `<svg class="rai-avatar" viewBox="0 0 64 64" xmlns="http://ww
 // Apps Script Web App URL — set on first submit (cached in localStorage thereafter).
 // You can also hard-code it here once deployed:
 const CONFIG = {
-  // RR Branch FF System — Apps Script Web App (fresh deployment Jun 2026)
-  endpoint: 'https://script.google.com/macros/s/AKfycbyUnSnQtumx9emW_LsWQf6QKZFBGGnaTn3-PfAZDfjtZuBUSha-OuIXPT30qkMrXMoczA/exec',
+  // RR Branch FF System — the current deployment. Until 11 November 2026 this
+  // was the June copy (...XMoczA); that deployment stopped answering ("Sorry,
+  // unable to open the file") and every submit failed with "Failed to fetch".
+  endpoint: 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec',
 };
 
 // ============== AGENT ROSTER ==============
@@ -5068,6 +5070,11 @@ function isAllowedEndpoint(u) {
 
 function getEndpoint() {
   var stored = localStorage.getItem('rrffEndpoint');
+  // A device that saved the old June deployment is moved off it: it no longer answers.
+  if (stored && stored.indexOf('AKfycbyUnSnQtumx9emW') >= 0) {
+    try { localStorage.removeItem('rrffEndpoint'); } catch (e) {}
+    stored = null;
+  }
   if (stored && isAllowedEndpoint(stored)) return stored;
   if (stored) {
     // Refuse it and clear it, so a hostile value cannot sit there waiting.
