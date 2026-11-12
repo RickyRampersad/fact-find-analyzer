@@ -1277,6 +1277,7 @@ async function liRunTest(btn, out){
 var FETCH_MS       = 30000;  // each attempt — wide enough for the slow tail
 var FETCH_TRIES    = 3;      // the tail can strike twice running
 var FETCH_PAUSE_MS = 1500;   // a breath, longer each time, so a recycling container is not hammered
+var DATA_FETCH_MS  = 120000; // the dashboard's data call: the whole branch can take over 30s
 var LOGIN_MS       = 60000;  // a sign-in waits once, long: requests queued for 50s that morning
 
 // `again` lists the failures worth another try. Reads can retry a timeout;
@@ -2234,7 +2235,11 @@ async function refreshData(){
       // the roster get it too. Leaving it here as well would have meant four
       // attempts on this one call and a two-minute wait before anyone was told.
       showLoading('');
-      var j = await fetchJson(url, null, function(n){
+      // The branch manager's answer is every fact find in the branch, and on
+      // 12 November it took longer than 30 seconds: three tries of 30s each
+      // ended in "did not answer". Apps Script can run for six minutes, so
+      // this one call waits up to two before trying again.
+      var j = await fetchJson(url, DATA_FETCH_MS, function(n){
         if(window.__loadingNote) window.__loadingNote('The server was slow to answer, so it is trying again ('+(n+1)+' of '+FETCH_TRIES+').');
       });
       if(j && j.ok && Array.isArray(j.rows)){
