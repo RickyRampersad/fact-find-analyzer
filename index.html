@@ -2189,6 +2189,29 @@ function logout(){
 // no third path: the old code silently substituted real imported client rows
 // whenever the endpoint was slow or unreachable, so the dashboard looked live
 // while showing stale data with no indication anything had gone wrong.
+/* A WAIT IS SAID, NOT LEFT BLANK (12 November 2026). The branch manager's
+   figures are the whole branch, and on a slow server the page could sit empty
+   for a minute and a half with nothing on screen; on a phone that reads as
+   broken. Now it says it is loading, counts the seconds, and says when it is
+   trying again. */
+var LOADING_TIMER=null;
+function showLoading(note){
+  var box=document.getElementById('execSummary'); if(!box) return;
+  var t0=Date.now();
+  function draw(){
+    var s=Math.round((Date.now()-t0)/1000);
+    var who=(SESSION && SESSION.scope && SESSION.scope.kind==='agent') ? 'your' : 'the branch\u2019s';
+    box.innerHTML='<div class="card" style="border-left:4px solid #0F766E">'+
+      '<h3 style="color:#0F766E">Loading '+who+' fact finds\u2026</h3>'+
+      '<div class="csub">'+(note?escapeHtml(note)+' ':'')+'Waiting on the branch server: '+s+'s. '+
+      (s>=20?'It can take up to a minute when the server is busy. Please keep this page open.':'Usually a few seconds.')+
+      '</div></div>';
+  }
+  stopLoading(); draw(); LOADING_TIMER=setInterval(draw,1000);
+  window.__loadingNote=function(n){ note=n; draw(); };
+}
+function stopLoading(){ if(LOADING_TIMER){ clearInterval(LOADING_TIMER); LOADING_TIMER=null; } }
+
 async function refreshData(){
   var rows=null, ep=getEndpoint();
   LOAD_ERROR='';
@@ -2210,7 +2233,10 @@ async function refreshData(){
       // The retry that used to live here now lives in fetchJson, so sign-in and
       // the roster get it too. Leaving it here as well would have meant four
       // attempts on this one call and a two-minute wait before anyone was told.
-      var j = await fetchJson(url);
+      showLoading('');
+      var j = await fetchJson(url, null, function(n){
+        if(window.__loadingNote) window.__loadingNote('The server was slow to answer, so it is trying again ('+(n+1)+' of '+FETCH_TRIES+').');
+      });
       if(j && j.ok && Array.isArray(j.rows)){
         // Keep each row exactly as the server sent it as well: Continue hands
         // the form the case, and the form must get what the server holds, not
@@ -2219,7 +2245,7 @@ async function refreshData(){
         rows=j.rows.map(function(raw){ var n=normalizeRow(raw); RAW_BY_ID[n.id]=raw; return n; });
         SRC='live';
       }
-      else if(j && j.expired){ logout(); return; }
+      else if(j && j.expired){ stopLoading(); logout(); return; }
       else LOAD_ERROR=(j && j.error) ? j.error : 'The server returned no data.';
     }catch(e){
       LOAD_ERROR = (e && e.message)
@@ -2417,6 +2443,18 @@ function deltaHtml(cur,prev,opt){
 }
 
 function render(){
+  stopLoading();
+  try{ return renderInner(); }
+  catch(eR){
+    if(window.console) console.error('render failed', eR);
+    var box=document.getElementById('execSummary');
+    if(box) box.innerHTML='<div class="card" style="border-left:4px solid #DC2626">'+
+      '<h3 style="color:#DC2626">The figures arrived, but the page could not draw them</h3>'+
+      '<div class="csub">Send a screenshot of this to the branch manager. Fault: '+escapeHtml(String((eR&&eR.message)||eR))+'</div>'+
+      '<div style="margin-top:10px"><button class="icon-btn" onclick="refreshData()">\u21bb Try again</button></div></div>';
+  }
+}
+function renderInner(){
   // Failed load: say so and render nothing. Blank panels beat confident-looking
   // panels built from data that is not this user's, or not from today.
   if(LOAD_ERROR){
