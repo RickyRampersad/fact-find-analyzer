@@ -258,3 +258,20 @@
   from = "/video"
   to = "/liftoff"
   status = 301
+
+# The client's Confirm and sign page (12 November 2026). Its address carries
+# the client's single-use link, so it must never be cached or sent on as a
+# referrer. Block 47 in RRBranchJourney.gs is the server half.
+[[headers]]
+  for = "/sign"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"
+
+[[headers]]
+  for = "/sign.html"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Cache-Control = "no-store"

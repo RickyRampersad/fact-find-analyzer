@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0F766E">
+<title>Confirm and sign · Ricky Rampersad Branch</title>
+<link rel="icon" href="shield.png">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all';this.onload=null">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+<!--
+  The client's Confirm and sign page.
+
+  It used to be served by the Apps Script web app itself, which puts Google's
+  own grey banner across the top and takes several seconds to appear. This
+  page loads at once from the branch's own site and asks the same server for
+  two things only: the plan behind this one link (action=csign_open, read
+  only) and, when the client presses Confirm & sign, to record their answer
+  (action=csign_submit). Every rule about what is recorded lives on the
+  server, in rrbClientConfirm, exactly as before. Block 47 in
+  RRBranchJourney.gs is the other half of this page.
+
+  The stars are buttons. Nothing happens on hover, so a phone's first tap
+  can never be swallowed as a hover, which is what broke the old page.
+-->
+<style>
+:root{
+  color-scheme: light;
+  --teal:#0D9488; --teal-deep:#0F766E; --teal-tint:#ECFDF8; --teal-line:#99F6E4;
+  --ink:#0F172A; --ink-2:#334155; --muted:#5B6675; --line:#E2E8F0; --line-2:#94A3B8;
+  --bg:#F1F5F9; --card:#FFFFFF; --amber:#B45309; --amber-tint:#FFFBEB; --red:#B91C1C;
+  --gold:#F5B935;
+  --display:'Fraunces','Fraunces Fallback',Georgia,'Times New Roman',serif;
+  --sans:'Inter','Inter Fallback','Inter Fallback R',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  --sh:0 1px 2px rgba(15,23,42,.06),0 10px 30px -18px rgba(15,23,42,.28);
+}
+@font-face{font-family:'Inter Fallback';src:local('Arial'),local('Helvetica'),local('Liberation Sans'),local('Arimo');size-adjust:107%;ascent-override:90%;descent-override:22%;line-gap-override:0%}
+@font-face{font-family:'Inter Fallback R';src:local('Roboto');size-adjust:107%;ascent-override:90%;descent-override:22%;line-gap-override:0%}
+@font-face{font-family:'Fraunces Fallback';src:local('Georgia');size-adjust:104%}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px 48px}
+
+/* masthead */
+.top{background:var(--card);border-bottom:1px solid var(--line)}
+.top .in{max-width:560px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.top img{width:30px;height:36px;display:block}
+.top b{display:block;font:700 17px/1.1 var(--display);letter-spacing:-.01em;color:var(--ink)}
+.top small{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-deep);font-weight:700;margin-top:3px}
+.top .lock{margin-left:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+@media (max-width:420px){.top .lock span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.top .lock svg{width:18px;height:18px}}
+.top .lock svg{width:14px;height:14px}
+
+/* hero */
+.hero{padding:26px 2px 18px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-deep)}
+h1{font:700 clamp(1.6rem,6vw,2rem)/1.15 var(--display);letter-spacing:-.015em;margin:6px 0 6px}
+.hero p{margin:0;color:var(--ink-2);font-size:15px}
+
+/* steps */
+.steps{display:flex;gap:6px;margin:4px 0 18px;padding:0;list-style:none}
+.steps li{flex:1;font-size:11.5px;font-weight:700;color:var(--muted);text-align:center}
+.steps li::before{content:"";display:block;height:5px;border-radius:3px;background:var(--line);margin-bottom:6px}
+.steps li.on{color:var(--teal-deep)}
+.steps li.on::before{background:var(--teal)}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh);padding:18px;margin:0 0 14px}
+.card h2{font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.rec{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px}
+.rec:first-of-type{margin-top:0}
+.rec .plan{font-weight:800;font-size:16px}
+.rec .need{color:var(--muted);font-size:13.5px;margin-top:2px}
+.rec .nums{display:flex;gap:22px;flex-wrap:wrap;margin-top:10px}
+.rec .nums div{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rec .nums b{display:block;font-size:17px;letter-spacing:0;text-transform:none;color:var(--ink);margin-top:1px}
+.rec .why{margin-top:11px;background:var(--teal-tint);border-left:3px solid var(--teal);border-radius:0 9px 9px 0;padding:9px 12px;font-size:14px;color:var(--ink-2)}
+.rec .why strong{color:var(--teal-deep)}
+
+/* ticks */
+.tick{display:flex;gap:12px;align-items:flex-start;padding:12px 2px;cursor:pointer;font-size:15px;color:var(--ink-2)}
+.tick + .tick{border-top:1px solid var(--line)}
+.tick input{width:24px;height:24px;margin:0;flex:none;accent-color:var(--teal)}
+.tick.warn{background:var(--amber-tint);border-radius:10px;padding:12px;color:#78350F}
+.tick.warn input{accent-color:var(--amber)}
+
+/* stars */
+.stars{display:flex;justify-content:center;gap:4px;margin:6px 0 2px}
+.star{appearance:none;-webkit-appearance:none;background:none;border:0;padding:4px;width:56px;height:56px;cursor:pointer;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;border-radius:12px}
+.star svg{width:44px;height:44px;display:block;margin:auto;fill:#D7DEE8;transition:fill .15s,transform .15s}
+.star.on svg{fill:var(--gold);transform:scale(1.06)}
+.star:focus-visible{outline:3px solid var(--teal);outline-offset:1px}
+.rate-word{text-align:center;font-weight:700;color:var(--muted);min-height:1.5em;font-size:14px}
+.better{margin-top:12px;display:none}
+.better.show{display:block}
+.better label{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+.better .note{font-size:12.5px;margin-top:6px;color:var(--muted)}
+textarea,input[type=text]{width:100%;border:1px solid var(--line-2);border-radius:10px;padding:12px;font:max(16px,1rem)/1.5 var(--sans);color:var(--ink);background:#fff}
+textarea:focus,input[type=text]:focus{outline:3px solid rgba(13,148,136,.25);border-color:var(--teal)}
+.better.low label{color:var(--amber)}
+.better.low textarea{border-color:#F59E0B}
+.better.high label{color:var(--teal-deep)}
+
+/* updates */
+.opt{display:block;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:8px;cursor:pointer;font-size:15px}
+.opt:has(input:checked){border-color:var(--teal);background:var(--teal-tint)}
+.opt input{accent-color:var(--teal);margin-right:6px;width:18px;height:18px;vertical-align:-3px}
+.opt small{display:block;color:var(--muted);font-size:13px;margin:3px 0 0 26px}
+
+/* signature */
+.padhead{display:flex;justify-content:space-between;align-items:baseline}
+.link{background:none;border:0;padding:8px 0;font:700 14px var(--sans);color:var(--teal-deep);cursor:pointer}
+.link.muted{color:var(--muted)}
+.pad{position:relative;border:2px dashed var(--line-2);border-radius:14px;background:#fff;height:170px;overflow:hidden;margin-top:6px}
+.pad canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.pad .hint{position:absolute;left:0;right:0;bottom:16px;text-align:center;color:var(--line-2);font-size:14px;pointer-events:none}
+.pad .rule{position:absolute;left:24px;right:24px;bottom:44px;border-bottom:1px solid var(--line);pointer-events:none}
+#signName{margin-top:10px}
+
+/* actions */
+.err{display:none;margin:4px 0 10px;color:var(--red);font-weight:700;font-size:14.5px}
+.err.show{display:block}
+.go{width:100%;border:0;border-radius:12px;background:var(--teal);color:#fff;font:800 17px var(--sans);padding:17px;cursor:pointer;
+  box-shadow:0 10px 24px -12px rgba(13,148,136,.7);touch-action:manipulation}
+.go:disabled{opacity:.7;cursor:progress}
+.go.amber{background:var(--amber);box-shadow:none}
+.small{color:var(--muted);font-size:13px;text-align:center;margin:12px 0 0}
+.change{display:block;text-align:center;margin:16px 0 0;color:var(--amber);font-weight:700;font-size:14.5px}
+
+/* states */
+.loading{padding:60px 0;text-align:center;color:var(--muted)}
+.spin{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--teal);margin:0 auto 14px;animation:sp 0.9s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.done{text-align:center;padding:30px 18px}
+.done .big{width:64px;height:64px;border-radius:50%;background:var(--teal-tint);display:grid;place-items:center;margin:0 auto 14px}
+.done .big svg{width:34px;height:34px;stroke:var(--teal);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.done .body{text-align:left}
+.foot{color:var(--muted);font-size:12px;text-align:center;margin-top:22px;line-height:1.6}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}.star svg{transition:none}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <img src="shield.png" alt="" width="30" height="36">
+  <div><b>Ricky Rampersad Branch</b><small>Guardian Life of the Caribbean</small></div>
+  <span class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Private to you</span></span>
+</div></header>
+
+<main class="wrap" id="app">
+  <div class="loading" id="loading">
+    <div class="spin" aria-hidden="true"></div>
+    <div id="loadMsg">Opening your plan…</div>
+  </div>
+  <noscript><div class="card" style="margin-top:24px">This page needs JavaScript. Please open the link in your email again in your phone’s browser, or reply to the email and your advisor will help.</div></noscript>
+</main>
+
+<div class="wrap"><p class="foot">Ricky Rampersad Branch · Guardian Life of the Caribbean Limited.<br>This page is for the person named on it. It does not commit you to buying anything.</p></div>
+
+<script>
+(function () {
+  'use strict';
+  var ENDPOINT = 'https://script.google.com/macros/s/AKfycbx776ORwmwhm2u4vx2YGQPC6bRR9gTQ-Y-Yc1up0FNGkCKGaQdet-APT1PJsrAxxJ3dsQ/exec';
+  var qs = new URLSearchParams(location.search);
+  var T = qs.get('t') || '';
+  var START_CHANGE = /^chang/i.test(qs.get('v') || '');
+  var app = document.getElementById('app');
+  var DATA = null, picked = 0;
+
+  /* Testing hook: ?api= points the page at another backend. Only honoured on
+     localhost, so a link can never redirect a client's answer elsewhere. */
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && qs.get('api')) ENDPOINT = qs.get('api');
+
+  var oldPage = ENDPOINT + '?action=cconfirm&t=' + encodeURIComponent(T) + '&v=ok';
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function money(n) { n = Number(n) || 0; return n ? 'TT$' + Math.round(n).toLocaleString('en-US') : ''; }
+  function $(id) { return document.getElementById(id); }
+
+  function fetchJson(url, opts, ms) {
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, ms);
+    opts = opts || {};
+    if (ctl) opts.signal = ctl.signal;
+    opts.redirect = 'follow';
+    return fetch(url, opts).then(function (r) { return r.text(); }).then(function (txt) {
+      clearTimeout(timer);
+      try { return JSON.parse(txt); } catch (e) { throw new Error('bad reply'); }
+    }, function (e) { clearTimeout(timer); throw e; });
+  }
+
+  function problem(head, body, withOld) {
+    app.innerHTML = '<div class="card" style="margin-top:24px"><h1 style="font-size:1.4rem">' + esc(head) + '</h1>' +
+      '<p style="color:var(--ink-2);margin:6px 0 0">' + body + '</p>' +
+      (withOld ? '<p style="margin:16px 0 0"><a class="link" href="' + esc(oldPage) + '">Open the original page instead</a></p>' : '') +
+      '</div>';
+  }
+
+  /* ── open ─────────────────────────────────────────────────────────────── */
+  if (!T) { problem('This link is incomplete', 'Please open the link in your email again. If it still does not work, reply to the email and your advisor will send a fresh one.'); return; }
+
+  var slow = setTimeout(function () { var m = $('loadMsg'); if (m) m.textContent = 'Still opening your plan… this can take a few seconds.'; }, 4000);
+  function open(tries) {
+    fetchJson(ENDPOINT + '?action=csign_open&t=' + encodeURIComponent(T), {}, 45000).then(function (d) {
+      clearTimeout(slow);
+      if (!d || !d.ok) {
+        if (d && d.used) return problem('You have already answered', 'Thank you. Your answer is already with your advisor and the branch. If you need to change something, reply to the email or call your advisor.');
+        if (d && d.expired) return problem('This link has expired', 'For your security, links stop working after a while. Reply to the email and your advisor will send you a fresh one.');
+        return problem('We could not open this link', esc((d && d.error) || 'Please try the link in your email again.'));
+      }
+      DATA = d;
+      if (START_CHANGE) drawChange(); else drawSign();
+    }).catch(function () {
+      if (tries < 1) return open(tries + 1);
+      clearTimeout(slow);
+      problem('The branch server did not answer', 'Please check your connection and try again in a minute.', true);
+    });
+  }
+  open(0);
+
+  /* ── the sign page ────────────────────────────────────────────────────── */
+  var WORDS = { 1: 'Poor', 2: 'Not good enough', 3: 'It was fine', 4: 'Good', 5: 'Excellent' };
+  var STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.3l-5.8 3.1 1.2-6.5L2.6 9.4l6.5-.8z"/></svg>';
+
+  function drawSign() {
+    var d = DATA, h = '';
+    h += '<section class="hero"><div class="eyebrow">Confirm and sign</div>' +
+         '<h1>' + esc(d.first) + ', is this right?</h1>' +
+         '<p>Prepared with ' + esc(d.advisor || 'your advisor') + '. Check it, rate the advice, and sign. It takes about a minute.</p></section>';
+    h += '<ol class="steps" aria-label="Three steps"><li class="on">Check</li><li id="st2">Rate</li><li id="st3">Sign</li></ol>';
+
+    if (d.recs && d.recs.length) {
+      h += '<section class="card"><h2>What you are confirming</h2>';
+      d.recs.forEach(function (r) {
+        h += '<div class="rec"><div class="plan">' + esc(r.plan) + '</div>' +
+             (r.need ? '<div class="need">' + esc(r.need) + '</div>' : '') +
+             ((r.amt || r.prem) ? '<div class="nums">' +
+               (r.amt ? '<div>Cover<b>' + money(r.amt) + '</b></div>' : '') +
+               (r.prem ? '<div>Premium<b>' + money(r.prem) + ' a month</b></div>' : '') + '</div>' : '') +
+             (r.reason ? '<div class="why"><strong>Why: </strong>' + esc(r.reason) + '</div>' : '') +
+             '</div>';
+      });
+      h += '</section>';
+    }
+    if (d.medHtml) h += '<section class="card">' + d.medHtml + '</section>';   /* built by the branch server */
+
+    h += '<form id="cf" novalidate>';
+    h += '<section class="card"><h2>Your confirmation</h2>' +
+         '<label class="tick"><input type="checkbox" class="cq" name="ok1"><span>What is written above is right, and it matches what I discussed with ' + esc(d.advFirst) + '.</span></label>' +
+         (d.adviceOnly ? '<label class="tick warn"><input type="checkbox" class="cq" name="ok2"><span><strong>I asked for advice on this product only.</strong> I chose not to go through my full financial position, and I understand a policy bought this way may not suit my wider needs.</span></label>' : '') +
+         '</section>';
+
+    h += '<section class="card" id="rateCard"><h2>' + (d.rating ? 'You rated ' + esc(d.advFirst) + ' from the email' : 'How was the advice ' + esc(d.advFirst) + ' gave you?') + '</h2>' +
+         '<p style="margin:-6px 0 6px;color:var(--muted);font-size:13.5px">' + (d.rating ? 'Change it here if you want to. ' : '') + 'This goes to the branch manager, not to your advisor.</p>' +
+         '<div class="stars" role="radiogroup" aria-label="Your rating">';
+    for (var i = 1; i <= 5; i++) h += '<button type="button" class="star" role="radio" aria-checked="false" aria-label="' + i + ' star' + (i > 1 ? 's' : '') + ', ' + WORDS[i] + '" data-v="' + i + '">' + STAR + '</button>';
+    h += '</div><div class="rate-word" id="rateWord" aria-live="polite"></div>' +
+         '<div class="better" id="better"><label for="betterText" id="betterLbl"></label>' +
+         '<textarea id="betterText" rows="3"></textarea><div class="note" id="betterNote"></div></div></section>';
+
+    h += '<section class="card"><h2>How much do you want to hear from us?</h2>' +
+         '<p style="margin:-6px 0 4px;color:var(--muted);font-size:13.5px">While your policy is being set up. Either way you get the milestones.</p>' +
+         '<label class="opt"><input type="radio" name="updates" value="milestones"' + (d.updates !== 'all' ? ' checked' : '') + '><strong>Milestones only</strong><small>Application in · policy at the branch · delivered. Three emails.</small></label>' +
+         '<label class="opt"><input type="radio" name="updates" value="all"' + (d.updates === 'all' ? ' checked' : '') + '><strong>Keep me posted</strong><small>The milestones, plus a short note every few days on where things are.</small></label>' +
+         '</section>';
+
+    h += '<section class="card"><div class="padhead"><h2 style="margin:0">Your signature</h2><button type="button" class="link muted" id="clear">Clear</button></div>' +
+         '<div class="pad"><canvas id="pad" aria-label="Signature box. Draw with your finger, or use your typed name below."></canvas><div class="rule"></div><div class="hint" id="hint">Sign here with your finger</div></div>' +
+         '<input type="text" id="signName" autocomplete="name" placeholder="Your full name" value="' + esc(d.signName) + '">' +
+         '<button type="button" class="link" id="typed">Use my typed name instead</button>' +
+         '</section>';
+
+    h += '<div class="err" id="err" role="alert"></div>' +
+         '<button type="submit" class="go" id="go">Confirm &amp; sign</button>' +
+         '<p class="small">Your signature goes onto your fact find, in the client’s box. Your approved plan follows once the manager has checked it. Nothing is final until then.</p>' +
+         '<a href="#" class="change" id="toChange">Something is not right — I want a change</a>';
+    h += '</form>';
+    app.innerHTML = h;
+
+    wireStars(d.rating || 0);
+    var pad = wirePad();
+    $('toChange').addEventListener('click', function (e) { e.preventDefault(); drawChange(); window.scrollTo(0, 0); });
+    $('cf').addEventListener('submit', function (e) { e.preventDefault(); submitSign(pad); });
+  }
+
+  function wireStars(start) {
+    var stars = [].slice.call(document.querySelectorAll('.star'));
+    function paint(n) {
+      stars.forEach(function (s) {
+        var v = +s.getAttribute('data-v');
+        s.classList.toggle('on', v <= n);
+        s.setAttribute('aria-checked', v === n ? 'true' : 'false');
+        s.tabIndex = (v === (n || 1)) ? 0 : -1;
+      });
+      $('rateWord').textContent = WORDS[n] || '';
+      var b = $('better'), lb = $('betterLbl'), ta = $('betterText'), nt = $('betterNote');
+      if (!n) { b.className = 'better'; return; }
+      if (n <= 3) {
+        b.className = 'better show low';
+        lb.textContent = 'What would have made it better?';
+        ta.placeholder = 'Say it plainly. The branch manager reads these.';
+        nt.textContent = 'The branch manager looks at every one of these personally. It is not shown to anyone else.';
+      } else {
+        b.className = 'better show high';
+        lb.textContent = 'What did ' + DATA.advFirst + ' do well? (optional)';
+        ta.placeholder = 'A line or two, if you have a moment.';
+        nt.textContent = 'Words like these are sometimes shown on the branch wall, with your first name only. Leave it blank if you would rather they were not.';
+      }
+      $('st2').classList.add('on');
+    }
+    stars.forEach(function (s) {
+      s.addEventListener('click', function () { picked = +s.getAttribute('data-v'); paint(picked); });
+      s.addEventListener('keydown', function (e) {
+        var n = picked || 0;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') n = Math.min(5, n + 1);
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') n = Math.max(1, n - 1);
+        else return;
+        e.preventDefault(); picked = n; paint(n); stars[n - 1].focus();
+      });
+    });
+    picked = start; paint(start);
+  }
+
+  function wirePad() {
+    var c = $('pad'), hint = $('hint'), x = c.getContext('2d');
+    var st = { drawn: false, down: false, last: null };
+    function fit() {
+      var r = c.getBoundingClientRect(), dp = window.devicePixelRatio || 1;
+      c.width = Math.round(r.width * dp); c.height = Math.round(r.height * dp);
+      x.setTransform(dp, 0, 0, dp, 0, 0);
+      x.lineWidth = 2.6; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#0F172A';
+    }
+    fit();
+    var lastW = c.getBoundingClientRect().width;
+    window.addEventListener('resize', function () {
+      var w = c.getBoundingClientRect().width;
+      if (Math.abs(w - lastW) > 2 && !st.drawn) { fit(); lastW = w; }
+    });
+    function pt(e) { var r = c.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    c.addEventListener('pointerdown', function (e) {
+      e.preventDefault(); st.down = true; st.last = pt(e); hint.style.display = 'none';
+      try { c.setPointerCapture(e.pointerId); } catch (er) {}
+    });
+    c.addEventListener('pointermove', function (e) {
+      if (!st.down) return; e.preventDefault();
+      var p = pt(e); x.beginPath(); x.moveTo(st.last.x, st.last.y); x.lineTo(p.x, p.y); x.stroke();
+      st.last = p; st.drawn = true; $('st3').classList.add('on');
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (n) { c.addEventListener(n, function () { st.down = false; }); });
+    $('clear').addEventListener('click', function () { x.clearRect(0, 0, c.width, c.height); st.drawn = false; hint.style.display = ''; });
+    $('typed').addEventListener('click', function () {
+      var n = ($('signName').value || '').trim();
+      if (!n) { $('signName').focus(); return; }
+      x.clearRect(0, 0, c.width, c.height);
+      var r = c.getBoundingClientRect(), s = 42;
+      x.fillStyle = '#0F172A'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      do { x.font = 'italic 700 ' + s + 'px Georgia,"Times New Roman",serif'; s -= 2; } while (x.measureText(n).width > r.width - 56 && s > 16);
+      x.fillText(n, r.width / 2, r.height / 2 - 8);
+      st.drawn = true; hint.style.display = 'none'; $('st3').classList.add('on');
+    });
+    return { st: st, canvas: c };
+  }
+
+  function showErr(msg, focusEl) {
+    var e = $('err'); e.textContent = msg; e.classList.add('show');
+    if (focusEl) { focusEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); try { focusEl.focus({ preventScroll: true }); } catch (er) {} }
+  }
+
+  function submitSign(pad) {
+    var boxes = [].slice.call(document.querySelectorAll('.cq'));
+    var first = boxes.filter(function (b) { return !b.checked; })[0];
+    if (first) return showErr('Please tick the box' + (boxes.length > 1 ? 'es' : '') + ' above. That is what you are signing.', first);
+    if (!picked) return showErr('Please rate the advice. It is how we keep it good.', document.querySelector('.star'));
+    var words = ($('betterText').value || '').trim();
+    if (picked <= 3 && !words) return showErr('Please tell us what would have made it better. That is the part we can act on.', $('betterText'));
+    if (!pad.st.drawn) return showErr('Please sign in the box, or use your typed name.', pad.canvas);
+    var name = ($('signName').value || '').trim();
+    if (!name) return showErr('Please type your name.', $('signName'));
+    $('err').classList.remove('show');
+
+    var f = new URLSearchParams();
+    f.set('action', 'csign_submit'); f.set('t', T); f.set('v', 'sign');
+    f.set('ok1', 'on');
+    if (DATA.adviceOnly) f.set('ok2', 'on');
+    f.set('rate', String(picked));
+    if (words) f.set('better', words);
+    var up = document.querySelector('input[name=updates]:checked');
+    f.set('updates', up ? up.value : 'milestones');
+    f.set('signName', name);
+    f.set('sig', pad.canvas.toDataURL('image/png'));
+    send(f, $('go'), 'Recording…', 'Confirm & sign');
+  }
+
+  /* ── the change request ───────────────────────────────────────────────── */
+  function drawChange() {
+    var d = DATA;
+    app.innerHTML =
+      '<section class="hero"><div class="eyebrow">Ask for a change</div><h1>What needs changing, ' + esc(d.first) + '?</h1>' +
+      '<p>Tell us in your own words. This goes straight to ' + esc(d.advisor || 'your advisor') + ' and the branch manager. Nothing goes ahead until it is right.</p></section>' +
+      '<form id="chf" class="card" novalidate><label for="note" style="display:block;font-weight:700;margin-bottom:8px">Your words</label>' +
+      '<textarea id="note" rows="6" placeholder="For example: my income is different, or I have cover you did not list…"></textarea>' +
+      '<div class="err" id="err" role="alert"></div>' +
+      '<button type="submit" class="go amber" id="go" style="margin-top:12px">Send this</button>' +
+      '<p style="margin:12px 0 0;text-align:center"><a href="#" class="link" id="back">Back to confirm and sign</a></p></form>';
+    $('back').addEventListener('click', function (e) { e.preventDefault(); drawSign(); window.scrollTo(0, 0); });
+    $('chf').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var note = ($('note').value || '').trim();
+      if (!note) return showErr('Please write what needs changing.', $('note'));
+      var f = new URLSearchParams();
+      f.set('action', 'csign_submit'); f.set('t', T); f.set('v', 'save'); f.set('note', note);
+      send(f, $('go'), 'Sending…', 'Send this');
+    });
+  }
+
+  /* ── one way to send, one way to finish ───────────────────────────────── */
+  function send(form, btn, busy, idle) {
+    btn.disabled = true; btn.textContent = busy;
+    fetchJson(ENDPOINT, { method: 'POST', body: form }, 60000).then(function (r) {
+      if (r && r.ok) return finish(r);
+      btn.disabled = false; btn.textContent = idle;
+      if (r && /already been used/i.test((r.html || '') + (r.title || ''))) {
+        return problem('You have already answered', 'Thank you. Your answer is already with your advisor and the branch.');
+      }
+      showErr((r && r.error) || 'That did not go through. Please try again.');
+    }).catch(function () {
+      btn.disabled = false; btn.textContent = idle;
+      showErr('We could not reach the branch server. Your answers are still here: check your connection and press the button again.');
+    });
+  }
+
+  function finish(r) {
+    app.innerHTML = '<section class="card done" style="margin-top:24px">' +
+      '<div class="big"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>' +
+      '<div class="body">' + (r.html || '<p>Thank you. That is recorded.</p>') + '</div></section>';  /* built by the branch server */
+    window.scrollTo(0, 0);
+  }
+})();
+</script>
+</body>
+</html>
