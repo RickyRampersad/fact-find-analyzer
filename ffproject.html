@@ -2315,8 +2315,8 @@ const RAI_MASCOT = `<svg class="rai-avatar" viewBox="0 0 64 64" xmlns="http://ww
    touches the fields or the submission: see next/next.js. */
 (function(){try{var q=location.search,m=q.match(/[?&]ui=(next|classic)\b/),t=q.match(/[?&]theme=(plum|sapphire|ember|reef)\b/);
 if(m)localStorage.setItem('ff-ui',m[1]);if(t)localStorage.setItem('ff-theme',t[1]);
-if(localStorage.getItem('ff-ui')==='next'){var h=document.documentElement,th=localStorage.getItem('ff-theme');if(!/^(plum|sapphire|ember|reef)$/.test(th||''))th='plum';h.className+=' fx';h.setAttribute('data-ffx-theme',th);
-document.write('<link rel="stylesheet" href="next/next.css?v=2"><script src="next/next.js?v=2" defer><\/script>');}}catch(e){}})();
+if(localStorage.getItem('ff-ui')==='next'){var h=document.documentElement,th=t?t[1]:'sapphire';if(!/^(plum|sapphire|ember|reef)$/.test(th||''))th='sapphire';h.className+=' fx';h.setAttribute('data-ffx-theme',th);
+document.write('<link rel="stylesheet" href="next/next.css?v=3"><script src="next/next.js?v=3" defer><\/script>');}}catch(e){}})();
 </script>
 </head>
 <body>

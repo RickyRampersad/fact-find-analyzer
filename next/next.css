@@ -1,8 +1,8 @@
 /* FactFind360 — the redesigned fact find. Loaded only on a device switched to it.
  *
  * Four colour directions, every ratio computed against its own ground (WCAG):
- *   plum     (default) action #6A3FA0, white on it 7.42:1, ink 14.8:1
- *   sapphire action #1F5FD6, white on it 5.73:1, ink 15.0:1
+ *   plum     action #6A3FA0, white on it 7.42:1, ink 14.8:1
+ *   sapphire (default, chosen 15 Nov 2026) action #1F5FD6, white on it 5.73:1, ink 15.0:1
  *   ember    action #C2410C, white on it 5.18:1, ink 13.6:1
  *   reef     action #0B7A86, white on it 5.07:1, ink 12.4:1
  * Muted text clears 5.3:1 and control borders 3.6:1 in all four. Accents are
