@@ -1,0 +1,125 @@
+/* FactFind360 "next" theme. Loaded only on a device switched to it.
+ *
+ * Three palettes from the colour research of 15 November 2026, every ratio
+ * computed against its own ground (WCAG relative luminance):
+ *   ocean   (default) indigo action #3446C8, white on it 7.35:1, ink 14.4:1
+ *   harbour Guardian's own navy #0D3F5E and teal #00728D (10.4:1, 5.54:1)
+ *   emerald #047857, white on it 5.48:1
+ * Choose with ?theme=ocean|harbour|emerald; the choice is kept on the device.
+ * Light grounds only, no gold, no near-black: the branch's standing rules.
+ * The live form reads every colour through these custom properties, including
+ * its inline styles, so overriding them here reskins the whole form.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+html.ffx {
+  --x-ground:#F5F7FB; --x-surface:#FFFFFF; --x-ink:#1B2559; --x-body:#2A3348; --x-muted:#5B6478;
+  --x-line:#E1E5EE; --x-line-strong:#7A8296; --x-act:#3446C8; --x-act-h:#2A39A6; --x-tint:#EEF0FC;
+  --x-a1:#0F8A8A; --x-a2:#C0396B; --x-ok:#18794E; --x-warn:#9A5800; --x-bad:#C0262D; --x-band:#1B2559;
+  --x-band2:#2A39A6;
+}
+html.ffx[data-ffx-theme="harbour"] {
+  --x-ground:#F7F8F6; --x-ink:#0D3F5E; --x-body:#26394A; --x-muted:#5A6774; --x-line:#E2E6E4;
+  --x-line-strong:#76838C; --x-act:#00728D; --x-act-h:#005B72; --x-tint:#E8F4F6; --x-a1:#2F6FB2;
+  --x-a2:#C2552D; --x-ok:#1E7A4A; --x-warn:#9A5B00; --x-bad:#B42318; --x-band:#0D3F5E; --x-band2:#00728D;
+}
+html.ffx[data-ffx-theme="emerald"] {
+  --x-ground:#F4F7F5; --x-ink:#0B3B2E; --x-body:#1F3A33; --x-muted:#556660; --x-line:#DDE5E1;
+  --x-line-strong:#728079; --x-act:#047857; --x-act-h:#065F46; --x-tint:#E7F5EF; --x-a1:#2563EB;
+  --x-a2:#B4389F; --x-ok:#15803D; --x-warn:#A16207; --x-bad:#B91C1C; --x-band:#063F31; --x-band2:#047857;
+}
+
+/* The live form's own tokens, pointed at the theme. */
+html.ffx {
+  --slate: var(--x-band); --slate-2: var(--x-band2); --slate-soft: var(--x-muted);
+  --teal: var(--x-act); --teal-soft: var(--x-act); --teal-tint: var(--x-tint); --teal-deep: var(--x-act-h);
+  --navy: var(--x-band); --navy-2: var(--x-band2); --navy-soft: var(--x-muted);
+  --gold: var(--x-act); --gold-soft: var(--x-act); --gold-tint: var(--x-tint);
+  --ink: var(--x-ink); --ink-soft: var(--x-body); --muted: var(--x-muted);
+  --line: var(--x-line); --line-2: var(--x-line-strong); --bg: var(--x-ground); --surface: var(--x-surface);
+  --ok: var(--x-ok); --warn: var(--x-warn); --danger: var(--x-bad);
+  --shadow-sm: 0 1px 2px rgba(20,30,70,.06);
+  --shadow: 0 6px 18px rgba(20,30,70,.07);
+  --shadow-lg: 0 16px 40px rgba(20,30,70,.10);
+  --radius: 14px; --radius-sm: 10px;
+}
+
+html.ffx body { background: var(--x-ground); color: var(--x-body); font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+html.ffx :is(h1,h2,h3,h4):not(#printLayout *):not(.app-header *) { font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; letter-spacing: -0.015em; color: var(--x-ink); }
+
+/* Header: one calm band, the theme's own colour. */
+html.ffx .app-header { background: linear-gradient(120deg, var(--x-band) 0%, var(--x-band2) 100%); box-shadow: none; }
+html.ffx .app-header h1, html.ffx .app-header .brand h1 { color: #fff; font-weight: 700; font-family: 'Inter Tight', 'Inter', system-ui, sans-serif; letter-spacing: -0.015em; }
+html.ffx .app-header .btn-ghost { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.28); color: #fff; }
+
+/* Sections read as cards; the open one stands forward. */
+html.ffx section.section { background: var(--x-surface); border: 1px solid var(--x-line); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+html.ffx section.section.open { box-shadow: var(--shadow); border-color: color-mix(in srgb, var(--x-act) 30%, var(--x-line)); }
+html.ffx .section-header { padding-block: 16px; }
+html.ffx .section-num { background: var(--x-tint); color: var(--x-act); border-radius: 10px; font-family: 'Inter Tight', sans-serif; font-weight: 800; }
+html.ffx section.section.open .section-num { background: var(--x-act); color: #fff; }
+html.ffx .section-title h2 { font-size: 1.12rem; font-weight: 700; }
+html.ffx .section-title .hint, html.ffx .hint { color: var(--x-muted); }
+
+/* Inputs: big, clear, and a focus ring that survives sunlight. */
+html.ffx :is(input:not([type=radio]):not([type=checkbox]):not([type=range]), select, textarea):not(#printLayout *) {
+  font-size: max(16px, 1rem); min-height: 46px; border: 1.5px solid var(--x-line-strong); border-radius: 10px;
+  background-color: #fff; color: var(--x-ink); transition: border-color .15s, box-shadow .15s;
+}
+html.ffx textarea { min-height: 92px; }
+html.ffx input:focus, html.ffx select:focus, html.ffx textarea:focus {
+  outline: none; border-color: var(--x-act); box-shadow: 0 0 0 3px color-mix(in srgb, var(--x-act) 28%, transparent);
+}
+html.ffx label:not(#printLayout *) { color: var(--x-ink); font-weight: 600; }
+html.ffx .req:not(#printLayout *) { color: var(--x-bad); }
+html.ffx .choice-card, html.ffx .radio-block, html.ffx .radio { border-radius: 12px; border-color: var(--x-line-strong); }
+html.ffx .choice-card:has(input:checked), html.ffx .radio:has(input:checked) { border-color: var(--x-act); background: var(--x-tint); box-shadow: 0 0 0 2px var(--x-act) inset; }
+html.ffx .legal-block { background: var(--x-ground); border-left: 4px solid var(--x-act); border-radius: 10px; color: var(--x-body); }
+
+/* The voice interview and its panel take the theme's action colour. */
+html.ffx .rrbv-fab, html.ffx .rrbv-hd, html.ffx .rrbv-row button.go, html.ffx .rrbv-type button { background: var(--x-act) !important; border-color: var(--x-act) !important; }
+html.ffx .rrbv-fab { box-shadow: 0 8px 24px color-mix(in srgb, var(--x-act) 35%, transparent) !important; }
+
+/* Buttons */
+html.ffx .btn-primary { background: var(--x-act); border-color: var(--x-act); color: #fff; border-radius: 12px; font-weight: 700; }
+html.ffx .btn-primary:hover { background: var(--x-act-h); }
+
+/* The stage menu, quieter. */
+html.ffx .section-nav button.active { background: var(--x-act); color: #fff; }
+
+/* The form's own Next buttons at the foot of each section. */
+html.ffx .section-actions .btn { background: var(--x-act); border-color: var(--x-act); color: #fff; min-height: 46px; padding: 0 22px; border-radius: 12px; font-weight: 700; }
+html.ffx .section-actions .btn:hover { background: var(--x-act-h); }
+html.ffx .section-actions .btn.btn-ghost { background: #fff; color: var(--x-ink); border: 1.5px solid var(--x-line-strong); }
+
+/* On a phone the header buttons sit in one row that scrolls, not three rows. */
+@media (max-width: 720px) {
+  html.ffx .header-actions { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  html.ffx .header-actions::-webkit-scrollbar { display: none; }
+  html.ffx .header-actions .btn { flex: none; }
+}
+
+/* ---------- no-signal outbox ---------- */
+.ffx-queue { position: fixed; left: 12px; right: 12px; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 62; background: #FFF7E6; border: 1.5px solid var(--x-warn); color: #5A3A00; border-radius: 12px; padding: 10px 14px; font: 500 14px 'Inter', sans-serif; }
+.ffx-queue button { margin-left: 8px; border: 0; background: var(--x-act); color: #fff; border-radius: 8px; padding: 6px 12px; font-weight: 700; }
+.ffx-note { position: fixed; left: 50%; top: 76px; transform: translateX(-50%); z-index: 70; max-width: min(92vw, 560px); background: #fff; border: 1.5px solid var(--x-bad); color: var(--x-ink); border-radius: 12px; padding: 10px 14px; font: 500 14px 'Inter', sans-serif; box-shadow: var(--shadow-lg); transition: opacity .5s; }
+.ffx-note.ok { border-color: var(--x-ok); }
+.ffx-note.go { opacity: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html.ffx section.section.open .section-body { animation: ffxIn .35s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes ffxIn { from { opacity: .0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+
+/* The Guardian PDF and its preview are drawn from the page: they keep the
+   classic look exactly, whichever layout typed the fact find. */
+html.ffx #printLayout {
+  --slate:#1E293B; --slate-2:#334155; --slate-soft:#475569; --teal:#0D9488; --teal-soft:#14B8A6;
+  --teal-tint:#ECFDF8; --teal-deep:#0F766E; --navy:#1E293B; --navy-2:#334155; --navy-soft:#475569;
+  --gold:#0D9488; --gold-soft:#14B8A6; --gold-tint:#ECFDF8; --ink:#0F172A; --ink-soft:#334155;
+  --muted:#556070; --line:#E2E8F0; --line-2:#CBD5E1; --bg:#F1F5F9; --surface:#FFFFFF; --ok:#0D9488;
+  --warn:#B45309; --danger:#DC2626; --shadow-sm:0 1px 2px rgba(15,23,42,0.06); --shadow:0 4px 14px rgba(15,23,42,0.08);
+  --shadow-lg:0 12px 32px rgba(15,23,42,0.12); --radius:12px; --radius-sm:8px;
+}
+
+@media print { .ffx-queue, .ffx-note { display: none !important; } }
