@@ -54,6 +54,15 @@ html.fx .app-header, html.fx .sidebar-toggle, html.fx #liveBar, html.fx #coachFa
 .fx-icon:hover { background: var(--x-tint); }
 .fx-icon:focus-visible, .fx-dock button:focus-visible, .fx-prog:focus-visible { outline: 3px solid color-mix(in srgb, var(--x-act) 45%, transparent); outline-offset: 2px; }
 
+/* HELP 868: WhatsApp's green carries only the glyph (4.14:1, over the 3:1 a
+   graphic needs); words about it stay in the theme's ink. */
+.fx-bar .fx-wa { background: #128c7e; color: #fff; width: 40px; height: 40px; border-radius: 12px; }
+.fx-bar .fx-wa:hover { background: #0e7568; }
+.fx-bar .fx-wa svg { width: 24px; height: 24px; }
+.fx-menu-help { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.fx-menu-help svg { color: #128c7e; }
+@media (max-width: 380px) { .fx-save { display: none; } }
+
 /* ---------- progress strip ---------- */
 .fx-prog { position: sticky; top: var(--fx-bar); z-index: 79; width: 100%; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 12px; padding: 8px 16px 10px; border: 0; border-bottom: 1px solid var(--x-line); background: color-mix(in srgb, var(--x-surface) 94%, transparent); backdrop-filter: blur(8px); text-align: left; cursor: pointer; font: inherit; color: inherit; }
 .fx-prog-t { display: flex; flex-direction: column; min-width: 0; }
