@@ -15352,7 +15352,25 @@ function buildPrintLayout() {
   }
 
   html += '</tbody></table>';
-  if (recCount > PF_ROWS.recommendations)
+  // Advice on one need prints no addendum (Ricky, 20 Nov 2026: "forget the
+  // addendum, just only have the pages for product only"), so the written
+  // reason for each recommendation, and any row past Guardian's four, is
+  // recorded here under the table instead of at the back of the pack.
+  if (adviceOnly && PF_STRICT_GUARDIAN) {
+    var whyRows = '';
+    for (var wi = 1; wi <= recCount; wi++) {
+      var wRec = s['rec' + wi + 'Rec'] || '', wWhy = s['rec' + wi + 'Reason'] || '';
+      if (wi > PF_ROWS.recommendations && wRec) {
+        var wb = [];
+        if (stripCurrency(s['rec' + wi + 'Amt']) > 0) wb.push('TT$' + pf_money(stripCurrency(s['rec' + wi + 'Amt'])) + ' cover');
+        if (stripCurrency(s['rec' + wi + 'Prem']) > 0) wb.push('TT$' + pf_money(stripCurrency(s['rec' + wi + 'Prem'])) + ' ' + rrbModeWords_(s['rec' + wi + 'Mode'] || ''));
+        if (wb.length) wRec += ' \u2014 ' + wb.join(', ');
+      }
+      if (wWhy || (wi > PF_ROWS.recommendations && wRec))
+        whyRows += '<div style="margin-top:0.8mm"><b>' + pf$(wRec || ('Recommendation ' + wi)) + ':</b> ' + pf$(wWhy) + '</div>';
+    }
+    if (whyRows) html += '<div style="font-size:8.5pt;margin-top:1.5mm;line-height:1.4"><div style="font-weight:700">Reason for recommendation</div>' + whyRows + '</div>';
+  } else if (recCount > PF_ROWS.recommendations)
     html += '<div style="font-size:7.5pt;font-style:italic;color:#444;margin-top:1mm">' +
             'This client was advised on ' + recCount + ' needs. Recommendations ' +
             (PF_ROWS.recommendations + 1) + '&ndash;' + recCount +
@@ -15408,7 +15426,12 @@ function buildPrintLayout() {
   if (!PF_STRICT_GUARDIAN && decPremTotal > 0)
     html += '<tr><td colspan="5" style="text-align:right; font-weight:bold">Total Monthly Premium</td><td class="pf-num" style="font-weight:bold">$' + pf_money(decPremTotal) + '</td><td colspan="2"></td></tr>';
   html += '</tbody></table>';
-  if (decCount > PF_ROWS.decision)
+  if (adviceOnly && decCount > PF_ROWS.decision) {
+    for (var dx = PF_ROWS.decision + 1; dx <= decCount; dx++) {
+      var dxl = s['dec' + dx + 'Plan'] || '';
+      if (dxl) html += '<div style="font-size:8.5pt;margin-top:0.8mm"><b>' + pf$(dxl) + ':</b> ' + pf$(s['dec' + dx + 'Reason'] || '') + '</div>';
+    }
+  } else if (decCount > PF_ROWS.decision)
     html += '<div style="font-size:7.5pt;font-style:italic;color:#444;margin-top:1mm">' +
             'Decisions ' + (PF_ROWS.decision + 1) + '&ndash;' + decCount +
             ' are recorded on the RR Branch addendum at the back of this pack.</div>';
@@ -15527,11 +15550,16 @@ function buildPrintLayout() {
   // ─────── PAGE 7 (ADDENDUM): overflow that doesn't fit official form ───────
   // Spouse needs analysis + extended recommendations. RR Branch addendum, only
   // rendered when there is content — keeps the official 6-page form intact.
-  html += pf_buildAddendum(s);
+  // Not on advice on one need: the client chose a limited scope, and the
+  // addendum's checks and the plans-against-needs page read the skipped
+  // sections as gaps. The pack is Guardian's own pages and nothing else.
+  if (!adviceOnly) {
+    html += pf_buildAddendum(s);
 
-  // ─────── OUR PLANS AGAINST THE NEEDS THEY ANSWER ───────
-  // Last page. An advisor can tear it off and put it on the table.
-  html += pf_productNeedGrid(s);
+    // ─────── OUR PLANS AGAINST THE NEEDS THEY ANSWER ───────
+    // Last page. An advisor can tear it off and put it on the table.
+    html += pf_productNeedGrid(s);
+  }
 
   /* Nothing changed since the last build: leave the page alone. beforeprint
      lands here, and swapping in identical markup throws away signature
